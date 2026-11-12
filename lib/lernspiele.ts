@@ -19,10 +19,11 @@
 import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
+import { haeufigsteForm } from "./lernspiele-antwort";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { SPIEL_THEMEN, spielbareThemen, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
-import { istSpielArt, SPIEL_FACH, sterneFuer, type SpielAntwort, type SpielArt, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
+import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
@@ -259,6 +260,20 @@ export function spielVorschau(student: repo.Student, art: SpielArt, heute: strin
     .slice(0, 24)
     .map((k) => k.karte.faecher)
     .sort((x, y) => laenge(x) - laenge(y))[0];
+}
+
+/**
+ * Wie die Karten der nächsten Runde beantwortet werden, wenn es am Thema hängt (lib/lernspiele-antwort.ts): bei
+ * „Kopfrechnen“ der Ziffernblock, wo das Ergebnis eine Zahl ist, sonst die Kisten. Für den Anfang des Spiels.
+ */
+export function spielAntwort(student: repo.Student, art: SpielArt, heute: string): SpielForm | undefined {
+  if (SPIEL_FORM[art]) return SPIEL_FORM[art];
+  const plan = themenPlan(student, art, heute);
+  if (!plan) return undefined;
+  const stufen = stufenFuer(art, student.grade, null);
+  const pool = themenKandidaten(plan.skillId);
+  const passend = pool.filter((k) => stufen.includes(k.stufe));
+  return haeufigsteForm(art, (passend.length ? passend : pool).map((k) => k.karte));
 }
 
 /** Satzbau in der Volksschule hängt an der Fähigkeit der Volksschule, sonst an der Umstellprobe der Unterstufe. */

@@ -19,15 +19,17 @@ process.env.DATABASE_PATH = ":memory:";
 process.env.UPLOADS_PATH = fs.mkdtempSync(path.join(os.tmpdir(), "pruefliste-"));
 for (const k of ["ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN", "OPENROUTER_API_KEY", "DEEPSEEK_API_KEY", "AI_COMPATIBLE_API_KEY", "AI_COMPATIBLE_BASE_URL", "OLLAMA_BASE_URL", "AI_PROVIDER", "AI_STUDENT_LIMIT_EUR"]) delete process.env[k];
 
-const HEUTE = "2026-10-23";
+// Die Tage liegen ein Jahr voraus: ob eine Prüfung „geplant“ ist, hängt am echten heutigen Tag (repo.addTest), und mit
+// 2026 wäre die Schularbeit vom 12.11. ab diesem Tag „geschrieben“.
+const HEUTE = "2027-10-23";
 let n = 0;
 /** Jedes Foto ein anderes (sonst wäre es dasselbe Material). */
 const jpeg = () => ({ name: "zettel.jpg", data: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from(`erfundener Stoffzettel ${++n}`)]) });
 const pdf = () => ({ name: "stoff.pdf", data: Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.from(`erfundener Stoff ${++n}`)]) });
-const o2 = { heute: "2026-10-23" };
+const o2 = { heute: "2027-10-23" };
 const eingabe = (o: Partial<{ art: string; fach: string; datum: string; stoff: string; notiz: string }> = {}) => ({ art: "Schularbeit", fach: "Mathematik", datum: "", stoff: "", notiz: "", ...o });
 
-const GELESEN: StoffzettelGelesen = { art: "2. Schularbeit", fach: "M", datum: "2026-11-12", titel: "2. Mathematik-Schularbeit", themen: ["Brüche kürzen", "Prozentrechnung"], unsicher: [] };
+const GELESEN: StoffzettelGelesen = { art: "2. Schularbeit", fach: "M", datum: "2027-11-12", titel: "2. Mathematik-Schularbeit", themen: ["Brüche kürzen", "Prozentrechnung"], unsicher: [] };
 
 async function setup() {
   const { resetForTests, db } = await import("./db");
@@ -58,7 +60,7 @@ async function mitKi(gelesen: StoffzettelGelesen | null | ((i: number) => Stoffz
 test("the student's entry is checked: known kinds and subjects, a real date or none, Stoff or a photo", async () => {
   const { pl, sid } = await setup();
   const o = { faecher: ["Mathematik", "Englisch"], alle: ["Mathematik", "Deutsch", "Englisch", "Biologie"], fotos: 0 };
-  const ok = pl.pruefeEingabe(eingabe({ art: "Quiz", fach: "biologie", datum: "2026-02-30", stoff: "  Zellen,\n Organe " }), o);
+  const ok = pl.pruefeEingabe(eingabe({ art: "Quiz", fach: "biologie", datum: "2027-02-30", stoff: "  Zellen,\n Organe " }), o);
   assert.ok(ok.ok);
   assert.deepEqual(ok.ok && ok.werte, { art: "Schularbeit", fach: "Biologie", datum: null, stoff: "Zellen, Organe", notiz: "" }, "unknown kind → Schularbeit, a day that does not exist stays empty");
   assert.deepEqual(pl.pruefeEingabe(eingabe({ fach: "Kochen", stoff: "x" }), o), { ok: false, fehler: "Bitte ein Fach wählen." });
@@ -117,11 +119,11 @@ test("only the student's teachers and the admin may work on the list", async () 
 
 test("what the photos say is a suggestion: empty fields are filled, other values are hints, an unclear date stays empty", async () => {
   const { pl } = await setup();
-  const v = (o: Partial<StoffzettelVorschlag>): StoffzettelVorschlag => ({ art: "Schularbeit", fach: "Mathematik", datum: "2026-11-12", titel: "", themen: [], hinweise: [], ...o });
+  const v = (o: Partial<StoffzettelVorschlag>): StoffzettelVorschlag => ({ art: "Schularbeit", fach: "Mathematik", datum: "2027-11-12", titel: "", themen: [], hinweise: [], ...o });
 
   // the student gave no date and no Stoff: both come from the photo
   const f = pl.formular({ art: "Test", fach: "Mathematik", datum: null, stoff: "", notiz: "Buch S. 40" }, v({ titel: "2. Schularbeit", themen: ["Brüche kürzen", "Prozent"] }));
-  assert.equal(f.datum, "2026-11-12");
+  assert.equal(f.datum, "2027-11-12");
   assert.equal(f.stoff, "Brüche kürzen, Prozent");
   assert.equal(f.art, "Test", "the student's kind stays");
   assert.deepEqual(f.vomFoto, ["datum", "titel", "stoff"]);
@@ -129,17 +131,17 @@ test("what the photos say is a suggestion: empty fields are filled, other values
   assert.deepEqual(f.abweichungen, ["Art auf dem Foto: Schularbeit"]);
 
   // the student's date stays, the photo's other date is a hint; extra topics too
-  const g = pl.formular({ art: "Schularbeit", fach: "Mathematik", datum: "2026-11-13", stoff: "Brüche kürzen", notiz: "" }, v({ themen: ["Brüche kürzen", "Prozent"] }));
-  assert.equal(g.datum, "2026-11-13");
+  const g = pl.formular({ art: "Schularbeit", fach: "Mathematik", datum: "2027-11-13", stoff: "Brüche kürzen", notiz: "" }, v({ themen: ["Brüche kürzen", "Prozent"] }));
+  assert.equal(g.datum, "2027-11-13");
   assert.deepEqual(g.konflikte, ["datum"]);
-  assert.deepEqual(g.abweichungen, ["Datum auf dem Foto: 12.11.2026", "Auf dem Foto außerdem: Prozent"]);
+  assert.deepEqual(g.abweichungen, ["Datum auf dem Foto: 12.11.2027", "Auf dem Foto außerdem: Prozent"]);
 
   // no date anywhere: empty, never today
   assert.equal(pl.formular({ art: "Test", fach: "Englisch", datum: null, stoff: "", notiz: "" }, v({ datum: null })).datum, "");
   assert.equal(pl.formular({ art: "Test", fach: "Englisch", datum: null, stoff: "", notiz: "" }, null).datum, "");
 
   // two photos with different dates: no date, with a hint; topics of both without doubles
-  const z = pl.zusammenfuehren([v({ themen: ["Brüche"], hinweise: ["Unsicher: Zeile 2"] }), null, v({ datum: "2026-11-19", themen: ["brüche", "Prozent"] })])!;
+  const z = pl.zusammenfuehren([v({ themen: ["Brüche"], hinweise: ["Unsicher: Zeile 2"] }), null, v({ datum: "2027-11-19", themen: ["brüche", "Prozent"] })])!;
   assert.equal(z.datum, null);
   assert.equal(z.fach, "Mathematik");
   assert.deepEqual(z.themen, ["Brüche", "Prozent"]);
@@ -151,24 +153,24 @@ test("what the photos say is a suggestion: empty fields are filled, other values
 
 test("only what is clear is entered without a teacher: a sure date from today on, nothing contradicts", async () => {
   const { pl } = await setup();
-  const v = (o: Partial<StoffzettelVorschlag> = {}): StoffzettelVorschlag => ({ art: "Schularbeit", fach: "Mathematik", datum: "2026-11-12", titel: "2. Schularbeit", themen: ["Prozent"], hinweise: [], ...o });
+  const v = (o: Partial<StoffzettelVorschlag> = {}): StoffzettelVorschlag => ({ art: "Schularbeit", fach: "Mathematik", datum: "2027-11-12", titel: "2. Schularbeit", themen: ["Prozent"], hinweise: [], ...o });
   const foto = (vorschlag: StoffzettelVorschlag | null) => ({ id: 1, materialId: 1, mime: "image/jpeg", gelesen: true, vorschlag, fehler: vorschlag ? "" : "nicht gelesen" });
   const e = (o: Partial<{ art: string; datum: string | null; stoff: string }> = {}, fotos = [foto(v())]) => ({ art: "Schularbeit", fach: "Mathematik", datum: null, stoff: "Brüche", notiz: "", fotos, ...o });
 
   const ok = pl.automatischMoeglich(e(), HEUTE);
   assert.ok(ok.ok);
-  assert.deepEqual(ok.ok && ok.werte, { art: "Schularbeit", fach: "Mathematik", datum: "2026-11-12", titel: "2. Schularbeit", stoff: "Brüche, Prozent", notiz: "" }, "the Stoff of both");
-  assert.ok(pl.automatischMoeglich(e({ datum: "2026-11-02" }, []), HEUTE).ok, "no photo: the student's own date counts");
+  assert.deepEqual(ok.ok && ok.werte, { art: "Schularbeit", fach: "Mathematik", datum: "2027-11-12", titel: "2. Schularbeit", stoff: "Brüche, Prozent", notiz: "" }, "the Stoff of both");
+  assert.ok(pl.automatischMoeglich(e({ datum: "2027-11-02" }, []), HEUTE).ok, "no photo: the student's own date counts");
 
   const nein = (x: ReturnType<typeof pl.automatischMoeglich>) => (x.ok ? "ok" : x.grund);
   assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v({ datum: null }))]), HEUTE)), "Kein sicheres Datum.");
   assert.equal(nein(pl.automatischMoeglich(e({}, []), HEUTE)), "Kein sicheres Datum.");
   assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v()), foto(null)]), HEUTE)), "Nicht jedes Foto wurde gelesen.");
-  assert.equal(nein(pl.automatischMoeglich(e({ datum: "2026-11-13" }), HEUTE)), "Foto und Angaben passen nicht zusammen.");
+  assert.equal(nein(pl.automatischMoeglich(e({ datum: "2027-11-13" }), HEUTE)), "Foto und Angaben passen nicht zusammen.");
   assert.equal(nein(pl.automatischMoeglich(e({ art: "Test" }), HEUTE)), "Foto und Angaben passen nicht zusammen.");
-  assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v({ datum: "2026-10-20", hinweise: ["Das Datum liegt in der Vergangenheit. Bitte prüfen."] }))]), HEUTE)), "Das Datum liegt nicht in den nächsten zwölf Monaten.");
+  assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v({ datum: "2027-10-20", hinweise: ["Das Datum liegt in der Vergangenheit. Bitte prüfen."] }))]), HEUTE)), "Das Datum liegt nicht in den nächsten zwölf Monaten.");
   assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v({ hinweise: ["Unsicher: Tag schwer lesbar"] }))]), HEUTE)), "Das Datum auf dem Foto ist nicht sicher.");
-  assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v()), foto(v({ datum: "2026-11-19" }))]), HEUTE)), "Kein sicheres Datum.", "two photos, two dates");
+  assert.equal(nein(pl.automatischMoeglich(e({}, [foto(v()), foto(v({ datum: "2027-11-19" }))]), HEUTE)), "Kein sicheres Datum.", "two photos, two dates");
 });
 
 test("right after the upload: read without a click, a clear entry becomes a Prüfung „vom Schüler“, an unclear date waits", async () => {
@@ -184,7 +186,7 @@ test("right after the upload: read without a click, a clear entry becomes a Prü
     const e = pl.getEinreichung(r.id)!;
     const t = repo.getTest(e.testId!)!;
     assert.equal(t.quelle, "schueler");
-    assert.equal(t.date, "2026-11-12");
+    assert.equal(t.date, "2027-11-12");
     assert.equal(t.kind, "Schularbeit");
     assert.deepEqual(t.topics, ["Brüche", "Brüche kürzen", "Prozentrechnung"]);
     assert.equal(t.status, "geplant", "counts for planning like any Schularbeit");
@@ -196,7 +198,7 @@ test("right after the upload: read without a click, a clear entry becomes a Prü
 
     const sicht = pl.eintraegeFuerSchueler(sid)[0];
     assert.equal(pl.STATUS_LABEL[sicht.status], "eingetragen");
-    assert.equal(sicht.datum, "2026-11-12");
+    assert.equal(sicht.datum, "2027-11-12");
     assert.equal(JSON.stringify(sicht).includes("Buch S. 40"), false, "no notes on the student's page");
     assert.equal(pl.offeneEinreichungen(sid).length, 1, "still in the Prüfliste for the teacher to see");
 
@@ -250,8 +252,8 @@ test("reading: without KI nothing is marked, a refusal is not tried again, the t
     assert.equal(ki2.gefragt.length, 1, "one request for both photos");
     const e = pl.getEinreichung(zwei.id)!;
     assert.deepEqual(e.fotos.map((f) => f.gelesen), [true, true]);
-    assert.equal(e.fotos[0].vorschlag?.datum, "2026-11-12");
-    assert.equal(pl.zusammenfuehren(e.fotos.map((f) => f.vorschlag))?.datum, "2026-11-12", "the merged suggestion has no hint per photo");
+    assert.equal(e.fotos[0].vorschlag?.datum, "2027-11-12");
+    assert.equal(pl.zusammenfuehren(e.fotos.map((f) => f.vorschlag))?.datum, "2027-11-12", "the merged suggestion has no hint per photo");
     assert.equal(pl.entscheide(zwei.id, HEUTE), "automatisch");
     const { db } = await import("./db");
     const testId = pl.getEinreichung(zwei.id)!.testId!;
@@ -289,31 +291,31 @@ test("Übernehmen makes the Prüfung with the teacher's values; Bestätigen chan
   assert.deepEqual(pl.uebernimm(r.id, thomas.id, u), { fehler: "Bitte das Datum der Prüfung eintragen." }, "no Prüfung without a date");
   assert.equal(repo.listTests(sid).length, 0);
 
-  const ok = pl.uebernimm(r.id, thomas.id, { ...u, datum: "2026-11-12" });
+  const ok = pl.uebernimm(r.id, thomas.id, { ...u, datum: "2027-11-12" });
   assert.ok("testId" in ok);
   const t = repo.getTest(ok.testId)!;
-  assert.deepEqual([t.kind, t.date, t.title, t.notes, t.quelle], ["Schularbeit", "2026-11-12", "2. Schularbeit", "Buch S. 40", "schueler"]);
+  assert.deepEqual([t.kind, t.date, t.title, t.notes, t.quelle], ["Schularbeit", "2027-11-12", "2. Schularbeit", "Buch S. 40", "schueler"]);
   assert.deepEqual(t.topics, ["Brüche kürzen", "Prozent"]);
   assert.deepEqual(t.skill_ids, [], "skills are linked later in the preparation");
   const foto = pl.getEinreichung(r.id)!.fotos[0].materialId!;
   assert.equal(t.material_id, foto);
   assert.equal(getMaterial(foto)!.title, "Stoffzettel 2. Schularbeit");
-  assert.deepEqual(pl.uebernimm(r.id, thomas.id, { ...u, datum: "2026-11-12" }), { fehler: "Dieser Eintrag ist schon erledigt." }, "a second click makes no second Prüfung");
+  assert.deepEqual(pl.uebernimm(r.id, thomas.id, { ...u, datum: "2027-11-12" }), { fehler: "Dieser Eintrag ist schon erledigt." }, "a second click makes no second Prüfung");
   assert.equal(repo.listTests(sid).length, 1);
   assert.equal(pl.STATUS_LABEL[pl.eintraegeFuerSchueler(sid)[0].status], "übernommen");
 
   // an entry made without a teacher: Bestätigen saves the changes into that Prüfung, no second one
-  const auto = pl.reicheEin(sid, eingabe({ datum: "2026-12-01", stoff: "Gleichungen" }), [], o2);
+  const auto = pl.reicheEin(sid, eingabe({ datum: "2027-12-01", stoff: "Gleichungen" }), [], o2);
   const autoTest = pl.getEinreichung(auto.id)!.testId!;
   assert.equal(pl.getEinreichung(auto.id)!.status, "automatisch");
-  const b = pl.uebernimm(auto.id, thomas.id, { ...u, datum: "2026-12-02", stoff: "Gleichungen, Terme" });
+  const b = pl.uebernimm(auto.id, thomas.id, { ...u, datum: "2027-12-02", stoff: "Gleichungen, Terme" });
   assert.deepEqual(b, { testId: autoTest });
-  assert.equal(repo.getTest(autoTest)!.date, "2026-12-02");
+  assert.equal(repo.getTest(autoTest)!.date, "2027-12-02");
   assert.deepEqual(repo.getTest(autoTest)!.topics, ["Gleichungen", "Terme"]);
   assert.equal(repo.listTests(sid).length, 2);
 
   // Verwerfen of an entered one: its Prüfung goes
-  const weg = pl.reicheEin(sid, eingabe({ datum: "2026-12-10", stoff: "Wurzeln" }), [], o2);
+  const weg = pl.reicheEin(sid, eingabe({ datum: "2027-12-10", stoff: "Wurzeln" }), [], o2);
   const wegTest = pl.getEinreichung(weg.id)!.testId!;
   assert.deepEqual(pl.verwirf(weg.id, thomas.id), { ok: true });
   assert.equal(repo.getTest(wegTest), null);
@@ -343,9 +345,9 @@ test("Zu erledigen: an entry is open for the student's teacher until it is decid
   assert.equal(p.titel, "Vokabeltest Englisch");
   assert.equal(ze.zuErledigen(niko.id, HEUTE).offen.some((x) => x.key === `e${r.id}`), false, "not in another teacher's list");
 
-  const auto = pl.reicheEin(sid, eingabe({ datum: "2026-11-20", stoff: "Brüche" }), [], o2);
+  const auto = pl.reicheEin(sid, eingabe({ datum: "2027-11-20", stoff: "Brüche" }), [], o2);
   const a = ze.zuErledigen(thomas.id, HEUTE).offen.find((x) => x.key === `e${auto.id}`);
-  assert.ok(a && a.art === "einreichung" && !a.zuPruefen && a.zustand === "offen" && a.pruefungsDatum === "2026-11-20", "entered already: to look at");
+  assert.ok(a && a.art === "einreichung" && !a.zuPruefen && a.zustand === "offen" && a.pruefungsDatum === "2027-11-20", "entered already: to look at");
 
   pl.verwirf(r.id, thomas.id);
   const l = ze.zuErledigen(thomas.id, HEUTE);

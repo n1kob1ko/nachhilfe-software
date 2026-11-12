@@ -2036,3 +2036,433 @@
     transition-property: background-color;
   }
 }
+
+/* ---------- Ziffernblock (ZiffernFeld.tsx) und Buchstaben legen (LegeFeld.tsx): die Antwort selbst schreiben ---------- */
+/* das Blatt nimmt den Platz, den es gibt; Rechnung oder Satz stehen in der Mitte, getippt wird unten beim Daumen */
+.ls-rechenblatt,
+.ls-legeblatt {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 400px;
+  align-items: center;
+  text-align: center;
+}
+/* „+1“ steigt über der Rechnung auf, nicht am Rand des Blatts */
+.ls-rechenblatt .ls-funken,
+.ls-legeblatt .ls-funken {
+  top: 34%;
+}
+.ls-rechenblatt[data-knapp],
+.ls-legeblatt[data-knapp] {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.ls-ziffern > .ls-reihe-mitte:empty,
+.ls-legen > .ls-reihe-mitte:empty {
+  flex: 0 0 0;
+  padding: 0;
+}
+.ls-rechenblatt .ls-satz[data-mathe] {
+  font-size: clamp(26px, 7.4vw, 34px);
+  line-height: 1.45;
+}
+.ls-rechenblatt[data-knapp] .ls-satz[data-mathe] {
+  font-size: clamp(22px, 6vw, 26px);
+}
+/* das Feld und die Einheit dahinter brechen nie auseinander */
+.ls-eingabe-zeile {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.28em;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.ls-eingabe,
+.ls-legewort {
+  display: inline-flex;
+  min-width: 2.5em;
+  min-height: 1.5em;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.32em;
+  border-radius: 12px;
+  border-bottom: 3px solid #9cc2f5;
+  background: #e6f0fd;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease;
+}
+:root[data-theme="dark"] .ls-eingabe:not([data-stand]),
+:root[data-theme="dark"] .ls-legewort:not([data-stand]) {
+  background: #2b426b;
+  border-bottom-color: #6a9be8;
+}
+.ls-eingabe[data-stand="richtig"],
+.ls-legewort[data-stand="richtig"] {
+  background: var(--green-wash);
+  border-bottom-color: var(--green);
+  color: var(--green);
+}
+.ls-eingabe[data-stand="falsch"],
+.ls-legewort[data-stand="falsch"] {
+  background: var(--red-wash);
+  border-bottom-color: var(--red);
+  color: var(--red);
+  text-decoration: line-through;
+}
+.ls-eingabe .frac {
+  font-size: 0.74em;
+  line-height: 1.05;
+}
+.ls-eingabe .frac-num {
+  min-width: 1em;
+  border-bottom-width: max(2px, 0.08em);
+}
+.ls-einheit {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+/* der Strich, an dem das nächste Zeichen erscheint */
+.ls-caret {
+  flex-shrink: 0;
+  width: 2.5px;
+  height: 1.05em;
+  margin-left: 2px;
+  border-radius: 2px;
+  background: var(--accent-bright);
+  animation: ls-caret 1100ms steps(1) infinite;
+}
+[data-leer] > .ls-caret {
+  margin-left: 0;
+}
+@keyframes ls-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* der Ziffernblock: links die Ziffern wie am Handy, rechts Löschen und der goldene Haken */
+.ls-block {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  gap: 8px;
+  width: min(100%, 420px);
+  /* immer unten beim Daumen, auch wenn das Blatt darüber kleiner wird */
+  margin: auto auto 0;
+  padding-bottom: 6px;
+}
+.ls-block-ziffern {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.ls-block-rand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ls-taste {
+  display: grid;
+  height: 56px;
+  place-items: center;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 4px 0 rgba(8, 30, 90, 0.3);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition:
+    transform 90ms var(--ls-ease-out),
+    box-shadow 90ms var(--ls-ease-out),
+    opacity 160ms ease;
+  animation: ls-hoch 300ms var(--ls-ease-out) backwards;
+}
+:root[data-theme="dark"] .ls-taste:not([data-art]),
+:root[data-theme="dark"] .ls-kachel:not([data-weg]) {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset,
+    0 4px 0 rgba(0, 8, 30, 0.5);
+}
+.ls-taste:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(8, 30, 90, 0.3);
+}
+.ls-taste:focus-visible,
+.ls-kachel:focus-visible,
+.ls-legewort:focus-visible {
+  outline: 3px solid var(--ls-gold);
+  outline-offset: 2px;
+}
+.ls-block-rand .ls-taste {
+  flex: 1 1 0;
+  height: auto;
+  min-height: 48px;
+}
+.ls-taste[data-art="zurueck"],
+.ls-taste[data-art="zeichen"] {
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  font-size: 19px;
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+}
+.ls-taste[data-art="ok"] {
+  flex-grow: 2;
+  background: linear-gradient(180deg, #ffdd72, #ffc42e);
+  color: #4a2c00;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.55) inset,
+    0 4px 0 #b87700;
+}
+.ls-taste[data-art="ok"]:active:not(:disabled) {
+  box-shadow: 0 1px 0 #b87700;
+}
+.ls-taste[data-aus] {
+  opacity: 0.5;
+}
+/* der Haken, solange es nichts zu prüfen gibt: durchscheinend statt blassgold */
+.ls-taste[data-art="ok"][data-aus] {
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+}
+/* die Taste für den Bruchstrich: ein Strich mit einem Kästchen darüber und darunter */
+.ls-taste-bruch {
+  position: relative;
+  width: 20px;
+  height: 3px;
+  border-radius: 2px;
+  background: currentColor;
+}
+.ls-taste-bruch::before,
+.ls-taste-bruch::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.5;
+}
+.ls-taste-bruch::before {
+  bottom: 6px;
+}
+.ls-taste-bruch::after {
+  top: 6px;
+}
+
+/* Buchstaben legen: das Wort in der Lücke, darunter die Kacheln */
+.ls-legeblatt .ls-satz {
+  font-size: clamp(22px, 6vw, 28px);
+  line-height: 1.6;
+}
+.ls-legeblatt[data-knapp] .ls-satz {
+  font-size: clamp(19px, 5.2vw, 23px);
+}
+.ls-legewort {
+  margin: 0 0.1em;
+  letter-spacing: 0.03em;
+  vertical-align: baseline;
+  cursor: pointer;
+  font-weight: 700;
+}
+.ls-legewort:disabled {
+  cursor: default;
+}
+.ls-legewort > span {
+  display: inline-block;
+}
+.ls-kacheln {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: flex-end;
+  gap: 8px;
+  min-height: 116px;
+  margin-top: auto;
+}
+.ls-kachel {
+  display: grid;
+  width: 48px;
+  height: 54px;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 700;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 4px 0 rgba(8, 30, 90, 0.3);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  transition:
+    transform 90ms var(--ls-ease-out),
+    box-shadow 90ms var(--ls-ease-out),
+    background-color 160ms ease,
+    color 120ms ease;
+  animation: ls-hoch 300ms var(--ls-ease-out) backwards;
+}
+.ls-kachel:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(8, 30, 90, 0.3);
+}
+/* gelegt: der Platz bleibt als leeres Feld, damit die anderen Kacheln nicht springen */
+.ls-kachel[data-weg] {
+  background: rgba(255, 255, 255, 0.1);
+  color: transparent;
+  box-shadow: 0 0 0 1.5px rgba(255, 255, 255, 0.2) inset;
+  pointer-events: none;
+}
+.ls-kacheln[data-viele] .ls-kachel {
+  width: 42px;
+  height: 48px;
+  font-size: 24px;
+}
+.ls-lege-knoepfe {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+.ls-lege-zurueck {
+  min-height: 58px;
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+}
+.ls-lege-zurueck:disabled {
+  opacity: 0.5;
+}
+.ls-lege-knoepfe .ls-pruefen,
+.ls-lege-knoepfe .ls-strahl-weiter {
+  margin-bottom: 0;
+}
+/* Anfang des Spiels: vier Buchstaben-Kacheln oder ein kleiner Ziffernblock statt der Kisten */
+.ls-vorschau-paar[data-form="legen"] .ls-paar-mini {
+  width: 42px;
+  padding: 0;
+  justify-content: center;
+  font-size: 21px;
+}
+.ls-block-mini {
+  display: grid;
+  grid-template-columns: repeat(3, 38px);
+  gap: 6px;
+  margin-inline: auto;
+  rotate: -2deg;
+}
+.ls-block-mini b {
+  display: grid;
+  height: 36px;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff;
+  color: #151f2b;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  box-shadow: 0 3px 0 rgba(8, 30, 90, 0.35);
+}
+.ls-block-mini b[data-ok] {
+  background: linear-gradient(180deg, #ffdd72, #ffc42e);
+  color: #4a2c00;
+  box-shadow: 0 3px 0 #b87700;
+}
+@media (max-width: 360px) {
+  .ls-kachel {
+    width: 42px;
+    height: 48px;
+    font-size: 24px;
+  }
+  .ls-kacheln[data-viele] .ls-kachel {
+    width: 38px;
+    height: 44px;
+    font-size: 22px;
+  }
+  .ls-kacheln {
+    gap: 6px;
+  }
+}
+/* kleines Handy: die Tasten rücken zusammen, nach einem Fehler braucht die Regel den Platz */
+@media (max-height: 640px) {
+  .ls-taste {
+    height: 46px;
+    font-size: 24px;
+  }
+  .ls-block,
+  .ls-block-ziffern,
+  .ls-block-rand {
+    gap: 6px;
+  }
+  .ls-block-rand .ls-taste {
+    min-height: 40px;
+  }
+  .ls-kacheln {
+    min-height: 0;
+  }
+  .ls-feld:has(.ls-rechenblatt[data-knapp]) .ls-auftrag,
+  .ls-feld:has(.ls-legeblatt[data-knapp]) .ls-auftrag,
+  .ls-rechenblatt[data-knapp] .ls-bedeutung {
+    display: none;
+  }
+  .ls-reihe.ls-ziffern,
+  .ls-reihe.ls-legen {
+    gap: 10px;
+    padding-top: 10px;
+  }
+  .ls-rechenblatt[data-knapp],
+  .ls-legeblatt[data-knapp] {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .ls-ziffern .ls-regel,
+  .ls-legen .ls-regel {
+    padding: 10px 14px 12px;
+  }
+  .ls-ziffern .ls-regel-text,
+  .ls-legen .ls-regel-text {
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .ls-lege-zurueck,
+  .ls-lege-knoepfe .ls-los {
+    min-height: 50px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-caret {
+    animation: none;
+  }
+  .ls-taste,
+  .ls-kachel {
+    animation: none;
+    transition-property: opacity, background-color, color;
+  }
+  .ls-taste:active:not(:disabled),
+  .ls-kachel:active:not(:disabled) {
+    transform: none;
+  }
+}

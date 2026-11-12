@@ -19,6 +19,11 @@
  * Mathe (niko: „für Mathe, was Spaß machen könnte“): „Kopfrechnen“, auch mit Kisten und je Runde ein Thema, vom
  * Einmaleins bis zu Brüchen, Prozent und Gleichungen (lib/lernspiele-mathe.ts). Und „Zahlenstrahl“ mit eigener
  * Mechanik: eine Zahl an die richtige Stelle schieben (`form: "strahl"`, lib/lernspiele-strahl.ts).
+ *
+ * Nicht jedes Spiel wird mit Kisten beantwortet (niko 2026-11-12: „immer das gleiche ist zu langweilig“): bei
+ * „Kopfrechnen“ tippt man das Ergebnis an einem Ziffernblock ein (`form: "tippen"`), bei „Irregular Verbs“ und
+ * „Präteritum“ legt man die Form aus Buchstaben (`form: "legen"`). Welche Karte wie beantwortet wird, steht in
+ * lib/lernspiele-antwort.ts.
  */
 export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
@@ -77,7 +82,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   irregular: "go, went, gone",
   zeiten: "plays, is playing oder played?",
   grammatik: "some oder any? much oder many?",
-  rechnen: "Schnell im Kopf: welches Ergebnis stimmt?",
+  rechnen: "Schnell im Kopf gerechnet: wie viel kommt heraus?",
   strahl: "Wo liegt die Zahl? Schieb den Zeiger an die richtige Stelle.",
 };
 
@@ -119,9 +124,16 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   strahl: "Wo liegt die Zahl am Zahlenstrahl?",
 };
 
-/** So spielt sich ein Spiel: Karten in Kisten (ohne Angabe), Paare finden, Teile in eine Reihe bringen oder eine Zahl am Zahlenstrahl treffen. */
-export type SpielForm = "paar" | "reihe" | "strahl";
-export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe", strahl: "strahl" };
+/**
+ * So wird eine Karte beantwortet: Karten in Kisten (ohne Angabe), Paare finden, Teile in eine Reihe bringen, eine Zahl
+ * am Zahlenstrahl treffen, das Ergebnis eintippen oder ein Wort aus Buchstaben legen.
+ */
+export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen";
+/**
+ * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“ fehlt: dort hängt es am Thema
+ * (Zahlen werden getippt, Terme und gemischte Zahlen bleiben bei den Kisten; lib/lernspiele-antwort.ts).
+ */
+export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = { vokabeln: "paar", satzbau: "reihe", strahl: "strahl", irregular: "legen", praeteritum: "legen" };
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */
 export const REIHE_TRENNER = " | ";
@@ -138,6 +150,9 @@ export const REIHE_TRENNER = " | ";
  *
  * Am Zahlenstrahl (`form: "strahl"`) ist `wort` die gesuchte Zahl, `strahl` der Zahlenstrahl und `richtig` die Nummer
  * des Teilstrichs (ab 0), an dem sie liegt; `faecher` ist leer, die Wahl ist die Nummer des getroffenen Teilstrichs.
+ *
+ * Beim Eintippen (`form: "tippen"`) und beim Legen (`form: "legen"`) ist die Karte dieselbe wie mit Kisten; die Wahl
+ * ist `richtig`, wenn das Getippte oder Gelegte stimmt, sonst das, was der Schüler geschrieben hat.
  */
 export type SpielKarte = {
   key: string;

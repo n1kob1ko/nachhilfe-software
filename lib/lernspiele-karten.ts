@@ -21,6 +21,7 @@ import {
 } from "./banks";
 import { wahlFuerSpiel } from "./deutsch-satzlehre";
 import { englischKandidaten, IRREGULAR_SKILL } from "./lernspiele-englisch";
+import { mitAntwortForm } from "./lernspiele-antwort";
 import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
@@ -554,5 +555,5 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
     if (gewaehlt.length >= anzahl) break;
   }
   // die Wiederholungen nicht alle vorne: gemischt, aber nie zwei gleiche Wörter nacheinander (gibt es nicht)
-  return mischen(gewaehlt, rng);
+  return mitAntwortForm(art, mischen(gewaehlt, rng));
 }
