@@ -40,8 +40,10 @@ der Wertung hat der neue Look nichts geändert.
 ## Die acht Kisten-Spiele
 
 niko 2026-11-11: „mach alle deutsch spiele zuerst“. Diese acht Spiele haben dieselbe Mechanik (eine Karte, zwei bis fünf
-Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen. Seit 2026-11-12 wird „Präteritum“ nicht mehr
-mit Kisten beantwortet: die Form wird aus Buchstaben gelegt (siehe „Wie geantwortet wird“).
+Kisten); neu ist nur, was auf der Karte steht und wie die Kisten heißen. Seit 2026-11-12 werden nur noch „der, die,
+das“ und „Die vier Fälle“ mit Kisten beantwortet: bei „Präteritum“ wird die Form aus Buchstaben gelegt, „das oder
+dass“, „Hauptsatz oder Gliedsatz“ und „Perfekt“ werden gewischt, „Präposition und Fall“ und „Adjektiv-Endungen“ haben
+ein Drehrad (siehe „Wie geantwortet wird“). Die Spalte „Kisten“ nennt die Antworten.
 
 | Spiel | Fähigkeit | Quelle | Karte | Kisten |
 | --- | --- | --- | --- | --- |
@@ -149,7 +151,8 @@ sind dieselben wie bei den Kisten-Spielen.
 
 niko 2026-11-11: „Vielleicht noch die Irregular Verbs. Zeiten in Englisch können wir auch noch reinhauen.“ Die drei
 Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.ts`). Seit 2026-11-12 wird bei
-„Irregular Verbs“ die Form aus Buchstaben gelegt (siehe „Wie geantwortet wird“).
+„Irregular Verbs“ die Form aus Buchstaben gelegt, „English Tenses“ und „English Grammar“ haben ein Drehrad (siehe
+„Wie geantwortet wird“); „Kisten“ heißt hier: die Antworten der Karte.
 
 - **Karten**: Sätze mit einer Lücke aus den Englisch-Generatoren (`englischWahlFuerSpiel` in
   lib/englisch-grammatik.ts), dieselben wie in den Übungen, ohne KI. Unter dem Satz steht das Verb in Klammern
@@ -180,7 +183,8 @@ Spiele haben die Kisten-Mechanik; neu sind die Karten (`lib/lernspiele-englisch.
 
 niko 2026-11-11: „Dann vielleicht für Mathe … Was Spaß machen könnte.“ Das erste Mathe-Spiel hat die Kisten-Mechanik
 (`lib/lernspiele-mathe.ts`): auf der Karte steht eine Rechnung („3/4 + 1/6 =“), die Kisten sind Ergebnisse. Seit
-2026-11-12 wird das Ergebnis an einem Ziffernblock eingetippt, wo es eine Zahl ist (siehe „Wie geantwortet wird“).
+2026-11-12 wird das Ergebnis an einem Ziffernblock eingetippt, wo es eine Zahl ist, und „Teilbar oder nicht?“ wird
+gewischt (siehe „Wie geantwortet wird“).
 
 - **Themenspiel** wie English Tenses: jede Runde hat ein Thema, also eine Fähigkeit. 38 Themen in `RECHNEN_THEMEN`,
   von „Plus und Minus bis 10“ (1. Klasse Volksschule) über Einmaleins, Dezimalzahlen, Maße, Teilbarkeit, Brüche,
@@ -249,8 +253,10 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 | --- | --- | --- |
 | **Ziffernblock** (`tippen`) | Kopfrechnen, wo das Ergebnis eine Zahl ist | `ZiffernFeld.tsx` |
 | **Buchstaben legen** (`legen`) | Irregular Verbs, Präteritum | `LegeFeld.tsx` |
+| **Wischen** (`wischen`) | das oder dass, Perfekt: haben oder sein, Hauptsatz oder Gliedsatz, bei Kopfrechnen „Teilbar oder nicht?“ (jede Karte mit genau zwei Antworten) | `WischFeld.tsx` |
+| **Drehrad** (`rad`) | Präposition und Fall, Adjektiv-Endungen, English Tenses, English Grammar (ein Satz mit Lücke und drei bis sechs Antworten) | `RadFeld.tsx` |
 | Paare, Reihe, Zahlenstrahl | Vokabel-Paare, Satzbau, Zahlenstrahl | siehe die Abschnitte oben |
-| Kisten | alle anderen | `Lernspiel.tsx` |
+| Kisten | der, die, das; Die vier Fälle; bei Kopfrechnen, was sich nicht tippen lässt | `Lernspiel.tsx` |
 
 - **Ziffernblock**: oben das Blatt mit der Rechnung und einem Feld, unten beim Daumen die Ziffern wie am Handy, rechts
   Löschen und ein goldener Haken zum Prüfen (am Laptop Ziffern, Rücktaste, Eingabetaste). Das Ergebnis wird selbst
@@ -261,8 +267,8 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
   - Getippt wird (`tippbar`): alle Themen mit einer Zahl als Ergebnis, auch mit Einheit, dazu „Brüche kürzen“,
     „Brüche erweitern“ und „Wurzeln“ mit einfachen Brüchen.
   - Bei den Kisten bleiben: Brüche addieren, subtrahieren, multiplizieren, dividieren und „Bruch, Dezimalzahl, Prozent“
-    (gemischte Zahlen, und ein ungekürztes Ergebnis wäre auch richtig), Terme, Potenzregeln, binomische Formeln und
-    „Teilbar oder nicht?“. Bei „Dezimalzahlen“ und „ggT und kgV“ wird nur getippt, was höchstens drei Ziffern hat: für
+    (gemischte Zahlen, und ein ungekürztes Ergebnis wäre auch richtig), Terme, Potenzregeln und binomische Formeln
+    („Teilbar oder nicht?“ wird gewischt). Bei „Dezimalzahlen“ und „ggT und kgV“ wird nur getippt, was höchstens drei Ziffern hat: für
     „5,59 · 1,2“ reicht ein Überschlag, dafür sind die drei Kisten da. In so einer Runde wechseln sich Ziffernblock
     und Kisten ab.
 - **Buchstaben legen**: oben das Blatt mit dem Satz und der Lücke, unten die Buchstaben als Kacheln. Antippen setzt
@@ -270,13 +276,28 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
   (am Laptop tippen, Rücktaste, Eingabetaste). Wie lang das Wort ist, steht nirgends. Zu den Buchstaben der Antwort
   kommen zwei oder drei aus den falschen Formen der Karte (`legeKacheln`): bei „put“ liegen auch t, e, d da, damit
   sich „putted“ legen lässt. Die Reihenfolge der Kacheln ist je Karte fest.
-- **Nach einem Fehler** bei beiden wie bei den Kisten: das Feld wird rot, darunter kommt das Blatt „Fast! Richtig
-  ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt oder gelegt ist (dann ohne
-  „Prüfen“). Die Karte kommt drei Karten später noch einmal.
+- **Wischen**: wo es nur zwei Antworten gibt, wird die Karte nach links oder rechts gewischt (die erste Antwort liegt
+  links, die zweite rechts, wie vorher die Kisten). Gewischt wird überall auf dem Feld, nicht nur auf der Karte: der
+  Daumen muss nicht nach oben. Beim Ziehen steht die Antwort als Stempel auf der Karte, losgelassen wird ab etwa
+  84 px oder mit einem schnellen kurzen Wisch; darunter kommt die Karte zurück. Unten stehen zwei Schilder, die nach
+  außen zeigen (violett links, gold rechts); sie lassen sich auch antippen, am Laptop zählen die Pfeiltasten links
+  und rechts. Richtig: die Karte fliegt zu ihrer Seite hinaus, oben steht kurz der ganze richtige Satz. Die Karte ist
+  dieselbe wie bei den Kisten (`KartenInhalt.tsx`), auch mit markiertem Teil.
+- **Drehrad**: oben das Blatt mit dem Satz, unten ein Rad mit den Antworten und „Prüfen“. Was in der Mitte des Rades
+  steht, steht schon in der Lücke (`probe`, noch ohne Farbe): man liest den ganzen Satz und hört, ob er stimmt. Am
+  Anfang steht das Rad auf keiner Antwort („Dreh am Rad“), „Prüfen“ geht erst mit einer Antwort. Das Rad ist eine
+  Liste, die der Browser selbst rollt und einrastet (scroll-snap); eine Zeile antippen dreht sie in die Mitte, am
+  Laptop Pfeil hoch und runter oder die Ziffer, die Eingabetaste prüft. Eine Karte mit nur zwei Antworten in diesen
+  Spielen wird gewischt.
+- **Nach einem Fehler** bei allen wie bei den Kisten: das Feld wird rot, darunter kommt das Blatt „Fast! Richtig
+  ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt, gelegt, gewischt oder am Rad
+  eingestellt ist (dann ohne „Prüfen“). Die Karte kommt drei Karten später noch einmal.
 - **Wertung**: wie immer die erste Antwort gegen `karte.richtig`. Stimmt das Getippte oder Gelegte, meldet das
-  Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat. Am Server ändert sich nichts.
-- Der Anfang des Spiels zeigt statt der kleinen Kisten einen kleinen Ziffernblock oder vier Buchstaben-Kacheln
-  (`spielAntwort` für Kopfrechnen: wie die meisten Karten des Themas beantwortet werden).
+  Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat; beim Wischen und am Rad ist die Wahl
+  wie bei den Kisten eine der Antworten der Karte. Am Server ändert sich nichts.
+- Der Anfang des Spiels zeigt statt der kleinen Kisten einen kleinen Ziffernblock, vier Buchstaben-Kacheln, zwei
+  Schilder oder ein kleines Rad (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
+  werden).
 
 ## Welches Spiel dran ist
 

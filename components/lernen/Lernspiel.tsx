@@ -3,21 +3,26 @@
 import "./lernspiel.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CalendarDays, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
+import { BookOpen, CalendarDays, ChevronLeft, ChevronRight, Flame, Lightbulb, Star, TrendingUp, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction } from "@/app/lernspiel-actions";
 import { REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
+import { RadFeld } from "./RadFeld";
 import { SatzbauFeld } from "./SatzbauFeld";
 import { StrahlFeld } from "./StrahlFeld";
+import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
 
 /**
- * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. „Vokabel-Paare“ hat ein
- * eigenes Spielfeld (PaarFeld.tsx); Anfang, Ende, Zählen und Speichern sind für alle Spiele dieselben.
+ * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
+ * wird, steht auf ihr (`form`, lib/lernspiele-antwort.ts); jede andere Art als die Kisten hat ihr eigenes Spielfeld
+ * (PaarFeld, SatzbauFeld, StrahlFeld, ZiffernFeld, LegeFeld, WischFeld, RadFeld). Anfang, Ende, Zählen und Speichern
+ * sind für alle Spiele dieselben.
  *
  * - Richtig: die Karte fliegt ins Fach, oben steht kurz der ganze richtige Satz (lernen beim Spielen).
  * - Falsch: die Lücke zeigt die Wahl durchgestrichen, das richtige Fach leuchtet, eine kurze Regel erscheint, und
@@ -47,15 +52,11 @@ export type DuellRahmen = {
 };
 
 type Eintrag = { karte: SpielKarte; wiederholung: boolean };
-type Stand = { wahl: string; richtig: boolean } | null;
 type Phase = "start" | "laden" | "spiel" | "ende";
 type Wurf = { x: number; y: number; r: number; s?: number };
 const zugGroesse = (dy: number) => 1 - (Math.min(Math.max(dy, 0), 220) / 220) * 0.38;
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
-
-/** Der Satz mit eingesetzter Antwort; bei Präpositionen steht ein Leerzeichen vor dem Nomen, Endungen hängen am Wort. */
-const ohneStrich = (s: string) => s.replace(/^-/, "");
 
 export function Lernspiel({
   token,
@@ -506,8 +507,8 @@ export function Lernspiel({
             {SPIEL_TITEL[art]}
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
-            {form === "tippen" ? "" : SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {form === "tippen" ? "" : form === "wischen" && art === "rechnen" ? "Ja oder nein?" : SPIEL_AUFGABE[art]}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "rad" ? " Dreh am Rad, bis der Satz stimmt, und tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
@@ -540,6 +541,26 @@ export function Lernspiel({
                   <b key={z}>{z}</b>
                 ))}
                 <b data-ok="">✓</b>
+              </span>
+            </div>
+          ) : form === "wischen" ? (
+            <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              {(vorschau ?? VORSCHAU[art]).slice(0, 2).map((f, i) => (
+                <span key={f} className="ls-wisch-mini" data-seite={i ? "rechts" : "links"}>
+                  {i === 0 && <ChevronLeft size={18} strokeWidth={3} />}
+                  {f}
+                  {i === 1 && <ChevronRight size={18} strokeWidth={3} />}
+                </span>
+              ))}
+            </div>
+          ) : form === "rad" ? (
+            <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+              <span className="ls-rad-mini">
+                {(vorschau ?? VORSCHAU[art]).slice(0, 3).map((f, i) => (
+                  <b key={f} data-mitte={i === 1 ? "" : undefined}>
+                    {f}
+                  </b>
+                ))}
               </span>
             </div>
           ) : form ? (
@@ -744,8 +765,14 @@ export function Lernspiel({
             <StrahlFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           ) : feld === "tippen" ? (
             <ZiffernFeld {...eigen} auftrag="Tipp das Ergebnis ein." tasten={tasten} />
-          ) : (
+          ) : feld === "legen" ? (
             <LegeFeld {...eigen} auftrag="Leg die Form aus den Buchstaben." />
+          ) : feld === "wischen" ? (
+            <WischFeld {...eigen} auftrag={aktuell.mathe ? "Ja oder nein?" : SPIEL_AUFGABE[art]} rest={reihe.length - pos - 1}>
+              {zuletztZeile}
+            </WischFeld>
+          ) : (
+            <RadFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           )}
           {jubelZeile}
         </div>
@@ -783,7 +810,7 @@ export function Lernspiel({
                 onPointerCancel={i === 0 ? onPointerUp : undefined}
                 aria-hidden={i > 0 ? true : undefined}
               >
-                <KartenInhalt karte={e.karte} art={art} stand={i === 0 ? stand : null} key={i === 0 ? `w${wackeln}` : "x"} />
+                <KartenInhalt karte={e.karte} stand={i === 0 ? stand : null} key={i === 0 ? `w${wackeln}` : "x"} />
               </div>
             ))}
 
@@ -873,8 +900,6 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   rechnen: ["54", "56", "63"],
   strahl: [],
 };
-/** Mathe-Karten (`mathe`) werden gesetzt wie in den Übungen: Bruchstrich, Hochzahl, Wurzel. */
-const gesetzt = (karte: Pick<SpielKarte, "mathe">, text: string): ReactNode => (karte.mathe ? <MathText text={text} /> : text);
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";
 const flach = (text: string) => text.replace(/\^(\d+)/g, (_, z: string) => [...z].map((c) => HOCH[Number(c)]).join(""));
@@ -955,97 +980,11 @@ function Konfetti() {
   );
 }
 
-/** Eine Endung („-en“) hängt am Wort davor, alles andere steht als eigenes Wort in der Lücke. */
-const haengt = (karte: SpielKarte) => karte.richtig.startsWith("-");
-/** Der Text hinter der Lücke: mit Leerzeichen davor, außer vor einem Satzzeichen oder wenn schon eines da ist. */
-const hinterLuecke = (karte: SpielKarte) => (haengt(karte) || /^[\s,.;:!?]/.test(karte.nach) || !karte.nach ? karte.nach : ` ${karte.nach}`);
-/** Was in der Lücke steht, wenn die Antwort stimmt („sind“ für die Kiste „sein“, „Das“ am Satzanfang). */
-const eingesetzt = (karte: SpielKarte) => karte.einsatz ?? ohneStrich(karte.richtig);
-/** Was bei einer falschen Wahl in der Lücke steht; beim Perfekt die passende Form („ich bin“ statt „ich sein“). */
-const HILFSVERB_PAARE = [
-  ["habe", "bin"],
-  ["hast", "bist"],
-  ["hat", "ist"],
-  ["haben", "sind"],
-  ["habt", "seid"],
-];
-function falschEingesetzt(karte: SpielKarte, wahl: string) {
-  const paar = karte.einsatz ? HILFSVERB_PAARE.find((p) => p.includes(karte.einsatz!.toLowerCase())) : undefined;
-  if (paar && (wahl === "haben" || wahl === "sein")) return paar[wahl === "haben" ? 0 : 1];
-  return ohneStrich(wahl);
-}
 /** Für die Zeile über der Karte: von einem langen Satz nur das Stück um die Lücke. */
 function knappDavor(vor: string) {
   if (vor.length <= 22) return vor;
   const ende = vor.slice(-20);
   return `… ${ende.slice(ende.indexOf(" ") + 1)}`;
-}
-
-function KartenInhalt({ karte, stand }: { karte: SpielKarte; art: SpielArt; stand: Stand }) {
-  if (karte.wort) {
-    return (
-      <>
-        <p className="ls-wort">
-          {stand && (
-            <span className="ls-artikel" data-a={stand.richtig ? stand.wahl : undefined} style={stand.richtig ? undefined : { color: "var(--red)", textDecoration: "line-through" }}>
-              {stand.wahl}
-            </span>
-          )}
-          {karte.wort}
-        </p>
-        {karte.bedeutung && <p className="ls-bedeutung">({karte.bedeutung})</p>}
-      </>
-    );
-  }
-  if (karte.mitte !== undefined) {
-    // ein markierter Teil statt einer Lücke; die Wahl steht danach als Schild unter dem Satz
-    return (
-      <>
-        <p className="ls-satz">
-          {karte.vor}
-          <mark className="ls-markiert" data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
-            {karte.mitte}
-          </mark>
-          {karte.nach}
-        </p>
-        {stand && (
-          <span className="ls-marke" data-falsch={stand.richtig ? undefined : ""}>
-            {stand.wahl}
-          </span>
-        )}
-      </>
-    );
-  }
-  const h = haengt(karte);
-  const luecke = (
-    <span className="ls-luecke" data-haengt={h ? "" : undefined} data-stand={stand ? (stand.richtig ? "richtig" : "falsch") : undefined}>
-      {stand ? gesetzt(karte, stand.richtig ? eingesetzt(karte) : falschEingesetzt(karte, stand.wahl)) : h ? "…" : "\u00a0"}
-    </span>
-  );
-  // eine Endung hängt am Wort: Wort und Lücke brechen nie auseinander
-  const vor = karte.vor.trimEnd();
-  const trenn = h ? vor.lastIndexOf(" ") + 1 : vor.length;
-  return (
-    <>
-      <p className="ls-satz" data-mathe={karte.mathe ? "" : undefined}>
-        {gesetzt(karte, vor.slice(0, trenn))}
-        {h ? (
-          <span className="whitespace-nowrap">
-            {vor.slice(trenn)}
-            {luecke}
-          </span>
-        ) : (
-          <>
-            {vor ? " " : ""}
-            {luecke}
-          </>
-        )}
-        {gesetzt(karte, hinterLuecke(karte))}
-      </p>
-      {karte.hinweis && <p className="ls-bedeutung">{karte.hinweis}</p>}
-      {stand?.richtig && karte.marke && <span className="ls-marke">{karte.marke}</span>}
-    </>
-  );
 }
 
 function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt; ohneMarke?: boolean; knapp?: boolean }) {

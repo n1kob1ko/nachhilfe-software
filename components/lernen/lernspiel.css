@@ -2466,3 +2466,402 @@
     transform: none;
   }
 }
+
+/* ---------- Wischen (WischFeld.tsx): zwei Antworten, die Karte geht nach links oder rechts ---------- */
+/* gewischt wird überall auf dem Feld, nicht nur auf der Karte: der Daumen muss nicht nach oben */
+.ls-wisch {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.ls-wischkarte {
+  position: relative;
+  animation: ls-wisch-rein 280ms var(--ls-ease-out) backwards;
+}
+/* die neue Karte kommt von dort, wo die nächste im Stapel lag */
+@keyframes ls-wisch-rein {
+  from {
+    opacity: 0.4;
+    transform: translateY(12px) scale(0.96);
+    rotate: 3deg;
+  }
+}
+/* beim Ziehen steht die Antwort als Stempel auf der Karte: nach links die erste, nach rechts die zweite */
+.ls-stempel {
+  position: absolute;
+  top: 12px;
+  padding: 1px 12px 2px;
+  border: 3px solid currentColor;
+  border-radius: 12px;
+  background: var(--surface);
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.3;
+  opacity: 0;
+  pointer-events: none;
+}
+.ls-stempel[data-seite="links"] {
+  right: 14px;
+  rotate: 7deg;
+  color: #6d4be8;
+  opacity: var(--links, 0);
+}
+.ls-stempel[data-seite="rechts"] {
+  left: 14px;
+  rotate: -7deg;
+  color: #c27f00;
+  opacity: var(--rechts, 0);
+}
+:root[data-theme="dark"] .ls-stempel[data-seite="links"] {
+  color: #b9a5ff;
+}
+:root[data-theme="dark"] .ls-stempel[data-seite="rechts"] {
+  color: #ffd060;
+}
+/* zwei Schilder unten, die nach außen zeigen: links die erste Antwort, rechts die zweite */
+.ls-wisch-ziele {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  width: min(100%, 520px);
+  margin: 0 auto;
+  padding: 10px 0 8px;
+}
+.ls-wisch-ziel {
+  --k-oben: #b199ff;
+  --k-unten: #7d5cf0;
+  --k-schatten: #5537b8;
+  --k-schrift: #fff;
+  display: flex;
+  min-height: 68px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 6px 16px;
+  border-radius: 34px 14px 14px 34px;
+  background: linear-gradient(180deg, var(--k-oben), var(--k-unten));
+  color: var(--k-schrift);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.35) inset,
+    0 5px 0 var(--k-schatten),
+    0 16px 24px -12px rgba(8, 30, 90, 0.6);
+  font-family: var(--font-display);
+  font-size: clamp(18px, 5.2vw, 22px);
+  font-weight: 800;
+  line-height: 1.15;
+  transition:
+    transform 180ms var(--ls-ease-out),
+    opacity 200ms ease,
+    filter 200ms ease,
+    box-shadow 200ms ease;
+}
+.ls-wisch-ziel[data-seite="rechts"] {
+  --k-oben: #ffd060;
+  --k-unten: #f2a516;
+  --k-schatten: #b87700;
+  --k-schrift: #4a2c00;
+  border-radius: 14px 34px 34px 14px;
+}
+.ls-wisch-ziel svg {
+  flex-shrink: 0;
+  opacity: 0.8;
+}
+.ls-wisch-ziel:active {
+  transform: translateY(3px);
+}
+/* die Karte hängt über dieser Seite: das Schild kommt ihr entgegen */
+.ls-wisch-ziel[data-ziel] {
+  transform: translateY(-4px) scale(1.05);
+}
+.ls-wisch-ziel[data-zeigen] {
+  box-shadow:
+    0 0 0 4px var(--ls-gold),
+    0 5px 0 var(--k-schatten),
+    0 16px 24px -12px rgba(8, 30, 90, 0.6);
+}
+.ls-wisch-ziel[data-falsch] {
+  opacity: 0.45;
+  filter: saturate(0.6);
+}
+/* Anfang des Spiels: zwei kleine Schilder */
+.ls-wisch-mini {
+  display: inline-flex;
+  height: 44px;
+  align-items: center;
+  gap: 2px;
+  padding: 0 16px 0 10px;
+  border-radius: 22px 10px 10px 22px;
+  background: linear-gradient(180deg, #b199ff, #7d5cf0);
+  box-shadow: 0 4px 0 #5537b8;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  rotate: -2.5deg;
+}
+.ls-wisch-mini[data-seite="rechts"] {
+  padding: 0 10px 0 16px;
+  border-radius: 10px 22px 22px 10px;
+  background: linear-gradient(180deg, #ffd060, #f2a516);
+  box-shadow: 0 4px 0 #b87700;
+  color: #4a2c00;
+  rotate: 2.5deg;
+}
+
+/* ---------- Drehrad (RadFeld.tsx): ein Satz mit Lücke, die Antworten an einem Rad ---------- */
+.ls-radblatt {
+  flex: 1 1 auto;
+  min-height: 120px;
+  max-height: 400px;
+  align-items: center;
+  text-align: center;
+}
+/* „+1“ steigt zwischen Blatt und Rad auf, nicht über den Antworten */
+.ls-rad .ls-funken {
+  top: 4px;
+}
+.ls-radblatt[data-knapp] {
+  flex: 0 0 auto;
+  min-height: 0;
+  padding-top: 14px;
+  padding-bottom: 14px;
+}
+.ls-radfeld > .ls-reihe-mitte:empty {
+  flex: 0 0 0;
+  padding: 0;
+}
+/* was das Rad gerade zeigt, steht schon in der Lücke (noch nicht geprüft) */
+.ls-luecke[data-probe] {
+  color: var(--ink);
+  font-weight: 650;
+}
+:root[data-theme="dark"] .ls-luecke[data-probe]:not([data-stand]) {
+  color: #eaf2ff;
+}
+.ls-rad {
+  --h: 52px;
+  position: relative;
+  flex-shrink: 0;
+  width: min(100%, 420px);
+  height: calc(var(--h) * 3);
+  margin: auto auto 0;
+  border-radius: 26px;
+  background: var(--ls-glas);
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+}
+/* das helle Band in der Mitte: was hier steht, gilt */
+.ls-rad-band {
+  position: absolute;
+  inset: calc(var(--h) + 2px) 8px auto;
+  height: calc(var(--h) - 4px);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, 0.5) inset,
+    0 5px 0 rgba(8, 30, 90, 0.28),
+    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+  transition:
+    box-shadow 200ms ease,
+    opacity 200ms ease;
+}
+.ls-rad[data-leer] .ls-rad-band {
+  opacity: 0.22;
+  box-shadow: none;
+}
+.ls-rad[data-stand="richtig"] .ls-rad-band {
+  box-shadow:
+    0 0 0 4px var(--ls-gold),
+    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+}
+.ls-rad[data-stand="falsch"] .ls-rad-band {
+  box-shadow:
+    0 0 0 4px var(--ls-rot),
+    0 14px 22px -10px rgba(8, 30, 90, 0.55);
+}
+:root[data-theme="dark"] .ls-rad-band {
+  background: #1c2b47;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.14) inset,
+    0 14px 22px -10px rgba(0, 8, 30, 0.7);
+}
+.ls-rad-rolle {
+  position: relative;
+  height: 100%;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scroll-snap-type: y mandatory;
+  scrollbar-width: none;
+  touch-action: pan-y;
+  border-radius: inherit;
+  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
+  mask-image: linear-gradient(to bottom, transparent, #000 24%, #000 76%, transparent);
+}
+.ls-rad-rolle::-webkit-scrollbar {
+  display: none;
+}
+/* oben und unten je eine Zeile Luft, damit auch die erste und die letzte Antwort in die Mitte passen */
+.ls-rad-rolle::before,
+.ls-rad-rolle::after {
+  content: "";
+  display: block;
+  height: var(--h);
+}
+.ls-rad-rolle[data-fest] {
+  overflow: hidden;
+  pointer-events: none;
+}
+.ls-rad-zeile {
+  display: flex;
+  width: 100%;
+  height: var(--h);
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 20px;
+  scroll-snap-align: center;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.1;
+  white-space: nowrap;
+  color: var(--ls-on);
+  transition:
+    opacity 160ms ease,
+    scale 160ms var(--ls-ease-out),
+    color 160ms ease;
+}
+.ls-rad-zeile[data-lang] {
+  font-size: 18px;
+}
+.ls-rad-zeile[data-ab="0"] {
+  color: var(--ink);
+}
+:root[data-theme="dark"] .ls-rad-zeile[data-ab="0"] {
+  color: #fff;
+}
+.ls-rad-zeile[data-ab="1"] {
+  opacity: 0.8;
+  scale: 0.9;
+}
+.ls-rad-zeile[data-ab="2"] {
+  opacity: 0.4;
+  scale: 0.8;
+}
+.ls-rad-hinweis {
+  font-size: 16px;
+  font-weight: 700;
+}
+.ls-rad-hinweis[data-ab="0"] {
+  color: var(--ls-on);
+}
+/* nach einem Fehler: die richtige Antwort am Rad ist markiert */
+.ls-rad-zeile[data-zeigen]:not([data-ab="0"]) {
+  color: var(--ls-gold);
+  opacity: 1;
+}
+.ls-rad-zeile[data-zeigen][data-ab="0"] {
+  color: var(--green);
+}
+/* Anfang des Spiels: ein kleines Rad mit drei Antworten */
+.ls-rad-mini {
+  display: grid;
+  min-width: 132px;
+  margin-inline: auto;
+  padding: 5px;
+  border-radius: 18px;
+  background: var(--ls-glas);
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+  rotate: -2deg;
+}
+.ls-rad-mini b {
+  display: grid;
+  height: 28px;
+  padding: 0 16px;
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 800;
+  white-space: nowrap;
+  color: var(--ls-on);
+  opacity: 0.6;
+}
+.ls-rad-mini b[data-mitte] {
+  height: 36px;
+  border-radius: 12px;
+  background: #fff;
+  color: #151f2b;
+  font-size: 18px;
+  opacity: 1;
+  box-shadow: 0 3px 0 rgba(8, 30, 90, 0.35);
+}
+/* kleines Handy: das Rad wird flacher, nach einem Fehler braucht die Regel den Platz */
+@media (max-height: 640px) {
+  .ls-rad {
+    --h: 44px;
+  }
+  .ls-rad-zeile {
+    font-size: 19px;
+  }
+  .ls-rad-zeile[data-lang] {
+    font-size: 17px;
+  }
+  .ls-wisch-ziel {
+    min-height: 58px;
+    border-radius: 29px 12px 12px 29px;
+  }
+  .ls-wisch-ziel[data-seite="rechts"] {
+    border-radius: 12px 29px 29px 12px;
+  }
+  .ls-feld:has(.ls-radblatt[data-knapp]) .ls-auftrag,
+  .ls-radblatt[data-knapp] .ls-bedeutung {
+    display: none;
+  }
+  /* nach einem Fehler brauchen Karte und Regel den Platz: die Karte rückt weniger hoch, die Zeile darüber macht Platz */
+  .ls-wisch .ls-stapel[data-falsch] .ls-karte[data-tiefe="0"] {
+    min-height: 0;
+    padding: 18px 20px;
+    translate: 0 -80px;
+  }
+  .ls-feld:has(.ls-wisch .ls-stapel[data-falsch]) .ls-zuletzt {
+    visibility: hidden;
+  }
+  .ls-reihe.ls-radfeld {
+    gap: 10px;
+    padding-top: 10px;
+  }
+  .ls-radblatt[data-knapp] {
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .ls-radfeld .ls-regel {
+    padding: 10px 14px 12px;
+  }
+  .ls-radfeld .ls-regel-text {
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .ls-radfeld .ls-los {
+    min-height: 50px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-wisch-ziel,
+  .ls-rad-zeile {
+    transition-property: opacity, background-color, color, box-shadow;
+  }
+  .ls-wisch-ziel:active,
+  .ls-wisch-ziel[data-ziel] {
+    transform: none;
+  }
+  .ls-rad-zeile[data-ab] {
+    scale: none;
+  }
+}

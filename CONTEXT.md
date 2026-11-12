@@ -239,8 +239,11 @@ einer Themenliste zu Paaren verbinden, und die Englisch-Spiele mit Kisten „Irr
 (je Runde ein Thema aus dem Stoff, Sätze aus den Englisch-Generatoren). Für Mathematik „Kopfrechnen“: eine Rechnung,
 die Kisten sind das richtige Ergebnis und zwei typische Fehler, je Runde ein Thema aus dem Stoff; und „Zahlenstrahl“:
 den Zeiger dorthin schieben, wo die Zahl liegt (docs/lernspiele.md). Nicht jedes Spiel wird mit Kisten beantwortet: bei „Kopfrechnen“ tippt man
-das Ergebnis an einem Ziffernblock ein, bei „Irregular Verbs“ und „Präteritum“ legt man die Form aus Buchstaben
-(`lib/lernspiele-antwort.ts`). Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
+das Ergebnis an einem Ziffernblock ein, bei „Irregular Verbs“ und „Präteritum“ legt man die Form aus Buchstaben,
+bei zwei Antworten („das oder dass“, „haben oder sein“, „Hauptsatz oder Gliedsatz“, „Teilbar oder nicht?“) wischt man
+die Karte nach links oder rechts, und bei „Präposition und Fall“, „Adjektiv-Endungen“, „English Tenses“ und „English
+Grammar“ dreht man an einem Rad, bis der Satz stimmt (`lib/lernspiele-antwort.ts`). Kisten haben nur noch „der, die,
+das“, „Die vier Fälle“ und Kopfrechnen mit Termen oder Bruchrechnen. Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 
