@@ -1,5 +1,5 @@
 import crypto from "node:crypto";
-import { db, json } from "./db";
+import { db, jeStand, json, zeilen } from "./db";
 import type { TaskDraft } from "./tasks";
 import { checkLevel } from "./school";
 import { levelOf } from "./curriculum";
@@ -348,7 +348,7 @@ export const SKILL_SELECT = `SELECT s.id, s.subject, COALESCE(o.area, s.area) AS
   FROM skills s LEFT JOIN skill_overrides o ON o.skill_id = s.id`;
 /** Every skill except duplicates that were merged into another one (their answers count for the other). */
 export function listSkills(): Skill[] {
-  return db().prepare(`${SKILL_SELECT} WHERE o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[];
+  return jeStand("listSkills", ...zeilen(() => db().prepare(`${SKILL_SELECT} WHERE o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[]));
 }
 /** One skill, also a merged duplicate (old answers and exercises still show its name). */
 export function getSkill(id: string): Skill | null {
@@ -356,7 +356,7 @@ export function getSkill(id: string): Skill | null {
 }
 /** Merged duplicate → the skill it was merged into (Mehr › Datenqualität). */
 export function skillAliases(): Map<string, string> {
-  const rows = db().prepare("SELECT skill_id, merged_into FROM skill_overrides WHERE merged_into IS NOT NULL").all() as { skill_id: string; merged_into: string }[];
+  const rows = jeStand("skillAliases", ...zeilen(() => db().prepare("SELECT skill_id, merged_into FROM skill_overrides WHERE merged_into IS NOT NULL").all() as { skill_id: string; merged_into: string }[]));
   const map = new Map(rows.map((r) => [r.skill_id, r.merged_into]));
   // a chain a → b → c ends at c
   for (const [k] of map) {
@@ -931,7 +931,7 @@ export function listAttemptsForAssignment(assignmentId: number): Attempt[] {
  * and the skills they belong to (an answer on "Kehrwert korrekt bilden" also counts for "Dividieren").
  */
 export function listAttemptsForStudent(studentId: number): Attempt[] {
-  const parents = new Map((db().prepare("SELECT id, parent_id FROM skills WHERE parent_id IS NOT NULL").all() as { id: string; parent_id: string }[]).map((r) => [r.id, r.parent_id]));
+  const parents: ReadonlyMap<string, string> = jeStand("skillEltern", () => new Map((db().prepare("SELECT id, parent_id FROM skills WHERE parent_id IS NOT NULL").all() as { id: string; parent_id: string }[]).map((r) => [r.id, r.parent_id])), (m) => m);
   const withAncestors = (ids: string[]) => {
     const out = new Set<string>();
     for (let id of ids) {

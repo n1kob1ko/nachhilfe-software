@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
-import { Ursprung } from "@/components/Bewegung";
+import { Ankunft, Ursprung } from "@/components/Bewegung";
 
 // Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else. Both are in app/fonts
 // (variable TTFs from github.com/google/fonts, OFL): the build must not need fonts.googleapis.com, whose fetch sometimes fails and then stops the whole build
@@ -30,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="min-h-screen font-sans text-[15px] leading-normal">
         {children}
         <Ursprung />
+        <Ankunft />
       </body>
     </html>
   );
