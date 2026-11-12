@@ -232,7 +232,13 @@ export type SpielAntwort = { key: string; wahl: string };
 /** Warum das Spiel gerade dran ist, in Worten für den Schüler. */
 export type SpielVorschlag = { art: SpielArt; grund: string; quelle: "pruefung" | "stoff" | "einheit" | "lernstand" | "fach" };
 
-export type SpielStart = { rundeId: number; karten: SpielKarte[] } | { fehler: string };
+/** `endlos`: im Endlos-Modus die id des Endlos-Spiels (für die nächste Runde). */
+export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: number } | { fehler: string };
+
+/** Spiele mit Endlos-Modus: alle außer „Vokabel-Paare“ (dort liegen alle Karten einer Runde auf einmal am Brett). */
+export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
+/** So viele Fehler verzeiht ein Endlos-Spiel. */
+export const ENDLOS_HERZEN = 3;
 
 export type SpielErgebnis =
   | {
@@ -247,6 +253,8 @@ export type SpielErgebnis =
       nochmal: { loesung: string }[];
       /** Wochenliga (lib/liga.ts): Punkte dieser Runde oder warum sie nicht zählt; fehlt ohne Liga */
       liga?: { punkte: number; grund?: string };
+      /** Endlos-Modus: alle beim ersten Versuch richtigen Karten des Endlos-Spiels und der Rekord davor */
+      endlos?: { stand: number; rekord: number };
     }
   | { fehler: string };
 

@@ -314,6 +314,7 @@ type Zeile = {
   richtig: number;
   created_at: string;
   beendet_at: string | null;
+  endlos: number | null;
 };
 
 type GespeicherteAntwort = SpielAntwort & { richtig: boolean };
@@ -341,7 +342,18 @@ function zuletztGespielt(studentId: number, art: SpielArt): string[] {
 }
 
 /** Startet eine Runde: wählt die Karten und merkt sie sich, damit das Ergebnis nur gegen sie geprüft wird. */
-export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: SpielVorschlag["quelle"]; lernstand?: number | null; rng?: () => number; heute?: string } = {}): { rundeId: number; karten: SpielKarte[] } {
+export function starteRunde(
+  student: repo.Student,
+  art: SpielArt,
+  o: {
+    grund?: SpielVorschlag["quelle"];
+    lernstand?: number | null;
+    rng?: () => number;
+    heute?: string;
+    /** Endlos-Modus: „neu“ beginnt ein Endlos-Spiel, eine Zahl setzt es fort (die id seiner ersten Runde) */
+    endlos?: "neu" | number;
+  } = {},
+): { rundeId: number; karten: SpielKarte[]; endlos?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
   db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
   let karten: SpielKarte[];
@@ -368,7 +380,39 @@ export function starteRunde(student: repo.Student, art: SpielArt, o: { grund?: S
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
     .run(student.id, art, karten[0]?.skill ?? (art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]), o.grund ?? "fach", JSON.stringify(karten), karten.length);
-  return { rundeId: Number(r.lastInsertRowid), karten };
+  const rundeId = Number(r.lastInsertRowid);
+  if (o.endlos === undefined) return { rundeId, karten };
+  // ein Endlos-Spiel setzt nur fort, wer es begonnen hat, und nur im selben Spiel
+  const lauf = o.endlos === "neu" ? rundeId : endlosLauf(student.id, art, o.endlos) ?? rundeId;
+  db().prepare("UPDATE spielrunden SET endlos = ? WHERE id = ?").run(lauf, rundeId);
+  return { rundeId, karten, endlos: lauf };
+}
+
+/** Die id eines Endlos-Spiels dieses Schülers in diesem Spiel (null, wenn es es nicht gibt). */
+function endlosLauf(studentId: number, art: SpielArt, lauf: number): number | null {
+  const z = db().prepare("SELECT id FROM spielrunden WHERE id = ? AND student_id = ? AND art = ? AND endlos = id").get(lauf, studentId, art) as { id: number } | undefined;
+  return z?.id ?? null;
+}
+
+/**
+ * Endlos-Modus (niko 2026-11-12: „ein endless mode für spiele“): gespielt wird in gewöhnlichen Runden zu zwölf Karten,
+ * die nahtlos aufeinander folgen, bis drei Herzen weg sind. Jede Runde zählt im Lernstand wie sonst; die letzte zählt
+ * nur mit den Karten, die beantwortet wurden (`beendeRunde` mit `teil`). Der Stand eines Endlos-Spiels sind alle
+ * Karten, die beim ersten Versuch richtig waren; der Rekord ist der beste Stand in diesem Spiel.
+ */
+export function endlosStand(studentId: number, lauf: number): number {
+  const z = db().prepare("SELECT COALESCE(SUM(richtig), 0) AS n FROM spielrunden WHERE student_id = ? AND endlos = ? AND beendet_at IS NOT NULL").get(studentId, lauf) as { n: number };
+  return z.n;
+}
+
+/** Der beste Stand eines Endlos-Spiels in diesem Spiel; `ohne`: dieses Endlos-Spiel nicht mitzählen. 0 = noch keines. */
+export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): number {
+  const z = db()
+    .prepare(
+      "SELECT COALESCE(MAX(n), 0) AS rekord FROM (SELECT SUM(richtig) AS n FROM spielrunden WHERE student_id = ? AND art = ? AND endlos IS NOT NULL AND endlos != ? AND beendet_at IS NOT NULL GROUP BY endlos)",
+    )
+    .get(studentId, art, ohne ?? -1) as { rekord: number };
+  return z.rekord;
 }
 
 /**
@@ -388,11 +432,14 @@ export type RundenErgebnis = { richtig: number; anzahl: number; sterne: 1 | 2 | 
  * Beendet eine Runde mit der ersten Wahl je Karte. Gezählt wird nur gegen die gespeicherten Karten; fehlt eine
  * Antwort, zählt die Karte als falsch. Eine Runde lässt sich nur einmal beenden (ein zweiter Aufruf liefert das
  * gespeicherte Ergebnis, damit ein doppelter Tipp nichts doppelt zählt).
+ *
+ * `teil` (nur die letzte Runde eines Endlos-Spiels): es zählen nur die Karten, die beantwortet wurden; ist keine
+ * beantwortet, fällt die Runde weg.
  */
-export function beendeRunde(studentId: number, rundeId: number, antworten: SpielAntwort[]): RundenErgebnis | null {
+export function beendeRunde(studentId: number, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean } = {}): RundenErgebnis | null {
   const z = db().prepare("SELECT * FROM spielrunden WHERE id = ? AND student_id = ?").get(rundeId, studentId) as Zeile | undefined;
   if (!z) return null;
-  const karten = json<SpielKarte[]>(z.karten, []);
+  let karten = json<SpielKarte[]>(z.karten, []);
   if (z.beendet_at) {
     const alt = json<GespeicherteAntwort[]>(z.antworten, []);
     const falsch = new Set(alt.filter((a) => !a.richtig).map((a) => a.key));
@@ -400,16 +447,26 @@ export function beendeRunde(studentId: number, rundeId: number, antworten: Spiel
   }
   const wahl = new Map<string, string>();
   for (const a of antworten) if (typeof a?.key === "string" && typeof a?.wahl === "string" && !wahl.has(a.key)) wahl.set(a.key, a.wahl);
+  if (o.teil && z.endlos !== null) {
+    karten = karten.filter((k) => wahl.has(k.key));
+    if (!karten.length) {
+      // die erste Runde trägt das Endlos-Spiel: sie bleibt (leer), damit der Stand der anderen zählt
+      if (z.endlos === z.id) db().prepare("UPDATE spielrunden SET karten = '[]', anzahl = 0, beendet_at = datetime('now') WHERE id = ?").run(rundeId);
+      else db().prepare("DELETE FROM spielrunden WHERE id = ?").run(rundeId);
+      return { richtig: 0, anzahl: 0, sterne: 1, nochmal: [] };
+    }
+    db().prepare("UPDATE spielrunden SET karten = ?, anzahl = ? WHERE id = ?").run(JSON.stringify(karten), karten.length, rundeId);
+  }
   const gespeichert: GespeicherteAntwort[] = karten.map((k) => ({ key: k.key, wahl: wahl.get(k.key) ?? "", richtig: wahl.get(k.key) === k.richtig }));
   const richtig = gespeichert.filter((a) => a.richtig).length;
   db().prepare("UPDATE spielrunden SET antworten = ?, richtig = ?, beendet_at = datetime('now') WHERE id = ?").run(JSON.stringify(gespeichert), richtig, rundeId);
   return { richtig, anzahl: karten.length, sterne: sterneFuer(richtig, karten.length), nochmal: karten.filter((k) => !wahl.has(k.key) || wahl.get(k.key) !== k.richtig) };
 }
 
-/** Die Fähigkeit einer Runde dieses Schülers (null, wenn es sie nicht gibt). */
-export function rundenSkill(studentId: number, rundeId: number): string | null {
-  const z = db().prepare("SELECT skill_id FROM spielrunden WHERE id = ? AND student_id = ?").get(rundeId, studentId) as { skill_id: string } | undefined;
-  return z?.skill_id ?? null;
+/** Fähigkeit, Spiel und Endlos-Spiel einer Runde dieses Schülers (null, wenn es sie nicht gibt). */
+export function rundenSkill(studentId: number, rundeId: number): { skillId: string; art: SpielArt; endlos: number | null } | null {
+  const z = db().prepare("SELECT skill_id, art, endlos FROM spielrunden WHERE id = ? AND student_id = ?").get(rundeId, studentId) as { skill_id: string; art: SpielArt; endlos: number | null } | undefined;
+  return z ? { skillId: z.skill_id, art: z.art, endlos: z.endlos } : null;
 }
 
 /** Wiener Datum einer Zeit aus SQLite (UTC). */

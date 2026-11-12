@@ -2865,3 +2865,84 @@
     scale: none;
   }
 }
+
+/* ---------- Endlos-Modus (Lernspiel.tsx): drei Herzen statt der Striche, ein Rekord je Spiel ---------- */
+.ls-herzen {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 6px;
+}
+.ls-herzen svg {
+  color: #ff6f7d;
+  filter: drop-shadow(0 3px 6px rgba(120, 10, 40, 0.35));
+  transition:
+    color 240ms ease,
+    opacity 240ms ease,
+    transform 320ms var(--ls-ease-out),
+    filter 240ms ease;
+}
+/* ein verlorenes Herz wird klein und blass (kein Wackeln, nur Größe und Farbe) */
+.ls-herzen svg:not([data-an]) {
+  color: rgba(255, 255, 255, 0.28);
+  filter: none;
+  transform: scale(0.82);
+}
+.ls-endlos-stand svg {
+  color: #7ef0b1;
+}
+.ls-endlos-stand b {
+  color: var(--ls-on);
+}
+/* Anfang: „Endlos“ unter „Los geht’s“, mit Rekord oder den drei Herzen */
+.ls-endlos-knopf {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 18px;
+}
+.ls-endlos-knopf small {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ls-on-2);
+  font-size: 13px;
+  font-weight: 600;
+}
+/* Ende: „Neuer Rekord“ in Gold, sonst der alte Rekord leise */
+.ls-rekord {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  gap: 6px;
+  margin-top: 14px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ls-gold);
+  color: #5a3b00;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+  box-shadow: 0 8px 22px rgba(255, 190, 40, 0.45);
+}
+.ls-rekord[data-alt] {
+  background: var(--ls-glas);
+  color: var(--ls-on-2);
+  font-size: 15px;
+  font-weight: 700;
+  box-shadow: none;
+}
+.ls-rekord[data-alt] svg {
+  color: var(--ls-gold);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-herzen svg {
+    transition-property: color, opacity;
+  }
+  .ls-herzen svg:not([data-an]) {
+    transform: none;
+  }
+}

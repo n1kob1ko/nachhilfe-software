@@ -247,6 +247,11 @@ das“, „Die vier Fälle“ und Kopfrechnen mit Termen oder Bruchrechnen. Die 
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
 
+**Endlos-Modus**:
+Ein **Lernspiel** ohne Ende: Runden zu zwölf Karten hängen aneinander, bis drei Antworten falsch waren (drei
+Herzen). Gezählt wird wie in normalen Runden; dazu Punkte und ein Rekord je Spiel. Nicht bei den Vokabel-Paaren.
+_Avoid_: Survival, Endless
+
 **Typische Fehler**:
 Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
 einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter
