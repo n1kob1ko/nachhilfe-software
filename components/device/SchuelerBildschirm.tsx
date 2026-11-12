@@ -11,7 +11,8 @@ type Ev = { type: number; timestamp: number; data?: { width?: number; height?: n
 /** long side of the copy per size, in CSS pixels of the laptop */
 const GROESSEN = [360, 620, 900] as const;
 const SPEICHER = "dreamstudy-schuelerbildschirm";
-const VERZOEGERUNG = 120;
+/** ms between arrival and showing: just enough to keep a batch together (niko 2026-11-12: „es laggt“) */
+const VERZOEGERUNG = 30;
 
 type Vorlieben = { offen: boolean; groesse: number; r: number; b: number };
 
@@ -146,7 +147,7 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
     };
   }, [offen, unitId]);
 
-  // Eingreifen: Befehle der Reihe nach, mehrere Schritte eines Zugs werden zu einem
+  // Eingreifen: Befehle der Reihe nach; aufeinanderfolgende Zugschritte werden zu einem
   const reihe = useRef<Steuern[]>([]);
   const unterwegs = useRef(false);
   const schicken = useCallback(
@@ -158,11 +159,13 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
       else q.push(c);
       if (unterwegs.current) return;
       unterwegs.current = true;
+      // whatever piled up while a request was on its way goes along in one request: a tap or a drag
+      // costs one round trip, not one per step
       void (async () => {
         while (reihe.current.length) {
-          const naechster = reihe.current.shift()!;
+          const c = reihe.current.splice(0, 50);
           try {
-            await fetch(`/einheiten/${unitId}/spiegel/steuern`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(naechster) });
+            await fetch(`/einheiten/${unitId}/spiegel/steuern`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ c }) });
           } catch {
             // offline: dieser Schritt geht verloren
           }

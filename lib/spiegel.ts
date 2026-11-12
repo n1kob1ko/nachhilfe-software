@@ -86,9 +86,18 @@ export function pruefeSteuern(raw: unknown): Steuern | null {
   return null;
 }
 
-/** Plays a command on the tablets of the unit. */
-export function steuern(unit: Pick<UnitView, "id" | "teacher_id">, c: Steuern) {
+/** One command, or the commands the teacher's screen collected while its last request was on the way (at most 50). */
+export function pruefeSteuernListe(raw: unknown): Steuern[] | null {
+  const r = raw as { c?: unknown } | null;
+  const liste = r && Array.isArray(r.c) ? r.c : [raw];
+  if (!liste.length || liste.length > 50) return null;
+  const out = liste.map(pruefeSteuern);
+  return out.every((c): c is Steuern => c !== null) ? out : null;
+}
+
+/** Plays commands, in order, on the tablets of the unit. */
+export function steuern(unit: Pick<UnitView, "id" | "teacher_id">, cs: Steuern | Steuern[]) {
   const tablets = devicesOfUnit(unit);
-  for (const d of tablets) publish(deviceChannel(d.id), { type: "steuern", c });
+  for (const c of Array.isArray(cs) ? cs : [cs]) for (const d of tablets) publish(deviceChannel(d.id), { type: "steuern", c });
   return tablets.length;
 }

@@ -1,5 +1,5 @@
 import { currentTeacher } from "@/lib/auth";
-import { pruefeSteuern, steuern } from "@/lib/spiegel";
+import { pruefeSteuernListe, steuern } from "@/lib/spiegel";
 import { canManageUnit, getUnit } from "@/lib/units";
 
 export const dynamic = "force-dynamic";
@@ -11,7 +11,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const unit = getUnit(Number((await params).id));
   if (!unit || !canManageUnit(teacher, unit)) return Response.json({ ok: false }, { status: 403 });
   if (unit.status !== "gestartet") return Response.json({ ok: false }, { status: 409 });
-  const c = pruefeSteuern(await request.json().catch(() => null));
+  const c = pruefeSteuernListe(await request.json().catch(() => null));
   if (!c) return Response.json({ ok: false }, { status: 400 });
   return Response.json({ ok: steuern(unit, c) > 0 });
 }
