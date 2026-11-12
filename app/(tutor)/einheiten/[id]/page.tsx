@@ -18,6 +18,7 @@ import { Elapsed, Restzeit } from "@/components/Elapsed";
 import { UnitDocForm } from "@/components/UnitDocForm";
 import { EinschaetzungKarte } from "@/components/Einschaetzung";
 import { CancelUnit } from "@/components/UnitControl";
+import { FachWechsel } from "@/components/FachWechsel";
 import { UnitReportView } from "@/components/UnitReportView";
 import { UnitSummary } from "@/components/UnitSummary";
 import { UnitBriefView } from "@/components/UnitBriefView";
@@ -80,7 +81,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string; fach?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -138,6 +139,17 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           {unit.teacher_id !== teacher.id ? ` (von ${unit.teacher_name})` : ""}. Es wurde keine zweite gestartet.
         </div>
       )}
+      {sp.fach && running && (
+        <p role="status" className={`mb-6 flex items-center gap-2 rounded-2xl px-4 py-3 text-[15px] font-medium ${sp.fach === "fehler" ? "bg-amber-wash" : "bg-green-wash text-green"}`} data-testid="fach-geaendert">
+          {sp.fach === "fehler" ? (
+            "Das Fach ließ sich nicht ändern. Bitte ein Fach wählen."
+          ) : (
+            <>
+              <CheckCircle2 size={18} className="shrink-0" aria-hidden /> Fach ist jetzt {unit.subject}. Der Plan geht in {unit.subject} neu los.
+            </>
+          )}
+        </p>
+      )}
       {sp.minitest && running && (
         <div role="alert" className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
           Minitest: {sp.minitest}
@@ -189,6 +201,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               {first(student.name)}
               {unit.subject && <span className="font-normal text-ink-2"> · {unit.subject}</span>}
             </h1>
+            {mayManage && <FachWechsel unitId={unit.id} fach={unit.subject} eigene={student.subjects} />}
             {fenster?.restMinuten !== null && fenster?.restMinuten !== undefined ? (
               <span className="rounded-full bg-accent-wash px-2.5 py-0.5 text-[15px] font-semibold text-accent">
                 <Restzeit rest={fenster.restMinuten} ab={Date.now()} />

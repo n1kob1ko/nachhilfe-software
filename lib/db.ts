@@ -1772,6 +1772,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // „Kein Name“ einmal je Einheit (lib/kein-name.ts, F3, 2026-10-28): wann die Lehrkraft für diese Einheit bestätigt hat, dass auf den
   // Seiten kein Name steht; gilt dann für jede weitere KI-Lesung der laufenden Einheit. null = noch nicht
   ["units", "keine_namen_at", "TEXT"],
+  // „Fach ändern“ in der laufenden Einheit (lib/cockpit.ts wechsleFach, 2026-11-12): 1 = die Lehrkraft hat das Fach selbst gewählt;
+  // dann gilt es auch in der Dokumentation am Ende, vor dem Fach der gemachten Übungen
+  ["units", "fach_gewaehlt", "INTEGER NOT NULL DEFAULT 0"],
   // Konto löschen (lib/lehrer-konten.ts, 2026-10-31): wann das Konto eines Lehrers mit Verlauf entfernt wurde. Es bleibt als Name in
   // Dokumentation und Abrechnung (active = 0, kein Passwort, Benutzername frei); null = Konto besteht
   ["teachers", "deleted_at", "TEXT"],

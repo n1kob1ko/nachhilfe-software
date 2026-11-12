@@ -432,8 +432,9 @@ export function writeLearningDoc(unit: UnitView, at = Date.now()): number {
       unit_id: unit.id,
       starts_at: localStamp(Date.parse(unit.started_at)),
       duration_min: Math.max(1, Math.round(r.durationMs / 60_000)),
-      // what was actually done decides: the exercises, else the Textarbeit, else what was planned
-      subject: r.subjects[0] ?? r.texts?.find((t) => t.subject)?.subject ?? existing?.subject ?? student.subjects[0] ?? "",
+      // the subject the teacher chose in the running unit („Fach ändern“), else what was actually done decides: the
+      // exercises, else the Textarbeit, else what was planned
+      subject: (unit.fach_gewaehlt ? unit.subject || null : null) ?? r.subjects[0] ?? r.texts?.find((t) => t.subject)?.subject ?? existing?.subject ?? student.subjects[0] ?? "",
       topic: existing?.topic || r.topics.join(", ") || [...new Set((r.texts ?? []).map((t) => t.topic).filter(Boolean))].join(", "),
       status: "abgeschlossen",
       activities,

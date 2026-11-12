@@ -25,7 +25,8 @@ import { alsEntwurf, bestandZur, oberfaehigkeit, passtZurFaehigkeit } from "./ma
 import { LERNKONTROLLE } from "./quick-round";
 import { nextSteps } from "./recommend";
 import * as repo from "./repo";
-import { schulstufe } from "./school";
+import { fachAus, schulstufe } from "./school";
+import { alleFachNamen } from "./faecher";
 import { analyzeStudent, buildWorksheet, generatorAufgaben, type BuildRequest } from "./service";
 import type { Art } from "./steuerung-regeln";
 import { sorteOfSkill } from "./schreibauftrag";
@@ -593,6 +594,30 @@ export function planNeu(unitId: number, paketId: number | null): { ok: true } | 
   if (paketId && (!p || p.status === "archiviert" || !p.schritte.length)) return { fehler: "Dieses Lernpaket gibt es nicht mehr." };
   aendere(unitId, (s) => ({ ...s, paket_id: paketId, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, plan: null, takt: null }));
   return { ok: true };
+}
+
+/**
+ * „Fach ändern“ in der laufenden Einheit (niko, 12.11.2026: Deutsch war gewählt, die Schülerin brauchte Mathe): das Fach
+ * der Einheit wird das gewählte, und der Ablauf fängt in diesem Fach von vorne an (wie `planNeu` ohne Paket: der Plan
+ * kommt neu aus den Daten des neuen Fachs, ein gewähltes Lernpaket fällt weg). Notizen und gesendete Übungen bleiben.
+ * Das Fach gilt dann auch in der Dokumentation am Ende (`units.fach_gewaehlt`, lib/learning.ts writeLearningDoc).
+ */
+export function wechsleFach(unitId: number, roh: string): { ok: true; fach: string; geaendert: boolean } | { fehler: string } {
+  const unit = getUnit(unitId);
+  if (!unit || unit.status !== "gestartet") return { fehler: "Diese Einheit läuft nicht mehr." };
+  const student = repo.getStudent(unit.student_id);
+  const fach = fachAus(roh, student?.subjects ?? [], alleFachNamen());
+  if (!fach) return { fehler: "Bitte ein Fach wählen." };
+  if (fach === unit.subject) {
+    db().prepare("UPDATE units SET fach_gewaehlt = 1 WHERE id = ?").run(unitId);
+    return { ok: true, fach, geaendert: false };
+  }
+  db().transaction(() => {
+    db().prepare("UPDATE units SET subject = ?, fach_gewaehlt = 1 WHERE id = ?").run(fach, unitId);
+    aendere(unitId, (s) => ({ ...s, paket_id: null, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, antworten: {}, plan: null, takt: null }));
+    eigeneWahl(unitId);
+  })();
+  return { ok: true, fach, geaendert: true };
 }
 
 /**

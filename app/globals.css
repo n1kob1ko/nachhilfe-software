@@ -719,6 +719,12 @@ textarea.input {
       translate: 0 0;
       transition-duration: var(--t-pop);
     }
+
+    /* ein schwebendes Feld (components/FachWechsel.tsx): kein translate, sonst hängt das Feld am Inhalt statt am Kopf */
+    details.schwebend::details-content {
+      block-size: auto;
+      translate: none;
+    }
   }
   @supports not selector(::details-content) {
     details[open]:where(:not(.excalidraw *)) > :not(summary) {

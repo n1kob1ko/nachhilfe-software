@@ -500,7 +500,10 @@ für Mathematik, Deutsch und Englisch; eine Einheit in einem anderen Fach wird
 dokumentiert, aber nicht ausgewertet. Alle Fach-Felder wählen aus der
 **Fächerliste** (Erweitert › Fächer, Tabelle `faecher`): die Verwaltung legt Fächer an
 und deaktiviert sie, umbenannt wird nie; ein altes, frei eingetipptes Fach bleibt
-gültig.
+gültig. Beim Start nimmt die Einheit das Fach der geplanten Stunde, sonst das der
+Vorbereitung von Heute (z. B. eine nahe Schularbeit), sonst das erste Fach im Profil;
+**„Fach ändern“** oben in der laufenden Einheit stellt es um, und der Plan geht im
+neuen Fach neu los. Das so gewählte Fach gilt auch in der Dokumentation.
 _Avoid_: Gegenstand, Unterrichtsgegenstand, Kurs
 
 **Hausübung**:
