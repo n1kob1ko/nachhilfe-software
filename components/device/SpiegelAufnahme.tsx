@@ -43,7 +43,8 @@ export function SpiegelAufnahme({ an, neu, aus, postUrl = "/geraet/spiegel" }: {
       if (queue.length) planen();
     };
     const planen = () => {
-      if (!timer) timer = setTimeout(senden, 120);
+      // one frame: what one change emits goes together, without making the teacher wait
+      if (!timer) timer = setTimeout(senden, 16);
     };
 
     void import("rrweb").then(({ record }) => {

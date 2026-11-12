@@ -107,4 +107,11 @@ test("only small, well-formed commands reach the tablet", async () => {
   assert.deepEqual(p({ art: "rad", x: 1, y: 2, dx: 0, dy: 99999 }), { art: "rad", x: 1, y: 2, dx: 0, dy: 5000 });
   assert.equal(p({ art: "skript", code: "alert(1)" }), null);
   assert.equal(p(null), null);
+  // several steps in one request, all checked, order kept
+  const l = spiegel.pruefeSteuernListe;
+  assert.deepEqual(l({ c: [{ art: "zeiger", phase: "down", x: 1, y: 1 }, { art: "zeiger", phase: "up", x: 1, y: 1 }] })?.map((c) => (c as { phase: string }).phase), ["down", "up"]);
+  assert.equal(l({ c: [{ art: "zeiger", phase: "down", x: 1, y: 1 }, { art: "skript" }] }), null, "one bad step: nothing");
+  assert.equal(l({ c: [] }), null);
+  assert.equal(l({ c: Array(51).fill({ art: "taste", key: "a" }) }), null);
+  assert.equal(l({ art: "taste", key: "a" })?.length, 1, "a single command still works");
 });
