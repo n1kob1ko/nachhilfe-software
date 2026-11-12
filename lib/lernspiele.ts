@@ -22,7 +22,8 @@ import { db, json } from "./db";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
-import { SPIEL_THEMEN, spielbareThemen, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
+import { SPIEL_THEMEN, spielbareThemen, THEMA_KARTEN_MIN, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
+import { WORTFELDER, wortfeldArtikel, wortfeldPraeteritum, type Wortfeld } from "./lernspiele-wortfelder";
 import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
@@ -45,6 +46,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   praeteritum: "deutsch.grammatik.praeteritum",
   // Satzbau übt, wo das Verb steht: die Umstellprobe der Satzglieder (Volksschule: satzbauSkill)
   satzbau: "deutsch.satz.satzglieder",
+  // Wortschatz: die Fähigkeit hängt am Wortfeld der Runde (themenPlan); ohne Runde die Wortfelder allgemein
+  wortschatz: "deutsch.wortschatz.wortfelder",
   // Vokabel-Paare: die eigenen Listen; spielt jemand eine Themenliste, hängt die Fähigkeit an der Runde (vokabelPlan)
   vokabeln: EIGENE_VOKABELN,
   irregular: IRREGULAR_SKILL,
@@ -55,7 +58,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   strahl: "mathe.zahlenstrahl",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -79,6 +82,14 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "englisch.tenses.pastsimple.irregular": ["irregular"],
   // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“ und „Zahlenstrahl“
   ...Object.fromEntries((Object.entries(SPIEL_THEMEN) as [SpielArt, SpielThema[]][]).flatMap(([art, themen]) => themen.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, [art]]))),
+  // Schreib-Themen (Gruselgeschichte, Märchen …): „Wortschatz“ mit dem Wortfeld, dazu „der, die, das“ und „Präteritum“
+  // mit seinen Nomen und Verben (wortfeldAusStoff)
+  ...Object.fromEntries(
+    WORTFELDER.flatMap((w) => [w.skill, ...(w.auch ?? [])].map((id) => [id, (["wortschatz", "artikel", ...(w.verben.length ? ["praeteritum"] : [])] as SpielArt[])])),
+  ),
+  "deutsch.schreiben.erzaehlung": ["wortschatz"],
+  "deutsch.vs.schreiben.erzaehlen": ["wortschatz"],
+  "deutsch.wortschatz.wortfelder": ["wortschatz"],
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -110,7 +121,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
 
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "artikel"];
+    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "wortschatz", "artikel"];
     add(
       reihe.filter((art) => student.grade >= SPIEL_AB[art]),
       "Zum Üben",
@@ -244,10 +255,29 @@ export function themenPlan(student: repo.Student, art: SpielArt, heute: string):
   return { skillId: thema.skill, titel: `Thema: ${thema.name}` };
 }
 
+// ---------- Wortfelder: „der, die, das“ und „Präteritum“ mit den Wörtern des Schreib-Themas ----------
+
+/**
+ * Die Karten des Wortfelds aus dem Stoff für „der, die, das“ oder „Präteritum“ (niko 2026-11-12: „gruselgeschichte muss
+ * der schüler lernen und dann bei den lernspielen sind es wörter die er für eine gruselgeschichte braucht“): das erste
+ * Schreib-Thema im Stoff (Prüfung, aktueller Stoff, letzte Einheit) mit genug Wörtern. null: das gewöhnliche Spiel.
+ */
+export function wortfeldPlan(student: repo.Student, art: SpielArt, heute: string): { feld: Wortfeld; pool: ReturnType<typeof wortfeldArtikel>; titel: string } | null {
+  if (art !== "artikel" && art !== "praeteritum") return null;
+  const karten = art === "artikel" ? wortfeldArtikel : wortfeldPraeteritum;
+  for (const id of stoffQuellen(student, heute).flatMap((q) => q.ids)) {
+    const feld = WORTFELDER.find((w) => themaPasst(w, id));
+    if (!feld) continue;
+    const pool = karten(feld.skill);
+    if (pool.length >= THEMA_KARTEN_MIN) return { feld, pool, titel: `Wörter für: ${feld.name}` };
+  }
+  return null;
+}
+
 /** Woher die Karten der nächsten Runde kommen, für den Schüler („Thema: Familie“, „Deine Liste …“); leer bei festen Spielen. */
 export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
   if (art === "vokabeln") return vokabelPlan(student, heute).titel;
-  return themenPlan(student, art, heute)?.titel;
+  return wortfeldPlan(student, art, heute)?.titel ?? themenPlan(student, art, heute)?.titel;
 }
 
 /** Die Kisten einer Karte des Themas, für den Anfang des Spiels (damit dort nicht „some, any“ steht, wenn es um if-Sätze geht). */
@@ -368,9 +398,10 @@ export function starteRunde(
       rng: o.rng,
     });
   } else {
-    const plan = themenPlan(student, art, o.heute ?? wienerDatum());
+    const heute = o.heute ?? wienerDatum();
+    const plan = themenPlan(student, art, heute);
     karten = waehleKarten(art, {
-      pool: plan ? themenKandidaten(plan.skillId) : undefined,
+      pool: plan ? themenKandidaten(plan.skillId) : wortfeldPlan(student, art, heute)?.pool,
       stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
       wiederholen: offeneFehler(student.id, art),
       zuletzt: zuletztGespielt(student.id, art),

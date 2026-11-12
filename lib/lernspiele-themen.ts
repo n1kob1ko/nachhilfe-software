@@ -1,6 +1,7 @@
 /**
  * Themenspiele: Lernspiele mit Kisten, die je Runde **ein Thema** (eine Fähigkeit) spielen. „English Tenses“ und
- * „English Grammar“ (lib/lernspiele-englisch.ts), „Kopfrechnen“ (lib/lernspiele-mathe.ts) und „Zahlenstrahl“ (lib/lernspiele-strahl.ts). Welches Thema dran ist,
+ * „English Grammar“ (lib/lernspiele-englisch.ts), „Kopfrechnen“ (lib/lernspiele-mathe.ts), „Zahlenstrahl“ (lib/lernspiele-strahl.ts) und
+ * „Wortschatz“ (lib/lernspiele-wortfelder.ts). Welches Thema dran ist,
  * entscheidet `themenPlan` in lib/lernspiele.ts: das aus dem Stoff des Schülers, sonst das nächste seiner Schulstufe.
  * Hier stehen die Themenlisten aller Spiele und was für alle gleich ist. Nur Reines (keine Datenbank).
  */
@@ -9,12 +10,17 @@ import type { Kandidat } from "./lernspiele-karten";
 import { matheKandidaten, RECHNEN_THEMEN } from "./lernspiele-mathe";
 import { istStrahlThema, STRAHL_THEMEN, strahlKandidaten } from "./lernspiele-strahl";
 import type { SpielArt, SpielThema } from "./lernspiele-typen";
+import { wortfeld, WORTSCHATZ_THEMEN, wortschatzKandidaten } from "./lernspiele-wortfelder";
 
 /** Die Spiele mit Themen und ihre Themenlisten, jede in der Reihenfolge des Unterrichts. */
-export const SPIEL_THEMEN: Partial<Record<SpielArt, SpielThema[]>> = { zeiten: ZEITEN_THEMEN, grammatik: GRAMMATIK_THEMEN, rechnen: RECHNEN_THEMEN, strahl: STRAHL_THEMEN };
+export const SPIEL_THEMEN: Partial<Record<SpielArt, SpielThema[]>> = { zeiten: ZEITEN_THEMEN, grammatik: GRAMMATIK_THEMEN, rechnen: RECHNEN_THEMEN, strahl: STRAHL_THEMEN, wortschatz: WORTSCHATZ_THEMEN };
 
-/** Alle Karten eines Themas, aus dem Speicher (Englisch aus den Englisch-Generatoren, Mathe aus den Mathe-Aufgaben, der Zahlenstrahl aus den Aufgaben mit Bild). */
-export const themenKandidaten = (skill: string): Kandidat[] => (istStrahlThema(skill) ? strahlKandidaten(skill) : skill.startsWith("mathe.") ? matheKandidaten(skill) : englischKandidaten(skill));
+/**
+ * Alle Karten eines Themas, aus dem Speicher (Englisch aus den Englisch-Generatoren, Mathe aus den Mathe-Aufgaben, der
+ * Zahlenstrahl aus den Aufgaben mit Bild, „Wortschatz“ aus den Wortfeldern).
+ */
+export const themenKandidaten = (skill: string): Kandidat[] =>
+  wortfeld(skill) ? wortschatzKandidaten(skill) : istStrahlThema(skill) ? strahlKandidaten(skill) : skill.startsWith("mathe.") ? matheKandidaten(skill) : englischKandidaten(skill);
 
 /** Ob eine Fähigkeit aus dem Stoff zu einem Thema gehört (auch ihre Unterfähigkeiten). */
 export const themaPasst = (t: SpielThema, skillId: string) => [t.skill, ...(t.auch ?? [])].some((s) => skillId === s || skillId.startsWith(`${s}.`));

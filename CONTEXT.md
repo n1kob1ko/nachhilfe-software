@@ -242,10 +242,18 @@ den Zeiger dorthin schieben, wo die Zahl liegt (docs/lernspiele.md). Nicht jedes
 das Ergebnis an einem Ziffernblock ein, bei „Irregular Verbs“ und „Präteritum“ legt man die Form aus Buchstaben,
 bei zwei Antworten („das oder dass“, „haben oder sein“, „Hauptsatz oder Gliedsatz“, „Teilbar oder nicht?“) wischt man
 die Karte nach links oder rechts, und bei „Präposition und Fall“, „Adjektiv-Endungen“, „English Tenses“ und „English
-Grammar“ dreht man an einem Rad, bis der Satz stimmt (`lib/lernspiele-antwort.ts`). Kisten haben nur noch „der, die,
+Grammar“ dreht man an einem Rad, bis der Satz stimmt (`lib/lernspiele-antwort.ts`). „Wortschatz“ (Deutsch) spielt das
+**Wortfeld** eines Schreib-Themas (Gruselgeschichte, Märchen, Krimi …): am Rad das treffende Wort für den Satz; steht
+so ein Thema im Stoff, nehmen auch „der, die, das“ und „Präteritum“ seine Wörter. Kisten haben nur noch „der, die,
 das“, „Die vier Fälle“ und Kopfrechnen mit Termen oder Bruchrechnen. Die App wählt das Spiel nach dem Stoff (nahe Prüfung, aktueller Stoff, letzte Einheit,
 unsicherer Lernstand). Eine **Runde** zählt mit der ersten Wahl je Karte, schwächer als eine Übung.
 _Avoid_: Quiz, Minispiel, Game
+
+**Wortfeld**:
+Die Wörter, die man für ein Schreib-Thema braucht (Gruselgeschichte, Abenteuergeschichte, Märchen, Krimi, Sage,
+Personenbeschreibung): Sätze mit dem treffenden Wort, Nomen mit Artikel und Verben im Präteritum
+(`lib/lernspiele-wortfelder.ts`). Steht das Thema im Stoff, üben die **Lernspiele** genau diese Wörter.
+_Avoid_: Wortliste, Vokabular
 
 **Endlos-Modus**:
 Ein **Lernspiel** ohne Ende: Runden zu zwölf Karten hängen aneinander, bis drei Antworten falsch waren (drei
