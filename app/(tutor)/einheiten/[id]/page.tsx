@@ -35,6 +35,8 @@ import { HausuebungKarte, HausuebungMitschicken } from "@/components/Hausuebung"
 import { hausuebungDerEinheit, kiAutomatisch, vorschlagZeigen } from "@/lib/hausuebung";
 import { Pill, Reveal, SectionTitle, formatDate, formatTime } from "@/components/ui";
 import { LiveStatus } from "@/components/device/LiveStatus";
+import { hasDevice } from "@/lib/devices";
+import { SchuelerBildschirm } from "@/components/device/SchuelerBildschirm";
 import { liveSnapshot, studentDevice } from "@/lib/live";
 import { baseUrl } from "@/lib/base-url";
 import { autoFelderVon, leseEinschaetzung } from "@/lib/einschaetzung";
@@ -173,6 +175,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
     return (
       <>
         <AutoRefresh seconds={30} />
+        {/* Schüler-Bildschirm (lib/spiegel.ts): was DreamStudy am Tablet zeigt, immer sichtbar, mit „Eingreifen“ */}
+        {mayManage && hasDevice(unit.teacher_id) && <SchuelerBildschirm unitId={unit.id} student={first(student.name)} />}
         <header className="sticky top-0 z-20 -mx-4 mb-5 bg-paper/95 px-4 pt-1 pb-3 backdrop-blur md:-mx-8 md:px-8" data-testid="unterricht-kopf">
           {wechsel.length > 0 && (
             <nav aria-label="Schüler wechseln" className="mb-2 flex flex-wrap gap-1.5" data-testid="schueler-wechsel">

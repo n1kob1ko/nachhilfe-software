@@ -2228,3 +2228,41 @@ textarea.input {
   font-weight: 600;
   color: var(--ink-3);
 }
+
+/* Schüler-Bildschirm, Eingreifen (lib/spiegel.ts): ein Ring, wo der Lehrer am Tablet getippt hat (8: Puls bestätigt) */
+.fern-tipp {
+  position: fixed;
+  z-index: 70;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border-radius: 9999px;
+  border: 3px solid var(--accent);
+  pointer-events: none;
+  animation: fern-tipp 600ms var(--ease-out) forwards;
+}
+@keyframes fern-tipp {
+  from {
+    opacity: 0.9;
+    scale: 0.5;
+  }
+  to {
+    opacity: 0;
+    scale: 1.4;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fern-tipp {
+    animation: fern-tipp-ruhig 600ms linear forwards;
+  }
+  @keyframes fern-tipp-ruhig {
+    to {
+      opacity: 0;
+    }
+  }
+}
+
+/* Schüler-Bildschirm: der Mauszeiger der Kopie erscheint erst, wenn am Tablet getippt wird (ein Tablet hat keinen Zeiger) */
+.schueler-spiegel .replayer-mouse:not(.touch-device) {
+  display: none;
+}

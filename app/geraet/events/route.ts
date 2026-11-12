@@ -1,5 +1,6 @@
 import { currentDevice, deviceUnit, touchDevice } from "@/lib/devices";
 import { deviceChannel, pushTabletPresence } from "@/lib/live";
+import { spiegelAktiv } from "@/lib/spiegel";
 import { stream } from "@/lib/whiteboard-hub";
 
 export const dynamic = "force-dynamic";
@@ -14,7 +15,8 @@ export async function GET(request: Request) {
     // the tablet compares this with what it shows, so nothing is missed while it was offline
     hello: () => {
       const { unit, choices } = deviceUnit(device);
-      return { type: "hello", unitId: unit?.id ?? null, choosing: choices.length > 0, view: unit?.device_view ?? "" };
+      // spiegel: a teacher watches this unit's student screen (lib/spiegel.ts), so the tablet records its page
+      return { type: "hello", unitId: unit?.id ?? null, choosing: choices.length > 0, view: unit?.device_view ?? "", spiegel: unit ? spiegelAktiv(unit.id) : false };
     },
     onAlive: () => touchDevice(device.id),
     onPresence: () => pushTabletPresence(device.teacher_id),
