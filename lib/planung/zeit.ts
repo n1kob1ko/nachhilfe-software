@@ -98,8 +98,10 @@ export function wochentageDerWoche(weekStart: string): { datum: string; tag: Woc
 
 // ---------- „Jetzt“ in Europe/Vienna ----------
 
+// einmal anlegen: ein neues Intl.DateTimeFormat je Aufruf kostete auf Heute einige Millisekunden je Seite
+let wienerFormat: Intl.DateTimeFormat | null = null;
 function wienerTeile(now: Date) {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  wienerFormat ??= new Intl.DateTimeFormat("en-CA", {
     timeZone: ZEITZONE,
     year: "numeric",
     month: "2-digit",
@@ -107,7 +109,8 @@ function wienerTeile(now: Date) {
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-  }).formatToParts(now);
+  });
+  const parts = wienerFormat.formatToParts(now);
   const wert = (typ: string) => parts.find((p) => p.type === typ)?.value ?? "";
   return { jahr: wert("year"), monat: wert("month"), tag: wert("day"), stunde: wert("hour"), minute: wert("minute") };
 }

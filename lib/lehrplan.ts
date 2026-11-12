@@ -3,7 +3,7 @@
  * student, prerequisites, topic → skill suggestions, settings and empirical task difficulty.
  * Everything here is rule-based and works without AI. Architecture: docs/curriculum.md.
  */
-import { db } from "./db";
+import { db, jeStand, zeilen } from "./db";
 import { SKILL_SELECT, type Skill, type Student } from "./repo";
 import { checkLevel, SCHOOL_BRANCHES, SCHOOL_TYPES, schulstufe, type SchoolBranch } from "./school";
 import { BEREICH_SUCHWOERTER, SUCHWOERTER } from "./themen";
@@ -213,7 +213,7 @@ export function curriculumTree(id: number, klasse?: number | null): CurriculumTr
 }
 
 // ---------- skills for a student ----------
-const activeSkills = () => db().prepare(`${SKILL_SELECT} WHERE COALESCE(s.status, 'aktiv') = 'aktiv' AND o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[];
+const activeSkills = () => jeStand("activeSkills", ...zeilen(() => db().prepare(`${SKILL_SELECT} WHERE COALESCE(s.status, 'aktiv') = 'aktiv' AND o.merged_into IS NULL ORDER BY s.sort, s.subject, area, s.name`).all() as Skill[]));
 const fitsSchoolType = (s: Skill, type: string) => !s.school_types || s.school_types.split(",").map((x) => x.trim()).includes(type);
 
 /**

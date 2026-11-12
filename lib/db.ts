@@ -1800,6 +1800,35 @@ export function dbPath() {
   return process.env.DATABASE_PATH || path.join(process.cwd(), "data", "nachhilfe.db");
 }
 
+/**
+ * Liest etwas, das sich nur ändert, wenn jemand in die Datenbank schreibt (Fähigkeiten, Zusammenlegungen), höchstens einmal je
+ * Stand der Datenbank. Eine Seite wie Heute fragte sonst für jeden Schüler und jeden Schritt wieder alle Fähigkeiten ab (niko,
+ * 12.11.2026: „irgendwie laggt die Seite“; gemessen 0,3 bis 0,8 s für Heute).
+ *
+ * Der Stand ist `total_changes()` dieser Verbindung (zählt jedes INSERT, UPDATE und DELETE, auch zurückgerollte) und
+ * `data_version` (zählt Schreiben über andere Verbindungen). Jedes Schreiben, egal wo, macht also alles Gemerkte ungültig.
+ * `kopie` gibt jedem Aufrufer eine eigene Hülle, damit keiner das Gemerkte verändert (Listen: neue Liste, die Zeilen selbst
+ * sind eingefroren; jede Zeile zu kopieren kostete mehr als die Abfrage).
+ */
+const merker = new WeakMap<Database.Database, Map<string, { stand: string; wert: unknown }>>();
+export function jeStand<T>(schluessel: string, lesen: () => T, kopie: (wert: T) => T): T {
+  const conn = db();
+  // in einer offenen Transaktion nichts merken: würde sie zurückgerollt, stimmte das Gemerkte nicht mehr
+  if (conn.inTransaction) return lesen();
+  const stand = `${conn.prepare("SELECT total_changes()").pluck().get()}:${conn.pragma("data_version", { simple: true })}`;
+  let liste = merker.get(conn);
+  if (!liste) merker.set(conn, (liste = new Map()));
+  const alt = liste.get(schluessel);
+  if (alt && alt.stand === stand) return kopie(alt.wert as T);
+  const wert = lesen();
+  liste.set(schluessel, { stand, wert });
+  return kopie(wert);
+}
+/** Für `jeStand`: liest Zeilen und friert sie ein; jeder Aufrufer bekommt eine eigene Liste derselben Zeilen. */
+export function zeilen<T extends object>(lesen: () => T[]): [() => T[], (rows: T[]) => T[]] {
+  return [() => lesen().map((r) => Object.freeze(r)), (rows) => rows.slice()];
+}
+
 export function db(): Database.Database {
   if (instance) return instance;
   const file = dbPath();

@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
@@ -7,7 +8,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
  * app/globals.css im Abschnitt „Bewegung“, die Übersicht in DESIGN.md).
  *
  * - `Ursprung`: einmal in app/layout.tsx. Merkt sich, wo zuletzt getippt wurde; ein Popover oder Dialog, der gleich
- *   danach aufgeht, wächst von dort (Regel 11) und geht dorthin zurück (Regel 12).
+ *   danach aufgeht, wächst von dort (Regel 11) und geht dorthin zurück (Regel 12). Dazu `Ankunft` (siehe dort).
  * - `Gleiter`: die Marke des aktiven Eintrags als ein einziges Element, das zum neuen Eintrag wandert (Regel 20),
  *   mit ease-in-out (Regel 9) und unterwegs 12 % gestreckt (Regel 5).
  * - `IconWechsel`: zwei Icons an derselben Stelle, die ineinander blenden (Regeln 16 und 18).
@@ -52,6 +53,39 @@ export function Ursprung() {
       document.removeEventListener("touchstart", nichts);
     };
   }, []);
+  return null;
+}
+
+/**
+ * Eingänge, die eine ganze Seite beim Ankommen spielt: `.seite-rein`, die versetzten Listen (`.staffel`), die Kennzahlen
+ * und `.setzen` (Animation „rein“) und das Bild der Bühne (`.bogen`).
+ */
+const SEITEN_EINGANG = new Set(["rein", "einblenden", "bogen-quer", "bogen-hoch"]);
+
+/**
+ * Beim Wechsel auf eine andere Seite ist die neue Seite sofort ganz da (niko, 12.11.2026: „irgendwie laggt die Seite“).
+ * Gemessen: nach jedem Klick in der Leiste liefen die Eingänge der neuen Seite noch 0,3 bis 0,65 s (Listen versetzt,
+ * Kennzahlen setzen sich nach), bevor sie stillstand; das wirkte wie Verzögerung. Seiten wechselt man dutzende Male am Tag,
+ * also bekommen sie keinen Eingang mehr. Nur das erste Laden der App spielt ihn noch, und alles, was auf einen Tipp hin
+ * erscheint (Aufklappen, Popover, Dialog, Liste in einem geöffneten <details>), bewegt sich weiter wie gehabt.
+ *
+ * Wie: der Pfad ändert sich im selben Commit, in dem die neue Seite in den Baum kommt; der Layout-Effekt läuft vor dem
+ * ersten Bild und spult deren Eingänge ans Ende.
+ */
+export function Ankunft() {
+  const pfad = usePathname();
+  const erster = useRef(true);
+  useLayoutEffect(() => {
+    if (erster.current) {
+      erster.current = false;
+      return;
+    }
+    if (typeof document.getAnimations !== "function") return;
+    for (const a of document.getAnimations()) {
+      const name = (a as Animation & { animationName?: string }).animationName;
+      if (name && SEITEN_EINGANG.has(name) && a.playState !== "finished") a.finish();
+    }
+  }, [pfad]);
   return null;
 }
 
