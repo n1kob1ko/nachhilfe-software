@@ -34,6 +34,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { Frisch } from "@/components/Frisch";
 import { logoutAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
 import { PageHeader } from "@/components/ui";
@@ -86,6 +87,7 @@ export default async function MorePage() {
   );
   return (
     <>
+      <Frisch />
       <PageHeader
         title="Erweitert"
         actions={

@@ -1,3 +1,4 @@
+import { Frisch } from "@/components/Frisch";
 import { CheckCircle2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { MasteryBar, TrendBadge, formatDate } from "@/components/ui";
@@ -23,6 +24,7 @@ export default async function FortschrittPage({ params }: { params: Promise<{ to
 
   return (
     <>
+      <Frisch />
       <SeitenKopf titel="Dein Fortschritt" text="Was du geübt hast und wie es läuft." />
 
       {practiced.length > 0 ? (

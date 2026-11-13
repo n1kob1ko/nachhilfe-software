@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Frisch } from "@/components/Frisch";
 import { ChevronRight, Swords, Trophy } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
@@ -29,6 +30,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   if (!vorschlaege.length) {
     return (
       <>
+        <Frisch />
         <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
         <p className="panel mt-6 px-5 py-5 text-[16px] text-ink-2" data-testid="spiele-leer">
           Für deine Fächer gibt es noch kein Spiel. Sobald eines dazukommt, steht es hier.
@@ -47,6 +49,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
 
   return (
     <>
+      <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
       <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} />

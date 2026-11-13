@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Frisch } from "@/components/Frisch";
 import { CalendarPlus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Pill, formatDate } from "@/components/ui";
@@ -21,6 +22,7 @@ export default async function PruefungenPage({ params }: { params: Promise<{ tok
 
   return (
     <>
+      <Frisch />
       <SeitenKopf titel="Prüfungen" text="Was ansteht, was du eingetragen hast und deine Unterlagen zum Lernen." />
 
       <KommendePruefungen studentId={student.id} />
