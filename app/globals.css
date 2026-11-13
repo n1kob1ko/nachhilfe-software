@@ -878,6 +878,33 @@ textarea.input {
     box-shadow: 0 0 0 10px transparent;
   }
 }
+/* ---------- Skelett ----------
+ * Die Form der nächsten Seite, wenn ein Wechsel länger als eine Viertelsekunde dauert (components/Navigation.tsx, SeitenRahmen).
+ * Ruhige Flächen in der Farbe der Paneele, die langsam atmen; nichts wandert, nichts glänzt.
+ */
+.skelett-block {
+  background: var(--panel);
+  border-radius: 8px;
+}
+@media screen and (prefers-reduced-motion: no-preference) {
+  .skelett {
+    animation: skelett-kommt 120ms ease-out backwards;
+  }
+  .skelett-block {
+    animation: skelett-atmen 1100ms ease-in-out infinite alternate;
+  }
+}
+@keyframes skelett-kommt {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes skelett-atmen {
+  to {
+    opacity: 0.6;
+  }
+}
+
 /* horizontal chip rows scroll without a visible bar */
 .ohne-leiste {
   scrollbar-width: none;

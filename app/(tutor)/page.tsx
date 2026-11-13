@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { ArrowRight, CheckCircle2, Plus } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
+import { Frisch } from "@/components/Frisch";
 import { AlteAnker } from "@/components/heute/AlteAnker";
 import { SchuelerKarte } from "@/components/heute/SchuelerKarte";
 import { SchuelerWahl } from "@/components/heute/SchuelerWahl";
@@ -55,6 +56,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
   if (students.length === 0) {
     return (
       <>
+        <Frisch />
         <Greeting name={teacher.name} date={now} />
         <Empty
           title="Noch keine Schüler angelegt"
@@ -96,6 +98,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
 
   return (
     <>
+      <Frisch />
       <AlteAnker />
       <Greeting name={teacher.name} date={now} />
 

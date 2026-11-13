@@ -5,6 +5,7 @@ import { Avatar } from "@/components/Art";
 import { BrandMark } from "@/components/Brand";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SchuelerNav } from "@/components/lernen/SchuelerNav";
+import { SeitenRahmen } from "@/components/Navigation";
 import { meineDuelle } from "@/lib/duelle";
 import { aktivesProfil } from "@/lib/spielprofil";
 
@@ -48,7 +49,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
       {/* fünf Seiten (Start, Termine, Spiele, Prüfungen, Fortschritt): am Handy Leiste unten, darum unten Platz dafür */}
       <main className="mx-auto max-w-[860px] px-4 pt-6 pb-[calc(6rem+env(safe-area-inset-bottom))] has-[.lesen-breit]:max-w-[1320px] md:py-10">
         <SchuelerNav token={token} spieleHinweis={duelleDran} />
-        {children}
+        <SeitenRahmen art="schueler">{children}</SeitenRahmen>
       </main>
     </div>
   );

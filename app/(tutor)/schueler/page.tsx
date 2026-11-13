@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Frisch } from "@/components/Frisch";
 import { CalendarClock, CalendarDays, Plus, Search } from "lucide-react";
 import { loadDemoData } from "@/app/actions";
 import { Empty, PageHeader, StatusChip, TrendBadge } from "@/components/ui";
@@ -36,6 +37,7 @@ export default async function Students({ searchParams }: { searchParams: Promise
   const pruefungen = pruefungsHinweise(dayOf(new Date()));
   return (
     <>
+      <Frisch />
       <PageHeader
         title="Schüler"
         subtitle={`${all.length} Schüler`}

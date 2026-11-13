@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Frisch } from "@/components/Frisch";
 import { ChevronRight, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
@@ -43,6 +44,7 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
 
   return (
     <>
+      <Frisch />
       <section className="buehne px-6 py-7 md:px-8 md:py-9">
         <div className="setzen relative z-10 sm:pr-[170px]">
           <h1 className="text-[30px] font-semibold tracking-[-0.02em] md:text-[34px]">Hallo {first}!</h1>
