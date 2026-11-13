@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { Play } from "lucide-react";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
+import { FormKnopf } from "@/components/FormKnopf";
 import { SchuelerWahl } from "@/components/heute/SchuelerWahl";
 import { requireTeacher } from "@/lib/auth";
 import { heuteKarten, naechsterPunkt, tagesplan } from "@/lib/heute";
@@ -67,9 +68,9 @@ export default async function UnterrichtPage() {
             </p>
           )}
           <form action={startUnitAction.bind(null, student.id, null)}>
-            <button className="btn btn-primary btn-lg w-full sm:w-auto">
-              <Play size={18} aria-hidden /> Einheit starten
-            </button>
+            <FormKnopf className="btn btn-primary btn-lg w-full sm:w-auto" icon={<Play size={18} aria-hidden />}>
+              Einheit starten
+            </FormKnopf>
           </form>
           <Link href="/" className="w-fit text-[14px] font-medium text-accent hover:underline">
             Alle Schüler von heute

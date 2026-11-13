@@ -3,6 +3,7 @@ import { ArrowRight, BookOpenCheck, CheckCircle2, ChevronDown, Play, Sparkles } 
 import { vorbereitenAction } from "@/app/cockpit-actions";
 import { startUnitAction } from "@/app/session-actions";
 import { Avatar } from "@/components/Art";
+import { FormKnopf } from "@/components/FormKnopf";
 import { nachtragenHref, type HeuteKarte, type HeutePunkt } from "@/lib/heute";
 import { wienerDatum } from "@/lib/planung/zeit";
 import type * as repo from "@/lib/repo";
@@ -124,9 +125,9 @@ export function SchuelerKarte({ p, student, karte, fach, haupt, wann, oben = fal
           )}
           {/* the unit starts for the Platz of this card (two students at the same time each get their own) */}
           <form action={startUnitAction.bind(null, p.studentId, p.platzId)} className="w-full sm:w-auto">
-            <button className={`btn w-full sm:w-auto ${haupt ? "btn-primary" : "btn-secondary"}`}>
-              <Play size={17} aria-hidden /> Einheit starten
-            </button>
+            <FormKnopf className={`btn w-full sm:w-auto ${haupt ? "btn-primary" : "btn-secondary"}`} icon={<Play size={17} aria-hidden />}>
+              Einheit starten
+            </FormKnopf>
           </form>
         </div>
       </div>

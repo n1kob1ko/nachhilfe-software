@@ -46,11 +46,6 @@ export default async function ReferenzenPage({ searchParams }: { searchParams: P
           {sp.fehler}
         </p>
       )}
-      {sp.geloescht && (
-        <p className="mb-6 text-[14px] font-semibold text-green" role="status">
-          Eintrag gelöscht.
-        </p>
-      )}
 
       <div className="mb-10 grid max-w-[1040px] gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
         <section className="panel px-4 py-4 md:px-5" aria-labelledby="pdf-lesen">
@@ -111,7 +106,7 @@ export default async function ReferenzenPage({ searchParams }: { searchParams: P
             const s = e.skill_id ? skills.get(e.skill_id) : null;
             const format = formateFuer(e.fach).find((f) => f.key === e.format)?.label;
             return (
-              <li key={e.id}>
+              <li key={e.id} data-zeile={`referenz-${e.id}`}>
                 <Link href={`${RS}/${e.id}`} className="flex min-h-[72px] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 hover:bg-panel/60">
                   <span className="min-w-0 flex-1 basis-[16rem]">
                     <span className="block truncate font-semibold">{ersteZeile(e.aufgabe) || <span className="font-normal text-ink-3 italic">Noch kein Text</span>}</span>

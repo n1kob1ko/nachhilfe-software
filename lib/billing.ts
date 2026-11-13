@@ -29,6 +29,13 @@ export function scopeToViewer(p: BillingParams, viewer: { id: number; is_admin: 
 /** Why an Einheit could not be deleted from the billing; the page shows the matching text. */
 export type DeleteRefusal = "weg" | "fremd" | "laeuft";
 
+/** Warum eine Einheit nicht aus der Abrechnung gelöscht wurde, in Worten für die Meldung. */
+export const DELETE_REFUSAL_TEXT: Record<DeleteRefusal, string> = {
+  weg: "Diese Einheit steht nicht mehr in der Abrechnung.",
+  fremd: "Nur der Lehrer der Einheit oder die Verwaltung kann sie löschen.",
+  laeuft: "Die Einheit läuft noch. Beende sie zuerst.",
+};
+
 /**
  * Deletes an Einheit from the billing for good: its documentation and, if it was started in the app,
  * the unit with its whiteboard, laptop codes and progress snapshots. Solved tasks stay in the

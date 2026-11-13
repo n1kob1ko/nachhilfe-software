@@ -51,9 +51,9 @@ export async function inBibliothekAction(id: number) {
   redirect(`/uebungen/bibliothek/${out.libraryId}`);
 }
 
+/** Leitet nicht um: die Seite wechselt schon beim Tipp zur Liste, gelöscht wird nach „Rückgängig“ (components/Meldung.tsx). */
 export async function loescheEintragAction(id: number) {
   await requireTeacher();
   loescheEintrag(id);
   revalidatePath(RS, "layout");
-  redirect(`${RS}?geloescht=1`);
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { WegForm } from "@/components/Meldung";
 import { LernspieleProfil } from "@/components/LernspieleProfil";
 import { WettspielProfil } from "@/components/WettspielProfil";
 import { Erkenntnisse } from "@/components/Erkenntnisse";
@@ -1029,7 +1030,7 @@ function School({ student }: { student: repo.Student }) {
         <ul className="divide-y divide-line">
           {written.length === 0 && <li className="py-2 text-[14px] text-ink-3">Noch keine Ergebnisse eingetragen.</li>}
           {written.map((t) => (
-            <li key={t.id} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
+            <li key={t.id} data-zeile={`pruefung-${t.id}`} className="flex items-start justify-between gap-3 py-2.5 text-[14px]">
               <div>
                 <span className="font-medium">
                   {t.title || `${t.kind} ${t.subject}`}
@@ -1055,11 +1056,11 @@ function School({ student }: { student: repo.Student }) {
                     </span>
                   )}
                 </span>
-                <form action={deleteTestAction.bind(null, t.id, student.id)}>
+                <WegForm action={deleteTestAction.bind(null, t.id, student.id)} zeile={`pruefung-${t.id}`} text="Ergebnis gelöscht">
                   <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
-                </form>
+                </WegForm>
               </div>
             </li>
           ))}
@@ -1076,7 +1077,7 @@ function School({ student }: { student: repo.Student }) {
             const done = !repo.homeworkOpen(h) || e?.status === "bewertet";
             const durchUebung = done && h.status !== "erledigt";
             return (
-              <li key={h.id} className="flex items-start gap-3 py-2.5">
+              <li key={h.id} data-zeile={`hausuebung-${h.id}`} className="flex items-start gap-3 py-2.5">
                 {durchUebung ? (
                   <span className="mt-0.5 text-green" title={h.assignment_completed_at ? "Erledigt: die Übung ist fertig" : "Erledigt: bewertet"}>
                     <CheckCircle2 size={18} aria-label={h.assignment_completed_at ? "Erledigt: die Übung ist fertig" : "Erledigt: bewertet"} />
@@ -1116,11 +1117,11 @@ function School({ student }: { student: repo.Student }) {
                     </div>
                   )}
                 </div>
-                <form action={deleteHomeworkAction.bind(null, h.id, student.id)}>
+                <WegForm action={deleteHomeworkAction.bind(null, h.id, student.id)} zeile={`hausuebung-${h.id}`} text="Hausübung gelöscht">
                   <button className="btn btn-ghost btn-sm min-w-[44px] !px-2" aria-label="Löschen">
                     <Trash2 size={14} />
                   </button>
-                </form>
+                </WegForm>
               </li>
             );
           })}
@@ -1211,7 +1212,7 @@ function Exercises({ student }: { student: repo.Student }) {
         </thead>
         <tbody className="divide-y divide-line">
           {rows.map((x) => (
-            <tr key={x.id}>
+            <tr key={x.id} data-zeile={`zuweisung-${x.id}`}>
               <td className="px-5 py-3">
                 <Link href={`/schueler/${student.id}/ergebnis/${x.id}`} className="font-medium hover:text-accent">
                   {x.title}
@@ -1329,7 +1330,7 @@ function ArchivSection({ student, open }: { student: repo.Student; open: boolean
       <p className="mb-4 max-w-[80ch] text-[14px] text-ink-2">{first} sieht diese Übungen und Texte nicht mehr als offen. Antworten, Dokumentation und Lernstand bleiben.</p>
       <ul className="staffel panel divide-y divide-line">
         {uebungen.map((x) => (
-          <li key={`a${x.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
+          <li key={`a${x.id}`} data-zeile={`zuweisung-${x.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3">
             <Archive size={18} className="shrink-0 text-ink-3" aria-hidden />
             <span className="min-w-0 flex-1 basis-56">
               <Link href={`/schueler/${student.id}/ergebnis/${x.id}`} className="block font-semibold hover:text-accent">

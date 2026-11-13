@@ -1,19 +1,13 @@
 import Link from "next/link";
-import { CheckCircle2, ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download } from "lucide-react";
 import { BillingDelete } from "@/components/BillingDelete";
 import { PrintButton } from "@/components/PrintButton";
 import { Empty, PageHeader } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
-import { billingDay, resolveBilling, scopeToViewer, type BillingParams, type DeleteRefusal } from "@/lib/billing";
+import { billingDay, resolveBilling, scopeToViewer, type BillingParams } from "@/lib/billing";
 import { listStudents, listTeachers, type BillingRow } from "@/lib/repo";
 
 export const metadata = { title: "Abrechnung" };
-
-const REFUSED: Record<DeleteRefusal, string> = {
-  weg: "Diese Einheit steht nicht mehr in der Abrechnung.",
-  fremd: "Nur der Lehrer der Einheit oder die Verwaltung kann sie löschen.",
-  laeuft: "Die Einheit läuft noch. Beende sie zuerst.",
-};
 
 const clock = (iso: string) => new Date(iso).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit" });
 
@@ -27,11 +21,10 @@ function zeit(r: BillingRow) {
   return null;
 }
 
-export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams & { geloescht?: string; fehler?: string }> }) {
+export default async function Billing({ searchParams }: { searchParams: Promise<BillingParams> }) {
   const viewer = await requireTeacher();
   const raw = await searchParams;
   const sp = scopeToViewer(raw, viewer);
-  const refused = raw.fehler && Object.hasOwn(REFUSED, raw.fehler) ? REFUSED[raw.fehler as DeleteRefusal] : null;
   const b = resolveBilling(sp);
   const teachers = listTeachers();
   const students = listStudents();
@@ -117,17 +110,6 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
         <button className="btn btn-primary col-span-2">Anzeigen</button>
       </form>
 
-      {raw.geloescht && (
-        <div role="status" className="no-print mb-6 flex items-center gap-2 rounded-2xl bg-green-wash px-4 py-3 text-[15px] font-medium text-green">
-          <CheckCircle2 size={18} aria-hidden /> Die Einheit ist gelöscht.
-        </div>
-      )}
-      {refused && (
-        <div role="alert" className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
-          {refused}
-        </div>
-      )}
-
       {b.rows.length === 0 ? (
         <Empty
           title={`Keine Einheiten im ${b.label}`}
@@ -178,7 +160,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                   {rows.map((r) => {
                     const z = zeit(r);
                     return (
-                      <li key={r.id} className="flex items-start gap-2 py-3 pr-2 pl-4" data-testid="abr-eintrag">
+                      <li key={r.id} data-zeile={`einheit-${r.id}`} className="flex items-start gap-2 py-3 pr-2 pl-4" data-testid="abr-eintrag">
                         <div className="min-w-0 flex-1">
                           <div className="flex items-baseline justify-between gap-3">
                             <Link
@@ -202,7 +184,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                           </div>
                           {r.tutor_notes && <p className="mt-1 line-clamp-2 text-[13px] whitespace-pre-line text-ink-3">{r.tutor_notes}</p>}
                         </div>
-                        <BillingDelete id={r.id} wer={`von ${r.student_name} am ${tag}`} zurueck={query(b.monat)} />
+                        <BillingDelete id={r.id} wer={`von ${r.student_name} am ${tag}`} kurz={`von ${r.student_name.split(" ")[0]}`} />
                       </li>
                     );
                   })}
@@ -226,7 +208,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
               </thead>
               <tbody className="divide-y divide-line align-top">
                 {b.rows.map((r) => (
-                  <tr key={r.id}>
+                  <tr key={r.id} data-zeile={`einheit-${r.id}`}>
                     <td className="num px-5 py-3 whitespace-nowrap">
                       {billingDay(r.starts_at)}
                       <div className="text-[12px] text-ink-3">{zeit(r) ?? "ohne Uhrzeit"}</div>
@@ -243,7 +225,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                     </td>
                     <td className="max-w-[44ch] px-5 py-3 whitespace-pre-line text-ink-2">{r.tutor_notes || "–"}</td>
                     <td className="no-print py-2 pr-3 text-right">
-                      <BillingDelete id={r.id} wer={`von ${r.student_name} am ${billingDay(r.starts_at)}`} zurueck={query(b.monat)} />
+                      <BillingDelete id={r.id} wer={`von ${r.student_name} am ${billingDay(r.starts_at)}`} kurz={`von ${r.student_name.split(" ")[0]}`} />
                     </td>
                   </tr>
                 ))}

@@ -1,5 +1,6 @@
 "use client";
 
+import { FormKnopf } from "@/components/FormKnopf";
 import { useState } from "react";
 import { Square } from "lucide-react";
 
@@ -20,7 +21,7 @@ export function EinheitBeenden({ action, name, className }: { action: () => Prom
   return (
     <form action={action} className="flex flex-wrap items-center gap-2 rounded-2xl bg-amber-wash px-3 py-2" role="group" aria-label="Einheit beenden?" data-testid="einheit-beenden-frage">
       <span className="text-[15px] font-semibold">Einheit mit {name} beenden?</span>
-      <button className="btn btn-primary">Ja, beenden</button>
+      <FormKnopf>Ja, beenden</FormKnopf>
       <button type="button" className="btn btn-ghost" onClick={() => setFrage(false)} autoFocus>
         Noch nicht
       </button>
