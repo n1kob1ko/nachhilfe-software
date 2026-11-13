@@ -1,7 +1,8 @@
 /*
  * Lernspiele (components/lernen/Lernspiel.tsx). Das Spiel läuft auf der Bühne (DESIGN.md: Blau-Verlauf mit Lichtfleck),
  * die Antworten sind farbige Kisten. Bewegung nach DESIGN.md „Bewegung“: dieselben Kurven wie in der App, nur
- * transform, translate, rotate und opacity, Eintritt ease-out, Bewegung auf dem Schirm ease-in-out, kein Federn.
+ * transform, translate, rotate und opacity, Eintritt ease-out, Bewegung auf dem Schirm ease-in-out. Nachfedern gibt es
+ * nur als Antwort auf richtig und falsch (Abschnitt „Übertreibung“ am Ende).
  * Bei „weniger Bewegung“ bleiben nur Farbe und Deckkraft; Funken, Konfetti und Jubel fallen weg.
  */
 .ls {
@@ -1050,7 +1051,7 @@
 }
 .ls-stern {
   color: rgba(255, 255, 255, 0.22);
-  animation: ls-stern 420ms var(--ls-ease-out) backwards;
+  animation: ls-stern 480ms ease-in-out backwards;
   animation-delay: calc(var(--n, 0) * 140ms + 500ms);
 }
 .ls-stern[data-an] {
@@ -1063,10 +1064,18 @@
 .ls-stern:nth-child(3) {
   rotate: 10deg;
 }
+/* der Stern springt etwas über sein Ziel hinaus und setzt sich (Übertreibung, siehe unten) */
 @keyframes ls-stern {
   from {
     opacity: 0;
     transform: scale(0.5);
+  }
+  55% {
+    opacity: 1;
+    transform: scale(1.28);
+  }
+  80% {
+    transform: scale(0.96);
   }
 }
 .ls-balken {
@@ -3027,5 +3036,173 @@
   }
   .ls-herzen svg:not([data-an]) {
     transform: none;
+  }
+}
+
+/* ---------- Übertreibung (niko, 13.11.2026: „Exaggeration“, „Squash & Stretch“) ----------
+ * Im Spiel zeigt die Antwort mehr als sonst in der App. Richtig: sie drückt sich kurz zusammen und streckt sich vom
+ * Boden nach oben, ein Hüpfer. Falsch: sie schüttelt den Kopf. Beides ist vorbei, bevor die nächste Karte kommt, und
+ * nichts wartet darauf. Nur hier federt etwas nach; die App selbst bleibt ruhig (DESIGN.md „Bewegung“).
+ * Es bewegen sich nur `scale`, `translate` und `rotate` als eigene Eigenschaften, `transform` bleibt den Feldern
+ * (Ziehen, Heben, Drücken). Bei „weniger Bewegung“ fällt alles weg: jede Animation im Spiel dauert dann 1 ms.
+ */
+@keyframes ls-hupf {
+  24% {
+    scale: 1.1 0.86;
+  }
+  52% {
+    scale: 0.93 1.12;
+  }
+  76% {
+    scale: 1.03 0.97;
+  }
+}
+/* dasselbe für große Blätter: ein Zehntel davon reicht, sonst wirkt es wie ein Wackelpudding */
+@keyframes ls-hupf-sanft {
+  24% {
+    scale: 1.025 0.965;
+  }
+  52% {
+    scale: 0.985 1.025;
+  }
+  76% {
+    scale: 1.005 0.995;
+  }
+}
+@keyframes ls-nein {
+  18% {
+    translate: -9px 0;
+    rotate: -1.5deg;
+  }
+  40% {
+    translate: 8px 0;
+    rotate: 1.5deg;
+  }
+  62% {
+    translate: -5px 0;
+    rotate: -0.8deg;
+  }
+  82% {
+    translate: 3px 0;
+    rotate: 0deg;
+  }
+}
+
+/* Kisten: stehen auf ihrem Boden. Beim Drücken werden sie flach, beim Treffer fangen sie die Karte und hüpfen. */
+.ls-fach {
+  transform-origin: 50% 100%;
+}
+.ls-fach:active {
+  transform: scale(1.04, 0.92);
+}
+.ls-fach[data-richtig] {
+  animation: ls-hupf 440ms ease-in-out;
+}
+
+/* Paare: das richtige Paar hüpft, bevor es geht (300 ms); ein falsches schüttelt sich. `ls-hoch` bleibt in der Liste,
+   damit der Eingang nicht noch einmal läuft, wenn der Stand wieder weg ist. */
+.ls-paar[data-stand="richtig"] {
+  transform-origin: 50% 100%;
+  animation:
+    ls-hoch 300ms var(--ls-ease-out) backwards,
+    ls-hupf 300ms ease-in-out;
+  animation-delay: 0ms;
+}
+.ls-paar[data-stand="falsch"] {
+  animation:
+    ls-hoch 300ms var(--ls-ease-out) backwards,
+    ls-nein 360ms ease-in-out;
+  animation-delay: 0ms;
+}
+
+/* Lücke im Satz, getippte Zahl, gelegtes Wort */
+.ls-luecke[data-stand="richtig"] {
+  transform-origin: 50% 100%;
+  animation:
+    ls-einsetzen 200ms var(--ls-ease-out),
+    ls-hupf 420ms ease-in-out 80ms;
+}
+.ls-luecke[data-stand="falsch"] {
+  animation:
+    ls-einsetzen 200ms var(--ls-ease-out),
+    ls-nein 360ms ease-in-out 80ms;
+}
+.ls-eingabe[data-stand="richtig"],
+.ls-legewort[data-stand="richtig"] {
+  transform-origin: 50% 100%;
+  animation: ls-hupf 420ms ease-in-out;
+}
+.ls-eingabe[data-stand="falsch"],
+.ls-legewort[data-stand="falsch"] {
+  animation: ls-nein 360ms ease-in-out;
+}
+
+/* Kacheln: die falsch gewählte schüttelt sich */
+.ls-kachel[data-falsch] {
+  animation:
+    ls-hoch 300ms var(--ls-ease-out) backwards,
+    ls-nein 360ms ease-in-out;
+  animation-delay: 0ms;
+}
+
+/* Satz bauen: das ganze Blatt, sanft */
+.ls-satzblatt[data-stand="richtig"] {
+  transform-origin: 50% 100%;
+  animation:
+    ls-blatt-rein 320ms var(--ls-ease-out) backwards,
+    ls-hupf-sanft 420ms ease-in-out;
+}
+.ls-satzblatt[data-stand="falsch"] {
+  animation:
+    ls-blatt-rein 320ms var(--ls-ease-out) backwards,
+    ls-nein 360ms ease-in-out;
+}
+
+/* Zahlenstrahl: der Griff des Zeigers */
+.ls-zeiger[data-stand="richtig"] i {
+  transform-origin: 50% 100%;
+  animation: ls-hupf 420ms ease-in-out;
+}
+.ls-zeiger[data-stand="falsch"] i {
+  animation: ls-nein 360ms ease-in-out;
+}
+
+/* Karte auf dem Stapel: richtig atmet sie einmal auf (nur `scale`; `translate` und `rotate` gehören dem Stapel) */
+.ls-karte[data-tiefe="0"][data-stand="richtig"] {
+  animation: ls-hupf-sanft 380ms ease-in-out;
+}
+
+/* (falsch: die Karte wackelt schon über `rotate`, siehe Lernspiel.tsx und WischFeld.tsx) */
+
+/* Fortschritt: der Strich der eben gelösten Karte schlägt einmal aus */
+.ls-fortschritt span[data-stand="richtig"] {
+  animation: ls-strich 380ms ease-in-out;
+}
+@keyframes ls-strich {
+  40% {
+    scale: 1 2.4;
+  }
+}
+
+/* Serie: ab drei in Folge springt die Zahl deutlich größer herein */
+.ls-combo[data-heiss] b[data-neu] {
+  animation: ls-zahl-heiss 420ms ease-in-out;
+}
+@keyframes ls-zahl-heiss {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.5);
+  }
+  78% {
+    transform: scale(0.94);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-fach:active {
+    transform: scale(0.96);
   }
 }
