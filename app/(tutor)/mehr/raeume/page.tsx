@@ -53,7 +53,7 @@ export default async function RoomsPage({ searchParams }: { searchParams: Promis
               {alle.map((r) => {
                 const verweise = raumVerweise(r.id);
                 return (
-                  <li key={r.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
+                  <li key={r.id} data-zeile={`raum-${r.id}`} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2 font-semibold">
                         {r.name}

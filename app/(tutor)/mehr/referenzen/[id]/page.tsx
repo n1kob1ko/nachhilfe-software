@@ -153,7 +153,7 @@ export default async function ReferenzEintragPage({ params, searchParams }: { pa
         )}
       </section>
 
-      <LoeschenMitWarnung action={loescheEintragAction.bind(null, e.id)} label="Eintrag löschen" frage="Diesen Eintrag löschen? Eine Aufgabe in der Bibliothek daraus bleibt." className="btn btn-ghost" />
+      <LoeschenMitWarnung action={loescheEintragAction.bind(null, e.id)} label="Eintrag löschen" text="Eintrag gelöscht" zeile={`referenz-${e.id}`} danach="/mehr/referenzen" className="btn btn-ghost" />
     </>
   );
 }

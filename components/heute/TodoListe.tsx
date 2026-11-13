@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { CalendarClock, CalendarPlus, CalendarSync, Check, CheckCircle2, ClipboardCheck, FileCheck2, NotebookPen, PenLine } from "lucide-react";
 import { abhakenAction } from "@/app/zu-erledigen-actions";
+import { WegForm } from "@/components/Meldung";
 import { Pill, formatDate } from "@/components/ui";
 import { STAGE_LABEL } from "@/lib/exams";
 import { ZUSTAND_LABEL, ZUSTAND_TONE, type Punkt } from "@/lib/zu-erledigen";
@@ -69,7 +70,10 @@ function todoText(p: Punkt): React.ReactNode {
   }
 }
 
-/** Die Zeilen von „Zu erledigen“ (offen oder erledigt): Link zum Punkt, Zustand, Datum und, wo es geht, „Abhaken“. */
+/**
+ * Die Zeilen von „Zu erledigen“ (offen oder erledigt): Link zum Punkt, Zustand, Datum und, wo es geht, „Abhaken“.
+ * Abhaken wirkt sofort (die Zeile ist weg) und lässt sich sechs Sekunden rückgängig machen (components/Meldung.tsx).
+ */
 /** `rahmen={false}`: ohne eigene Karte (auf dem Dashboard in Heute); dort fehlt auch der Zustand „Offen“, nur besondere stehen da. */
 export function TodoListe({ punkte, rahmen = true }: { punkte: Punkt[]; rahmen?: boolean }) {
   return (
@@ -77,7 +81,7 @@ export function TodoListe({ punkte, rahmen = true }: { punkte: Punkt[]; rahmen?:
       {punkte.map((p) => {
         const Icon = p.zustand === "erledigt" ? CheckCircle2 : TODO_ICON[p.art];
         return (
-          <li key={p.key} className="flex items-stretch">
+          <li key={p.key} data-zeile={`todo-${p.key}`} className="flex items-stretch">
             <Link href={p.href} className="flex min-h-[60px] min-w-0 flex-1 items-center gap-3 px-4 py-2.5 text-[14px] hover:bg-panel/60">
               <Icon size={19} className={`shrink-0 ${p.zustand === "erledigt" ? "text-green" : "text-accent"}`} aria-hidden />
               <span className={`min-w-0 flex-1 ${p.zustand === "erledigt" ? "text-ink-2" : ""}`}>
@@ -91,11 +95,11 @@ export function TodoListe({ punkte, rahmen = true }: { punkte: Punkt[]; rahmen?:
               <span className="num shrink-0 text-[13px] text-ink-3">{formatDate(p.datum, { day: "numeric", month: "short" })}</span>
             </Link>
             {p.abhaken && (
-              <form action={abhakenAction.bind(null, p.abhaken)} className="flex shrink-0 items-center pr-2">
+              <WegForm action={abhakenAction.bind(null, p.abhaken)} zeile={`todo-${p.key}`} text="Abgehakt" className="flex shrink-0 items-center pr-2">
                 <button className="btn btn-ghost btn-sm min-h-[44px] min-w-[44px] !px-2 text-ink-3 hover:text-green" aria-label="Abhaken" title="Abhaken">
                   <Check size={18} aria-hidden />
                 </button>
-              </form>
+              </WegForm>
             )}
           </li>
         );

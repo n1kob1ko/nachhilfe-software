@@ -1,5 +1,6 @@
 "use client";
 
+import { spaeter } from "@/components/Meldung";
 import { AlertTriangle, ArrowDown, ArrowUp, BookmarkPlus, Check, Library, Pencil, Plus, Presentation, RefreshCw, Send, Trash2, X, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -110,7 +111,7 @@ export function WorksheetEditor(p: Props) {
           const shown = t.data.passage ? passages.has(t.data.passage) : false;
           if (t.data.passage) passages.add(t.data.passage);
           return (
-            <li key={t.id} id={`aufgabe-${t.id}`} className="panel scroll-mt-6 px-5 py-4">
+            <li key={t.id} id={`aufgabe-${t.id}`} data-zeile={`aufgabe-${t.id}`} className="panel scroll-mt-6 px-5 py-4">
               {editing === t.id ? (
                 <TaskForm task={t} index={i + 1} subject={p.subject} skills={p.skills} reading={reading} onDone={() => setEditing(null)} />
               ) : (
@@ -251,7 +252,7 @@ function TaskCard(p: Props & { task: Task; index: number; first: boolean; last: 
                   type="button"
                   className="btn btn-ghost btn-sm text-red"
                   disabled={pending}
-                  onClick={() => confirm(`Aufgabe ${p.index} löschen?`) && run(() => deleteTaskAction(t.id))}
+                  onClick={() => spaeter({ zeile: `aufgabe-${t.id}`, text: `Aufgabe ${p.index} gelöscht`, aktion: () => deleteTaskAction(t.id) })}
                   aria-label={`Aufgabe ${p.index} löschen`}
                   title="Löschen"
                 >

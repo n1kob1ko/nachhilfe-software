@@ -3,9 +3,10 @@
 /**
  * Raum-Aktionen (portiert und neu gestaltet nach `DeleteRoomButton.tsx` der Tutoring-Plattform):
  * deaktivieren/aktivieren und — nur solange kein Platz auf den Raum zeigt — löschen.
- * Das Löschen fragt nach und lehnt serverseitig ab, sobald Plätze auf den Raum zeigen
+ * Das Löschen lässt sich sechs Sekunden rückgängig machen (components/Meldung.tsx) und lehnt serverseitig ab, sobald Plätze auf den Raum zeigen
  * (`lib/planung/aktionen.ts`), damit kein Platz ins Leere zeigt.
  */
+import { WegForm } from "@/components/Meldung";
 import { setRoomActiveAction, deleteRoomAction } from "@/app/planung-actions";
 import { Power, Trash2 } from "lucide-react";
 
@@ -19,17 +20,11 @@ export function RaumAktionen({ roomId, active, verweise, zurueck }: { roomId: nu
         </button>
       </form>
       {verweise === 0 ? (
-        <form
-          action={deleteRoomAction.bind(null, roomId)}
-          onSubmit={(e) => {
-            if (!confirm("Diesen Raum endgültig löschen? Er wird von keiner geplanten Einheit verwendet.")) e.preventDefault();
-          }}
-        >
-          <input type="hidden" name="zurueck" value={zurueck} />
+        <WegForm action={() => deleteRoomAction(roomId)} zeile={`raum-${roomId}`} text="Raum gelöscht">
           <button className="btn btn-danger btn-sm border border-red/30">
             <Trash2 size={15} aria-hidden /> Löschen
           </button>
-        </form>
+        </WegForm>
       ) : (
         <span className="text-[13px] text-ink-3">wird verwendet – nur deaktivierbar</span>
       )}

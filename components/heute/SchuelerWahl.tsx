@@ -1,3 +1,4 @@
+import { FormKnopf } from "@/components/FormKnopf";
 import Link from "next/link";
 import { ChevronDown, Play } from "lucide-react";
 import { startUnitAction } from "@/app/session-actions";
@@ -15,14 +16,14 @@ export function SchuelerWahl({ students, offen, label = "Anderen Schüler starte
       {students.slice(0, 8).map((s) => (
         <li key={s.id}>
           <form action={startUnitAction.bind(null, s.id, null)}>
-            <button className="panel flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:border-line-strong" aria-label={`Einheit mit ${s.name} starten`}>
+            <FormKnopf className="panel flex min-h-[60px] w-full items-center gap-3 px-3 py-2 text-left transition-colors hover:border-line-strong aria-busy:opacity-60" aria-label={`Einheit mit ${s.name} starten`}>
               <Avatar name={s.name} size={40} />
               <span className="min-w-0 flex-1">
                 <span className="block truncate font-semibold">{s.name}</span>
                 <span className="block truncate text-[13px] text-ink-2">{s.subjects.join(", ") || klassenLabel(s.school_type, s.klasse, { short: true })}</span>
               </span>
               <Play size={18} className="shrink-0 text-accent" aria-hidden />
-            </button>
+            </FormKnopf>
           </form>
         </li>
       ))}

@@ -144,12 +144,12 @@ export async function setRoomActiveAction(roomId: number, active: boolean, formD
   redirect(mitMeldung(zurueck, ergebnis));
 }
 
-export async function deleteRoomAction(roomId: number, formData: FormData) {
+/** Leitet nicht um: gelöscht wird erst, wenn „Rückgängig“ abgelaufen ist (components/Meldung.tsx). */
+export async function deleteRoomAction(roomId: number): Promise<{ error?: string }> {
   const me = await requireTeacher();
-  const zurueck = pfadAus(formData, "/mehr/raeume");
   const ergebnis = planung.loescheRaum(me, roomId);
   aktualisiere("/mehr/raeume", "/lehrer");
-  redirect(mitMeldung(zurueck, ergebnis));
+  return ergebnis.ok ? {} : { error: ergebnis.fehler };
 }
 
 // ---------- Wochenplan (Phase 4) ----------

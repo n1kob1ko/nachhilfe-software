@@ -298,10 +298,12 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
         <div className="flex flex-wrap items-center gap-3">
           {!archivedAt && <ArchivKnopf action={archiveAssignmentAction.bind(null, assignment.id, `/schueler/${student.id}?tab=lernverlauf`)} />}
           <LoeschenMitWarnung
-            action={deleteAssignmentAction.bind(null, assignment.id, student.id)}
+            action={deleteAssignmentAction.bind(null, assignment.id)}
             label="Beim Schüler entfernen (mit Ergebnissen)"
             className="btn btn-danger btn-sm"
-            frage={`„${w.title}“ bei ${student.name} ganz entfernen? Das löscht ${finals.length ? `die ${finals.length} beantworteten Aufgaben` : "alle Antworten"} und die Dokumentation dazu, und es lässt sich nicht rückgängig machen. Zum Aufräumen ohne Verlust lieber „Archivieren“.`}
+            text={`„${w.title}“ bei ${student.name.split(" ")[0]} entfernt`}
+            zeile={`zuweisung-${assignment.id}`}
+            danach={`/schueler/${student.id}?tab=uebungen`}
           />
         </div>
       </div>

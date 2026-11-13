@@ -8,7 +8,7 @@ import { aiEnabled, analyzeWithAI } from "@/lib/ai";
 import { pct } from "@/lib/analysis";
 import { hasData, seedDemo } from "@/lib/demo";
 import { requireTeacher } from "@/lib/auth";
-import { deleteBillingEntry } from "@/lib/billing";
+import { DELETE_REFUSAL_TEXT, deleteBillingEntry } from "@/lib/billing";
 import { noteActivity } from "@/lib/learning";
 import * as repo from "@/lib/repo";
 import { dropFilesIfUnused, studentImageFiles } from "@/lib/picture-story";
@@ -165,16 +165,15 @@ export async function deleteLessonAction(id: number, studentId: number) {
 }
 
 /** Abrechnung: deletes an Einheit for good, then back to the same month and filters. */
-export async function deleteBillingEntryAction(id: number, formData: FormData) {
+/**
+ * Abrechnung: eine Einheit ganz löschen. Leitet nicht um: der Aufruf kommt erst, wenn „Rückgängig“ abgelaufen ist
+ * (components/Meldung.tsx), und die Lehrkraft ist dann vielleicht schon auf einer anderen Seite.
+ */
+export async function deleteBillingEntryAction(id: number): Promise<{ error?: string }> {
   const viewer = await requireTeacher();
   const r = deleteBillingEntry(id, viewer);
-  const from = new URLSearchParams(str(formData, "zurueck"));
-  const back = new URLSearchParams();
-  for (const k of ["monat", "lehrer", "schueler"]) if (from.get(k)) back.set(k, from.get(k)!);
-  if (r.ok) back.set("geloescht", "1");
-  else back.set("fehler", r.error);
   revalidatePath("/", "layout");
-  redirect(`/abrechnung?${back}`);
+  return r.ok ? {} : { error: DELETE_REFUSAL_TEXT[r.error] };
 }
 
 // ---------- homework & tests ----------
@@ -243,18 +242,18 @@ export async function assignWorksheetAction(formData: FormData) {
   revalidatePath("/", "layout");
 }
 
+// Beide leiten nicht um: die Seite wechselt schon beim Tipp zur Liste, gelöscht wird erst, wenn „Rückgängig“ abgelaufen ist
+// (components/Meldung.tsx, WegForm mit `danach`).
 export async function deleteWorksheetAction(id: number) {
   await requireTeacher();
   repo.deleteWorksheet(id);
   revalidatePath("/", "layout");
-  redirect("/uebungen");
 }
 
-export async function deleteAssignmentAction(id: number, studentId: number) {
+export async function deleteAssignmentAction(id: number) {
   await requireTeacher();
   repo.deleteAssignment(id);
   revalidatePath("/", "layout");
-  redirect(`/schueler/${studentId}?tab=uebungen`);
 }
 
 /**

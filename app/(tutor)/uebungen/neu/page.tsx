@@ -1,3 +1,4 @@
+import { WegForm } from "@/components/Meldung";
 import { BookmarkCheck, BookOpenText, ChevronRight, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { deleteTemplateAction, useTemplateAction } from "@/app/builder-actions";
@@ -58,7 +59,7 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
               const s = parseSettings(t.settings);
               const what = [t.subject, s.count && `${t.task_count ?? s.count} Aufgaben`, s.difficulty, ...(s.categories ?? []).map((c) => categoryLabel(t.subject, c))].filter(Boolean).join(" · ");
               return (
-                <li key={t.id} className="panel flex w-[260px] shrink-0 flex-col gap-2 px-4 py-3">
+                <li key={t.id} data-zeile={`vorlage-${t.id}`} className="panel flex w-[260px] shrink-0 flex-col gap-2 px-4 py-3">
                   <p className="font-semibold leading-snug">{t.name}</p>
                   <p className="text-[12.5px] text-ink-2">{what}</p>
                   <p className="text-[12px] text-ink-3">{t.source_worksheet_id ? "mit festen Aufgaben" : "Aufgaben werden neu erstellt"}{t.used_count ? ` · ${t.used_count}× verwendet` : ""}</p>
@@ -68,11 +69,11 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
                       {studentId && <input type="hidden" name="student_id" value={studentId} />}
                       <button className="btn btn-secondary w-full">Verwenden</button>
                     </form>
-                    <form action={deleteTemplateAction.bind(null, t.id)}>
+                    <WegForm action={deleteTemplateAction.bind(null, t.id)} zeile={`vorlage-${t.id}`} text={`Vorlage „${t.name}“ gelöscht`}>
                       <button className="btn btn-ghost btn-sm" aria-label={`Vorlage ${t.name} löschen`} title="Vorlage löschen">
                         <Trash2 size={14} aria-hidden />
                       </button>
-                    </form>
+                    </WegForm>
                   </div>
                 </li>
               );

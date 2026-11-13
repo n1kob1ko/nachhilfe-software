@@ -449,12 +449,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
               ) : (
                 <ArchivKnopf action={archiveWorksheetAction.bind(null, w.id, "/uebungen")} label="Übung archivieren" />
               )}
-              <LoeschenMitWarnung
-                action={deleteWorksheetAction.bind(null, w.id)}
-                label="Übung löschen"
-                className="btn btn-danger"
-                frage={`„${w.title}“ endgültig löschen? Das löscht auch ${assignments.length === 1 ? "die Antworten des Schülers" : assignments.length > 1 ? `die Antworten von ${assignments.length} Schülern` : "alle Antworten"} und die Dokumentation dazu, und es lässt sich nicht rückgängig machen. Zum Aufräumen ohne Verlust lieber „Archivieren“.`}
-              />
+              <LoeschenMitWarnung action={deleteWorksheetAction.bind(null, w.id)} label="Übung löschen" text={`„${w.title}“ gelöscht`} zeile={`uebung-${w.id}`} danach="/uebungen" />
             </div>
           </div>
         </div>

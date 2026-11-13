@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Ankunft, Ursprung } from "@/components/Bewegung";
+import { Meldungen } from "@/components/Meldung";
 import { NavWaechter } from "@/components/Navigation";
 
 // Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else. Both are in app/fonts
@@ -33,6 +34,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Ursprung />
         <Ankunft />
         <NavWaechter />
+        <Meldungen />
       </body>
     </html>
   );

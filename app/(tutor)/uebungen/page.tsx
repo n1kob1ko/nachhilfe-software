@@ -49,7 +49,7 @@ export default async function Worksheets({ searchParams }: { searchParams: Promi
             ? { tone: "amber", text: "begonnen" }
             : { tone: "neutral", text: "noch offen" };
     return (
-      <li key={w.id} className={inArchiv ? "flex flex-wrap items-center gap-x-2 pr-4 pb-2 sm:flex-nowrap sm:pb-0" : undefined}>
+      <li key={w.id} data-zeile={`uebung-${w.id}`} className={inArchiv ? "flex flex-wrap items-center gap-x-2 pr-4 pb-2 sm:flex-nowrap sm:pb-0" : undefined}>
         <Link href={`/uebungen/${w.id}`} className={`group flex min-h-[60px] min-w-0 flex-1 items-center gap-4 px-5 py-2.5 hover:bg-panel/60${inArchiv ? " basis-full sm:basis-auto" : ""}`}>
           <div className="min-w-0 flex-1">
             <p className="truncate font-medium group-hover:text-accent" title={w.title}>
