@@ -2,12 +2,16 @@ import Link from "next/link";
 import { Brand, Nav, TabBar } from "@/components/Nav";
 import { SeitenRahmen } from "@/components/Navigation";
 import { Avatar } from "@/components/Art";
+import { Befehle, BefehleKnopf } from "@/components/Befehle";
 import { FeedbackButton } from "@/components/FeedbackButton";
 import { RunningUnits } from "@/components/RunningUnits";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { requireTeacher } from "@/lib/auth";
 import { backfillAutoDocs } from "@/lib/autodoc";
+import { erweitertGruppen } from "@/lib/erweitert";
 import { sweepIdleUnits } from "@/lib/learning";
+import { listStudents } from "@/lib/repo";
+import { klassenLabel } from "@/lib/school";
 import { platzFuerEinheit, runningUnits } from "@/lib/units";
 import { zeitfenster } from "@/lib/planung/heute";
 
@@ -29,6 +33,11 @@ export default async function TutorLayout({ children }: { children: React.ReactN
   });
   // welche Einheiten laufen (auch die anderer Lehrkräfte): ihre Seite gehört zu „Unterricht“, eine beendete zu „Abschluss“
   const laufend = runningUnits().map((u) => u.id);
+  // Befehlsmenü (Strg+K): alle Schüler und jede Seite von „Erweitert“, die diese Rolle sieht
+  const befehlSeiten = erweitertGruppen(teacher, { offen: 0, offenesFeedback: 0 })
+    .flatMap((g) => g.items)
+    .map(({ href, label, hint }) => ({ href, label, hint }));
+  const befehlSchueler = listStudents().map((s) => ({ id: s.id, name: s.name, klasse: klassenLabel(s.school_type, s.klasse, { short: true }) }));
   // am Telefon nur das Bild: neben Feedback und Dunkelmodus ist für den Namen kein Platz
   const me = (kompakt = false) => (
     <Link href="/mehr" className={`treffer flex items-center gap-2.5 rounded-full text-[14px] transition-colors hover:bg-surface ${kompakt ? "p-1" : "py-1 pr-3 pl-1"}`} title="Konto und Einstellungen">
@@ -51,7 +60,10 @@ export default async function TutorLayout({ children }: { children: React.ReactN
       </header>
       <aside className="no-print hidden border-r border-line md:sticky md:top-0 md:flex md:h-screen md:flex-col md:px-4 md:py-6">
         <Brand />
-        <div className="mt-8">
+        <div className="mt-6">
+          <BefehleKnopf />
+        </div>
+        <div className="mt-4">
           <Nav laufend={laufend} />
         </div>
         <div className="mt-auto space-y-2">
@@ -69,6 +81,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
         </div>
       </main>
       <TabBar laufend={laufend} />
+      <Befehle seiten={befehlSeiten} schueler={befehlSchueler} />
     </div>
   );
 }
