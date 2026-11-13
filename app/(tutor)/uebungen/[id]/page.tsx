@@ -471,7 +471,7 @@ function FreigabeWahl({ assignmentId, student, current }: { assignmentId: number
             <button
               aria-pressed={f === current}
               title={FREIGABE_INFO[f]}
-              className={`inline-flex min-h-[36px] items-center rounded-full px-3 text-[12.5px] font-semibold ${f === current ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-accent"}`}
+              className={`treffer inline-flex min-h-[36px] items-center rounded-full px-3 text-[12.5px] font-semibold ${f === current ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-accent"}`}
             >
               {FREIGABE_LABEL[f]}
             </button>

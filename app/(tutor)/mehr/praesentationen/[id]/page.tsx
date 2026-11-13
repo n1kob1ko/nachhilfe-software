@@ -217,7 +217,7 @@ export default async function PraesentationPage({ params, searchParams }: { para
               <ul className="flex flex-wrap gap-2">
                 {pakete.map((x) => (
                   <li key={x.id}>
-                    <Link href={`/mehr/lernpakete/${x.id}`} className="inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-accent-wash px-3 text-[14px] font-semibold text-accent hover:underline">
+                    <Link href={`/mehr/lernpakete/${x.id}`} className="treffer inline-flex min-h-[40px] items-center gap-1.5 rounded-full bg-accent-wash px-3 text-[14px] font-semibold text-accent hover:underline">
                       <Package size={15} aria-hidden /> {x.title}
                     </Link>
                   </li>

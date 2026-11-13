@@ -217,7 +217,12 @@ textarea,
 select {
   caret-color: var(--accent);
 }
-.num {
+/* Ziffern gleich breit, damit Zahlen untereinander stehen und sich beim Zählen nichts verschiebt (niko, 13.11.2026):
+   in jeder Tabelle, auf Kennzahlen, in Zeitangaben und überall, wo `.num` steht. Fließtext behält seine normalen Ziffern. */
+.num,
+table,
+time,
+.kennzahl {
   font-variant-numeric: tabular-nums;
 }
 a.link,
@@ -225,9 +230,11 @@ button.link {
   color: var(--accent);
   text-underline-offset: 3px;
 }
-a.link:hover,
-button.link:hover {
-  text-decoration: underline;
+@media (hover: hover) {
+  a.link:hover,
+  button.link:hover {
+    text-decoration: underline;
+  }
 }
 
 /* form controls */
@@ -254,8 +261,10 @@ button.link:hover {
 .input::placeholder {
   color: var(--ink-3);
 }
-.input:hover {
-  border-color: var(--line-hover);
+@media (hover: hover) {
+  .input:hover {
+    border-color: var(--line-hover);
+  }
 }
 .input:focus {
   outline: none;
@@ -306,30 +315,38 @@ textarea.input {
   color: var(--on-fill);
   box-shadow: 0 6px 16px -8px rgba(29, 99, 196, 0.55);
 }
-.btn-primary:hover:not(:disabled) {
-  background: var(--accent-hover);
+@media (hover: hover) {
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-hover);
+  }
 }
 .btn-secondary {
   background: var(--surface);
   color: var(--ink);
   border: 1px solid var(--line-strong);
 }
-.btn-secondary:hover:not(:disabled) {
-  border-color: var(--accent-bright);
-  background: var(--paper);
+@media (hover: hover) {
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--accent-bright);
+    background: var(--paper);
+  }
 }
 .btn-ghost {
   color: var(--ink-2);
 }
-.btn-ghost:hover:not(:disabled) {
-  background: var(--panel);
-  color: var(--ink);
+@media (hover: hover) {
+  .btn-ghost:hover:not(:disabled) {
+    background: var(--panel);
+    color: var(--ink);
+  }
 }
 .btn-danger {
   color: var(--red);
 }
-.btn-danger:hover:not(:disabled) {
-  background: var(--red-wash);
+@media (hover: hover) {
+  .btn-danger:hover:not(:disabled) {
+    background: var(--red-wash);
+  }
 }
 .btn-sm {
   min-height: 36px;
@@ -346,16 +363,38 @@ textarea.input {
 .btn-reihe .btn-lg {
   padding: 0 20px;
 }
-/* touch screens: small buttons still get a finger-sized target */
+/* ---------- Trefferflächen ----------
+ * niko, 13.11.2026 (Fitts, Hit Slop): am Finger ist alles Tippbare mindestens 44 × 44 px groß. Am Laptop bleibt es kompakt.
+ * - Was klein aussehen soll, behält seine Größe und bekommt eine unsichtbare Fläche darum. Die Fläche ist genau so viel
+ *   größer, wie zu 44 px fehlt, und nie kleiner als das Element. Von selbst haben sie: kleine Knöpfe (`.btn-sm`),
+ *   Text-Links (`a.link`, `button.link` und jeder Link oder Knopf mit `hover:underline` oder `hover:text-accent`),
+ *   `.drueck` und Zeilen zum Aufklappen (`summary.cursor-pointer`). Alles andere, das kleiner ist (Filter-Kacheln mit
+ *   36 px, runde Icon-Knöpfe, das Häkchen einer Hausübung), bekommt die Klasse `.treffer`.
+ * - Felder zum Schreiben und Auswählen und Zeilen zum Ankreuzen wachsen auf 44 px.
+ * - Schneidet das Element seinen Inhalt ab (`truncate`), wirkt die Fläche nicht: dort `-my-2.5 py-2.5`.
+ * Dichte Raster (Verfügbarkeit im Viertelstunden-Takt) bleiben, wie sie sind: dort zählt die Übersicht.
+ */
 @media (pointer: coarse) {
-  .btn-sm {
+  :where(.treffer, .btn-sm, a.link, button.link, .drueck, summary.cursor-pointer, :is(a, button):is([class*="hover:underline"], [class*="hover:text-accent"])):where(:not(.absolute, .fixed, .sticky)) {
+    position: relative;
+  }
+  :where(.treffer, .btn-sm, a.link, button.link, .drueck, summary.cursor-pointer, :is(a, button):is([class*="hover:underline"], [class*="hover:text-accent"]))::after {
+    content: "";
+    position: absolute;
+    top: min(0px, calc((100% - 44px) / 2));
+    bottom: min(0px, calc((100% - 44px) / 2));
+    left: min(0px, calc((100% - 44px) / 2));
+    right: min(0px, calc((100% - 44px) / 2));
+  }
+  /* Kästchen und Punkte zum Ankreuzen: die ganze Zeile ist das Ziel, eine Fingerbreite hoch */
+  label:where(.cursor-pointer):has(input:is([type="checkbox"], [type="radio"])) {
     min-height: 44px;
   }
-  /* select fields too: 39 px in the Schreibauftrag form on the tablet (Abnahme, 25.10.2026) */
-  select.input {
+  /* Felder: 39 px waren am Tablet knapp (Abnahme, 25.10.2026: Auswahl-Felder), und neben einem Knopf standen sie tiefer */
+  .input:where(:not(textarea)) {
     min-height: 44px;
   }
-  select.input.input-sm {
+  .input.input-sm:where(:not(textarea)) {
     height: 44px;
   }
 }
@@ -386,17 +425,21 @@ textarea.input {
   color: #1d63c4;
   box-shadow: 0 6px 16px -10px rgba(10, 30, 70, 0.5);
 }
-.buehne .btn-primary:hover:not(:disabled) {
-  background: #eef4fd;
+@media (hover: hover) {
+  .buehne .btn-primary:hover:not(:disabled) {
+    background: #eef4fd;
+  }
 }
 .buehne .btn-secondary {
   background: rgba(255, 255, 255, 0.08);
   border-color: rgba(255, 255, 255, 0.22);
   color: #fff;
 }
-.buehne .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.14);
-  border-color: rgba(255, 255, 255, 0.4);
+@media (hover: hover) {
+  .buehne .btn-secondary:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
 }
 .buehne .link,
 .buehne a.link {
@@ -449,9 +492,11 @@ textarea.input {
 .kennzahl-voll .kennzahl-zusatz {
   color: #d8e6fb;
 }
-.kennzahl.kennzahl-voll:hover {
-  border-color: transparent;
-  filter: brightness(1.04);
+@media (hover: hover) {
+  .kennzahl.kennzahl-voll:hover {
+    border-color: transparent;
+    filter: brightness(1.04);
+  }
 }
 /* Breite Tabellen scrollen in ihrem Kasten. Ohne contain zählt Chrome am Handy den verdeckten Teil trotzdem zur
    Seitenbreite und zieht die ganze Ansicht auseinander (Schüler › Übungen & Verlauf wurde 590 px breit). */

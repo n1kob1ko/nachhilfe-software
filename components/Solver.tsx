@@ -756,7 +756,7 @@ function TaskCard({
                     disabled={final}
                     onClick={() => wortRein(w)}
                     aria-label={benutzt ? `${w}, schon verwendet` : w}
-                    className={`min-h-[40px] rounded-lg border px-3 text-[16px] font-medium transition-colors ${
+                    className={`treffer min-h-[40px] rounded-lg border px-3 text-[16px] font-medium transition-colors ${
                       benutzt ? "border-line text-ink-3 line-through" : "border-line-strong bg-surface hover:border-ink-3"
                     }`}
                   >

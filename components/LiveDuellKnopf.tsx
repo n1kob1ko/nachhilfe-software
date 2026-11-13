@@ -88,7 +88,7 @@ export function LiveDuellKnopf({ aId, bId }: { aId: number; bId: number }) {
                     type="button"
                     aria-pressed={s === art}
                     onClick={() => setArt(s)}
-                    className={`min-h-[40px] rounded-full px-3 text-[14px] font-semibold ${s === art ? "bg-ink text-surface" : "bg-panel text-ink"}`}
+                    className={`treffer min-h-[40px] rounded-full px-3 text-[14px] font-semibold ${s === art ? "bg-ink text-surface" : "bg-panel text-ink"}`}
                   >
                     {SPIEL_TITEL[s]}
                   </button>

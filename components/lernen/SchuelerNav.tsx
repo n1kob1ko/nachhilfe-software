@@ -55,7 +55,7 @@ export function SchuelerNav({ token, spieleHinweis = 0 }: { token: string; spiel
         {SEITEN.map(({ key, label, icon: Icon, vor }) => {
           const active = aktiv === key;
           return (
-            <Vor key={key} vor={vor} href={href(key)} aria-current={active ? "page" : undefined} data-gleit-ziel className={`inline-flex min-h-[40px] items-center gap-2 rounded-full px-4 text-[15px] font-semibold whitespace-nowrap transition-colors ${active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}>
+            <Vor key={key} vor={vor} href={href(key)} aria-current={active ? "page" : undefined} data-gleit-ziel className={`treffer inline-flex min-h-[40px] items-center gap-2 rounded-full px-4 text-[15px] font-semibold whitespace-nowrap transition-colors ${active ? "bg-surface text-ink shadow-[var(--shadow-card)]" : "text-ink-2 hover:text-ink"}`}>
               <Icon size={17} aria-hidden /> {label}
               {key === "spiele" && spieleHinweis > 0 && <span className="h-2 w-2 rounded-full bg-[var(--red)]" aria-label={spieleHinweis === 1 ? "ein Duell wartet" : `${spieleHinweis} Duelle warten`} />}
             </Vor>

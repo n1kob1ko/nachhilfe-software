@@ -40,7 +40,7 @@ export function ErrorTypeSelect({
   return (
     <span className="inline-flex flex-wrap items-center gap-1.5">
       <select
-        className={`min-h-[36px] rounded-md border px-2 text-[13px] ${unconfirmed ? "border-dashed border-line-strong bg-surface text-ink-2" : value ? "border-amber/40 bg-amber-wash text-amber" : "border-line bg-surface text-ink-3"}`}
+        className={`min-h-[36px] rounded-md border px-2 text-[13px] pointer-coarse:min-h-[44px] ${unconfirmed ? "border-dashed border-line-strong bg-surface text-ink-2" : value ? "border-amber/40 bg-amber-wash text-amber" : "border-line bg-surface text-ink-3"}`}
         value={value}
         onChange={(e) => save(e.target.value)}
         disabled={pending}

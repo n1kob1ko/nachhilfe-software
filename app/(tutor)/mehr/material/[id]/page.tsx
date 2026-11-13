@@ -344,7 +344,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
           <ul className="mb-4 flex flex-wrap gap-2">
             {taken.map((t) => (
               <li key={t.id}>
-                <Link href={`/uebungen/bibliothek/${t.id}`} className="inline-flex min-h-[40px] items-center rounded-full border border-line bg-surface px-3 text-[13.5px] hover:border-accent">
+                <Link href={`/uebungen/bibliothek/${t.id}`} className="treffer inline-flex min-h-[40px] items-center rounded-full border border-line bg-surface px-3 text-[13.5px] hover:border-accent">
                   {t.title}
                 </Link>
               </li>

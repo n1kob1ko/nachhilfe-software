@@ -32,7 +32,7 @@ export default async function ReferenzenPage({ searchParams }: { searchParams: P
     return q.size ? `${RS}?${q}` : RS;
   };
   const chip = (aktiv: boolean) =>
-    `inline-flex min-h-[40px] items-center rounded-full border px-4 text-[14px] ${aktiv ? "border-accent bg-accent-wash font-semibold text-accent" : "border-line bg-surface hover:border-accent"}`;
+    `treffer inline-flex min-h-[40px] items-center rounded-full border px-4 text-[14px] ${aktiv ? "border-accent bg-accent-wash font-semibold text-accent" : "border-line bg-surface hover:border-accent"}`;
 
   return (
     <>

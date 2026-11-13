@@ -72,7 +72,7 @@ export default async function UnterrichtPage() {
               Einheit starten
             </FormKnopf>
           </form>
-          <Link href="/" className="w-fit text-[14px] font-medium text-accent hover:underline">
+          <Link href="/" className="treffer w-fit text-[14px] font-medium text-accent hover:underline">
             Alle Schüler von heute
           </Link>
         </section>

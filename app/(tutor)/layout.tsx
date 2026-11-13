@@ -31,7 +31,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
   const laufend = runningUnits().map((u) => u.id);
   // am Telefon nur das Bild: neben Feedback und Dunkelmodus ist für den Namen kein Platz
   const me = (kompakt = false) => (
-    <Link href="/mehr" className={`flex items-center gap-2.5 rounded-full text-[14px] transition-colors hover:bg-surface ${kompakt ? "p-1" : "py-1 pr-3 pl-1"}`} title="Konto und Einstellungen">
+    <Link href="/mehr" className={`treffer flex items-center gap-2.5 rounded-full text-[14px] transition-colors hover:bg-surface ${kompakt ? "p-1" : "py-1 pr-3 pl-1"}`} title="Konto und Einstellungen">
       <Avatar name={teacher.name} size={32} />
       <span className={kompakt ? "sr-only" : "min-w-0"}>
         <span className="block truncate font-semibold">{teacher.name}</span>

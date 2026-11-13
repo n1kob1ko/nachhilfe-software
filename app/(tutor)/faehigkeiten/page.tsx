@@ -118,7 +118,7 @@ export default async function SkillsPage({ searchParams }: { searchParams: Promi
               {areas
                 .filter((a) => a !== area)
                 .map((a) => (
-                  <Link key={a} href={href({ fach: subject!, schulart: branch!.key, klasse: String(klasse), thema: a })} className="inline-flex min-h-[40px] items-center rounded-full bg-panel px-4 text-[14px] text-ink-2 hover:text-ink">
+                  <Link key={a} href={href({ fach: subject!, schulart: branch!.key, klasse: String(klasse), thema: a })} className="treffer inline-flex min-h-[40px] items-center rounded-full bg-panel px-4 text-[14px] text-ink-2 hover:text-ink">
                     {a}
                   </Link>
                 ))}

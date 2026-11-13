@@ -249,7 +249,7 @@ export function ProbeExtern({
                       <li key={`${f.name}${i}`} className="flex min-w-0 items-center gap-1.5">
                         <FileText size={14} className="shrink-0 text-ink-3" aria-hidden />
                         <span className="min-w-0 flex-1 truncate">{f.name}</span>
-                        <button type="button" onClick={() => setDateien((d) => ({ ...d, [feld]: d[feld].filter((_, j) => j !== i) }))} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 hover:text-red" aria-label={`${f.name} entfernen`}>
+                        <button type="button" onClick={() => setDateien((d) => ({ ...d, [feld]: d[feld].filter((_, j) => j !== i) }))} className="treffer flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-ink-3 hover:text-red" aria-label={`${f.name} entfernen`}>
                           <X size={15} aria-hidden />
                         </button>
                       </li>

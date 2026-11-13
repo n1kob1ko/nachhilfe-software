@@ -97,7 +97,7 @@ export function Lernverlauf({ student, filter }: { student: repo.Student; filter
               key={k}
               href={`/schueler/${student.id}?tab=lernverlauf${k === "alle" ? "" : `&art=${k}`}`}
               aria-current={art === k ? "true" : undefined}
-              className={`inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${art === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
+              className={`treffer inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-medium ${art === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
             >
               {label}
               <span className="num ml-1.5 opacity-70">{count[k]}</span>
@@ -307,7 +307,7 @@ function Overview({ student }: { student: repo.Student }) {
             <th className="px-4 py-2.5 font-sans font-semibold">Fähigkeit</th>
             {idx.map((i) => (
               <th key={p.units[i].unitId} className="px-2 py-2.5 text-right font-semibold">
-                <Link href={`/einheiten/${p.units[i].unitId}`} className="hover:text-accent" title={`Einheit ${i + 1}`}>
+                <Link href={`/einheiten/${p.units[i].unitId}`} className="treffer hover:text-accent" title={`Einheit ${i + 1}`}>
                   {formatDate(p.units[i].at, { day: "numeric", month: "numeric" })}
                 </Link>
               </th>

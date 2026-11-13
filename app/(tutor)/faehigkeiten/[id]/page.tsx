@@ -243,7 +243,7 @@ export default async function SkillPage({ params, searchParams }: { params: Prom
             <SectionTitle>Baut darauf auf</SectionTitle>
             <div className="flex flex-wrap gap-1.5">
               {next.map((n) => (
-                <Link key={n} href={`/faehigkeiten/${encodeURIComponent(n)}`} className="inline-flex min-h-[40px] items-center rounded-full bg-panel px-4 text-[14px] text-ink-2 hover:text-ink">
+                <Link key={n} href={`/faehigkeiten/${encodeURIComponent(n)}`} className="treffer inline-flex min-h-[40px] items-center rounded-full bg-panel px-4 text-[14px] text-ink-2 hover:text-ink">
                   {label(n)}
                 </Link>
               ))}
