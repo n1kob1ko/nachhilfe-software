@@ -121,7 +121,7 @@ export function Nav({ laufend = [] }: { laufend?: number[] }) {
  */
 export function Brand() {
   return (
-    <Link href="/jetzt" className="flex items-center gap-2.5 rounded-2xl">
+    <Link href="/jetzt" className="treffer flex items-center gap-2.5 rounded-2xl">
       <BrandMark height={38} />
       <span className="leading-tight">
         <span className="display block text-[18px] font-semibold tracking-[-0.01em]">DreamStudy</span>

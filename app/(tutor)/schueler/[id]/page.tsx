@@ -82,7 +82,7 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
 
   return (
     <>
-      <Link href="/schueler" className="no-print mb-3 inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
+      <Link href="/schueler" className="no-print mb-3 treffer inline-flex min-h-[36px] items-center gap-1 text-[14px] font-medium text-ink-2 hover:text-ink">
         ← Alle Schüler
       </Link>
       <header className="mb-6 flex items-center gap-4">
@@ -1084,7 +1084,7 @@ function School({ student }: { student: repo.Student }) {
                   </span>
                 ) : (
                   <form action={setHomeworkStatusAction.bind(null, h.id, student.id, done ? "offen" : "erledigt")}>
-                    <button className={`mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
+                    <button className={`treffer mt-0.5 ${done ? "text-green" : "text-ink-3 hover:text-ink"}`} aria-label={done ? "Als offen markieren" : "Als erledigt markieren"}>
                       {done ? <CheckCircle2 size={18} /> : <Circle size={18} />}
                     </button>
                   </form>

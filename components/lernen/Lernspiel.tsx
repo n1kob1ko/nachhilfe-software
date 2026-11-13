@@ -566,7 +566,7 @@ export function Lernspiel({
 
   const kopf = (
     <div className="ls-kopf">
-      <ZuLink href={zurueck} className="ls-zu" aria-label="Spiel schließen">
+      <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </ZuLink>
       {phase === "spiel" && endlos ? (

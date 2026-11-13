@@ -106,7 +106,7 @@ export default async function MaterialsPage({ searchParams }: { searchParams: Pr
             <Link
               key={s ?? "alle"}
               href={s ? `/mehr/material?fach=${encodeURIComponent(s)}` : "/mehr/material"}
-              className={`inline-flex min-h-[40px] items-center rounded-full border px-4 text-[14px] ${sp.fach === s ? "border-accent bg-accent-wash font-semibold text-accent" : "border-line bg-surface hover:border-accent"}`}
+              className={`treffer inline-flex min-h-[40px] items-center rounded-full border px-4 text-[14px] ${sp.fach === s ? "border-accent bg-accent-wash font-semibold text-accent" : "border-line bg-surface hover:border-accent"}`}
               aria-current={sp.fach === s ? "page" : undefined}
             >
               {s ?? "Alle"}

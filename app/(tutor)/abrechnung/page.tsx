@@ -165,7 +165,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                           <div className="flex items-baseline justify-between gap-3">
                             <Link
                               href={r.unit_id ? `/einheiten/${r.unit_id}` : `/schueler/${r.student_id}/stunden/${r.id}`}
-                              className="min-w-0 truncate text-[16px] font-semibold hover:text-accent"
+                              className="-my-2.5 min-w-0 truncate py-2.5 text-[16px] font-semibold hover:text-accent"
                             >
                               {r.student_name}
                             </Link>
@@ -215,7 +215,7 @@ export default async function Billing({ searchParams }: { searchParams: Promise<
                     </td>
                     <td className="px-3 py-3 whitespace-nowrap">{r.teacher_name ?? <span className="text-red">offen</span>}</td>
                     <td className="px-3 py-3 whitespace-nowrap">
-                      <Link href={r.unit_id ? `/einheiten/${r.unit_id}` : `/schueler/${r.student_id}/stunden/${r.id}`} className="hover:text-accent">
+                      <Link href={r.unit_id ? `/einheiten/${r.unit_id}` : `/schueler/${r.student_id}/stunden/${r.id}`} className="treffer hover:text-accent">
                         {r.student_name}
                       </Link>
                     </td>

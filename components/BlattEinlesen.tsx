@@ -644,7 +644,7 @@ export function BlattEinlesen({
                         </p>
                       )}
                     </div>
-                    <button type="button" className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-ink-3 transition-colors hover:bg-panel hover:text-red" onClick={() => setZeilen(zeilen.filter((x) => x.k !== z.k))} aria-label={`Aufgabe ${i + 1} entfernen`}>
+                    <button type="button" className="treffer flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-ink-3 transition-colors hover:bg-panel hover:text-red" onClick={() => setZeilen(zeilen.filter((x) => x.k !== z.k))} aria-label={`Aufgabe ${i + 1} entfernen`}>
                       <Trash2 size={16} aria-hidden />
                     </button>
                   </div>

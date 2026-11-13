@@ -208,7 +208,7 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
                                 formAction={an ? undefined : setTeacherRoleAction.bind(null, t.id, rolle)}
                                 aria-pressed={an}
                                 disabled={!an && rolle === "lehrer" && letzteVerwaltung}
-                                className={`min-h-[34px] rounded-full px-3 text-[13px] font-semibold disabled:opacity-50 ${an ? "bg-accent text-on-fill" : "text-ink-2 hover:text-ink"}`}
+                                className={`treffer min-h-[34px] rounded-full px-3 text-[13px] font-semibold disabled:opacity-50 ${an ? "bg-accent text-on-fill" : "text-ink-2 hover:text-ink"}`}
                               >
                                 {rolle === "lehrer" ? "Lehrer" : "Verwaltung"}
                               </button>

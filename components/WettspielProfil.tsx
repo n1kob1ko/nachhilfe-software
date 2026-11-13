@@ -39,7 +39,7 @@ export function WettspielProfil({ student }: { student: Student }) {
             <button
               type="submit"
               aria-pressed={e === w.wert}
-              className={`min-h-[40px] rounded-full px-3.5 text-[14px] font-semibold ${e === w.wert ? "bg-ink text-surface" : "bg-panel text-ink hover:bg-line"}`}
+              className={`treffer min-h-[40px] rounded-full px-3.5 text-[14px] font-semibold ${e === w.wert ? "bg-ink text-surface" : "bg-panel text-ink hover:bg-line"}`}
             >
               {w.text}
             </button>
@@ -47,7 +47,7 @@ export function WettspielProfil({ student }: { student: Student }) {
         ))}
         {p && (
           <form action={spielprofilLoeschenAction.bind(null, student.id)}>
-            <button type="submit" className="min-h-[40px] px-2 text-[14px] font-medium text-accent hover:underline">
+            <button type="submit" className="treffer min-h-[40px] px-2 text-[14px] font-medium text-accent hover:underline">
               Spielnamen zurücksetzen
             </button>
           </form>

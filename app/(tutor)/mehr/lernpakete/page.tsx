@@ -221,7 +221,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
                 key={k || "alle"}
                 href={href({ ...current, status: k })}
                 aria-current={(status ?? "") === k ? "true" : undefined}
-                className={`inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium ${(status ?? "") === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
+                className={`treffer inline-flex min-h-[40px] items-center gap-1.5 rounded-full px-4 text-[14px] font-medium ${(status ?? "") === k ? "bg-accent text-on-fill" : "bg-panel text-ink-2 hover:text-ink"}`}
               >
                 {l} <span className="num opacity-75">{n}</span>
               </Link>
@@ -253,7 +253,7 @@ export default async function LernpaketePage({ searchParams }: { searchParams: P
           {active.length > 0 && (
             <div className="mb-4 flex flex-wrap gap-1.5" aria-label="Aktive Filter">
               {active.map((k) => (
-                <Link key={k} href={href({ ...current, [k]: undefined })} className="inline-flex min-h-[36px] items-center gap-1 rounded-full bg-accent-wash px-3 text-[13px] font-medium text-accent" aria-label={`Filter ${label(k, sp[k]!)} entfernen`}>
+                <Link key={k} href={href({ ...current, [k]: undefined })} className="treffer inline-flex min-h-[36px] items-center gap-1 rounded-full bg-accent-wash px-3 text-[13px] font-medium text-accent" aria-label={`Filter ${label(k, sp[k]!)} entfernen`}>
                   {label(k, sp[k]!)} <X size={13} aria-hidden />
                 </Link>
               ))}

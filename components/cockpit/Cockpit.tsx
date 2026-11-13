@@ -44,7 +44,7 @@ export function PaketKopf({ c, paket, warum, entfernen, children }: { c: Cockpit
         <BookMarked size={18} className="shrink-0 text-accent" aria-hidden />
         <h2 className="text-[19px] leading-tight font-semibold">{paket.title}</h2>
         <StatusPill p={paket} />
-        <Link href={`${LP}/${paket.id}`} className="ml-auto inline-flex min-h-[36px] items-center gap-1 text-[13px] font-medium text-ink-2 hover:text-ink">
+        <Link href={`${LP}/${paket.id}`} className="ml-auto treffer inline-flex min-h-[36px] items-center gap-1 text-[13px] font-medium text-ink-2 hover:text-ink">
           Paket ansehen <ExternalLink size={13} aria-hidden />
         </Link>
         {entfernen && (

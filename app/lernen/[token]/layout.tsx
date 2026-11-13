@@ -33,7 +33,7 @@ export default async function LearnLayout({ children, params }: { children: Reac
     <div className="min-h-screen bg-paper">
       <header>
         <div className="mx-auto flex max-w-[860px] items-center justify-between px-4 py-3">
-          <a href={`/lernen/${token}`} className="display flex items-center gap-2.5 text-[17px] font-semibold">
+          <a href={`/lernen/${token}`} className="treffer display flex items-center gap-2.5 text-[17px] font-semibold">
             <BrandMark height={36} />
             DreamStudy
           </a>
