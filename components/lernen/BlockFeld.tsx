@@ -1,10 +1,12 @@
 "use client";
 
 import "./blockwerk.css";
-import { Zap } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { Flame, Zap } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
+import { Funkenregen, type FunkenApi } from "./Funkenregen";
+import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
 
 /**
@@ -15,6 +17,12 @@ import { vibriere } from "./SpielTeile";
  * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Passt kein Teil mehr und
  * ist kein Blitz da, kommt eine Rettungsfrage: richtig gibt einen Blitz, sonst ist das Spiel aus (`onEnde`).
  *
+ * Damit es packt (niko 2026-11-16: „süchtig machen … zu wenig flashyness“): die Frage schiebt sich unter dem Brett hoch
+ * (`frage`, components/lernen/BrettFrage.tsx), das Brett bleibt stehen. Drei Antworten beim ersten Versuch hintereinander
+ * sind **Fieber**: alles zählt doppelt (ab sechs dreifach), bis eine Antwort falsch ist. Eine schnelle Antwort bringt
+ * einen Bonus. Dazu Töne (klang.ts), Funken aus jeder geräumten Zelle (Funkenregen.tsx), ein Wackeln bei mehreren
+ * Linien, große Lobwörter und Punkte, die hochzählen.
+ *
  * Ziehen läuft ohne React-Zustand je Bewegung (nur transform am gezogenen Teil); neu gezeichnet wird nur, wenn das
  * Teil über ein anderes Feld rückt. Am Finger schwebt das Teil über dem Finger, damit man sieht, wo es landet.
  */
@@ -23,9 +31,19 @@ import { vibriere } from "./SpielTeile";
 export type BlockFrage = { grund: "teile" | "rettung"; vorschau: Teil[]; ladung: number };
 /** So viele richtige Antworten sind ein Blitz. */
 export const LADUNG = 3;
-export type BlockAntwort = { n: number; sauber: boolean };
+/** `schnell`: richtig innerhalb der Zeit der Frage (BrettFrage SCHNELL_MS) */
+export type BlockAntwort = { n: number; sauber: boolean; schnell?: boolean };
+/** So viele richtige Antworten am Stück sind Fieber (Punkte mal zwei), doppelt so viele mal drei. */
+export const FIEBER_AB = 3;
+export const fieberFaktor = (serie: number) => (serie >= FIEBER_AB * 2 ? 3 : serie >= FIEBER_AB ? 2 : 1);
+/** Bonus für eine schnelle richtige Antwort (mal dem Fieber). */
+export const SCHNELL_PUNKTE = 30;
+/** Die Farben der Teile für die Funken (wie --b-unten in blockwerk.css). */
+const FUNKEN_FARBEN = ["#3d86ff", "#ff5d50", "#22c283", "#ffb21f", "#8f6cff"];
+/** Lob nach der Zahl der Linien auf einmal */
+const LOB = ["", "", "Super!", "Stark!", "Wahnsinn!"];
 
-type Ansage = { n: number; text: string; art: "punkte" | "kombo" | "blitz" | "frei" };
+type Ansage = { n: number; text: string; art: "punkte" | "kombo" | "blitz" | "frei" | "lob" | "fieber"; x?: number; y?: number };
 type Vorschau = { r: number; s: number; ok: boolean; zellen: Set<number>; raeumt: Set<number>; farbe: number } | null;
 /** `zelle`: Kante eines Felds, `schritt`: Feld plus Lücke (so weit liegen zwei Felder auseinander) */
 type Zieh = { slot: number; teil: Teil; id: number; ox: number; oy: number; zelle: number; schritt: number; r: number; s: number; maus: boolean };
@@ -35,14 +53,17 @@ const LUECKE = 3;
 
 export function BlockFeld({
   aktiv,
+  frage,
   antwort,
   onFrage,
   onPunkte,
   onEnde,
   rekord,
 }: {
-  /** false, solange die Frage über dem Brett liegt */
+  /** false, solange die Frage über dem Brett liegt (ohne `frage`: auf eigenem Bildschirm) */
   aktiv: boolean;
+  /** die Frage unter dem Brett, wo sonst die Teile liegen */
+  frage?: ReactNode;
   antwort: BlockAntwort | null;
   onFrage: (f: BlockFrage) => void;
   onPunkte: (punkte: number) => void;
@@ -64,6 +85,11 @@ export function BlockFeld({
   const [zieht, setZieht] = useState<Zieh | null>(null);
   const [gelandet, setGelandet] = useState<{ zellen: Set<number>; n: number } | null>(null);
   const [blitzZiel, setBlitzZiel] = useState<number | null>(null);
+  // richtige Antworten beim ersten Versuch am Stück (ab FIEBER_AB: Fieber)
+  const [serie, setSerie] = useState(0);
+  const faktor = fieberFaktor(serie);
+  const funkenRef = useRef<FunkenApi | null>(null);
+  const rekordGeknackt = useRef(false);
 
   const brettRef = useRef<HTMLDivElement | null>(null);
   const ziehRef = useRef<HTMLDivElement | null>(null);
@@ -79,21 +105,52 @@ export function BlockFeld({
   }, []);
   useEffect(() => onPunkte(punkte), [punkte, onPunkte]);
 
-  const sage = useCallback((text: string, art: Ansage["art"]) => {
+  /** `x`, `y`: wo am Brett (in %, sonst in der Mitte) */
+  const sage = useCallback((text: string, art: Ansage["art"], wo?: { x: number; y: number }) => {
     const n = ++zaehler.current;
-    setAnsage((a) => [...a.slice(-2), { n, text, art }]);
-    setTimeout(() => setAnsage((a) => a.filter((x) => x.n !== n)), 1300);
+    setAnsage((a) => [...a.slice(-3), { n, text, art, ...wo }]);
+    setTimeout(() => setAnsage((a) => a.filter((x) => x.n !== n)), art === "lob" || art === "fieber" ? 1500 : 1300);
   }, []);
 
-  const zeigeWeg = useCallback((z: Zug, von: number | null) => {
-    if (!z.weg.length) return;
-    const n = ++zaehler.current;
-    // von der Stelle aus, an der das Teil lag, nach außen: die Linie „läuft“ weg
-    const r0 = von === null ? 3.5 : Math.floor(von / SEITE);
-    const s0 = von === null ? 3.5 : von % SEITE;
-    setWeg((w) => [...w, ...z.weg.map((x) => ({ ...x, n, v: Math.round(Math.hypot(Math.floor(x.i / SEITE) - r0, (x.i % SEITE) - s0) * 22) }))]);
-    setTimeout(() => setWeg((w) => w.filter((x) => x.n !== n)), 700);
+  /** Die Mitte eines Felds auf dem Bildschirm (für die Funken). */
+  const feldMitte = useCallback((i: number) => {
+    const b = brettRef.current;
+    if (!b) return null;
+    const rect = b.getBoundingClientRect();
+    const zelle = (rect.width - 2 * RAND - (SEITE - 1) * LUECKE) / SEITE;
+    return { x: rect.left + RAND + (i % SEITE) * (zelle + LUECKE) + zelle / 2, y: rect.top + RAND + Math.floor(i / SEITE) * (zelle + LUECKE) + zelle / 2 };
   }, []);
+
+  /** Das Brett wackelt (mehrere Linien, leeres Brett, Blitz). */
+  const wackle = useCallback((staerke: number) => {
+    const b = brettRef.current;
+    if (!b?.animate || reduziert.current) return;
+    const d = Math.min(9, 2 + staerke * 2);
+    b.animate([{ translate: "0 0" }, { translate: `${-d}px ${d * 0.4}px` }, { translate: `${d * 0.8}px ${-d * 0.5}px` }, { translate: `${-d * 0.5}px ${d * 0.3}px` }, { translate: `${d * 0.25}px 0` }, { translate: "0 0" }], {
+      duration: 320,
+      easing: "cubic-bezier(0.23, 1, 0.32, 1)",
+    });
+  }, []);
+
+  const zeigeWeg = useCallback(
+    (z: Zug, von: number | null) => {
+      if (!z.weg.length) return;
+      const n = ++zaehler.current;
+      // von der Stelle aus, an der das Teil lag, nach außen: die Linie „läuft“ weg
+      const r0 = von === null ? 3.5 : Math.floor(von / SEITE);
+      const s0 = von === null ? 3.5 : von % SEITE;
+      const mitV = z.weg.map((x) => ({ ...x, n, v: Math.round(Math.hypot(Math.floor(x.i / SEITE) - r0, (x.i % SEITE) - s0) * 22) }));
+      setWeg((w) => [...w, ...mitV]);
+      setTimeout(() => setWeg((w) => w.filter((x) => x.n !== n)), 700);
+      // aus jeder Zelle fliegen Funken, mit der Welle nach außen
+      const viele = mitV.length > 24;
+      for (const x of mitV) {
+        const m = feldMitte(x.i);
+        if (m) funkenRef.current?.burst(m.x, m.y, FUNKEN_FARBEN[x.farbe] ?? "#ffffff", { n: viele ? 4 : 6, verzoegerung: x.v / 1000 + 0.06, kraft: 0.8 });
+      }
+    },
+    [feldMitte],
+  );
 
   /** Nach einem Zug oder neuen Teilen: steckt das Spiel? Dann Blitz, sonst Rettungsfrage. */
   const pruefe = useCallback(
@@ -108,6 +165,7 @@ export function BlockFeld({
         return;
       }
       const f: BlockFrage = { grund: "rettung", vorschau: [], ladung: 0 };
+      klang.aus();
       wartend.current = f;
       setLage("frage");
       setTimeout(() => onFrage(f), reduziert.current ? 0 : 650);
@@ -122,6 +180,20 @@ export function BlockFeld({
     const f = wartend.current;
     if (!f) return;
     wartend.current = null;
+    // Fieber: richtige Antworten am Stück; eine falsche beendet es
+    const neueSerie = antwort.sauber ? serie + 1 : 0;
+    const neuFaktor = fieberFaktor(neueSerie);
+    setSerie(neueSerie);
+    if (neuFaktor > faktor) {
+      setTimeout(() => {
+        klang.fieber();
+        sage(neuFaktor === 2 ? "FIEBER! Punkte ×2" : "SUPERFIEBER! ×3", "fieber");
+        funkenRef.current?.regen(["#ffb21f", "#ff5d50", "#ffe27a", "#ffffff"], 50);
+      }, 420);
+    } else if (faktor > 1 && neuFaktor === 1) {
+      klang.fieberAus();
+      setTimeout(() => sage("Fieber vorbei", "kombo"), 200);
+    }
     // neue Teile: drei richtige Antworten laden einen Blitz; die Rettungsfrage gibt gleich einen
     const voll = f.grund === "rettung" || ladung + 1 >= LADUNG;
     const bl = antwort.sauber && voll ? Math.min(BLITZE_MAX, blitze + 1) : blitze;
@@ -132,19 +204,22 @@ export function BlockFeld({
     }
     if (f.grund === "teile") {
       if (antwort.sauber) {
-        setPunkte((p) => p + FRAGE_PUNKTE);
-        if (bl === blitze) setTimeout(() => sage(`+${FRAGE_PUNKTE}`, "punkte"), 260);
+        const bonus = (FRAGE_PUNKTE + (antwort.schnell ? SCHNELL_PUNKTE : 0)) * neuFaktor;
+        setPunkte((p) => p + bonus);
+        if (bl === blitze) setTimeout(() => sage(antwort.schnell ? `Blitzschnell! +${bonus}` : `+${bonus}`, "punkte"), 260);
       }
       setTeile(f.vorschau);
+      setTimeout(() => klang.teile(), 120);
       pruefe(brett, f.vorschau, bl);
     } else if (antwort.sauber) {
       setLage("eng");
       setZielen(true);
     } else {
       setLage("aus");
+      klang.aus();
       setTimeout(onEnde, reduziert.current ? 300 : 1400);
     }
-  }, [antwort, blitze, ladung, brett, pruefe, sage, onEnde]);
+  }, [antwort, blitze, ladung, brett, pruefe, sage, onEnde, serie, faktor]);
 
   /** Ein Teil liegt: abräumen, zählen, und wenn alle drei liegen, nach neuen fragen. */
   const lege = useCallback(
@@ -152,21 +227,50 @@ export function BlockFeld({
       const z = setze(brett, teil, r, s);
       const linien = z.reihen.length + z.spalten.length;
       const k = naechsteKombo(kombo.kombo, kombo.ohne, linien);
-      const p = punkteFuer(z, teil.zellen.length, k.kombo);
+      const p = punkteFuer(z, teil.zellen.length, k.kombo) * faktor;
       setBrett(z.brett);
       setKombo(k);
-      setPunkte((x) => x + p);
+      setPunkte((x) => {
+        const neu = x + p;
+        // der Rekord fällt: einmal je Spiel feiern
+        if (rekord > 0 && x <= rekord && neu > rekord && !rekordGeknackt.current) {
+          rekordGeknackt.current = true;
+          setTimeout(() => {
+            klang.rekord();
+            sage("Neuer Rekord!", "frei");
+            funkenRef.current?.regen(["#ffd76e", "#ffffff", "#47d89a", "#5aa0ff"], 70);
+          }, 700);
+        }
+        return neu;
+      });
       const rest = teile.map((t, i) => (i === slot ? null : t));
       setTeile(rest);
       const zellen = new Set(teil.zellen.map(([dr, ds]) => (r + dr) * SEITE + s + ds));
       setGelandet({ zellen, n: ++zaehler.current });
       zeigeWeg(z, r * SEITE + s);
+      // die Punkte stehen dort, wo das Teil liegt
+      const wo = { x: ((s + teil.breite / 2) / SEITE) * 100, y: ((r + teil.hoehe / 2) / SEITE) * 100 };
       if (linien > 0) {
-        vibriere(linien > 1 ? [18, 30, 18] : 18);
-        sage(`+${p}`, "punkte");
-        if (z.brett.every((x) => x === null)) setTimeout(() => sage("Alles frei!", "frei"), 160);
-        else if (k.kombo >= 2) setTimeout(() => sage(`Kombo ×${k.kombo}`, "kombo"), 160);
-      } else vibriere(8);
+        vibriere(linien > 1 ? [18, 30, 18, 30, 24] : 18);
+        klang.linie(linien, k.kombo);
+        sage(`+${p.toLocaleString("de-AT")}`, "punkte", wo);
+        const frei = z.brett.every((x) => x === null);
+        if (frei) {
+          setTimeout(() => {
+            klang.frei();
+            sage("Alles frei!", "frei");
+            funkenRef.current?.regen(FUNKEN_FARBEN, 110);
+          }, 160);
+          wackle(4);
+        } else if (linien >= 2) {
+          setTimeout(() => sage(LOB[Math.min(4, linien)], "lob"), 120);
+          wackle(linien);
+        }
+        if (!frei && k.kombo >= 2) setTimeout(() => sage(`Kombo ×${k.kombo}`, "kombo"), linien >= 2 ? 520 : 160);
+      } else {
+        vibriere(8);
+        klang.setzen();
+      }
       if (rest.every((t) => !t)) {
         const f: BlockFrage = { grund: "teile", vorschau: neueTeile(z.brett), ladung };
         wartend.current = f;
@@ -177,7 +281,7 @@ export function BlockFeld({
       }
       pruefe(z.brett, rest, blitze);
     },
-    [brett, kombo, teile, blitze, ladung, zeigeWeg, sage, onFrage, pruefe],
+    [brett, kombo, teile, blitze, ladung, zeigeWeg, sage, onFrage, pruefe, faktor, rekord, wackle],
   );
 
   const blitzAuf = useCallback(
@@ -190,6 +294,8 @@ export function BlockFeld({
       setZielen(false);
       setBlitzZiel(null);
       zeigeWeg(z, i);
+      klang.blitz();
+      wackle(2);
       vibriere([14, 24, 30]);
       pruefe(z.brett, teile, bl);
     },
@@ -210,6 +316,7 @@ export function BlockFeld({
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
     setZielen(false);
+    klang.heben();
     const rect = b.getBoundingClientRect();
     const zelle = (rect.width - 2 * RAND - (SEITE - 1) * LUECKE) / SEITE;
     const schritt = zelle + LUECKE;
@@ -292,15 +399,29 @@ export function BlockFeld({
               : "";
 
   return (
-    <div className="bw" data-aktiv={aktiv ? "" : undefined} hidden={!aktiv} data-lage={lage}>
+    <div className="bw" data-aktiv={aktiv ? "" : undefined} hidden={!aktiv} data-lage={lage} data-fieber={faktor > 1 ? faktor : undefined} data-frage-da={frage ? "" : undefined}>
+      <Funkenregen ref={funkenRef} />
       <div className="bw-stand">
-        <span className="bw-kombo" data-an={kombo.kombo >= 2 ? "" : undefined} aria-hidden={kombo.kombo < 2}>
-          Kombo ×{Math.max(2, kombo.kombo)}
-        </span>
+        <div className="bw-links">
+          {/* die Serie: drei richtige Antworten am Stück sind Fieber */}
+          <span className="bw-serie" data-fieber={faktor > 1 ? "" : undefined} aria-label={faktor > 1 ? `Fieber: Punkte mal ${faktor}` : `${serie} von ${FIEBER_AB} richtigen Antworten bis zum Fieber`} data-testid="bw-serie">
+            <Flame size={16} strokeWidth={2.2} fill={serie > 0 ? "currentColor" : "none"} aria-hidden />
+            {faktor > 1 ? (
+              <b key={faktor}>×{faktor}</b>
+            ) : (
+              <span className="bw-serie-punkte" aria-hidden>
+                {Array.from({ length: FIEBER_AB }, (_, i) => (
+                  <i key={i} data-an={i < serie ? "" : undefined} />
+                ))}
+              </span>
+            )}
+          </span>
+          <span className="bw-kombo" data-an={kombo.kombo >= 2 ? "" : undefined} aria-hidden={kombo.kombo < 2}>
+            Kombo ×{Math.max(2, kombo.kombo)}
+          </span>
+        </div>
         <div className="bw-punkte" aria-live="polite" aria-label={`${punkte} Punkte`} data-testid="bw-punkte">
-          <b key={punkte} data-neu={punkte ? "" : undefined}>
-            {punkte.toLocaleString("de-AT")}
-          </b>
+          <ZaehlZahl wert={punkte} />
           <small>{rekord > 0 ? (punkte > rekord ? "Neuer Rekord!" : `Rekord ${rekord.toLocaleString("de-AT")}`) : "Punkte"}</small>
         </div>
         <button
@@ -357,16 +478,21 @@ export function BlockFeld({
             );
           })}
           {ansage.map((a) => (
-            <p key={a.n} className="bw-ansage" data-art={a.art} aria-hidden>
+            <p key={a.n} className="bw-ansage" data-art={a.art} data-wo={a.x !== undefined ? "" : undefined} style={a.x !== undefined ? ({ "--x": `${Math.min(80, Math.max(20, a.x))}%`, "--y": `${Math.min(85, Math.max(12, a.y!))}%` } as CSSProperties) : undefined} aria-hidden>
               {a.text}
             </p>
           ))}
         </div>
-        <p className="bw-hinweis" role="status">
-          {hinweis}
-        </p>
+        {!frage && (
+          <p className="bw-hinweis" role="status">
+            {hinweis}
+          </p>
+        )}
       </div>
 
+      {frage ? (
+        <div className="bw-frage-platz">{frage}</div>
+      ) : (
       <div className="bw-teile" role="group" aria-label="Teile">
         {teile.map((t, i) => (
           <button
@@ -392,6 +518,7 @@ export function BlockFeld({
           </button>
         ))}
       </div>
+      )}
 
       {zieht &&
         createPortal(
@@ -402,6 +529,38 @@ export function BlockFeld({
         )}
     </div>
   );
+}
+
+/** Punkte, die hochzählen statt zu springen (bei „weniger Bewegung“ sofort). */
+function ZaehlZahl({ wert }: { wert: number }) {
+  const [zeige, setZeige] = useState(wert);
+  const von = useRef(wert);
+  const el = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const start = von.current;
+    if (start === wert || window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      von.current = wert;
+      setZeige(wert);
+      return;
+    }
+    // die Zahl springt kurz größer, je mehr dazukommt, desto mehr
+    const gross = Math.min(1.35, 1.08 + (wert - start) / 2000);
+    el.current?.animate?.([{ scale: String(gross) }, { scale: "1" }], { duration: 360, easing: "cubic-bezier(0.23, 1, 0.32, 1)" });
+    const t0 = performance.now();
+    const dauer = Math.min(700, 250 + Math.abs(wert - start) / 4);
+    let id = 0;
+    const schritt = (jetzt: number) => {
+      const a = Math.min(1, (jetzt - t0) / dauer);
+      const e = 1 - (1 - a) ** 3;
+      const n = Math.round(start + (wert - start) * e);
+      von.current = n;
+      setZeige(n);
+      if (a < 1) id = requestAnimationFrame(schritt);
+    };
+    id = requestAnimationFrame(schritt);
+    return () => cancelAnimationFrame(id);
+  }, [wert]);
+  return <b ref={el}>{zeige.toLocaleString("de-AT")}</b>;
 }
 
 /** Ein Teil als kleines Raster (in der Reihe unten, gezogen und in der Vorschau über der Frage). */
@@ -446,6 +605,29 @@ export function FrageKopf({ frage }: { frage: BlockFrage }) {
           </small>
         </span>
       )}
+    </div>
+  );
+}
+
+/** Oben in der Frage unter dem Brett: welche Teile es für die Antwort gibt, oder dass es die Rettung ist. */
+export function FrageLeiste({ frage }: { frage: BlockFrage }) {
+  if (frage.grund === "rettung")
+    return (
+      <div className="bwf-leiste" data-grund="rettung">
+        <b>Rettungsfrage!</b>
+        <small>
+          Richtig: +1 <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="Blitz" /> und weiter
+        </small>
+      </div>
+    );
+  return (
+    <div className="bwf-leiste" data-grund="teile">
+      <span className="bwf-leiste-teile" aria-hidden>
+        {frage.vorschau.map((t) => (
+          <TeilBild key={t.id} teil={t} />
+        ))}
+      </span>
+      <b>Antworte für diese Teile</b>
     </div>
   );
 }

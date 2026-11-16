@@ -332,7 +332,7 @@
   rotate: -4deg;
 }
 .bw-ansage[data-art="blitz"] {
-  top: 46%;
+  top: 62%;
   color: var(--ls-gold);
 }
 
@@ -616,4 +616,485 @@
 }
 .bw-besten .ar-punkte {
   font-size: 16px;
+}
+
+/* ==========================================================================
+ * Packender (niko 2026-11-16 „süchtig machen … zu wenig flashyness“): Funken, Serie und Fieber, große Lobwörter,
+ * die Frage unter dem Brett (BrettFrage.tsx). Bewegung über transform und opacity; bei „weniger Bewegung“ still.
+ * ========================================================================== */
+
+.ls-funkenregen {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  width: 100vw;
+  height: 100vh;
+  pointer-events: none;
+}
+
+/* ---------- Serie und Fieber ---------- */
+.bw-links {
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+}
+.bw-serie {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 10px 4px 8px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: #ffb35c;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+.bw-serie-punkte {
+  display: inline-flex;
+  gap: 4px;
+}
+.bw-serie-punkte i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+  transition:
+    background-color 200ms ease,
+    transform 260ms var(--ls-ease-out);
+}
+.bw-serie-punkte i[data-an] {
+  background: #ffb35c;
+  transform: scale(1.25);
+}
+.bw-serie[data-fieber] {
+  background: linear-gradient(120deg, #ff7a3d, #ffcf3d);
+  color: #4a1600;
+  box-shadow: 0 0 18px rgba(255, 140, 50, 0.65);
+  animation: bw-fieber-puls 900ms var(--ls-ease-in-out) infinite alternate;
+}
+.bw-serie[data-fieber] b {
+  animation: bw-zahl 300ms var(--ls-ease-out);
+}
+@keyframes bw-fieber-puls {
+  to {
+    transform: scale(1.07);
+  }
+}
+.bw-kombo {
+  min-height: 26px;
+  padding: 3px 10px;
+  font-size: 14px;
+}
+
+/* das Brett im Fieber: ein glühender Rand, der umläuft */
+/* ein Ring um das Brett (nur der Rand, das Brett selbst bleibt dunkel) */
+.bw-brett::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  padding: 5px;
+  border-radius: 23px;
+  background: conic-gradient(from 20deg, #ff5d50, #ffb21f, #ffe27a, #ff7a3d, #ff5d50);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 300ms ease;
+}
+.bw[data-fieber] .bw-brett {
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.25),
+    0 0 34px rgba(255, 140, 50, 0.55);
+}
+.bw[data-fieber] .bw-brett::before {
+  opacity: 1;
+  animation: bw-fieber-glut 1400ms var(--ls-ease-in-out) infinite alternate;
+}
+.bw[data-fieber="3"] .bw-brett::before {
+  background: conic-gradient(from 0deg, #8f6cff, #ff5dc8, #ffb21f, #22c283, #3d86ff, #8f6cff);
+}
+@keyframes bw-fieber-glut {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.bw[data-fieber] .bw-punkte b {
+  color: #ffe08a;
+  text-shadow:
+    0 0 18px rgba(255, 150, 50, 0.75),
+    0 4px 18px rgba(10, 30, 90, 0.35);
+}
+
+/* ---------- Lob und Punkte am Brett ---------- */
+.bw-ansage[data-wo] {
+  left: var(--x);
+  right: auto;
+  top: var(--y);
+  translate: -50% -50%;
+  font-size: 26px;
+  color: #fff;
+  white-space: nowrap;
+  text-shadow:
+    0 2px 0 rgba(10, 30, 90, 0.55),
+    0 6px 18px rgba(10, 30, 90, 0.55);
+  animation: bw-punkte-hoch 1100ms var(--ls-ease-out) forwards;
+}
+@keyframes bw-punkte-hoch {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+  15% {
+    opacity: 1;
+    transform: translateY(0) scale(1.15);
+  }
+  30% {
+    transform: translateY(-4px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-46px) scale(0.95);
+  }
+}
+.bw-ansage[data-art="lob"],
+.bw-ansage[data-art="fieber"] {
+  top: 34%;
+  font-size: clamp(44px, 13vw, 62px);
+  line-height: 1;
+  rotate: -6deg;
+  background: linear-gradient(180deg, #fff6c2 0%, #ffd34d 45%, #ff9a2e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 1.5px rgba(90, 40, 0, 0.35);
+  filter: drop-shadow(0 4px 0 rgba(90, 40, 0, 0.45)) drop-shadow(0 10px 22px rgba(10, 30, 90, 0.5));
+  text-shadow: none;
+  animation: bw-lob 1500ms var(--ls-ease-out) forwards;
+}
+.bw-ansage[data-art="fieber"] {
+  top: 40%;
+  font-size: clamp(30px, 9vw, 42px);
+  rotate: -3deg;
+  background-image: linear-gradient(180deg, #fff 0%, #ffcf3d 40%, #ff5d50 100%);
+}
+@keyframes bw-lob {
+  0% {
+    opacity: 0;
+    transform: scale(0.3);
+  }
+  14% {
+    opacity: 1;
+    transform: scale(1.22);
+  }
+  24% {
+    transform: scale(0.96);
+  }
+  34% {
+    transform: scale(1.04);
+  }
+  44% {
+    transform: scale(1);
+  }
+  80% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px) scale(0.92);
+  }
+}
+.bw-ansage[data-art="frei"] {
+  font-size: clamp(38px, 11vw, 54px);
+  top: 42%;
+  animation: bw-lob 1500ms var(--ls-ease-out) forwards;
+}
+
+/* ---------- die Frage unter dem Brett ---------- */
+/* das Brett nimmt den Platz, der zwischen Stand und Teilen (oder der Frage) bleibt: so passt beides auf jedes Handy */
+@supports (container-type: size) {
+  .bw-mitte {
+    container-type: size;
+  }
+  .bw-brett {
+    width: min(100%, 460px, calc(100cqh - 56px));
+    min-width: 0;
+  }
+  .bw[data-frage-da] .bw-brett {
+    width: min(100%, 420px, 100cqh);
+  }
+}
+.bw-brett {
+  transition: width 260ms var(--ls-ease-out);
+}
+.bw-frage-platz {
+  width: min(100%, 520px);
+  margin: 10px auto 0;
+}
+.bwf {
+  display: grid;
+  gap: 8px;
+  animation: bwf-rein 300ms var(--ls-ease-out) both;
+}
+@keyframes bwf-rein {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+  }
+}
+.bwf-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bwf-leiste {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.bwf-leiste b {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+}
+.bwf-leiste small {
+  font-size: 13.5px;
+  color: var(--ls-on-2);
+}
+.bwf-leiste small svg {
+  display: inline;
+  vertical-align: -2px;
+  color: var(--ls-gold);
+}
+.bwf-leiste[data-grund="rettung"] {
+  flex-wrap: wrap;
+  column-gap: 8px;
+  row-gap: 0;
+}
+.bwf-leiste[data-grund="rettung"] b {
+  color: var(--ls-gold);
+}
+.bwf-leiste-teile {
+  --z: 8px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  border-radius: 10px;
+  background: rgba(8, 26, 76, 0.35);
+}
+.bwf-leiste-teile .bw-teil {
+  gap: 1px;
+}
+/* der Zeitbalken: so lange ist eine richtige Antwort blitzschnell */
+.bwf-zeit {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ls-gold);
+  transition: opacity 200ms ease;
+}
+.bwf-zeit span {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.bwf-zeit i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #ffb21f, #ffe27a);
+  transform-origin: left;
+  animation: bwf-zeit var(--ms) linear forwards;
+}
+@keyframes bwf-zeit {
+  to {
+    transform: scaleX(0);
+  }
+}
+.bwf-zeit[data-aus] {
+  opacity: 0.25;
+}
+.bwf-zeit[data-aus] i {
+  animation-play-state: paused;
+}
+.bwf-blatt {
+  padding: 10px 14px 12px;
+  border-radius: 18px;
+  background: #fff;
+  color: #10203f;
+  text-align: center;
+  box-shadow: 0 14px 30px -14px rgba(8, 30, 90, 0.7);
+}
+.bwf-auftrag {
+  margin: 0 0 2px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #5b6b8c;
+}
+.bwf-satz .ls-satz {
+  margin: 0;
+  font-size: clamp(18px, 5vw, 22px);
+  line-height: 1.4;
+}
+.bwf-satz .ls-satz[data-mathe] {
+  font-size: clamp(20px, 5.6vw, 24px);
+}
+.bwf-satz .ls-wort {
+  margin: 0;
+  font-size: clamp(28px, 8vw, 36px);
+}
+.bwf-satz .ls-marke {
+  margin-top: 4px;
+}
+.bwf-kacheln {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.bwf-kachel {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #10203f;
+  font-family: var(--font-display);
+  font-size: 19px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+  box-shadow: 0 4px 0 rgba(8, 30, 90, 0.4);
+  touch-action: manipulation;
+  animation: bwf-kachel-rein 320ms var(--ls-ease-out) calc(80ms + var(--i) * 45ms) both;
+  transition:
+    transform 110ms var(--ls-ease-out),
+    background-color 180ms ease,
+    box-shadow 110ms ease,
+    opacity 200ms ease;
+}
+/* drei Antworten: die dritte über die ganze Breite */
+.bwf-kachel:last-child:nth-child(odd) {
+  grid-column: span 2;
+}
+.bwf-kacheln[data-lang] .bwf-kachel {
+  font-size: 15.5px;
+}
+@keyframes bwf-kachel-rein {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.9);
+  }
+}
+.bwf-kachel:active:not(:disabled) {
+  transform: translateY(3px) scale(0.97);
+  box-shadow: 0 1px 0 rgba(8, 30, 90, 0.4);
+}
+.bwf-kachel:disabled {
+  cursor: default;
+}
+.bwf-kachel[data-richtig] {
+  background: #22c283;
+  color: #fff;
+  box-shadow: 0 4px 0 #11784f, 0 0 0 4px rgba(34, 194, 131, 0.35);
+  animation: bwf-richtig 420ms var(--ls-ease-out) both;
+}
+@keyframes bwf-richtig {
+  30% {
+    transform: scale(1.1);
+  }
+  60% {
+    transform: scale(0.97);
+  }
+}
+.bwf-kachel[data-falsch] {
+  background: rgba(255, 255, 255, 0.35);
+  color: #7a1d14;
+  text-decoration: line-through;
+  box-shadow: none;
+  opacity: 0.7;
+}
+.bwf-kachel[data-zeigen] {
+  background: #fff;
+  box-shadow: 0 4px 0 rgba(8, 30, 90, 0.4), 0 0 0 4px #22c283;
+  animation: bwf-zeigen 900ms var(--ls-ease-in-out) infinite alternate;
+}
+@keyframes bwf-zeigen {
+  to {
+    transform: scale(1.04);
+  }
+}
+.bwf-kachel:disabled:not([data-richtig]):not([data-falsch]):not([data-zeigen]) {
+  opacity: 0.5;
+}
+.bwf-regel {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(255, 211, 77, 0.16);
+  font-size: 14px;
+  line-height: 1.35;
+  animation: bwf-rein 240ms var(--ls-ease-out) both;
+}
+.bwf-regel svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ls-gold);
+}
+.bwf-laedt {
+  padding: 26px 0;
+  text-align: center;
+  color: var(--ls-on-2);
+}
+
+@media (min-width: 700px) and (min-height: 760px) {
+  .bwf-kachel {
+    min-height: 58px;
+    font-size: 21px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-serie[data-fieber],
+  .bw[data-fieber] .bw-brett::before,
+  .bw-ansage[data-wo],
+  .bw-ansage[data-art="lob"],
+  .bw-ansage[data-art="fieber"],
+  .bw-ansage[data-art="frei"],
+  .bwf,
+  .bwf-kachel,
+  .bwf-kachel[data-richtig],
+  .bwf-kachel[data-zeigen],
+  .bwf-regel {
+    animation: none;
+  }
+  .bw-brett,
+  .bw[data-frage-da] .bw-brett {
+    transition: none;
+  }
+  .bwf-zeit i {
+    animation-duration: var(--ms);
+  }
 }
