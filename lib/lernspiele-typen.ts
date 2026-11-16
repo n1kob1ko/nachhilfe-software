@@ -297,7 +297,7 @@ export type SpielErgebnis =
       liga?: { punkte: number; grund?: string };
       /** Endlos-Modus: alle beim ersten Versuch richtigen Karten des Endlos-Spiels und der Rekord davor */
       endlos?: { stand: number; rekord: number };
-      /** Blockwerk: der beste Stand davor (über alle Spiele), wie viele Fragen beim ersten Versuch richtig waren, die Bestenliste danach */
+      /** Blockwerk und Funkelfeld: der beste Stand davor (über alle Spiele), wie viele Fragen beim ersten Versuch richtig waren, die Bestenliste danach */
       bloecke?: { rekord: number; fragen: number; bestenliste?: Bestenliste };
       /** Glasklar: der beste Stand davor, wie viele Begriffe beim ersten Versuch richtig waren, die Bestenliste danach */
       glas?: { rekord: number; begriffe: number; bestenliste?: Bestenliste };

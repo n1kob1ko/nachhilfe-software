@@ -31,7 +31,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { bloeckeBestenliste, bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -173,17 +173,19 @@ export default async function DevicePage() {
     const lernstand = new Map((analyzeStudent(student.id)?.skills ?? []).map((s) => [s.skill.id, s.mastery]));
     const vorschlaege = spielVorschlaege(student, { heute, lernstand });
     const art = view.kind === "spiel" ? view.art : null;
-    const bloecke = view.kind === "spiel" && view.bloecke;
+    const brett = view.kind === "spiel" ? (view.bloecke ? "bloecke" : view.funkel ? "funkel" : undefined) : undefined;
     content =
       art && vorschlaege.length ? (
         <Lernspiel
-          key={`${art}${bloecke ? "-bloecke" : ""}`}
+          key={`${art}${brett ? `-${brett}` : ""}`}
           token=""
           amTablet
-          modus={bloecke ? "bloecke" : undefined}
+          modus={brett}
           bloeckeRekord={bloeckeRekord(student.id)}
-          bestenliste={bloecke ? bloeckeBestenliste(student) : undefined}
+          funkelRekord={punkteRekord(student.id, "funkel")}
+          bestenliste={brett ? punkteBestenliste(student, brett) : undefined}
           bloeckeLink="/geraet/ansicht?zu=bloecke:"
+          funkelLink="/geraet/ansicht?zu=funkel:"
           art={art}
           vorschlaege={vorschlaege}
           serie={serie(student.id, heute)}
@@ -196,7 +198,7 @@ export default async function DevicePage() {
         />
       ) : vorschlaege.length ? (
         <div className="geraet-spiele">
-          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} glas={(() => {
+          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} funkel={(a) => `/geraet/ansicht?zu=funkel:${a}`} glas={(() => {
               const t = glasThemen(student, heute)[0];
               return t ? { href: "/geraet/ansicht?zu=glas:", thema: t.name } : undefined;
             })()}

@@ -19,6 +19,8 @@ import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
 import { BlockFeld, FrageKopf, type BlockAntwort, type BlockFrage } from "./BlockFeld";
+import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
+import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
@@ -41,7 +43,13 @@ import { BlockFeld, FrageKopf, type BlockAntwort, type BlockFrage } from "./Bloc
  * Blockwerk (niko 2026-11-16, components/lernen/BlockFeld.tsx): dieselben Karten, aber zwischen den Karten liegt ein
  * Legespiel. Sind die drei Teile gelegt, kommt die nächste Karte als Frage; danach geht es mit neuen Teilen weiter.
  * Die Runden hängen wie im Endlos-Modus aneinander, Herzen gibt es keine: das Spiel endet, wenn kein Teil mehr passt.
+ *
+ * Funkelfeld (niko 2026-11-16, components/lernen/FunkelFeld.tsx): genauso, aber das Brett ist ein Drei-in-einer-Reihe-
+ * Feld; sind die Züge weg, bringt die nächste Karte neue. Beide Bretter heißen hier `brett`.
  */
+
+/** Ein Spielbrett zwischen den Karten: Blockwerk (Teile legen) oder Funkelfeld (Steine tauschen). */
+export type Brett = "bloecke" | "funkel";
 
 /**
  * Für Duelle (components/lernen/Duell.tsx, lib/duelle.ts): eigener Start und eigenes Ende mit denselben Karten für beide,
@@ -84,6 +92,8 @@ export function Lernspiel({
   modus,
   bloeckeRekord = 0,
   bloeckeLink,
+  funkelRekord = 0,
+  funkelLink,
   bestenliste: bestenlisteAnfang,
   arenaLink,
 }: {
@@ -106,13 +116,17 @@ export function Lernspiel({
   rekord?: number;
   /** am Schüler-Tablet in der Einheit (app/geraet/page.tsx): der Server findet den Schüler über das Tablet */
   amTablet?: boolean;
-  /** „bloecke“: der Anfang zeigt Blockwerk (aus dem Tab „Spiele“) */
-  modus?: "bloecke";
+  /** „bloecke“: der Anfang zeigt Blockwerk, „funkel“ Funkelfeld (aus dem Tab „Spiele“) */
+  modus?: Brett;
   /** der beste Blockwerk-Stand des Schülers (0: noch keiner) */
   bloeckeRekord?: number;
   /** Blockwerk: der Link zu einem anderen Spiel als Fragenquelle, ohne die Art am Ende („…?modus=bloecke&art=“) */
   bloeckeLink?: string;
-  /** Blockwerk: die Bestenliste aller Schüler (lib/lernspiele.ts bloeckeBestenliste) */
+  /** der beste Funkelfeld-Stand des Schülers (0: noch keiner) */
+  funkelRekord?: number;
+  /** Funkelfeld: wie `bloeckeLink` („…?modus=funkel&art=“) */
+  funkelLink?: string;
+  /** Blockwerk oder Funkelfeld: die Bestenliste aller Schüler (lib/lernspiele.ts bloeckeBestenliste) */
   bestenliste?: Bestenliste;
   /** Liga und Duelle: dort legt der Schüler sein Spielprofil an (fehlt am Tablet) */
   arenaLink?: string;
@@ -120,7 +134,7 @@ export function Lernspiel({
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (endlos?: "neu" | number, bloecke?: boolean) => (amTablet ? tabletSpielStartenAction(art, endlos, bloecke) : spielStartenAction(token, art, endlos, bloecke)),
+      starten: (endlos?: "neu" | number, brett?: Brett) => (amTablet ? tabletSpielStartenAction(art, endlos, brett) : spielStartenAction(token, art, endlos, brett)),
       beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
     }),
     [amTablet, token, art],
@@ -173,10 +187,12 @@ export function Lernspiel({
   // das Beenden der letzten vollen Runde (im Hintergrund) und der Lernstand vor dem Endlos-Spiel
   const abschluss = useRef<Promise<SpielErgebnis> | null>(null);
   const laufVorher = useRef<number | null | undefined>(undefined);
-  // ---------- Blockwerk ----------
-  const [bloecke, setBloecke] = useState(false);
+  // ---------- Blockwerk und Funkelfeld ----------
+  const [brett, setBrett] = useState<Brett | null>(null);
+  // das meiste ist für beide Bretter gleich (Fragen zwischen den Zügen, Punkte, Ende)
+  const bloecke = brett !== null;
   // die offene Frage (zwischen den Teilen) und die Antwort darauf für das Brett
-  const [frage, setFrage] = useState<(BlockFrage & { n: number }) | null>(null);
+  const [frage, setFrage] = useState<((BlockFrage | FunkelFrage) & { n: number }) | null>(null);
   const [blockAntwort, setBlockAntwort] = useState<BlockAntwort | null>(null);
   const [blockStand, setBlockStand] = useState(0);
   const blockPunkte = useRef(0);
@@ -210,17 +226,17 @@ export function Lernspiel({
 
   // ---------- Runde starten und beenden ----------
 
-  const starten = useCallback(async (mitEndlos = false, mitBloecke = false) => {
+  const starten = useCallback(async (mitEndlos = false, mitBrett: Brett | null = null) => {
     setPhase("laden");
     setFehler(null);
-    const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos || mitBloecke ? "neu" : undefined, mitBloecke || undefined));
+    const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos || mitBrett ? "neu" : undefined, mitBrett ?? undefined));
     if ("fehler" in r) {
       setFehler(r.fehler);
       setPhase("start");
       return;
     }
-    setEndlos(mitEndlos && !mitBloecke && !!r.endlos);
-    setBloecke(mitBloecke && !!r.endlos);
+    setEndlos(mitEndlos && !mitBrett && !!r.endlos);
+    setBrett(mitBrett && r.endlos ? mitBrett : null);
     setFrage(null);
     setBlockAntwort(null);
     setBlockStand(0);
@@ -375,7 +391,7 @@ export function Lernspiel({
   }, [bloecke, endlos, endlosEnde, nachladen, beenden, rundeId, pos, reihe.length]);
 
   // Blockwerk: das Brett will eine Frage, zählt Punkte, oder es passt nichts mehr
-  const blockFrage = useCallback((f: BlockFrage) => {
+  const blockFrage = useCallback((f: BlockFrage | FunkelFrage) => {
     frageFalsch.current = false;
     setStand(null);
     setFalschGewaehlt([]);
@@ -713,12 +729,15 @@ export function Lernspiel({
     );
   }
 
-  if ((phase === "start" || phase === "laden") && modus === "bloecke" && !duell) {
+  if ((phase === "start" || phase === "laden") && modus && !duell) {
+    const info = BRETT_INFO[modus];
+    const brettRekord = modus === "funkel" ? funkelRekord : bloeckeRekord;
+    const quellLink = modus === "funkel" ? funkelLink : bloeckeLink;
     // die Spiele, aus denen die Fragen kommen können (Vokabel-Paare nicht: dort liegen alle Karten auf einmal da)
     const passend = vorschlaege.filter((v) => hatEndlos(v.art));
     const quellen = passend.slice(0, 6).some((v) => v.art === art) ? passend.slice(0, 6) : [...passend.filter((v) => v.art === art), ...passend.filter((v) => v.art !== art).slice(0, 5)];
     return (
-      <div className="ls" role="dialog" aria-modal="true" aria-label="Lernspiel Blockwerk">
+      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${info.titel}`}>
         <Hintergrund woerter={deko} />
         {kopf}
         <div className="ls-mitte ls-rollt ls-staffel">
@@ -726,21 +745,21 @@ export function Lernspiel({
             Lernspiel
           </p>
           <h1 className="ls-titel" style={{ "--n": 1 } as CSSProperties}>
-            Blockwerk
+            {info.titel}
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
-            Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort.
+            {info.text}
           </p>
           <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
-            <MiniBrett />
+            {modus === "funkel" ? <MiniFunkel /> : <MiniBrett />}
           </div>
           <p className="ls-klein mt-5" style={{ "--n": 3 } as CSSProperties}>
             Fragen aus
           </p>
-          <div className="bw-fragen-aus mt-2" style={{ "--n": 3 } as CSSProperties} data-testid="bw-quellen">
-            {bloeckeLink && quellen.length > 1 ? (
+          <div className="bw-fragen-aus mt-2" style={{ "--n": 3 } as CSSProperties} data-testid={`${info.kurz}-quellen`}>
+            {quellLink && quellen.length > 1 ? (
               quellen.map((v) => (
-                <ZuLink key={v.art} href={`${bloeckeLink}${v.art}`} aria-current={v.art === art ? "true" : undefined}>
+                <ZuLink key={v.art} href={`${quellLink}${v.art}`} aria-current={v.art === art ? "true" : undefined}>
                   {SPIEL_TITEL[v.art]}
                 </ZuLink>
               ))
@@ -757,7 +776,7 @@ export function Lernspiel({
           <div className="ls-glas mt-6 grid grid-cols-2 gap-4 p-4" style={{ "--n": 4 } as CSSProperties}>
             <div>
               <p className="ls-klein">Rekord</p>
-              <p className="text-[22px] font-semibold tabular-nums">{bloeckeRekord > 0 ? bloeckeRekord.toLocaleString("de-AT") : "Noch keiner"}</p>
+              <p className="text-[22px] font-semibold tabular-nums">{brettRekord > 0 ? brettRekord.toLocaleString("de-AT") : "Noch keiner"}</p>
             </div>
             <div>
               <p className="ls-klein">Serie</p>
@@ -776,7 +795,7 @@ export function Lernspiel({
         </div>
         <div className="ls-fuss ls-staffel">
           <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
-            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, true)} disabled={phase === "laden"} autoFocus data-testid="bw-start">
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, modus)} disabled={phase === "laden"} autoFocus data-testid={`${info.kurz}-start`}>
               {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
             </button>
           </div>
@@ -910,13 +929,20 @@ export function Lernspiel({
                 <small>{rekord > 0 ? `Rekord ${rekord}` : `${ENDLOS_HERZEN} Herzen`}</small>
               </button>
             )}
-            {/* Blockwerk: dieselben Karten zwischen den Teilen eines Legespiels */}
+            {/* Blockwerk und Funkelfeld: dieselben Karten zwischen den Zügen eines Spielbretts */}
             {hatEndlos(art) && !duell && (
-              <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(false, true)} disabled={phase === "laden"} data-testid="bw-start-spiel">
-                <Bausteine />
-                <span>Blockwerk</span>
-                <small>{bloeckeRekord > 0 ? `Rekord ${bloeckeRekord.toLocaleString("de-AT")}` : "Teile legen"}</small>
-              </button>
+              <div className="ls-bretter">
+                <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(false, "bloecke")} disabled={phase === "laden"} data-testid="bw-start-spiel">
+                  <Bausteine />
+                  <span>Blockwerk</span>
+                  <small>{bloeckeRekord > 0 ? `Rekord ${bloeckeRekord.toLocaleString("de-AT")}` : "Teile legen"}</small>
+                </button>
+                <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(false, "funkel")} disabled={phase === "laden"} data-testid="ff-start-spiel">
+                  <FunkelZeichen />
+                  <span>Funkelfeld</span>
+                  <small>{funkelRekord > 0 ? `Rekord ${funkelRekord.toLocaleString("de-AT")}` : "Steine tauschen"}</small>
+                </button>
+              </div>
             )}
           </div>
         </div>
@@ -924,20 +950,22 @@ export function Lernspiel({
     );
   }
 
-  if (phase === "ende" && bloecke) {
+  if (phase === "ende" && brett) {
+    const info = BRETT_INFO[brett];
+    const brettRekord = brett === "funkel" ? funkelRekord : bloeckeRekord;
     const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
     const stand = blockPunkte.current;
-    const bisher = e?.bloecke?.rekord ?? bloeckeRekord;
+    const bisher = e?.bloecke?.rekord ?? brettRekord;
     const neuerRekord = !!e && stand > 0 && stand > bisher;
     const anteil = bisher > 0 ? Math.min(100, Math.round((stand / bisher) * 100)) : stand > 0 ? 100 : 0;
     const nochmal = daneben.filter((k, i) => daneben.findIndex((x) => x.key === k.key) === i);
     return (
-      <div className="ls" role="dialog" aria-modal="true" aria-label="Blockwerk vorbei">
+      <div className="ls" role="dialog" aria-modal="true" aria-label={`${info.titel} vorbei`}>
         <Hintergrund woerter={deko} />
         {neuerRekord && <Konfetti />}
         {kopf}
         <div className="ls-mitte ls-staffel text-center">
-          <div className="ls-ring" style={{ "--n": 0 } as CSSProperties} data-testid="bw-ende">
+          <div className="ls-ring" style={{ "--n": 0 } as CSSProperties} data-testid={`${info.kurz}-ende`}>
             <svg viewBox="0 0 120 120" aria-hidden>
               <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-spur" />
               <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-wert" style={{ strokeDashoffset: 100 - anteil } as CSSProperties} />
@@ -950,7 +978,7 @@ export function Lernspiel({
           </div>
           <h1 className="bw-ende-titel" style={{ "--n": 1 } as CSSProperties}>
             {neuerRekord && <Trophy size={26} strokeWidth={2.4} aria-hidden />}
-            {neuerRekord ? "Neuer Rekord!" : "Kein Platz mehr"}
+            {neuerRekord ? "Neuer Rekord!" : info.ende}
           </h1>
           <p className="ls-text mt-1" style={{ "--n": 1 } as CSSProperties}>
             {e?.bloecke ? `${e.bloecke.fragen} ${e.bloecke.fragen === 1 ? "Frage" : "Fragen"} richtig` : "Gezählt wird der erste Versuch"}
@@ -990,7 +1018,7 @@ export function Lernspiel({
           )}
 
           <div className="mt-auto grid gap-3 pt-8" style={{ "--n": 5 } as CSSProperties}>
-            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, true)} disabled={!ergebnis} autoFocus data-testid="bw-nochmal">
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, brett)} disabled={!ergebnis} autoFocus data-testid={`${info.kurz}-nochmal`}>
               Nochmal
             </button>
             <ZuLink href={zurueck} className="ls-knopf ls-los" data-zweit="">
@@ -1222,14 +1250,15 @@ export function Lernspiel({
   );
 
   // Blockwerk: das Brett bleibt immer an derselben Stelle stehen (so behält es seinen Stand), die Frage liegt darüber
-  const frageZeile = bloecke && frage ? <FrageKopf frage={frage} /> : null;
+  const frageZeile = bloecke && frage ? "brett" in frage ? <FunkelKopf frage={frage} /> : <FrageKopf frage={frage} /> : null;
   const feldKlasse = bloecke ? "ls-feld bw-frage" : "ls-feld";
   const schale = (inhalt: ReactNode) => (
-    <div className="ls" role="dialog" aria-modal="true" aria-label={bloecke ? "Lernspiel Blockwerk" : `Lernspiel ${SPIEL_TITEL[art]}`}>
+    <div className="ls" role="dialog" aria-modal="true" aria-label={brett ? `Lernspiel ${BRETT_INFO[brett].titel}` : `Lernspiel ${SPIEL_TITEL[art]}`}>
       <Hintergrund woerter={deko} />
       {kopf}
       {duell?.leiste}
-      {bloecke && <BlockFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
+      {brett === "bloecke" && <BlockFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
+      {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
       {(!bloecke || frage) && inhalt}
     </div>
   );
@@ -1593,6 +1622,12 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
     </>
   );
 }
+
+/** Name, Satz für den Anfang und Ende je Spielbrett; `kurz`: Anfang der Test-Kennungen. */
+const BRETT_INFO: Record<Brett, { titel: string; text: string; ende: string; kurz: string }> = {
+  bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort.", ende: "Kein Platz mehr", kurz: "bw" },
+  funkel: { titel: "Funkelfeld", text: "Tausch zwei Steine, und drei gleiche in einer Linie verschwinden. Sind die Züge weg, bringt eine richtige Antwort neue.", ende: "Keine Herzen mehr", kurz: "ff" },
+};
 
 /** Ein kleines Brett mit ein paar Teilen für den Anfang von Blockwerk. */
 function MiniBrett() {

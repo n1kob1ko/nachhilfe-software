@@ -4,6 +4,7 @@ import { CalendarDays, ChevronRight, Flame } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
 import { hatEndlos, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
+import { SteinBild } from "./FunkelSteine";
 
 /** Warum ein Spiel gerade passt, kurz für das Schild auf der Kachel. */
 const SCHILD: Partial<Record<SpielVorschlag["quelle"], string>> = { pruefung: "Schularbeit", stoff: "Dein Stoff", einheit: "Letzte Einheit", lernstand: "Üben lohnt sich" };
@@ -21,6 +22,8 @@ export function SpieleListe({
   href,
   bloecke,
   blockPlatz,
+  funkel,
+  funkelPlatz,
   glas,
 }: {
   student: repo.Student;
@@ -32,6 +35,9 @@ export function SpieleListe({
   bloecke?: (art: SpielArt) => string;
   /** Blockwerk: der eigene Platz in der Bestenliste (steht dann auf der Kachel) */
   blockPlatz?: BestenZeile | null;
+  /** Funkelfeld: wie `bloecke` (lib/funkelfeld.ts); ohne Angabe keine Kachel */
+  funkel?: (art: SpielArt) => string;
+  funkelPlatz?: BestenZeile | null;
   /** Glasklar (lib/glasklar.ts): wohin die Kachel führt, das passendste Thema und der eigene Platz; ohne Angabe keine Kachel */
   glas?: { href: string; thema: string; platz?: BestenZeile | null };
 }) {
@@ -85,6 +91,31 @@ export function SpieleListe({
             {blockPlatz && (
               <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-blockwerk-platz">
                 Platz {blockPlatz.platz} · Rekord {blockPlatz.punkte.toLocaleString("de-AT")}
+              </span>
+            )}
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+        </Link>
+      )}
+
+      {funkel && blockArt && (
+        <Link href={funkel(blockArt)} className="sp-block panel mt-3" data-testid="spiele-funkelfeld">
+          <span className="sp-funkel-bild" aria-hidden>
+            {[0, 1, 0, 2, 2, 2, 3, 4, 1].map((f, i) => (
+              <span key={i} className="ff-mini-stein" data-f={f} data-an={i >= 3 && i <= 5 ? "" : undefined}>
+                <SteinBild f={f} />
+              </span>
+            ))}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="sp-titel">Funkelfeld</span>
+              <span className="sp-schild">Neu</span>
+            </span>
+            <span className="sp-kurz">Drei gleiche Steine in eine Linie. Neue Züge gibt es für Fragen aus {SPIEL_TITEL[blockArt]}.</span>
+            {funkelPlatz && (
+              <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-funkelfeld-platz">
+                Platz {funkelPlatz.platz} · Rekord {funkelPlatz.punkte.toLocaleString("de-AT")}
               </span>
             )}
           </span>

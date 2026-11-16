@@ -31,6 +31,10 @@ test("Tablet-Ansicht Spiele: hin und zurück gelesen, Live-Status zeigt das Spie
   assert.deepEqual(live.parseView("bloecke:artikel"), { kind: "spiel", art: "artikel", bloecke: true });
   live.showOnTablet(unit, { kind: "spiel", art: "artikel", bloecke: true });
   assert.equal(units.getUnit(unit.id)!.device_view, "bloecke:artikel");
+  // Funkelfeld genauso
+  assert.deepEqual(live.parseView("funkel:dasdass"), { kind: "spiel", art: "dasdass", funkel: true });
+  live.showOnTablet(unit, { kind: "spiel", art: "dasdass", funkel: true });
+  assert.equal(units.getUnit(unit.id)!.device_view, "funkel:dasdass");
 
   live.showOnTablet(unit, { kind: "spiele" });
   assert.equal(units.getUnit(unit.id)!.device_view, "spiele");

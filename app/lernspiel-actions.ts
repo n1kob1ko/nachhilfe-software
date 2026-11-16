@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, endlosRekord, endlosStand, glasThemen, laufIst, laufPunkte, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, endlosRekord, endlosStand, glasThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
+import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -19,9 +20,10 @@ const lernstandVon = (studentId: number, skillId: string) => analyzeStudent(stud
 
 /**
  * `endlos`: „neu“ beginnt ein Endlos-Spiel, eine Zahl holt dessen nächste Runde (lib/lernspiele.ts). `bloecke`: mit
- * „neu“ ein Blockwerk-Spiel (lib/blockwerk.ts), dessen Runden genauso aneinanderhängen.
+ * „neu“ ein Blockwerk-Spiel (lib/blockwerk.ts, `true` oder „bloecke“) oder Funkelfeld (lib/funkelfeld.ts, „funkel“),
+ * dessen Runden genauso aneinanderhängen.
  */
-export async function spielStartenAction(token: string, art: string, endlos?: "neu" | number, bloecke?: boolean): Promise<SpielStart> {
+export async function spielStartenAction(token: string, art: string, endlos?: "neu" | number, bloecke?: Brett): Promise<SpielStart> {
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   return starten(student, art, endlos, bloecke);
@@ -56,7 +58,7 @@ async function tabletSchueler() {
   return ctx?.unit && ctx.student && ctx.unit.status === "gestartet" ? ctx.student : null;
 }
 
-export async function tabletSpielStartenAction(art: string, endlos?: "neu" | number, bloecke?: boolean): Promise<SpielStart> {
+export async function tabletSpielStartenAction(art: string, endlos?: "neu" | number, bloecke?: Brett): Promise<SpielStart> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
   return starten(student, art, endlos, bloecke);
@@ -74,7 +76,10 @@ export async function tabletSpielBeendenAction(rundeId: number, antworten: Spiel
   return beenden(student, rundeId, antworten, o);
 }
 
-function starten(student: repo.Student, art: string, endlos?: "neu" | number, bloecke?: boolean): SpielStart {
+/** Ein Spielbrett zwischen den Karten (`true` heißt Blockwerk, wie früher). */
+type Brett = boolean | "bloecke" | "funkel";
+
+function starten(student: repo.Student, art: string, endlos?: "neu" | number, bloecke?: Brett): SpielStart {
   if (!istSpielArt(art)) return { fehler: "Dieses Spiel gibt es nicht." };
   // Glasklar startet nur über glasStarten (Thema und Stufe)
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
@@ -82,7 +87,8 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
   const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
   const lauf = !hatEndlos(art) ? undefined : endlos === "neu" ? "neu" : Number.isInteger(endlos) && Number(endlos) > 0 ? Number(endlos) : undefined;
-  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: bloecke === true && lauf === "neu" });
+  const brett = bloecke === true || bloecke === "bloecke" ? "bloecke" : bloecke === "funkel" ? "funkel" : null;
+  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu" });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
 }
@@ -101,10 +107,12 @@ function glasStarten(student: repo.Student, thema: string | undefined, lauf?: nu
 
 function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number }): SpielErgebnis {
   const zeile = rundenSkill(student.id, Number(rundeId));
-  // Blockwerk und Glasklar: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
-  const spiel: PunkteSpiel | null = zeile?.endlos ? (laufIst(student.id, zeile.endlos, "bloecke") ? "bloecke" : laufIst(student.id, zeile.endlos, "glas") ? "glas" : null) : null;
-  const block = spiel === "bloecke";
-  if (spiel && zeile?.endlos && o?.punkte !== undefined) laufPunkte(student.id, zeile.endlos, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
+  // Blockwerk, Funkelfeld und Glasklar: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
+  const lauf = zeile?.endlos ?? null;
+  const spiel: PunkteSpiel | null = lauf ? (PUNKTE_SPIELE.find((s) => laufIst(student.id, lauf, s)) ?? null) : null;
+  // Blockwerk und Funkelfeld: ein Brett zwischen den Karten (gleiches Ergebnis)
+  const block = spiel === "bloecke" || spiel === "funkel" ? spiel : null;
+  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
   const vorher = zeile ? lernstandVon(student.id, zeile.skillId) : null;
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : [], { teil: o?.teil === true });
   if (!e) return { fehler: "Diese Runde gibt es nicht mehr." };
@@ -122,7 +130,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     nochmal: e.nochmal.map((k) => ({ loesung: k.loesung })),
     liga: liga.punkte > 0 || liga.grund ? { punkte: liga.punkte, grund: liga.grund } : undefined,
     endlos: zeile?.endlos && !spiel ? { stand: endlosStand(student.id, zeile.endlos), rekord: endlosRekord(student.id, zeile.art, zeile.endlos) } : undefined,
-    bloecke: zeile?.endlos && block ? { rekord: punkteRekord(student.id, "bloecke", zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "bloecke") : undefined } : undefined,
+    bloecke: zeile?.endlos && block ? { rekord: punkteRekord(student.id, block, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, block) : undefined } : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
 }

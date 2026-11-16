@@ -314,6 +314,31 @@ test("Blockwerk: Runden hängen wie Endlos aneinander, Punkte am ersten, eigener
   assert.equal(sp.bloeckeRekord(student.id), 2400);
 });
 
+test("Funkelfeld: Runden hängen aneinander, Punkte und Rekord getrennt von Blockwerk, kein Endlos-Rekord", async () => {
+  const { sp, student } = await setup();
+  const heute = "2026-11-16";
+  const a = sp.starteRunde(student, "artikel", { rng: rng(21), heute, endlos: "neu", funkel: true });
+  assert.equal(a.endlos, a.rundeId);
+  assert.ok(sp.laufIst(student.id, a.rundeId, "funkel"));
+  assert.ok(!sp.istBlockwerk(student.id, a.rundeId));
+  sp.beendeRunde(student.id, a.rundeId, a.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  const b = sp.starteRunde(student, "artikel", { rng: rng(22), heute, endlos: a.endlos, funkel: true });
+  assert.equal(b.endlos, a.rundeId, "die nächste Runde gehört zum selben Funkelfeld-Spiel");
+  sp.beendeRunde(student.id, b.rundeId, b.karten.slice(0, 1).map((k) => ({ key: k.key, wahl: k.richtig })), { teil: true });
+  sp.laufPunkte(student.id, a.rundeId, 2210, "funkel");
+  sp.laufPunkte(student.id, a.rundeId, 40, "funkel");
+  assert.equal(sp.punkteRekord(student.id, "funkel"), 2210, "ein zweites Ende macht die Punkte nicht kleiner");
+  assert.equal(sp.bloeckeRekord(student.id), 0, "Funkelfeld zählt nicht für Blockwerk");
+  assert.equal(sp.endlosRekord(student.id, "artikel"), 0, "Funkelfeld zählt nicht als Endlos-Spiel");
+  // ein Blockwerk-Spiel bekommt keine Funkelfeld-Punkte
+  const c = sp.starteRunde(student, "artikel", { rng: rng(23), heute, endlos: "neu", bloecke: true });
+  sp.laufPunkte(student.id, c.rundeId, 9999, "funkel");
+  assert.equal(sp.punkteRekord(student.id, "funkel"), 2210);
+  const liste = sp.punkteBestenliste(student, "funkel");
+  assert.equal(liste.ich?.punkte, 2210);
+  assert.equal(sp.punkteBestenliste(student, "bloecke").ich ?? null, null);
+});
+
 test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen), ausgeschaltete nur für sich", async () => {
   const { sp, repo, student: a } = await setup();
   const profil = await import("./spielprofil");

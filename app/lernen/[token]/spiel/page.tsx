@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
-import { bloeckeBestenliste, bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -43,8 +43,9 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
   }
   const vorschlaege = spielVorschlaege(student, { heute, lernstand });
   if (!vorschlaege.length) redirect(`/lernen/${token}`);
-  // Blockwerk braucht ein Spiel mit einzelnen Karten (nicht die Vokabel-Paare)
-  const art = istSpielArt(gewuenscht) ? gewuenscht : modus === "bloecke" ? (vorschlaege.find((v) => hatEndlos(v.art))?.art ?? vorschlaege[0].art) : vorschlaege[0].art;
+  // Blockwerk und Funkelfeld brauchen ein Spiel mit einzelnen Karten (nicht die Vokabel-Paare)
+  const brett = modus === "bloecke" || modus === "funkel" ? modus : undefined;
+  const art = istSpielArt(gewuenscht) ? gewuenscht : brett ? (vorschlaege.find((v) => hatEndlos(v.art))?.art ?? vorschlaege[0].art) : vorschlaege[0].art;
   return (
     <Lernspiel
       key={`${art}-${modus ?? ""}`}
@@ -58,11 +59,13 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       antwort={spielAntwort(student, art, heute)}
       rekord={endlosRekord(student.id, art)}
       zurueck={von === "start" ? `/lernen/${token}` : undefined}
-      modus={modus === "bloecke" ? "bloecke" : undefined}
+      modus={brett}
       bloeckeRekord={bloeckeRekord(student.id)}
-      bestenliste={modus === "bloecke" ? bloeckeBestenliste(student) : undefined}
+      funkelRekord={punkteRekord(student.id, "funkel")}
+      bestenliste={brett ? punkteBestenliste(student, brett) : undefined}
       arenaLink={`/lernen/${token}/arena`}
       bloeckeLink={`/lernen/${token}/spiel?modus=bloecke${von === "start" ? "&von=start" : ""}&art=`}
+      funkelLink={`/lernen/${token}/spiel?modus=funkel${von === "start" ? "&von=start" : ""}&art=`}
     />
   );
 }
