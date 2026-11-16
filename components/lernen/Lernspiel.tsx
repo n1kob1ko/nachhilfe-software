@@ -4,7 +4,7 @@ import "./lernspiel.css";
 import "./arena.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, X } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
 import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
@@ -18,7 +18,9 @@ import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
-import { BlockFeld, FrageKopf, type BlockAntwort, type BlockFrage } from "./BlockFeld";
+import { BlockFeld, FrageKopf, FrageLeiste, type BlockAntwort, type BlockFrage } from "./BlockFeld";
+import { BrettFrage, brettOptionen } from "./BrettFrage";
+import { aufTon, setzeTon, tonAn } from "./klang";
 import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
 import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
 
@@ -198,6 +200,14 @@ export function Lernspiel({
   const blockPunkte = useRef(0);
   // die Frage war schon einmal falsch (dann gibt es keinen Blitz)
   const frageFalsch = useRef(false);
+  // Blockwerk: richtig innerhalb der Zeit der Frage (Bonus am Brett)
+  const frageSchnell = useRef(false);
+  // Töne an oder aus (klang.ts; das Gerät merkt es sich)
+  const [ton, setTon] = useState(true);
+  useEffect(() => {
+    setTon(tonAn());
+    return aufTon(setTon);
+  }, []);
   // die nächste Runde wird gerade geholt
   const [laedt, setLaedt] = useState(false);
   const karteRef = useRef<HTMLDivElement | null>(null);
@@ -370,9 +380,11 @@ export function Lernspiel({
     if (bloecke) {
       // Blockwerk: die Frage ist beantwortet, das Brett bekommt seine Teile; die nächste Karte wartet auf die nächste Frage
       const sauber = !frageFalsch.current;
+      const schnell = sauber && frageSchnell.current;
       frageFalsch.current = false;
+      frageSchnell.current = false;
       setFrage(null);
-      setBlockAntwort((a) => ({ n: (a?.n ?? 0) + 1, sauber }));
+      setBlockAntwort((a) => ({ n: (a?.n ?? 0) + 1, sauber, schnell }));
       if (pos + 1 >= reihe.length) {
         setLaedt(true);
         void nachladen(rundeId).finally(() => setLaedt(false));
@@ -393,6 +405,7 @@ export function Lernspiel({
   // Blockwerk: das Brett will eine Frage, zählt Punkte, oder es passt nichts mehr
   const blockFrage = useCallback((f: BlockFrage | FunkelFrage) => {
     frageFalsch.current = false;
+    frageSchnell.current = false;
     setStand(null);
     setFalschGewaehlt([]);
     setFrage((alt) => ({ ...f, n: (alt?.n ?? 0) + 1 }));
@@ -652,6 +665,10 @@ export function Lernspiel({
 
   // ---------- Darstellung ----------
 
+  // Blockwerk: die Frage schiebt sich unter dem Brett hoch (BrettFrage), wenn sie Antworten zum Antippen hat; sonst
+  // (Satzbau, Zahlenstrahl) wie bisher auf eigenem Bildschirm
+  const brettOpts = brett === "bloecke" && aktuell ? brettOptionen(aktuell) : [];
+  const imBrett = brett === "bloecke" && !!frage && !("brett" in frage) && (laedt || !aktuell || brettOpts.length >= 2);
   const kopf = (
     <div className="ls-kopf">
       <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
@@ -660,8 +677,14 @@ export function Lernspiel({
       {phase === "spiel" && bloecke ? (
         <>
           <span className="flex-1" />
+          {/* Töne an oder aus (klang.ts) */}
+          {brett === "bloecke" && (
+            <button type="button" className="ls-zu treffer" onClick={() => setzeTon(!ton)} aria-pressed={!ton} aria-label={ton ? "Töne ausschalten" : "Töne einschalten"} data-testid="ls-ton">
+              {ton ? <Volume2 size={22} aria-hidden /> : <VolumeX size={22} aria-hidden />}
+            </button>
+          )}
           {/* Blockwerk: über der Frage stehen die Punkte oben, auf dem Brett groß über dem Brett */}
-          {frage && (
+          {frage && !imBrett && (
             <span className="ls-combo ls-endlos-stand" aria-label={`${blockStand} Punkte`}>
               <b>{blockStand.toLocaleString("de-AT")}</b>
               <small className="text-[13px] font-semibold">Punkte</small>
@@ -1252,14 +1275,38 @@ export function Lernspiel({
   // Blockwerk: das Brett bleibt immer an derselben Stelle stehen (so behält es seinen Stand), die Frage liegt darüber
   const frageZeile = bloecke && frage ? "brett" in frage ? <FunkelKopf frage={frage} /> : <FrageKopf frage={frage} /> : null;
   const feldKlasse = bloecke ? "ls-feld bw-frage" : "ls-feld";
+  const brettFrage =
+    imBrett && frage && !("brett" in frage) ? (
+      laedt || !aktuell ? (
+        <div className="bwf" data-testid="bw-frage">
+          <div className="bwf-kopf">
+            <FrageLeiste frage={frage} />
+          </div>
+          <p className="bwf-laedt">Karten werden gemischt …</p>
+        </div>
+      ) : (
+        <BrettFrage
+          key={`${rundeId}-${pos}-${frage.n}`}
+          karte={aktuell}
+          optionen={brettOpts}
+          auftrag={SPIEL_AUFGABE[art]}
+          kopf={<FrageLeiste frage={frage} />}
+          onPruefe={reihePruefe}
+          onWeiter={(sauber, schnell) => {
+            frageSchnell.current = schnell;
+            reiheWeiter(sauber);
+          }}
+        />
+      )
+    ) : null;
   const schale = (inhalt: ReactNode) => (
     <div className="ls" role="dialog" aria-modal="true" aria-label={brett ? `Lernspiel ${BRETT_INFO[brett].titel}` : `Lernspiel ${SPIEL_TITEL[art]}`}>
       <Hintergrund woerter={deko} />
       {kopf}
       {duell?.leiste}
-      {brett === "bloecke" && <BlockFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
+      {brett === "bloecke" && <BlockFeld aktiv={!frage || imBrett} frage={brettFrage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
       {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
-      {(!bloecke || frage) && inhalt}
+      {(!bloecke || (frage && !imBrett)) && inhalt}
     </div>
   );
   if (bloecke && frage && (laedt || !aktuell))
@@ -1626,7 +1673,7 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
 
 /** Name, Satz für den Anfang und Ende je Spielbrett; `kurz`: Anfang der Test-Kennungen. */
 const BRETT_INFO: Record<Brett, { titel: string; text: string; ende: string; kurz: string }> = {
-  bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort.", ende: "Kein Platz mehr", kurz: "bw" },
+  bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort, schnell ist mehr wert. Drei richtig hintereinander: Fieber, alles zählt doppelt!", ende: "Kein Platz mehr", kurz: "bw" },
   funkel: { titel: "Funkelfeld", text: "Tausch zwei Steine, und drei gleiche in einer Linie verschwinden. Sind die Züge weg, bringt eine richtige Antwort neue.", ende: "Keine Herzen mehr", kurz: "ff" },
 };
 

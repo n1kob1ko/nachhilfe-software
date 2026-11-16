@@ -364,6 +364,25 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   derselben Antwortart wie im Spiel (Kisten, Kacheln, Ziffernblock …). Oben steht „Antworte für neue Teile“ mit den
   drei Teilen, die danach kommen. Neue Teile gibt es immer, auch nach einem Fehler (dann erst mit der richtigen
   Antwort, wie im Spiel). Beim ersten Versuch richtig: +60 Punkte, und der Blitz lädt.
+- **Frage unter dem Brett** (niko 2026-11-16: „die spiele sollen die schüler süchtig machen … zu wenig flashyness
+  und das spielkonzept … komisch aufgebaut“; „blockwerk war bisher das beste die kinder lieben es“): seit 2026-11-17
+  verschwindet das Brett nicht mehr. Die Frage schiebt sich dort hoch, wo sonst die Teile liegen
+  (`components/lernen/BrettFrage.tsx`), das Brett wird so groß, wie noch Platz ist (Container-Abfrage in
+  blockwerk.css). Oben stehen die drei Teile, die es dafür gibt, darunter ein Zeitbalken (6 s), der Satz und
+  höchstens vier große Kacheln (`brettOptionen`: die richtige und die ersten falschen der Karte). Ein Tipp zählt
+  sofort. Falsch: durchgestrichen, die richtige leuchtet, die Regel steht darunter, weiter mit einem Tipp auf die
+  richtige. Karten ohne Kacheln (Satzbau, Zahlenstrahl) kommen wie bisher auf eigenem Bildschirm. Auch die
+  Rettungsfrage kommt unter dem Brett.
+- **Schnell und Fieber**: richtig innerhalb der 6 s ist „Blitzschnell!“ (+30). Drei Antworten beim ersten Versuch
+  richtig am Stück sind **Fieber** (`fieberFaktor`): alle Punkte ×2, ab sechs ×3, bis eine Antwort falsch ist. Links
+  oben zeigt die Flamme mit drei Punkten, wie weit es bis zum Fieber ist; im Fieber leuchtet ein Ring um das Brett.
+- **Effekte**: Töne aus dem Browser (`components/lernen/klang.ts`, Web Audio ohne Dateien: Tock beim Legen, eine
+  Tonfolge je Linie, die mit der Kombo höher wird, Klingeln bei richtig, Brummen bei falsch, Fanfare bei leerem Brett
+  und neuem Rekord; Lautsprecher-Knopf oben rechts, das Gerät merkt sich die Wahl in `ls-ton`). Funken aus jeder
+  geräumten Zelle und aus der richtigen Kachel (`components/lernen/Funkenregen.tsx`, eine Leinwand, die nur zeichnet,
+  solange etwas fliegt), Regen bei Fieber, leerem Brett und Rekord. Das Brett wackelt bei zwei und mehr Linien, große
+  Wörter („Super!“, „Stark!“, „Wahnsinn!“), die Punkte erscheinen dort, wo das Teil lag, und zählen oben hoch. Bei
+  „weniger Bewegung“ fliegt und wackelt nichts.
 - **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
   richtige Antworten laden einen neuen (die drei Punkte am Knopf), höchstens drei. Zuerst gab jede richtige Antwort
   einen Blitz; im Test endete dann kein Spiel mehr.
