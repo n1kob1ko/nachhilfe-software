@@ -28,11 +28,18 @@
  * „Wortschatz“ (niko 2026-11-12: „bei den lernspielen sind es wörter die er für eine gruselgeschichte braucht“): ein
  * Themenspiel mit den Wortfeldern der Schreib-Themen (Gruselgeschichte, Märchen, Krimi …, lib/lernspiele-wortfelder.ts);
  * auf einer Kachel das treffende Wort für den Satz.
+ *
+ * „Dein Stoff“ (niko 2026-11-16, Bio-Test: „wie könnte ich das in blockpuzzle implementieren“): die Spielkarten, die die
+ * Lehrkraft für diesen Schüler geschrieben oder aus „Stoff vorbereiten“ übernommen hat, in jedem Fach
+ * (lib/spielkarten.ts). Jede Karte bringt ihre Form mit: Wischen, Kacheln oder eine Reihenfolge.
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
+/** Spiele für ein Duell: „Dein Stoff“ hat nur dieser Schüler (lib/spielkarten.ts). */
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff");
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff";
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -51,10 +58,11 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   grammatik: "English Grammar",
   rechnen: "Kopfrechnen",
   strahl: "Zahlenstrahl",
+  stoff: "Dein Stoff",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
-export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik"> = {
+export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" | "Dein Stoff"> = {
   artikel: "Deutsch",
   praepositionen: "Deutsch",
   deklination: "Deutsch",
@@ -71,6 +79,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik">
   grammatik: "Englisch",
   rechnen: "Mathematik",
   strahl: "Mathematik",
+  stoff: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -91,6 +100,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   grammatik: "some oder any? much oder many?",
   rechnen: "Schnell im Kopf gerechnet: wie viel kommt heraus?",
   strahl: "Wo liegt die Zahl? Schieb den Zeiger an die richtige Stelle.",
+  stoff: "Die Karten, die deine Lehrkraft für dich geschrieben hat",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -111,6 +121,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   grammatik: ["some", "any", "much"],
   rechnen: ["7 · 8", "56", "+"],
   strahl: ["0", "0,5", "1"],
+  stoff: ["?", "✓", "→"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -131,6 +142,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   grammatik: "Was passt in die Lücke?",
   rechnen: "Welches Ergebnis stimmt?",
   strahl: "Wo liegt die Zahl am Zahlenstrahl?",
+  stoff: "Welche Antwort stimmt?",
 };
 
 /**
@@ -207,6 +219,8 @@ export type SpielKarte = {
   regel: string;
   /** Ein Wort zur richtigen Antwort, z. B. „Dativ“ */
   marke?: string;
+  /** Was über der Karte steht, wenn es nicht für das ganze Spiel gilt („Ordne das Zeitseil …“, Spielkarten) */
+  auftrag?: string;
   /** Mathe: Text, Kisten und Regel werden gesetzt wie in den Übungen (Bruchstrich, Hochzahl, Wurzel) */
   mathe?: true;
   /** Nur am Zahlenstrahl: die Zahl an jedem Teilstrich, welche davon dastehen, und ob die Gerade auch nach links weitergeht */

@@ -17,6 +17,7 @@ export const STOFF_TEILE: { key: string; label: string; hilfe: string }[] = [
   { key: "uebung", label: "Übungsblatt", hilfe: "8 Aufgaben mit Hilfen" },
   { key: "test", label: "Test mit Lösungen", hilfe: "6 Aufgaben, zur nächsten Schularbeit mit Punkten und Note" },
   { key: "praesentation", label: "Präsentation", hilfe: "mit Sprechtext für dich" },
+  { key: "spielkarten", label: "Spielkarten", hilfe: "etwa 40 Fragen für „Dein Stoff“ und Blockwerk in der Schüler-App" },
 ];
 
 type Datei = { key: string; file: File; url: string | null };

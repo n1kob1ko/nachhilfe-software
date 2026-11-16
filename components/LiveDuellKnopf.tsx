@@ -4,7 +4,7 @@ import { Swords, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { liveDuellAbbrechenAction, liveDuellStandAction, liveDuellStartenAction } from "@/app/wettspiel-actions";
 import type { DuellSicht } from "@/lib/duelle";
-import { SPIEL_ARTEN, SPIEL_TITEL, type SpielArt } from "@/lib/lernspiele-typen";
+import { DUELL_ARTEN, SPIEL_TITEL, type SpielArt } from "@/lib/lernspiele-typen";
 
 /**
  * Im Unterricht mit zwei Schülern gleichzeitig (D26): ein Live-Duell starten (lib/duelle.ts). Beide sehen es in ihrer
@@ -12,7 +12,7 @@ import { SPIEL_ARTEN, SPIEL_TITEL, type SpielArt } from "@/lib/lernspiele-typen"
  */
 export function LiveDuellKnopf({ aId, bId }: { aId: number; bId: number }) {
   const [offen, setOffen] = useState(false);
-  const [art, setArt] = useState<SpielArt>(SPIEL_ARTEN[0]);
+  const [art, setArt] = useState<SpielArt>(DUELL_ARTEN[0]);
   const [stand, setStand] = useState<(DuellSicht & { vonId: number }) | null>(null);
   const [fehler, setFehler] = useState<string | null>(null);
 
@@ -82,7 +82,7 @@ export function LiveDuellKnopf({ aId, bId }: { aId: number; bId: number }) {
               )}
               <p className="mt-3 text-[13px] text-ink-3">Spiel</p>
               <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Spiel">
-                {SPIEL_ARTEN.map((s) => (
+                {DUELL_ARTEN.map((s) => (
                   <button
                     key={s}
                     type="button"

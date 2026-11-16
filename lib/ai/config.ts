@@ -213,7 +213,7 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Stoff vorbereiten (lib/stoffpaket.ts): only on the teacher's click, after the tick „kein Name darauf“; all photos or PDF pages
   // of the Stoff with the teacher's text (names replaced) and what the app knows about the student. One long answer: Lernzettel,
   // the steps of a unit and up to 18 tasks; thinking on, because correctness beats quantity. Each click is a new draft
-  stoffpaket: { label: "Stoff vorbereiten", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 360_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
+  stoffpaket: { label: "Stoff vorbereiten", area: "EXERCISE", tier: "standard", maxTokens: 40_000, timeoutMs: 360_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },
   // Präsentation aus einem Lernpaket (lib/praesentation-ki.ts): only on the teacher's click, for a checked package, never with
   // student data. The KI writes the slides' content as JSON, never HTML; the app builds the deck. Each click is a new draft
   praesentation: { label: "Präsentation erstellen", area: "EXERCISE", tier: "standard", maxTokens: 32_000, timeoutMs: 300_000, thinking: "adaptiv", effort: "medium", realtime: false, reuseMs: 0, cache: "aus", schemaInPrompt: true },

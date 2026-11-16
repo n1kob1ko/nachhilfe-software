@@ -784,7 +784,7 @@ export function Lernspiel({
         {kopf}
         <div className="ls-mitte ls-rollt ls-staffel">
           <p className="ls-oberzeile" style={{ "--n": 0 } as CSSProperties}>
-            Lernspiel {SPIEL_FACH[art]}
+            {art === "stoff" ? "Lernspiel" : `Lernspiel ${SPIEL_FACH[art]}`}
           </p>
           <h1 className="ls-titel" style={{ "--n": 1 } as CSSProperties}>
             {SPIEL_TITEL[art]}
@@ -1275,7 +1275,7 @@ export function Lernspiel({
         <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
           {frageZeile}
           {feld === "reihe" ? (
-            <SatzbauFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
+            <SatzbauFeld {...eigen} auftrag={aktuell.auftrag ?? SPIEL_AUFGABE[art]} />
           ) : feld === "strahl" ? (
             <StrahlFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           ) : feld === "tippen" ? (
@@ -1283,11 +1283,11 @@ export function Lernspiel({
           ) : feld === "legen" ? (
             <LegeFeld {...eigen} auftrag="Leg die Form aus den Buchstaben." />
           ) : feld === "wischen" ? (
-            <WischFeld {...eigen} auftrag={aktuell.mathe ? "Ja oder nein?" : SPIEL_AUFGABE[art]} rest={reihe.length - pos - 1}>
+            <WischFeld {...eigen} auftrag={aktuell.auftrag ?? (aktuell.mathe ? "Ja oder nein?" : SPIEL_AUFGABE[art])} rest={reihe.length - pos - 1}>
               {zuletztZeile}
             </WischFeld>
           ) : (
-            <KachelFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
+            <KachelFeld {...eigen} auftrag={aktuell.auftrag ?? SPIEL_AUFGABE[art]} />
           )}
           {jubelZeile}
         </div>,
@@ -1300,7 +1300,7 @@ export function Lernspiel({
   return schale(
       <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
         {frageZeile}
-        <p className="ls-auftrag">{SPIEL_AUFGABE[art]}</p>
+        <p className="ls-auftrag">{aktuell?.auftrag ?? SPIEL_AUFGABE[art]}</p>
         {zuletztZeile}
         {jubelZeile}
 
@@ -1410,6 +1410,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   grammatik: ["some", "any", "much"],
   rechnen: ["54", "56", "63"],
   strahl: [],
+  stoff: ["richtig", "falsch"],
 };
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";

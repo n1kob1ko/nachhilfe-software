@@ -293,6 +293,12 @@ verschwinden. Neue Teile gibt es für eine Karte aus einem Spiel des Stoffs; dre
 Blitz (räumt 3 × 3 Felder frei). Gezählt wird wie im **Endlos-Modus**, dazu Punkte und ein Rekord über alle Spiele.
 _Avoid_: Block Blast, Tetris, Puzzle
 
+**Spielkarten**:
+Eigener Stoff eines Schülers für die **Lernspiele**, in jedem Fach: Fragen mit einer richtigen und falschen Antworten
+oder eine Reihenfolge, als Text geschrieben oder bei „Stoff vorbereiten“ von der KI vorgeschlagen. In der Schüler-App
+das Spiel „Dein Stoff“ und die Fragen im **Blockwerk**.
+_Avoid_: Quiz, Karteikarten (das ist der Vokabeltrainer)
+
 **Typische Fehler**:
 Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
 einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter

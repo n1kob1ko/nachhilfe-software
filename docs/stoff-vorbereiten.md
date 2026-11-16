@@ -26,7 +26,7 @@ Phase 3 (das ausgefüllte Blatt drucken) bauen darauf auf.
 1. Beim Schüler (oder in der laufenden Einheit): **Stoff vorbereiten**. Die Lehrkraft wählt bis zu 10 Fotos
    oder PDFs (Buch, Arbeitsblätter, Stoffzettel) oder schon vorhandenes Material, schreibt bei Bedarf, was sie
    braucht („Test für die Schularbeit am 3.12., nur Seite 45–48“), wählt das Fach und die Teile:
-   Lernzettel, Vorbereitungstest, Übungsblatt, Test mit Lösungen, Präsentation. Ohne Foto geht es auch, dann
+   Lernzettel, Vorbereitungstest, Übungsblatt, Test mit Lösungen, Präsentation, Spielkarten. Ohne Foto geht es auch, dann
    reicht der Text.
 2. **Eine KI-Anfrage** (`stoffpaket`, Stufe standard, bis 6 Minuten): die Fotos/PDFs plus das, was die App
    über den Schüler weiß, ohne Namen: Schulstufe und Schulart, die schwachen Fähigkeiten und häufigen Fehler
@@ -37,12 +37,14 @@ Phase 3 (das ausgefüllte Blatt drucken) bauen darauf auf.
    Builder, doppelte und kaputte fallen weg und stehen unter „Weggelassen“), ein **Lernpaket** mit dem
    Unterrichtsablauf (50 Minuten; die Übung bekommt das Übungsblatt, die Kontrolle den Vorbereitungstest) und
    der Entwurf der **Präsentation** (eine zweite KI-Anfrage, `praesentation`).
+   Mit „Spielkarten“ dazu etwa 40 **Spielkarten** für „Dein Stoff“ und Blockwerk (lib/spielkarten.ts), gespeichert,
+   aber noch nicht im Spiel; „Ansehen und ändern“ öffnet sie im Editor.
 4. Steht eine Schularbeit, ein Test oder eine LZK an, ist der Test eine **Probeschularbeit** dazu (Punkte,
    Notenschlüssel). Vorbereitungstest und Test laufen am Tablet im Testmodus (ein Versuch, keine Hilfen).
 5. Die Vorschau zeigt alles auf einer Seite. **Alles übernehmen** markiert Lernpaket und Präsentation als
    geprüft und legt den Ablauf bereit: in der laufenden Einheit sofort (wenn dort noch nichts begonnen hat),
    sonst für den nächsten Termin. Ab dann sieht der Schüler in der App unter „Deine Unterlagen“ den Lernzettel
-   und die Präsentation. **Verwerfen** löscht die nicht gesendeten Blätter und den Entwurf und archiviert das
+   und die Präsentation, und die Spielkarten sind im Spiel. **Verwerfen** löscht die nicht gesendeten Blätter und den Entwurf und archiviert das
    Paket.
 
 ## Regeln
