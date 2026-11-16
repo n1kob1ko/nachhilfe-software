@@ -818,7 +818,7 @@ export function Lernspiel({
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
             {form === "tippen" ? "" : form === "wischen" && art === "rechnen" ? "Ja oder nein?" : SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Schieb den Zeiger auf den richtigen Teilstrich und tipp auf „Prüfen“." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben und tipp auf „Prüfen“." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "kacheln" ? " Tipp eine Antwort an, sie springt in die Lücke. Dann tipp auf „Prüfen“." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Tipp die richtige Stelle am Strahl an." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "kacheln" ? " Tipp die richtige Antwort an." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (

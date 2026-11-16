@@ -220,14 +220,14 @@ eine Zahl, darunter ein Zahlenstrahl, und der Schüler schiebt den Zeiger dorthi
 
 - **Spielfeld**: ein Blatt mit „Wo liegt 3,7“ und dem Strahl. Die Zahlen stehen über den Teilstrichen, der Zeiger
   hängt darunter, damit der Finger nichts verdeckt. Irgendwo auf den Strahl tippen oder ziehen setzt den Zeiger auf den
-  nächsten Teilstrich (am Laptop die Pfeiltasten), „Prüfen“ zählt (Eingabetaste). Welche Zahl unter dem Zeiger liegt,
+  nächsten Teilstrich (am Laptop die Pfeiltasten), das Loslassen zählt sofort (am Laptop die Eingabetaste). Welche Zahl unter dem Zeiger liegt,
   steht vorher nirgends: das abzulesen ist die Aufgabe.
 - **Richtig**: der Zeiger wird grün, über dem Teilstrich erscheint die Zahl als Fähnchen, die nächste Karte kommt.
   **Falsch**: der Zeiger wird rot, die richtige Stelle bekommt das grüne Fähnchen, darunter steht, welche Zahl
   getroffen wurde („Fast! Das war 3,6. Um einen Teilstrich verzählt.“) und der Weg („Von 3,5 bis 4 sind es 5
   Teilstücke, ein Teilstück ist also 0,1 …“). Weiter geht es, wenn der Zeiger an der richtigen Stelle sitzt; die Karte
   kommt drei Karten später noch einmal.
-- **Gezählt** wird das erste Prüfen je Karte. Die Wahl ist die Nummer des Teilstrichs (`richtig` der Karte), der
+- **Gezählt** wird das erste Loslassen je Karte. Die Wahl ist die Nummer des Teilstrichs (`richtig` der Karte), der
   Server prüft sie wie bei jedem Spiel.
 - **Themenspiel**: acht Themen in `STRAHL_THEMEN`, jedes eine Fähigkeit: Zahlen am Zahlenstrahl (Volksschule), große
   Zahlen, Dezimalzahlen, Brüche, Brüche erweitern, gemischte Zahlen, negative Zahlen, negative Brüche und
@@ -261,7 +261,8 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 | Kisten | der, die, das; Die vier Fälle; bei Kopfrechnen, was sich nicht tippen lässt | `Lernspiel.tsx` |
 
 - **Ziffernblock**: oben das Blatt mit der Rechnung und einem Feld, unten beim Daumen die Ziffern wie am Handy, rechts
-  Löschen und ein goldener Haken zum Prüfen (am Laptop Ziffern, Rücktaste, Eingabetaste). Das Ergebnis wird selbst
+  Löschen und ein goldener Haken (am Laptop Ziffern, Rücktaste, Eingabetaste). Hat das Getippte so viele Zeichen wie
+  das Ergebnis (oder stimmt es schon), zählt es sofort; der Haken braucht es nur für ein kürzeres. Das Ergebnis wird selbst
   ausgerechnet und eingetippt, statt es unter drei Kisten wiederzuerkennen. Eine Einheit steht fest hinter dem Feld
   („= ___ dm“), lange Zahlen stehen beim Tippen in Dreiergruppen. Komma, Vorzeichen („+/−“) und Bruchstrich gibt es
   nur, wenn eine Karte der Runde sie braucht; die Null nimmt sonst ihren Platz. Zahlen zählen nach ihrem Wert („0,50“
@@ -274,8 +275,8 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
     „5,59 · 1,2“ reicht ein Überschlag, dafür sind die drei Kisten da. In so einer Runde wechseln sich Ziffernblock
     und Kisten ab.
 - **Buchstaben legen**: oben das Blatt mit dem Satz und der Lücke, unten die Buchstaben als Kacheln. Antippen setzt
-  einen Buchstaben in die Lücke, die Rücktaste (oder ein Tipp auf das Wort) holt den letzten zurück, „Prüfen“ zählt
-  (am Laptop tippen, Rücktaste, Eingabetaste). Wie lang das Wort ist, steht nirgends. Zu den Buchstaben der Antwort
+  einen Buchstaben in die Lücke, die Rücktaste (oder ein Tipp auf das Wort) holt den letzten zurück. Liegen so viele
+  Buchstaben, wie das Wort lang ist, zählt es sofort (am Laptop tippen, Rücktaste; die Eingabetaste zählt ein kürzeres). Wie lang das Wort ist, steht nirgends. Zu den Buchstaben der Antwort
   kommen zwei oder drei aus den falschen Formen der Karte (`legeKacheln`): bei „put“ liegen auch t, e, d da, damit
   sich „putted“ legen lässt. Die Reihenfolge der Kacheln ist je Karte fest.
 - **Wischen**: wo es nur zwei Antworten gibt, wird die Karte nach links oder rechts gewischt (die erste Antwort liegt
@@ -288,16 +289,15 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
 - **Antwortkacheln** (niko 2026-11-12: „das mit dem drehen als antwort bei spielen gefällt mir nicht schau dir mal
   online einige lernspiele an die beliebt sind und mache es wie die“; bis dahin war hier ein Drehrad): oben das Blatt
   mit dem Satz, darunter beim Daumen die Antworten als große Kacheln, zu zweit nebeneinander (lange englische Formen
-  untereinander), darunter „Prüfen“. So machen es die verbreiteten Lern-Apps: eine Wortbank unter dem Satz, ein Tipp
-  setzt das Wort ein, ein Knopf prüft, und das Ergebnis kommt als farbiger Streifen unten. Eine Kachel antippen: das
-  Wort fliegt in die Lücke (`probe`, noch ohne Farbe), auf seinem Platz bleibt ein leerer Rahmen; eine andere Kachel
-  tauscht es, die Lücke antippen holt es zurück. Unten kommt nach dem Prüfen der Streifen: grün „Super!“, oder rot
+  untereinander). Eine Kachel antippen: das Wort fliegt in die Lücke (`probe`, noch ohne Farbe), auf seinem Platz
+  bleibt ein leerer Rahmen, und es zählt sofort (niko 2026-11-16: „dieses ‚Prüfen‘ ist zu anstrengend, das soll weg
+  sein, also wenn der Spieler klickt, dann soll es sofort zählen“; bis dahin gab es einen Knopf „Prüfen“). Unten kommt der Streifen: grün „Super!“, oder rot
   „Fast! Richtig ist …“ mit der Regel. Die falsche Kachel ist dann durchgestrichen, um die richtige
-  atmet ein goldener Ring, ein Tipp auf sie schließt die Karte ab. Am Laptop die Ziffern, Eingabetaste, Rücktaste. Eine Karte mit nur
+  atmet ein goldener Ring, ein Tipp auf sie schließt die Karte ab. Am Laptop die Ziffern. Eine Karte mit nur
   zwei Antworten in diesen Spielen wird gewischt.
 - **Nach einem Fehler** bei allen wie bei den Kisten: das Feld wird rot, darunter kommt das Blatt „Fast! Richtig
   ist …“ mit Rechenweg oder Regel, und weiter geht es erst, wenn das Richtige getippt, gelegt, gewischt oder als Kachel
-  angetippt ist (dann ohne „Prüfen“). Die Karte kommt drei Karten später noch einmal.
+  angetippt ist. Einen Knopf „Prüfen“ gibt es in keinem Spiel. Die Karte kommt drei Karten später noch einmal.
 - **Wertung**: wie immer die erste Antwort gegen `karte.richtig`. Stimmt das Getippte oder Gelegte, meldet das
   Spielfeld genau `karte.richtig`, sonst das, was der Schüler geschrieben hat; beim Wischen und bei den Kacheln ist die Wahl
   wie bei den Kisten eine der Antworten der Karte. Am Server ändert sich nichts.
