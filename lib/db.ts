@@ -2027,6 +2027,12 @@ function migrate(conn: Database.Database) {
     // the school subjects of the Fächerliste: missing ones are added, a deactivated one stays deactivated
     const insertFach = conn.prepare("INSERT OR IGNORE INTO faecher (name, sort) VALUES (?, ?)");
     for (const [i, name] of SCHULFAECHER.entries()) insertFach.run(name, i);
+    // Blockwerk: seit 2026-11-16 alle Punkte mal drei (lib/blockwerk.ts PUNKTE_FAKTOR); die Stände von davor einmal mit
+    const mal3 = "blockwerk_punkte_mal3";
+    if (!conn.prepare("SELECT 1 FROM app_settings WHERE key = ?").get(mal3)) {
+      conn.exec("UPDATE spielrunden SET bloecke = bloecke * 3 WHERE bloecke IS NOT NULL AND bloecke > 0");
+      conn.prepare("INSERT INTO app_settings (key, value) VALUES (?, '1')").run(mal3);
+    }
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
     // Präsentation im Unterricht (2026-10-27): ein Vorschlag darf ohne Lernpaket sein. SQLite nimmt NOT NULL nur weg, indem die

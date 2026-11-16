@@ -30,7 +30,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { bloeckeRekord, endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeBestenliste, bloeckeRekord, endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -159,6 +159,7 @@ export default async function DevicePage() {
           amTablet
           modus={bloecke ? "bloecke" : undefined}
           bloeckeRekord={bloeckeRekord(student.id)}
+          bestenliste={bloecke ? bloeckeBestenliste(student) : undefined}
           bloeckeLink="/geraet/ansicht?zu=bloecke:"
           art={art}
           vorschlaege={vorschlaege}

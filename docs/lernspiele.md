@@ -363,23 +363,30 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
 - **Fragen**: die ersten drei Teile gibt es so. Sind sie gelegt, kommt die nächste Karte des Spiels als Frage, mit
   derselben Antwortart wie im Spiel (Kisten, Kacheln, Ziffernblock …). Oben steht „Antworte für neue Teile“ mit den
   drei Teilen, die danach kommen. Neue Teile gibt es immer, auch nach einem Fehler (dann erst mit der richtigen
-  Antwort, wie im Spiel). Beim ersten Versuch richtig: +20 Punkte, und der Blitz lädt.
+  Antwort, wie im Spiel). Beim ersten Versuch richtig: +60 Punkte, und der Blitz lädt.
 - **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
   richtige Antworten laden einen neuen (die drei Punkte am Knopf), höchstens drei. Zuerst gab jede richtige Antwort
   einen Blitz; im Test endete dann kein Spiel mehr.
 - **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage**: richtig
   gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
   richtig waren, der Lernstand des Spiels und „Kommt nächstes Mal wieder“.
-- **Punkte** (`punkteFuer`): jedes gelegte Feld 1, jede Linie 10 mal die Zahl der Linien (1 → 10, 2 → 40, 3 → 90),
-  das Ganze mal der Kombo; ein ganz leeres Brett +300. Die Kombo steigt mit jedem Zug, der abräumt, und endet nach
+- **Punkte** (`punkteFuer`, seit 2026-11-16 alles mal drei: niko „die punkte sind noch zu wenig“): jedes gelegte
+  Feld 3, jede Linie 30 mal die Zahl der Linien (1 → 30, 2 → 120, 3 → 270), das Ganze mal der Kombo; ein ganz leeres
+  Brett +900. Ältere Stände hat die Datenbank einmal mal drei genommen (`blockwerk_punkte_mal3`). Die Kombo steigt mit jedem Zug, der abräumt, und endet nach
   drei Zügen ohne Linie.
 - **Gezählt** wird wie im Endlos-Modus: die Karten kommen in gewöhnlichen Runden, die aneinanderhängen
   (`spielrunden.endlos`), der Lernstand zählt jede Runde einmal, die letzte nur mit den beantworteten Karten. Die
   erste Runde trägt in `spielrunden.bloecke` die Punkte (0 beim Start); das Gerät meldet sie am Ende, der Server nimmt
-  höchstens eine Million und macht sie nie kleiner. Der Rekord gilt für alle Spiele zusammen (`bloeckeRekord`), der
+  höchstens drei Millionen und macht sie nie kleiner. Der Rekord gilt für alle Spiele zusammen (`bloeckeRekord`), der
   Endlos-Rekord zählt Blockwerk nicht mit. Wer mit dem Kreuz aufhört, bekommt keinen Rekord (wie beim Endlos-Spiel).
 - Ziehen geht mit Finger und Maus; ohne Bewegung bei „weniger Bewegung“. Video: `lernspiele/blockwerk-handy.mp4` im
   Projektordner.
+
+- **Bestenliste** (niko 2026-11-16: „mach einen highscore also leaderboard für alle“, `bloeckeBestenliste`): je
+  Schüler der beste Blockwerk-Stand, die Besten zuerst, auf dem Anfang (5 Plätze) und am Ende (4 Plätze). Andere stehen
+  nur mit Spielprofil und Erlaubnis drin (wie Liga und Duelle, lib/spielprofil.ts), nur mit Spitzname und Tierbild.
+  Die eigene Zeile sieht jeder, auch weiter unten nach „…“; ohne Profil als „Du“ mit dem Hinweis, wie man für alle
+  sichtbar wird.
 
 ## Dein Stoff (eigene Spielkarten)
 

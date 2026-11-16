@@ -152,13 +152,21 @@ export function blitzFelder(r: number, s: number): number[] {
 }
 
 /**
- * Punkte für einen Zug: jedes gelegte Feld einen, jede abgeräumte Linie zehn mal die Zahl der Linien (eine 10, zwei
- * 40, drei 90), das Ganze mal der Kombo. Ein ganz leeres Brett bringt 300 dazu.
+ * Alle Punkte mal drei (niko 2026-11-16: „die punkte sind noch zu wenig … einfach 3 mal so viele punkte alles geben“).
+ * Gespeicherte Stände von davor hat die Datenbank einmal mit drei malgenommen (lib/db.ts, `blockwerk_punkte_mal3`).
+ */
+export const PUNKTE_FAKTOR = 3;
+/** Eine Frage beim ersten Versuch richtig (20 mal drei). */
+export const FRAGE_PUNKTE = 20 * PUNKTE_FAKTOR;
+
+/**
+ * Punkte für einen Zug: jedes gelegte Feld 3, jede abgeräumte Linie 30 mal die Zahl der Linien (eine 30, zwei 120,
+ * drei 270), das Ganze mal der Kombo. Ein ganz leeres Brett bringt 900 dazu.
  */
 export function punkteFuer(zug: Zug, felder: number, kombo: number): number {
   const linien = zug.reihen.length + zug.spalten.length;
   const leer = linien > 0 && zug.brett.every((x) => x === null);
-  return felder + linien * linien * 10 * Math.max(1, kombo) + (leer ? 300 : 0);
+  return PUNKTE_FAKTOR * (felder + linien * linien * 10 * Math.max(1, kombo) + (leer ? 300 : 0));
 }
 
 /** Nach so vielen Zügen ohne abgeräumte Linie endet die Kombo. */
@@ -214,5 +222,5 @@ export function steckt(brett: Brett, teile: (Teil | null)[]): boolean {
 }
 
 /** Der Punktestand, den der Server glaubt: höchstens so viel, wie ein ehrliches langes Spiel bringen kann. */
-export const PUNKTE_MAX = 1_000_000;
+export const PUNKTE_MAX = 3_000_000;
 export const gueltigePunkte = (p: unknown) => (typeof p === "number" && Number.isFinite(p) ? Math.min(PUNKTE_MAX, Math.max(0, Math.round(p))) : 0);

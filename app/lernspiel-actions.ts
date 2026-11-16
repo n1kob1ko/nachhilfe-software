@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, bloeckePunkte, bloeckeRekord, endlosRekord, istBlockwerk, endlosStand, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde } from "@/lib/lernspiele";
+import { beendeRunde, bloeckeBestenliste, bloeckePunkte, bloeckeRekord, endlosRekord, istBlockwerk, endlosStand, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
@@ -90,6 +90,6 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     nochmal: e.nochmal.map((k) => ({ loesung: k.loesung })),
     liga: liga.punkte > 0 || liga.grund ? { punkte: liga.punkte, grund: liga.grund } : undefined,
     endlos: zeile?.endlos && !block ? { stand: endlosStand(student.id, zeile.endlos), rekord: endlosRekord(student.id, zeile.art, zeile.endlos) } : undefined,
-    bloecke: zeile?.endlos && block ? { rekord: bloeckeRekord(student.id, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos) } : undefined,
+    bloecke: zeile?.endlos && block ? { rekord: bloeckeRekord(student.id, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? bloeckeBestenliste(student) : undefined } : undefined,
   };
 }

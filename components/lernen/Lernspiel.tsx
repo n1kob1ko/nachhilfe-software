@@ -1,12 +1,13 @@
 "use client";
 
 import "./lernspiel.css";
+import "./arena.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
-import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
@@ -83,6 +84,8 @@ export function Lernspiel({
   modus,
   bloeckeRekord = 0,
   bloeckeLink,
+  bestenliste: bestenlisteAnfang,
+  arenaLink,
 }: {
   /** der geheime Link des Schülers; leer am Tablet */
   token: string;
@@ -109,6 +112,10 @@ export function Lernspiel({
   bloeckeRekord?: number;
   /** Blockwerk: der Link zu einem anderen Spiel als Fragenquelle, ohne die Art am Ende („…?modus=bloecke&art=“) */
   bloeckeLink?: string;
+  /** Blockwerk: die Bestenliste aller Schüler (lib/lernspiele.ts bloeckeBestenliste) */
+  bestenliste?: Bestenliste;
+  /** Liga und Duelle: dort legt der Schüler sein Spielprofil an (fehlt am Tablet) */
+  arenaLink?: string;
 }) {
   const router = useRouter();
   const server = useMemo(
@@ -760,6 +767,7 @@ export function Lernspiel({
               </p>
             </div>
           </div>
+          {bestenlisteAnfang && <BestenListe liste={bestenlisteAnfang} arenaLink={arenaLink} n={5} />}
           {fehler && (
             <p className="ls-fehler mt-6" role="alert">
               {fehler}
@@ -988,6 +996,8 @@ export function Lernspiel({
               </p>
             </div>
           </div>
+
+          {(e?.bloecke?.bestenliste ?? bestenlisteAnfang) && <BestenListe liste={(e?.bloecke?.bestenliste ?? bestenlisteAnfang)!} arenaLink={arenaLink} n={4} />}
 
           {nochmal.length > 0 && (
             <div className="ls-blatt mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
@@ -1389,6 +1399,72 @@ export function Lernspiel({
           </div>
         )}
       </div>,
+  );
+}
+
+/**
+ * Die Blockwerk-Bestenliste (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): die ersten Plätze mit
+ * Spitzname und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
+ * für sich selbst drin; darunter ein Satz, wie man für alle sichtbar wird.
+ */
+function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: string; n: number }) {
+  const oben = liste.zeilen.slice(0, Math.max(1, n));
+  const ichUnten = liste.ich && !oben.some((z) => z.ich) ? liste.ich : null;
+  if (!oben.length) return null;
+  return (
+    <section className="ls-glas mt-4 p-3 text-left" aria-label="Bestenliste" style={{ "--n": 4 } as CSSProperties} data-testid="bw-bestenliste">
+      <p className="ls-klein flex items-center gap-1.5 px-1">
+        <Trophy size={14} strokeWidth={2.4} aria-hidden /> Bestenliste
+      </p>
+      <ol className="mt-2 grid gap-1.5">
+        {oben.map((z) => (
+          <BestenReihe key={`${z.platz}-${z.name}`} z={z} />
+        ))}
+        {ichUnten && (
+          <>
+            <li className="text-center text-[13px] leading-none opacity-60" aria-hidden>
+              …
+            </li>
+            <BestenReihe z={ichUnten} />
+          </>
+        )}
+      </ol>
+      {liste.profil !== "da" && (
+        <p className="mt-2 px-1 text-[13px] leading-snug opacity-80">
+          {liste.profil === "anlegen" ? (
+            arenaLink ? (
+              <>
+                Nur du siehst dich hier.{" "}
+                <Link href={arenaLink} className="font-semibold underline">
+                  Mit Spitzname mitspielen
+                </Link>
+                , dann sehen dich alle.
+              </>
+            ) : (
+              "Nur du siehst dich hier. Mit einem Spitznamen (Spiele › Liga) sehen dich alle."
+            )
+          ) : (
+            "Nur du siehst dich hier. Frag deinen Lehrer, ob du mit Spitzname mitspielen darfst."
+          )}
+        </p>
+      )}
+    </section>
+  );
+}
+
+function BestenReihe({ z }: { z: Bestenliste["zeilen"][number] }) {
+  return (
+    <li className="ar-reihe" data-ich={z.ich ? "" : undefined}>
+      <span className="ar-platz">{z.platz}</span>
+      <span className="ar-bild" aria-hidden>
+        {z.bild}
+      </span>
+      <span className="min-w-0 flex-1 truncate text-[15px] font-bold">
+        {z.name}
+        {z.ich && z.name !== "Du" ? " (du)" : ""}
+      </span>
+      <span className="ar-punkte tabular-nums">{z.punkte.toLocaleString("de-AT")}</span>
+    </li>
   );
 }
 

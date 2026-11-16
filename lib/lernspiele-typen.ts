@@ -264,6 +264,14 @@ export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
 /** So viele Fehler verzeiht ein Endlos-Spiel. */
 export const ENDLOS_HERZEN = 3;
 
+/** Eine Zeile der Blockwerk-Bestenliste: Spitzname und Tierbild aus dem Spielprofil, nie der echte Name. */
+export type BestenZeile = { platz: number; name: string; bild: string; punkte: number; ich: boolean };
+/**
+ * Die Blockwerk-Bestenliste (lib/lernspiele.ts `bloeckeBestenliste`): die Besten aller Schüler mit Spielprofil, dazu die
+ * eigene Zeile, auch wenn sie weiter unten ist. `profil`: was dem Schüler fehlt, um für andere sichtbar zu sein.
+ */
+export type Bestenliste = { zeilen: BestenZeile[]; ich: BestenZeile | null; profil: "da" | "anlegen" | "erlaubnis" };
+
 export type SpielErgebnis =
   | {
       richtig: number;
@@ -279,8 +287,8 @@ export type SpielErgebnis =
       liga?: { punkte: number; grund?: string };
       /** Endlos-Modus: alle beim ersten Versuch richtigen Karten des Endlos-Spiels und der Rekord davor */
       endlos?: { stand: number; rekord: number };
-      /** Blockwerk: der beste Stand davor (über alle Spiele) und wie viele Fragen beim ersten Versuch richtig waren */
-      bloecke?: { rekord: number; fragen: number };
+      /** Blockwerk: der beste Stand davor (über alle Spiele), wie viele Fragen beim ersten Versuch richtig waren, die Bestenliste danach */
+      bloecke?: { rekord: number; fragen: number; bestenliste?: Bestenliste };
     }
   | { fehler: string };
 
