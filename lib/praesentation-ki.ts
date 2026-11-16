@@ -129,14 +129,15 @@ const laufend = ((globalThis as unknown as { __praesKiLaufend?: Map<number, Prom
  * empty budget, on a timeout or an unusable answer a message comes back and nothing is stored. An older open
  * proposal of the package is set aside (verworfen), so there is only ever one to look at.
  */
-export async function erstellePraesEntwurf(paketId: number, teacherId: number | null): Promise<PraesKiErgebnis> {
+export async function erstellePraesEntwurf(paketId: number, teacherId: number | null, o: { auchUngeprueft?: boolean } = {}): Promise<PraesKiErgebnis> {
   const running = laufend.get(paketId);
   if (running) return running;
   const job = (async (): Promise<PraesKiErgebnis> => {
     try {
       const p = getLernpaket(paketId);
       if (!p) return { ok: false, error: "Dieses Lernpaket gibt es nicht." };
-      if (p.status !== "geprueft") return { ok: false, error: "Eine Präsentation lässt sich erst aus einem geprüften Lernpaket erstellen." };
+      // „Stoff vorbereiten“ (lib/stoffpaket.ts) erstellt Paket und Präsentation zusammen; die Lehrkraft prüft beides in einer Vorschau
+      if (p.status !== "geprueft" && !(o.auchUngeprueft && p.status === "entwurf")) return { ok: false, error: "Eine Präsentation lässt sich erst aus einem geprüften Lernpaket erstellen." };
       if (!p.schritte.length) return { ok: false, error: "Das Lernpaket hat noch keine Schritte." };
       const aus = praesKiAusGrund();
       if (aus) return { ok: false, error: aus };

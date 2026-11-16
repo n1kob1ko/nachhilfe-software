@@ -838,8 +838,10 @@ export function hintUsesForAssignment(assignmentId: number) {
 export function assignWorksheet(worksheetId: number, studentId: number, note = "", unitId: number | null = null, mode: AssignmentMode = "normal"): number {
   // a Probeschularbeit (lib/probeschularbeit.ts) is written like a Schularbeit, whichever way it is sent:
   // no hints, one try per task, the result at the end (mode 'test', like a Minitest)
-  const probe = db().prepare("SELECT probe_test_id FROM worksheets WHERE id = ?").get(worksheetId) as { probe_test_id: number | null } | undefined;
+  const probe = db().prepare("SELECT probe_test_id, settings FROM worksheets WHERE id = ?").get(worksheetId) as { probe_test_id: number | null; settings: string | null } | undefined;
   if (probe?.probe_test_id) mode = "test";
+  // Test und Vorbereitungstest aus „Stoff vorbereiten“ (lib/stoffpaket.ts) laufen ebenso: ein Versuch, keine Tipps
+  if (mode === "normal" && /"rolle":"(test|vorbereitung)"/.test(probe?.settings ?? "")) mode = "test";
   const res = db().prepare("INSERT INTO assignments (worksheet_id, student_id, note, unit_id, mode) VALUES (?, ?, ?, ?, ?)").run(worksheetId, studentId, note, unitId, mode);
   // students only ever see released exercises; sending an archived exercise again takes it out of the archive
   db().prepare("UPDATE worksheets SET status = 'freigegeben', archived_at = NULL, archived_by = NULL WHERE id = ?").run(worksheetId);

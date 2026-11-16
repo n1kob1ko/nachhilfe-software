@@ -5,7 +5,7 @@ import { WettspielProfil } from "@/components/WettspielProfil";
 import { Erkenntnisse } from "@/components/Erkenntnisse";
 import { ortName } from "@/lib/planung/ort";
 import { notFound } from "next/navigation";
-import { Archive, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, ScanLine, Sparkles, Trash2 } from "lucide-react";
+import { Archive, BookOpenCheck, Camera, CheckCircle2, Circle, FileText, History, PenLine, Pencil, Plus, ScanLine, Sparkles, Trash2 } from "lucide-react";
 import { Avatar } from "@/components/Art";
 import {
   addHomeworkAction,
@@ -105,6 +105,10 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       </header>
       <div className="no-print mb-7 grid grid-cols-2 gap-2.5 sm:flex sm:flex-wrap sm:gap-3 [&_.btn]:w-full sm:[&_.btn]:w-auto [&>:first-child]:col-span-2 sm:[&>:first-child]:col-auto">
         <UnitControl student={student} />
+        {/* niko 16.11.2026: Fotos vom Buch → Lernzettel, Tests, Präsentation in einem Schritt (lib/stoffpaket.ts) */}
+        <Link href={`/schueler/${student.id}/stoff`} className="btn btn-secondary btn-lg" data-testid="stoff-vorbereiten">
+          <BookOpenCheck size={18} aria-hidden /> Stoff vorbereiten
+        </Link>
         <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-secondary btn-lg">
           <Plus size={18} aria-hidden /> Übung erstellen
         </Link>

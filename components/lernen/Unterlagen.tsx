@@ -1,19 +1,32 @@
 import Link from "next/link";
-import { BookOpenCheck, ChevronRight, FolderOpen, Presentation } from "lucide-react";
+import { BookOpenCheck, ChevronRight, FileText, FolderOpen, Presentation } from "lucide-react";
 import { More, Pill } from "@/components/ui";
-import { praesentationenFuer, uebungenMitLoesung } from "@/lib/schuelerportal";
+import { lernzettelFuer, praesentationenFuer, uebungenMitLoesung } from "@/lib/schuelerportal";
 import { Abschnitt } from "./Abschnitt";
 
 /**
- * Deine Unterlagen in der Schüler-App: die Präsentationen aus deinen Einheiten (nur die Folien) und die Übungen,
- * deren Lösung freigegeben ist. Nur was dir freigegeben ist; ohne beides kein Abschnitt.
+ * Deine Unterlagen in der Schüler-App: die Lernzettel aus „Stoff vorbereiten“, die Präsentationen aus deinen Einheiten
+ * (nur die Folien) und die Übungen, deren Lösung freigegeben ist. Nur was dir freigegeben ist; ohne alles kein Abschnitt.
  */
 export function Unterlagen({ studentId, token }: { studentId: number; token: string }) {
   const praes = praesentationenFuer(studentId);
   const uebungen = uebungenMitLoesung(studentId);
-  if (praes.length === 0 && uebungen.length === 0) return null;
+  const zettel = lernzettelFuer(studentId);
+  if (praes.length === 0 && uebungen.length === 0 && zettel.length === 0) return null;
   return (
-    <Abschnitt titel="Deine Unterlagen" icon={FolderOpen} anzahl={praes.length + uebungen.length} testId="unterlagen">
+    <Abschnitt titel="Deine Unterlagen" icon={FolderOpen} anzahl={praes.length + uebungen.length + zettel.length} testId="unterlagen">
+      {zettel.length > 0 && (
+        <div className="mt-4">
+          <p className="text-[13px] font-semibold text-ink-2">Lernzettel</p>
+          <More
+            limit={3}
+            className="divide-y divide-line"
+            items={zettel.map((z) => (
+              <Zeile key={z.id} href={`/lernen/${token}/lernzettel/${z.id}`} icon={<FileText size={18} aria-hidden />} titel={z.titel} meta={z.fach} />
+            ))}
+          />
+        </div>
+      )}
       {praes.length > 0 && (
         <div className="mt-4">
           <p className="text-[13px] font-semibold text-ink-2">Präsentationen</p>
