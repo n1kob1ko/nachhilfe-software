@@ -2,7 +2,7 @@ import "@/components/lernen/spiele.css";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Flame } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
-import { SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { hatEndlos, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
 
 /** Warum ein Spiel gerade passt, kurz für das Schild auf der Kachel. */
@@ -19,16 +19,21 @@ export function SpieleListe({
   lernstand,
   vorschlaege,
   href,
+  bloecke,
 }: {
   student: repo.Student;
   heute: string;
   lernstand: Map<string, number | null>;
   vorschlaege: SpielVorschlag[];
   href: (art: SpielArt) => string;
+  /** Blockwerk mit den Karten eines Spiels; ohne Angabe keine Kachel */
+  bloecke?: (art: SpielArt) => string;
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
   const grundVon = new Map(vorschlaege.map((v) => [v.art, v]));
+  // Blockwerk: die Fragen kommen aus dem Spiel, das am besten passt (nur Spiele mit einzelnen Karten)
+  const blockArt = vorschlaege.find((v) => hatEndlos(v.art))?.art;
   const faecher = [...new Set(SPIEL_ARTEN.map((a) => SPIEL_FACH[a]))]
     .map((fach) => ({ fach, spiele: SPIEL_ARTEN.filter((a) => SPIEL_FACH[a] === fach && grundVon.has(a)) }))
     .filter((f) => f.spiele.length > 0);
@@ -57,6 +62,24 @@ export function SpieleListe({
         </div>
         <Kaertchen art={erstes.art} gross />
       </section>
+
+      {bloecke && blockArt && (
+        <Link href={bloecke(blockArt)} className="sp-block panel mt-3" data-testid="spiele-blockwerk">
+          <span className="sp-block-bild" aria-hidden>
+            {[0, 0, 3, 1, 1, 1, 2, 4, 2].map((f, i) => (
+              <i key={i} data-f={f} data-leer={[2, 6].includes(i) ? "" : undefined} />
+            ))}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="sp-titel">Blockwerk</span>
+              <span className="sp-schild">Neu</span>
+            </span>
+            <span className="sp-kurz">Teile legen, Reihen räumen. Neue Teile gibt es für Fragen aus {SPIEL_TITEL[blockArt]}.</span>
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+        </Link>
+      )}
 
       {faecher.map(({ fach, spiele }) => (
         <section key={fach} className="mt-9" aria-labelledby={`spiele-${fach}`}>

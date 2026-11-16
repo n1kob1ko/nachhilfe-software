@@ -52,7 +52,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={(art) => `${base}/spiel?modus=bloecke&art=${art}`} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">

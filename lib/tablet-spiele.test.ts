@@ -27,6 +27,10 @@ test("Tablet-Ansicht Spiele: hin und zurück gelesen, Live-Status zeigt das Spie
   assert.deepEqual(live.parseView("spiel:wortschatz"), { kind: "spiel", art: "wortschatz" });
   // ein Spiel, das es nicht gibt, ist die Startansicht
   assert.deepEqual(live.parseView("spiel:schach"), { kind: "start" });
+  // Blockwerk mit den Karten eines Spiels
+  assert.deepEqual(live.parseView("bloecke:artikel"), { kind: "spiel", art: "artikel", bloecke: true });
+  live.showOnTablet(unit, { kind: "spiel", art: "artikel", bloecke: true });
+  assert.equal(units.getUnit(unit.id)!.device_view, "bloecke:artikel");
 
   live.showOnTablet(unit, { kind: "spiele" });
   assert.equal(units.getUnit(unit.id)!.device_view, "spiele");

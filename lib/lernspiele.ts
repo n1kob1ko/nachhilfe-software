@@ -345,6 +345,7 @@ type Zeile = {
   created_at: string;
   beendet_at: string | null;
   endlos: number | null;
+  bloecke: number | null;
 };
 
 type GespeicherteAntwort = SpielAntwort & { richtig: boolean };
@@ -382,6 +383,8 @@ export function starteRunde(
     heute?: string;
     /** Endlos-Modus: „neu“ beginnt ein Endlos-Spiel, eine Zahl setzt es fort (die id seiner ersten Runde) */
     endlos?: "neu" | number;
+    /** Blockwerk: mit `endlos: "neu"` beginnt ein Blockwerk-Spiel statt eines Endlos-Spiels (die Runden hängen gleich aneinander) */
+    bloecke?: boolean;
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
@@ -416,6 +419,8 @@ export function starteRunde(
   // ein Endlos-Spiel setzt nur fort, wer es begonnen hat, und nur im selben Spiel
   const lauf = o.endlos === "neu" ? rundeId : endlosLauf(student.id, art, o.endlos) ?? rundeId;
   db().prepare("UPDATE spielrunden SET endlos = ? WHERE id = ?").run(lauf, rundeId);
+  // Blockwerk: die erste Runde trägt die Punkte (später `bloeckePunkte`); eine Fortsetzung erbt das von ihr
+  if (lauf === rundeId && o.bloecke) db().prepare("UPDATE spielrunden SET bloecke = 0 WHERE id = ?").run(rundeId);
   return { rundeId, karten, endlos: lauf };
 }
 
@@ -440,9 +445,29 @@ export function endlosStand(studentId: number, lauf: number): number {
 export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): number {
   const z = db()
     .prepare(
-      "SELECT COALESCE(MAX(n), 0) AS rekord FROM (SELECT SUM(richtig) AS n FROM spielrunden WHERE student_id = ? AND art = ? AND endlos IS NOT NULL AND endlos != ? AND beendet_at IS NOT NULL GROUP BY endlos)",
+      // Blockwerk-Spiele hängen ihre Runden genauso aneinander, sind aber keine Endlos-Spiele
+      "SELECT COALESCE(MAX(n), 0) AS rekord FROM (SELECT SUM(richtig) AS n FROM spielrunden WHERE student_id = ? AND art = ? AND endlos IS NOT NULL AND endlos != ? AND beendet_at IS NOT NULL AND endlos NOT IN (SELECT id FROM spielrunden WHERE student_id = ? AND bloecke IS NOT NULL) GROUP BY endlos)",
     )
-    .get(studentId, art, ohne ?? -1) as { rekord: number };
+    .get(studentId, art, ohne ?? -1, studentId) as { rekord: number };
+  return z.rekord;
+}
+
+/**
+ * Blockwerk (lib/blockwerk.ts): das Spiel zählt seine Punkte auf dem Gerät und meldet sie am Ende; der Server merkt sie
+ * sich an der ersten Runde. Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
+ */
+export function bloeckePunkte(studentId: number, lauf: number, punkte: number) {
+  db().prepare("UPDATE spielrunden SET bloecke = MAX(COALESCE(bloecke, 0), ?) WHERE id = ? AND student_id = ? AND bloecke IS NOT NULL").run(punkte, lauf, studentId);
+}
+
+/** Ist dieser Lauf ein Blockwerk-Spiel? */
+export function istBlockwerk(studentId: number, lauf: number): boolean {
+  return !!db().prepare("SELECT 1 FROM spielrunden WHERE id = ? AND student_id = ? AND bloecke IS NOT NULL").get(lauf, studentId);
+}
+
+/** Der beste Blockwerk-Stand des Schülers über alle Spiele; `ohne`: dieses Blockwerk-Spiel nicht mitzählen. */
+export function bloeckeRekord(studentId: number, ohne?: number): number {
+  const z = db().prepare("SELECT COALESCE(MAX(bloecke), 0) AS rekord FROM spielrunden WHERE student_id = ? AND bloecke IS NOT NULL AND id != ?").get(studentId, ohne ?? -1) as { rekord: number };
   return z.rekord;
 }
 

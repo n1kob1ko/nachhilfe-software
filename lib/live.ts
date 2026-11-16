@@ -37,13 +37,16 @@ export type View =
   | { kind: "praesentation"; id: number; folie: number }
   // Lernspiele (lib/lernspiele.ts) am Tablet: die Liste der Spiele des Schülers, oder eines davon im Spiel
   | { kind: "spiele" }
-  | { kind: "spiel"; art: SpielArt };
+  // `bloecke`: Blockwerk mit den Karten dieses Spiels (components/lernen/BlockFeld.tsx)
+  | { kind: "spiel"; art: SpielArt; bloecke?: true };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
   if (raw === "spiele") return { kind: "spiele" };
   const s = /^spiel:([a-z]+)$/.exec(raw);
   if (s && istSpielArt(s[1])) return { kind: "spiel", art: s[1] };
+  const b = /^bloecke:([a-z]+)$/.exec(raw);
+  if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const m = /^aufgabe:(\d+)$/.exec(raw);
   if (m) return { kind: "aufgabe", assignmentId: Number(m[1]) };
   const p = /^praesentation:(\d+):(\d+)$/.exec(raw);
@@ -52,7 +55,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `spiel:${v.art}` : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : "spiel"}:${v.art}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
