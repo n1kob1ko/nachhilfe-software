@@ -9,9 +9,10 @@ Lernspielen (docs/lernspiele.md), alle drei Konzepte: Wochenliga, Duell per Code
   auch schwächere Schüler vorne stehen.
 - **Freiwillig und ohne echten Namen**: wer mitspielt, wählt einen Spitznamen aus zwei festen Listen („Blitz“ +
   „fuchs“) und ein Tierbild. Schule, Klasse und Name stehen nirgends. Liga und Duelle lassen sich einzeln ausschalten.
-- **Der Lehrer entscheidet** (Profil › Fortschritt › „Liga und Duelle“): Standard ist „ab der 9. Schulstufe“ (≈ 14 Jahre).
-  Jüngere dürfen erst mit „Erlaubt (Eltern einverstanden)“. „Aus“ sperrt es ganz. „Spielnamen zurücksetzen“, wenn ein
-  Name nicht passt.
+- **Für alle erlaubt** (niko 2026-11-16: „mach die erlaubnis weg es soll generell erlaubt sein“; vorher „ab der 9.
+  Schulstufe, jünger nur mit Erlaubnis der Eltern“). Der Lehrer kann es im Profil › Fortschritt › „Liga und Duelle“ für
+  einen Schüler ausschalten („Aus“). „Spielnamen zurücksetzen“, wenn ein Name nicht passt. Wer Blockwerk-Punkte hat und
+  noch keinen Spitznamen, bekommt einen freien (`sorgeFuerProfil`), damit alle in der Bestenliste stehen.
 
 ## Was der Schüler sieht
 

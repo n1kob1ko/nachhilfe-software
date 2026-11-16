@@ -39,18 +39,17 @@ async function setup() {
   return { db, repo, profil, liga, duelle, sp, teacher, neu, runde, mitProfil };
 }
 
-test("Erlaubnis: ab der 9. Schulstufe von selbst, jünger nur mit „Erlaubt“, „Aus“ sperrt; Spitzname nur aus den Listen", async () => {
+test("Erlaubnis: für alle Schulstufen (niko 2026-11-16), „Aus“ sperrt; Spitzname nur aus den Listen", async () => {
   const { profil, neu, mitProfil } = await setup();
-  const klein = neu("Lena Test", 7);
+  const klein = neu("Lena Test", 3);
   const gross = neu("Jonas Test", 10);
-  assert.equal(profil.erlaubnis(klein).darf, false);
-  assert.match(profil.erlaubnis(klein).grund, /Eltern/);
+  assert.equal(profil.erlaubnis(klein).darf, true, "auch die Volksschule");
   assert.equal(profil.erlaubnis(gross).darf, true);
-  const r = profil.speichereProfil(klein, { vorne: "Blitz", hinten: "fuchs", bild: "fuchs", liga: true, duelle: true });
-  assert.equal(r.ok, false);
-  profil.setzeWettspiel(klein.id, "ja");
   mitProfil(klein, "Blitz", "fuchs");
   assert.equal(profil.profilVon(klein.id)!.name, "Blitzfuchs");
+  // „ja“ von früher zählt wie „An“
+  profil.setzeWettspiel(klein.id, "ja");
+  assert.notEqual(profil.aktivesProfil(klein), null);
   // selber Name für jemand anderen: nein; freier Text: nein
   assert.equal(profil.speichereProfil(gross, { vorne: "Blitz", hinten: "fuchs", bild: "eule", liga: true, duelle: true }).ok, false);
   assert.equal(profil.speichereProfil(gross, { vorne: "Doof", hinten: "fuchs", bild: "eule", liga: true, duelle: true }).ok, false);
@@ -60,6 +59,14 @@ test("Erlaubnis: ab der 9. Schulstufe von selbst, jünger nur mit „Erlaubt“,
   profil.setzeWettspiel(gross.id, "nein");
   assert.equal(profil.aktivesProfil(gross), null);
   assert.notEqual(profil.profilVon(gross.id), null);
+  assert.equal(profil.speichereProfil(gross, { vorne: "Sturm", hinten: "eule", bild: "eule", liga: true, duelle: true }).ok, false);
+  assert.equal(profil.sorgeFuerProfil(gross), null);
+  // ohne Spitzname: bekommt einen freien aus den Listen, Liga und Duelle an; ein zweiter Aufruf ändert nichts
+  const neuer = neu("Mira Test", 5);
+  const auto = profil.sorgeFuerProfil(neuer)!;
+  assert.ok(profil.namensTeile(auto.name));
+  assert.ok(auto.liga && auto.duelle);
+  assert.equal(profil.sorgeFuerProfil(neuer)!.name, auto.name);
 });
 
 test("Ligapunkte: 20 je Runde plus Besserwerden gegen sich selbst; zu schnell oder ohne Liga zählt nicht", async () => {

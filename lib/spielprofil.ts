@@ -4,8 +4,9 @@
  * - **Freiwillig**: ohne Profil spielt der Schüler wie bisher allein. Liga und Duelle lassen sich einzeln ausschalten.
  * - **Nie der echte Name**: der Spitzname besteht aus zwei Teilen aus festen Listen („Blitz“ + „fuchs“), das Bild ist ein
  *   Tier. So kann niemand etwas Gemeines eintippen, und Schule, Klasse oder Name stehen nirgends.
- * - **Der Lehrer entscheidet** (students.wettspiel): Standard ist „ab der 9. Schulstufe erlaubt“ (etwa ab 14). Jüngere
- *   dürfen erst, wenn der Lehrer im Profil „Erlaubt“ wählt, weil die Eltern einverstanden sind. „Aus“ sperrt es ganz.
+ * - **Für alle erlaubt** (niko 2026-11-16: „mach die erlaubnis weg es soll generell erlaubt sein“): jede Schulstufe darf
+ *   mitmachen. Der Lehrer kann es im Profil für einen Schüler ausschalten (students.wettspiel = „nein“). Vorher galt
+ *   „ab der 9. Schulstufe, jünger nur mit Erlaubnis“.
  */
 import { db } from "./db";
 import { BILDER, BILD_SCHLUESSEL, NAME_HINTEN, NAME_VORNE } from "./spielprofil-listen";
@@ -14,8 +15,8 @@ import type { Student } from "./repo";
 export { BILDER, BILD_SCHLUESSEL, NAME_HINTEN, NAME_VORNE } from "./spielprofil-listen";
 
 export type Wettspiel = "" | "ja" | "nein";
-/** Ab dieser Schulstufe ist Mitspielen ohne eigene Erlaubnis möglich (9. Schulstufe ≈ 14 Jahre). */
-export const AB_SCHULSTUFE = 9;
+/** Darf ein Schüler mit dieser Einstellung mitspielen? Alle, außer der Lehrer hat es ausgeschaltet. */
+export const darfMitspielen = (wettspiel: string | null | undefined) => wettspiel !== "nein";
 
 export type Spielprofil = { studentId: number; name: string; bild: string; liga: boolean; duelle: boolean };
 
@@ -34,9 +35,8 @@ export function setzeWettspiel(studentId: number, wert: Wettspiel) {
 /** Darf der Schüler bei Liga und Duellen mitmachen? `grund` sagt es dem Schüler, wenn nicht. */
 export function erlaubnis(student: Pick<Student, "id" | "grade">): { darf: boolean; grund: string } {
   const e = wettspielEinstellung(student.id);
-  if (e === "nein") return { darf: false, grund: "Dein Lehrer hat Liga und Duelle für dich ausgeschaltet." };
-  if (e === "ja" || student.grade >= AB_SCHULSTUFE) return { darf: true, grund: "" };
-  return { darf: false, grund: "Frag deinen Lehrer, ob du mitspielen darfst. Vorher brauchen wir das Okay deiner Eltern." };
+  if (!darfMitspielen(e)) return { darf: false, grund: "Dein Lehrer hat Liga und Duelle für dich ausgeschaltet." };
+  return { darf: true, grund: "" };
 }
 
 export function profilVon(studentId: number): Spielprofil | null {
@@ -86,6 +86,22 @@ export function speichereProfil(student: Pick<Student, "id" | "grade">, e: Profi
     )
     .run({ id: student.id, name, bild: e.bild, liga: e.liga ? 1 : 0, duelle: e.duelle ? 1 : 0 });
   return { ok: true, profil: profilVon(student.id)! };
+}
+
+/**
+ * Gibt einem Schüler, der mitspielen darf, aber noch keinen Spitznamen hat, einen freien aus den Listen (Liga und
+ * Duelle an, wie beim Anlegen in der App). So steht jeder in der Bestenliste; ändern kann er ihn unter Spiele › Duelle.
+ */
+export function sorgeFuerProfil(student: Pick<Student, "id" | "grade">): Spielprofil | null {
+  if (!erlaubnis(student).darf) return null;
+  const da = profilVon(student.id);
+  if (da) return da;
+  for (let i = 0; i < 5; i++) {
+    const v = vorschlag();
+    const r = speichereProfil(student, { ...v, liga: true, duelle: true });
+    if (r.ok) return r.profil;
+  }
+  return null;
 }
 
 /** Der Lehrer setzt den Spitznamen zurück (z. B. wenn ein Kind ihn tauschen will); Ligapunkte bleiben. */

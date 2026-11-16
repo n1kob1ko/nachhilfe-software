@@ -31,7 +31,7 @@ import * as repo from "./repo";
 import { THEMEN } from "./themen";
 import { leseListe } from "./vokabeln";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
-import { AB_SCHULSTUFE, BILDER, erlaubnis, profilVon } from "./spielprofil";
+import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
@@ -512,10 +512,18 @@ export const BESTENLISTE_PLAETZE = 10;
 
 /**
  * Die Blockwerk-Bestenliste für alle (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): je Schüler sein
- * bester Stand, die Besten zuerst. Andere sieht man nur mit Spielprofil und Erlaubnis (lib/spielprofil.ts, wie Liga und
- * Duelle), und nur mit Spitzname und Tierbild. Die eigene Zeile sieht jeder, auch ohne Profil („Du“).
+ * bester Stand, die Besten zuerst. Jeder steht nur mit Spitzname und Tierbild drin (lib/spielprofil.ts); wer Punkte hat,
+ * aber noch keinen Spitznamen, bekommt hier einen (niko 2026-11-16: „es soll generell erlaubt sein“). Nur wen der
+ * Lehrer ausgeschaltet hat, sehen die anderen nicht; er selbst sieht sich als „Du“.
  */
 export function bloeckeBestenliste(student: Pick<repo.Student, "id" | "grade">, anzahl = BESTENLISTE_PLAETZE): Bestenliste {
+  const ohneName = db()
+    .prepare(
+      `SELECT DISTINCT s.id, s.grade FROM spielrunden r JOIN students s ON s.id = r.student_id
+       WHERE r.bloecke > 0 AND COALESCE(s.wettspiel, '') != 'nein' AND NOT EXISTS (SELECT 1 FROM spielprofile sp WHERE sp.student_id = s.id)`,
+    )
+    .all() as { id: number; grade: number }[];
+  for (const s of ohneName) sorgeFuerProfil(s);
   const rows = db()
     .prepare(
       `SELECT r.student_id AS id, MAX(r.bloecke) AS punkte, MIN(r.id) AS zuerst, sp.name, sp.bild, s.grade, s.wettspiel
@@ -523,7 +531,7 @@ export function bloeckeBestenliste(student: Pick<repo.Student, "id" | "grade">, 
        WHERE r.bloecke > 0 GROUP BY r.student_id ORDER BY punkte DESC, zuerst ASC`,
     )
     .all() as { id: number; punkte: number; name: string | null; bild: string | null; grade: number; wettspiel: string | null }[];
-  const sichtbar = (z: (typeof rows)[number]) => !!z.name && z.wettspiel !== "nein" && (z.wettspiel === "ja" || z.grade >= AB_SCHULSTUFE);
+  const sichtbar = (z: (typeof rows)[number]) => !!z.name && darfMitspielen(z.wettspiel);
   const eigenes = profilVon(student.id);
   const darf = erlaubnis(student).darf;
   const liste = rows
