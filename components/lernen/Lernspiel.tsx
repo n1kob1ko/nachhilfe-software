@@ -17,6 +17,7 @@ import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
 import { Funken, vibriere } from "./SpielTeile";
+import { BlockFeld, FrageKopf, type BlockAntwort, type BlockFrage } from "./BlockFeld";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
@@ -35,6 +36,10 @@ import { Funken, vibriere } from "./SpielTeile";
  * Endlos-Modus (niko 2026-11-12): statt zwölf Karten geht es weiter, bis drei Herzen weg sind; jede falsche erste
  * Antwort kostet eines. Gespielt wird in gewöhnlichen Runden, die nahtlos aufeinander folgen: kurz vor dem Ende einer
  * Runde holt das Spiel die nächste, am Übergang wird die alte im Hintergrund beendet (lib/lernspiele.ts).
+ *
+ * Blockwerk (niko 2026-11-16, components/lernen/BlockFeld.tsx): dieselben Karten, aber zwischen den Karten liegt ein
+ * Legespiel. Sind die drei Teile gelegt, kommt die nächste Karte als Frage; danach geht es mit neuen Teilen weiter.
+ * Die Runden hängen wie im Endlos-Modus aneinander, Herzen gibt es keine: das Spiel endet, wenn kein Teil mehr passt.
  */
 
 /**
@@ -75,6 +80,9 @@ export function Lernspiel({
   antwort,
   rekord = 0,
   amTablet = false,
+  modus,
+  bloeckeRekord = 0,
+  bloeckeLink,
 }: {
   /** der geheime Link des Schülers; leer am Tablet */
   token: string;
@@ -95,12 +103,18 @@ export function Lernspiel({
   rekord?: number;
   /** am Schüler-Tablet in der Einheit (app/geraet/page.tsx): der Server findet den Schüler über das Tablet */
   amTablet?: boolean;
+  /** „bloecke“: der Anfang zeigt Blockwerk (aus dem Tab „Spiele“) */
+  modus?: "bloecke";
+  /** der beste Blockwerk-Stand des Schülers (0: noch keiner) */
+  bloeckeRekord?: number;
+  /** Blockwerk: der Link zu einem anderen Spiel als Fragenquelle, ohne die Art am Ende („…?modus=bloecke&art=“) */
+  bloeckeLink?: string;
 }) {
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (endlos?: "neu" | number) => (amTablet ? tabletSpielStartenAction(art, endlos) : spielStartenAction(token, art, endlos)),
-      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      starten: (endlos?: "neu" | number, bloecke?: boolean) => (amTablet ? tabletSpielStartenAction(art, endlos, bloecke) : spielStartenAction(token, art, endlos, bloecke)),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
     }),
     [amTablet, token, art],
   );
@@ -152,6 +166,17 @@ export function Lernspiel({
   // das Beenden der letzten vollen Runde (im Hintergrund) und der Lernstand vor dem Endlos-Spiel
   const abschluss = useRef<Promise<SpielErgebnis> | null>(null);
   const laufVorher = useRef<number | null | undefined>(undefined);
+  // ---------- Blockwerk ----------
+  const [bloecke, setBloecke] = useState(false);
+  // die offene Frage (zwischen den Teilen) und die Antwort darauf für das Brett
+  const [frage, setFrage] = useState<(BlockFrage & { n: number }) | null>(null);
+  const [blockAntwort, setBlockAntwort] = useState<BlockAntwort | null>(null);
+  const [blockStand, setBlockStand] = useState(0);
+  const blockPunkte = useRef(0);
+  // die Frage war schon einmal falsch (dann gibt es keinen Blitz)
+  const frageFalsch = useRef(false);
+  // die nächste Runde wird gerade geholt
+  const [laedt, setLaedt] = useState(false);
   const karteRef = useRef<HTMLDivElement | null>(null);
   const fachRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const zug = useRef<{ id: number; x0: number; y0: number; x: number; y: number; t: number; vx: number; vy: number; cx: number } | null>(null);
@@ -178,16 +203,23 @@ export function Lernspiel({
 
   // ---------- Runde starten und beenden ----------
 
-  const starten = useCallback(async (mitEndlos = false) => {
+  const starten = useCallback(async (mitEndlos = false, mitBloecke = false) => {
     setPhase("laden");
     setFehler(null);
-    const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos ? "neu" : undefined));
+    const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos || mitBloecke ? "neu" : undefined, mitBloecke || undefined));
     if ("fehler" in r) {
       setFehler(r.fehler);
       setPhase("start");
       return;
     }
-    setEndlos(mitEndlos && !!r.endlos);
+    setEndlos(mitEndlos && !mitBloecke && !!r.endlos);
+    setBloecke(mitBloecke && !!r.endlos);
+    setFrage(null);
+    setBlockAntwort(null);
+    setBlockStand(0);
+    setLaedt(false);
+    blockPunkte.current = 0;
+    frageFalsch.current = false;
     lauf.current = r.endlos ?? null;
     herzenRef.current = ENDLOS_HERZEN;
     setHerzen(ENDLOS_HERZEN);
@@ -237,6 +269,8 @@ export function Lernspiel({
       if (erste.current.has(karte.key)) return;
       erste.current.set(karte.key, wahl);
       duellRef.current?.ersteWahl?.(karte.key, wahl);
+      // Blockwerk: keine Herzen, aber die falschen Karten kommen am Ende noch einmal
+      if (bloecke && wahl !== karte.richtig) setDaneben((d) => [...d, karte]);
       if (!endlos) return;
       if (wahl === karte.richtig) setPunkte((n) => n + 1);
       else {
@@ -245,29 +279,33 @@ export function Lernspiel({
         setDaneben((d) => [...d, karte]);
       }
     },
-    [endlos],
+    [endlos, bloecke],
   );
 
-  // Endlos: ist die laufende Runde fast durch, wird die nächste schon geholt
+  // Endlos und Blockwerk: ist die laufende Runde fast durch, wird die nächste schon geholt
+  const kette = endlos || bloecke;
   useEffect(() => {
-    if (phase !== "spiel" || !endlos || !lauf.current || vorrat.current || herzenRef.current <= 0) return;
+    if (phase !== "spiel" || !kette || !lauf.current || vorrat.current || (endlos && herzenRef.current <= 0)) return;
     if (reihe.length - pos <= 3) vorrat.current = server.starten(lauf.current);
-  }, [phase, endlos, pos, reihe.length, server]);
+  }, [phase, kette, endlos, pos, reihe.length, server]);
 
-  /** Endlos: die drei Herzen sind weg. Die laufende Runde zählt mit den Karten, die beantwortet sind. */
+  /**
+   * Endlos: die drei Herzen sind weg; Blockwerk: kein Teil passt mehr. Die laufende Runde zählt mit den Karten, die
+   * beantwortet sind; im Blockwerk gehen die Punkte mit.
+   */
   const endlosEnde = useCallback(
     async (id: number) => {
       setPhase("ende");
       const antworten = [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl }));
       // die Runde davor muss gezählt sein, sonst fehlt sie im Stand
       const davor = await abschluss.current?.catch(() => null);
-      let e = await server.beenden(id, antworten, { teil: true });
+      let e = await server.beenden(id, antworten, { teil: true, punkte: bloecke ? blockPunkte.current : undefined });
       const vorher = laufVorher.current !== undefined ? laufVorher.current : davor && !("fehler" in davor) ? davor.lernstandVorher : undefined;
       if (!("fehler" in e) && vorher !== undefined) e = { ...e, lernstandVorher: vorher };
       setErgebnis(e);
       router.refresh();
     },
-    [server, router],
+    [server, router, bloecke],
   );
 
   /** Endlos: die Runde ist durch. Sie wird im Hintergrund beendet, die nächste schließt nahtlos an. */
@@ -287,7 +325,7 @@ export function Lernspiel({
         // keine Karten mehr: das Endlos-Spiel endet hier (die Runde ist schon gezählt)
         setPhase("ende");
         await fertig;
-        const e = await server.beenden(id, antworten, { teil: true });
+        const e = await server.beenden(id, antworten, { teil: true, punkte: blockPunkte.current || undefined });
         setErgebnis(!("fehler" in e) && laufVorher.current !== undefined ? { ...e, lernstandVorher: laufVorher.current } : e);
         return;
       }
@@ -306,6 +344,18 @@ export function Lernspiel({
 
   /** Zur nächsten Karte; am Ende der Runde fertig (oder im Endlos-Modus die nächste Runde), ohne Herzen das Ende. */
   const naechste = useCallback(() => {
+    if (bloecke) {
+      // Blockwerk: die Frage ist beantwortet, das Brett bekommt seine Teile; die nächste Karte wartet auf die nächste Frage
+      const sauber = !frageFalsch.current;
+      frageFalsch.current = false;
+      setFrage(null);
+      setBlockAntwort((a) => ({ n: (a?.n ?? 0) + 1, sauber }));
+      if (pos + 1 >= reihe.length) {
+        setLaedt(true);
+        void nachladen(rundeId).finally(() => setLaedt(false));
+      } else setPos(pos + 1);
+      return;
+    }
     if (endlos && herzenRef.current <= 0) {
       void endlosEnde(rundeId);
       return;
@@ -315,7 +365,20 @@ export function Lernspiel({
       return;
     }
     setPos(pos + 1);
-  }, [endlos, endlosEnde, nachladen, beenden, rundeId, pos, reihe.length]);
+  }, [bloecke, endlos, endlosEnde, nachladen, beenden, rundeId, pos, reihe.length]);
+
+  // Blockwerk: das Brett will eine Frage, zählt Punkte, oder es passt nichts mehr
+  const blockFrage = useCallback((f: BlockFrage) => {
+    frageFalsch.current = false;
+    setStand(null);
+    setFalschGewaehlt([]);
+    setFrage((alt) => ({ ...f, n: (alt?.n ?? 0) + 1 }));
+  }, []);
+  const blockPunkteNeu = useCallback((p: number) => {
+    blockPunkte.current = p;
+    setBlockStand(p);
+  }, []);
+  const blockEnde = useCallback(() => void endlosEnde(rundeId), [endlosEnde, rundeId]);
 
   // Duell: gleich losspielen; ist die Zeit um, endet die Runde von selbst
   const sofort = !!duell?.sofort;
@@ -366,6 +429,7 @@ export function Lernspiel({
       const karte = eintrag.karte;
       merke(karte, wahl);
       if (wahl === karte.richtig) return true;
+      frageFalsch.current = true;
       comboRef.current = 0;
       setCombo(0);
       // einmal wiederholen, drei Karten später (nie eine Wiederholung wiederholen)
@@ -426,6 +490,7 @@ export function Lernspiel({
       const fach = karte.faecher.indexOf(wahl);
 
       if (wahl !== karte.richtig) {
+        frageFalsch.current = true;
         // falsch: Karte zurück in die Mitte, Wahl durchgestrichen, richtiges Fach leuchtet, Regel erscheint
         const el = karteRef.current;
         if (el) {
@@ -480,7 +545,7 @@ export function Lernspiel({
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
   useEffect(() => {
-    if (phase !== "spiel" || !aktuell || aktuell.form) return;
+    if (phase !== "spiel" || !aktuell || aktuell.form || (bloecke && !frage)) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
@@ -491,7 +556,7 @@ export function Lernspiel({
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [phase, aktuell, waehle]);
+  }, [phase, aktuell, waehle, bloecke, frage]);
 
   // ---------- Ziehen und Werfen ----------
 
@@ -569,7 +634,18 @@ export function Lernspiel({
       <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </ZuLink>
-      {phase === "spiel" && endlos ? (
+      {phase === "spiel" && bloecke ? (
+        <>
+          <span className="flex-1" />
+          {/* Blockwerk: über der Frage stehen die Punkte oben, auf dem Brett groß über dem Brett */}
+          {frage && (
+            <span className="ls-combo ls-endlos-stand" aria-label={`${blockStand} Punkte`}>
+              <b>{blockStand.toLocaleString("de-AT")}</b>
+              <small className="text-[13px] font-semibold">Punkte</small>
+            </span>
+          )}
+        </>
+      ) : phase === "spiel" && endlos ? (
         <>
           {/* Endlos: drei Herzen statt der Striche, daneben wie viele schon richtig sind */}
           <div className="ls-herzen" role="img" aria-label={`${herzen} von ${ENDLOS_HERZEN} Herzen`} data-testid="herzen">
@@ -625,6 +701,77 @@ export function Lernspiel({
           ) : (
             <p className="ls-text mt-10">Karten werden gemischt …</p>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  if ((phase === "start" || phase === "laden") && modus === "bloecke" && !duell) {
+    // die Spiele, aus denen die Fragen kommen können (Vokabel-Paare nicht: dort liegen alle Karten auf einmal da)
+    const passend = vorschlaege.filter((v) => hatEndlos(v.art));
+    const quellen = passend.slice(0, 6).some((v) => v.art === art) ? passend.slice(0, 6) : [...passend.filter((v) => v.art === art), ...passend.filter((v) => v.art !== art).slice(0, 5)];
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label="Lernspiel Blockwerk">
+        <Hintergrund woerter={deko} />
+        {kopf}
+        <div className="ls-mitte ls-rollt ls-staffel">
+          <p className="ls-oberzeile" style={{ "--n": 0 } as CSSProperties}>
+            Lernspiel
+          </p>
+          <h1 className="ls-titel" style={{ "--n": 1 } as CSSProperties}>
+            Blockwerk
+          </h1>
+          <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
+            Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort.
+          </p>
+          <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
+            <MiniBrett />
+          </div>
+          <p className="ls-klein mt-5" style={{ "--n": 3 } as CSSProperties}>
+            Fragen aus
+          </p>
+          <div className="bw-fragen-aus mt-2" style={{ "--n": 3 } as CSSProperties} data-testid="bw-quellen">
+            {bloeckeLink && quellen.length > 1 ? (
+              quellen.map((v) => (
+                <ZuLink key={v.art} href={`${bloeckeLink}${v.art}`} aria-current={v.art === art ? "true" : undefined}>
+                  {SPIEL_TITEL[v.art]}
+                </ZuLink>
+              ))
+            ) : (
+              <span className="ls-grund">{SPIEL_TITEL[art]}</span>
+            )}
+          </div>
+          {(woher || (vorschlag && vorschlag.quelle !== "fach")) && (
+            <span className="ls-grund mt-3" style={{ "--n": 3 } as CSSProperties}>
+              <BookOpen size={16} aria-hidden />
+              {woher ?? vorschlag?.grund}
+            </span>
+          )}
+          <div className="ls-glas mt-6 grid grid-cols-2 gap-4 p-4" style={{ "--n": 4 } as CSSProperties}>
+            <div>
+              <p className="ls-klein">Rekord</p>
+              <p className="text-[22px] font-semibold tabular-nums">{bloeckeRekord > 0 ? bloeckeRekord.toLocaleString("de-AT") : "Noch keiner"}</p>
+            </div>
+            <div>
+              <p className="ls-klein">Serie</p>
+              <p className="flex items-center gap-1.5 text-[22px] font-semibold tabular-nums">
+                <Flame size={20} className={serieAnfang > 0 ? "ls-flamme" : "opacity-60"} fill={serieAnfang > 0 ? "currentColor" : "none"} aria-hidden />
+                {serieAnfang === 0 ? "Heute starten" : serieAnfang === 1 ? "1 Tag" : `${serieAnfang} Tage`}
+              </p>
+            </div>
+          </div>
+          {fehler && (
+            <p className="ls-fehler mt-6" role="alert">
+              {fehler}
+            </p>
+          )}
+        </div>
+        <div className="ls-fuss ls-staffel">
+          <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, true)} disabled={phase === "laden"} autoFocus data-testid="bw-start">
+              {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -755,6 +902,114 @@ export function Lernspiel({
                 <small>{rekord > 0 ? `Rekord ${rekord}` : `${ENDLOS_HERZEN} Herzen`}</small>
               </button>
             )}
+            {/* Blockwerk: dieselben Karten zwischen den Teilen eines Legespiels */}
+            {hatEndlos(art) && !duell && (
+              <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(false, true)} disabled={phase === "laden"} data-testid="bw-start-spiel">
+                <Bausteine />
+                <span>Blockwerk</span>
+                <small>{bloeckeRekord > 0 ? `Rekord ${bloeckeRekord.toLocaleString("de-AT")}` : "Teile legen"}</small>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "ende" && bloecke) {
+    const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
+    const stand = blockPunkte.current;
+    const bisher = e?.bloecke?.rekord ?? bloeckeRekord;
+    const neuerRekord = !!e && stand > 0 && stand > bisher;
+    const anteil = bisher > 0 ? Math.min(100, Math.round((stand / bisher) * 100)) : stand > 0 ? 100 : 0;
+    const nochmal = daneben.filter((k, i) => daneben.findIndex((x) => x.key === k.key) === i);
+    return (
+      <div className="ls" role="dialog" aria-modal="true" aria-label="Blockwerk vorbei">
+        <Hintergrund woerter={deko} />
+        {neuerRekord && <Konfetti />}
+        {kopf}
+        <div className="ls-mitte ls-staffel text-center">
+          <div className="ls-ring" style={{ "--n": 0 } as CSSProperties} data-testid="bw-ende">
+            <svg viewBox="0 0 120 120" aria-hidden>
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-spur" />
+              <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-wert" style={{ strokeDashoffset: 100 - anteil } as CSSProperties} />
+            </svg>
+            <div className="ls-ring-zahl">
+              <b>{stand.toLocaleString("de-AT")}</b>
+              <span>Punkte</span>
+            </div>
+          </div>
+          {neuerRekord ? (
+            <p className="ls-rekord" style={{ "--n": 1 } as CSSProperties}>
+              <Trophy size={20} strokeWidth={2.4} aria-hidden /> Neuer Rekord
+            </p>
+          ) : (
+            <p className="ls-rekord" data-alt="" style={{ "--n": 1 } as CSSProperties}>
+              <Trophy size={18} strokeWidth={2.4} aria-hidden /> {bisher > 0 ? `Dein Rekord: ${bisher.toLocaleString("de-AT")}` : "Dein erster Rekord"}
+            </p>
+          )}
+          <h1 className="ls-titel mt-3" style={{ "--n": 2 } as CSSProperties}>
+            {neuerRekord ? "Stark gebaut!" : "Kein Platz mehr"}
+          </h1>
+          <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
+            {e?.bloecke ? `${e.bloecke.fragen} ${e.bloecke.fragen === 1 ? "Frage" : "Fragen"} beim ersten Versuch richtig` : "Gezählt wird der erste Versuch"}
+          </p>
+          {ergebnis && "fehler" in ergebnis && (
+            <p className="ls-fehler mt-4" role="alert">
+              {ergebnis.fehler}
+            </p>
+          )}
+
+          <div className="mt-6 grid grid-cols-2 gap-3 text-left" style={{ "--n": 3 } as CSSProperties}>
+            <div className="ls-glas p-4">
+              <p className="ls-klein">{SPIEL_TITEL[art]}</p>
+              <p className="text-[21px] font-semibold tabular-nums">
+                {e ? (
+                  e.lernstandVorher === null ? (
+                    pct(e.lernstandNachher)
+                  ) : (
+                    <>
+                      {pct(e.lernstandVorher)} → {pct(e.lernstandNachher)}
+                    </>
+                  )
+                ) : (
+                  "…"
+                )}
+              </p>
+              <div className="ls-balken mt-2">
+                <span style={{ transform: `scaleX(${e?.lernstandNachher ?? e?.lernstandVorher ?? lernstand ?? 0})` }} />
+              </div>
+            </div>
+            <div className="ls-glas p-4">
+              <p className="ls-klein">Serie</p>
+              <p className="flex items-center gap-1.5 text-[21px] font-semibold tabular-nums">
+                <Flame size={20} className="ls-flamme" fill="currentColor" aria-hidden />
+                {e ? (e.serie === 1 ? "1 Tag" : `${e.serie} Tage`) : "…"}
+              </p>
+            </div>
+          </div>
+
+          {nochmal.length > 0 && (
+            <div className="ls-blatt mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
+              <p className="text-[15px] font-semibold">Kommt nächstes Mal wieder</p>
+              <ul className="mt-2 space-y-1.5 text-[16px]">
+                {nochmal.slice(0, 5).map((k) => (
+                  <li key={k.key}>
+                    <Loesung karte={k} art={art} />
+                  </li>
+                ))}
+              </ul>
+              {nochmal.length > 5 && <p className="mt-2 text-[14px] text-ink-3">und {nochmal.length - 5} weitere</p>}
+            </div>
+          )}
+
+          <div className="mt-auto grid gap-3 pt-8" style={{ "--n": 5 } as CSSProperties}>
+            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, true)} disabled={!ergebnis} autoFocus data-testid="bw-nochmal">
+              Nochmal
+            </button>
+            <ZuLink href={zurueck} className="ls-knopf ls-los" data-zweit="">
+              Fertig
+            </ZuLink>
           </div>
         </div>
       </div>
@@ -973,38 +1228,52 @@ export function Lernspiel({
       )}
     </p>
   );
-  const jubelZeile = jubel && (
+  // im Blockwerk zählt die Kombo am Brett, nicht die Serie der Karten
+  const jubelZeile = jubel && !bloecke && (
     <p key={jubel.n} className="ls-jubel" aria-hidden>
       {jubel.text}
     </p>
   );
 
+  // Blockwerk: das Brett bleibt immer an derselben Stelle stehen (so behält es seinen Stand), die Frage liegt darüber
+  const frageZeile = bloecke && frage ? <FrageKopf frage={frage} /> : null;
+  const feldKlasse = bloecke ? "ls-feld bw-frage" : "ls-feld";
+  const schale = (inhalt: ReactNode) => (
+    <div className="ls" role="dialog" aria-modal="true" aria-label={bloecke ? "Lernspiel Blockwerk" : `Lernspiel ${SPIEL_TITEL[art]}`}>
+      <Hintergrund woerter={deko} />
+      {kopf}
+      {duell?.leiste}
+      {bloecke && <BlockFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
+      {(!bloecke || frage) && inhalt}
+    </div>
+  );
+  if (bloecke && frage && (laedt || !aktuell))
+    return schale(
+      <div className={feldKlasse}>
+        {frageZeile}
+        <p className="ls-text mt-10 text-center">Karten werden gemischt …</p>
+      </div>,
+    );
+
   // wie die Karte beantwortet wird, steht auf ihr (in einer Runde „Kopfrechnen“ können sich Ziffernblock und Kisten abwechseln)
   const feld = aktuell?.form;
   if (feld === "paar") {
-    return (
-      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
-        <Hintergrund woerter={deko} />
-        {kopf}
-        {duell?.leiste}
-        <div className="ls-feld">
+    return schale(
+        <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+          {frageZeile}
           <PaarFeld key={rundeId} karten={karten} auftrag={SPIEL_AUFGABE[art]} onVersuch={paarVersuch} onRichtig={paarRichtig} onFalsch={paarFalsch} onFertig={paarFertig}>
             {zuletztZeile}
             {jubelZeile}
           </PaarFeld>
-        </div>
-      </div>
+        </div>,
     );
   }
 
   if (aktuell && feld) {
     const eigen = { key: `${rundeId}-${pos}`, karte: aktuell, onPruefe: reihePruefe, onWeiter: reiheWeiter };
-    return (
-      <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
-        <Hintergrund woerter={deko} />
-        {kopf}
-        {duell?.leiste}
-        <div className="ls-feld">
+    return schale(
+        <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+          {frageZeile}
           {feld === "reihe" ? (
             <SatzbauFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           ) : feld === "strahl" ? (
@@ -1021,20 +1290,16 @@ export function Lernspiel({
             <KachelFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           )}
           {jubelZeile}
-        </div>
-      </div>
+        </div>,
     );
   }
 
   const sichtbar = reihe.slice(pos, pos + 3);
   if (aktuell) fachRefs.current.length = aktuell.faecher.length;
   const falsch = !!stand && !stand.richtig;
-  return (
-    <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${SPIEL_TITEL[art]}`}>
-      <Hintergrund woerter={deko} />
-      {kopf}
-      {duell?.leiste}
-      <div className="ls-feld">
+  return schale(
+      <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+        {frageZeile}
         <p className="ls-auftrag">{SPIEL_AUFGABE[art]}</p>
         {zuletztZeile}
         {jubelZeile}
@@ -1123,8 +1388,7 @@ export function Lernspiel({
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </div>,
   );
 }
 
@@ -1276,5 +1540,28 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
       {gesetzt(karte, hinterLuecke(karte))}
       {karte.marke && !ohneMarke ? <span className="ls-marke-klein">{karte.marke}</span> : null}
     </>
+  );
+}
+
+/** Ein kleines Brett mit ein paar Teilen für den Anfang von Blockwerk. */
+function MiniBrett() {
+  const voll: Record<number, number> = { 0: 0, 1: 0, 5: 3, 10: 1, 11: 1, 12: 1, 15: 2, 16: 2, 20: 4, 21: 2, 23: 4, 24: 4 };
+  return (
+    <span className="bw-mini">
+      {Array.from({ length: 25 }, (_, i) => (
+        <i key={i} data-f={voll[i]} />
+      ))}
+    </span>
+  );
+}
+
+/** Das Zeichen für Blockwerk auf dem Knopf: drei Klötze. */
+function Bausteine() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
+      <rect x="2" y="11" width="8" height="8" rx="2" fill="currentColor" />
+      <rect x="12" y="11" width="8" height="8" rx="2" fill="currentColor" opacity="0.75" />
+      <rect x="12" y="1.5" width="8" height="8" rx="2" fill="currentColor" opacity="0.5" />
+    </svg>
   );
 }

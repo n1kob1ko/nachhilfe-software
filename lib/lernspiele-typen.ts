@@ -265,6 +265,8 @@ export type SpielErgebnis =
       liga?: { punkte: number; grund?: string };
       /** Endlos-Modus: alle beim ersten Versuch richtigen Karten des Endlos-Spiels und der Rekord davor */
       endlos?: { stand: number; rekord: number };
+      /** Blockwerk: der beste Stand davor (über alle Spiele) und wie viele Fragen beim ersten Versuch richtig waren */
+      bloecke?: { rekord: number; fragen: number };
     }
   | { fehler: string };
 

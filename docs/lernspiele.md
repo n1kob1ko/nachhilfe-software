@@ -345,6 +345,42 @@ Karte ist ein Punkt. Am Ende stehen Punkte gegen Rekord („Neuer Rekord“ mit 
 - Stand = beim ersten Mal richtig über alle Runden des Laufs (`endlosStand`), Rekord = bester Lauf je Spiel
   (`endlosRekord`).
 
+## Blockwerk
+
+niko 2026-11-16 (mit einem Bild eines Quiz-Spiels, bei dem man für eine Antwort Züge bekommt): „neue spielidee …
+kennst du das spiel block blast … ich möchte es genau so haben aber als lernspiel“. Blockwerk hat die Regeln dieser
+Legespiele, aber einen eigenen Namen und den Look der Lernspiele (Bühne, Klötze in den Farben der Kisten); dazwischen
+kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`, Logik in `lib/blockwerk.ts`).
+
+- **Wo**: im Tab „Spiele“ als breite Kachel unter „Für dich“ (die Fragen kommen aus dem Spiel, das am besten passt),
+  und auf dem Anfang jedes Spiels außer den Vokabel-Paaren als dritter Knopf neben „Los geht’s“ und „Endlos“. Der
+  eigene Anfang (`/lernen/[token]/spiel?modus=bloecke&art=…`, am Tablet `bloecke:<art>`) zeigt „Fragen aus“ mit bis
+  zu sechs passenden Spielen zum Umschalten.
+- **Brett**: 8 × 8 Felder, darunter drei Teile (37 Formen von 1 bis 9 Feldern, gedreht gibt es nicht). Ein Teil wird
+  aufs Brett gezogen; am Finger schwebt es gut eine Zelle über dem Finger, damit man sieht, wo es landet. Wo es
+  passt, steht es blass als Vorschau da, und was dabei abgeräumt würde, leuchtet. Volle Reihen und Spalten
+  verschwinden (von der Stelle des Teils aus nach außen). Ein Teil, das nirgends passt, ist grau.
+- **Fragen**: die ersten drei Teile gibt es so. Sind sie gelegt, kommt die nächste Karte des Spiels als Frage, mit
+  derselben Antwortart wie im Spiel (Kisten, Kacheln, Ziffernblock …). Oben steht „Antworte für neue Teile“ mit den
+  drei Teilen, die danach kommen. Neue Teile gibt es immer, auch nach einem Fehler (dann erst mit der richtigen
+  Antwort, wie im Spiel). Beim ersten Versuch richtig: +20 Punkte, und der Blitz lädt.
+- **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
+  richtige Antworten laden einen neuen (die drei Punkte am Knopf), höchstens drei. Zuerst gab jede richtige Antwort
+  einen Blitz; im Test endete dann kein Spiel mehr.
+- **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage**: richtig
+  gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
+  richtig waren, der Lernstand des Spiels und „Kommt nächstes Mal wieder“.
+- **Punkte** (`punkteFuer`): jedes gelegte Feld 1, jede Linie 10 mal die Zahl der Linien (1 → 10, 2 → 40, 3 → 90),
+  das Ganze mal der Kombo; ein ganz leeres Brett +300. Die Kombo steigt mit jedem Zug, der abräumt, und endet nach
+  drei Zügen ohne Linie.
+- **Gezählt** wird wie im Endlos-Modus: die Karten kommen in gewöhnlichen Runden, die aneinanderhängen
+  (`spielrunden.endlos`), der Lernstand zählt jede Runde einmal, die letzte nur mit den beantworteten Karten. Die
+  erste Runde trägt in `spielrunden.bloecke` die Punkte (0 beim Start); das Gerät meldet sie am Ende, der Server nimmt
+  höchstens eine Million und macht sie nie kleiner. Der Rekord gilt für alle Spiele zusammen (`bloeckeRekord`), der
+  Endlos-Rekord zählt Blockwerk nicht mit. Wer mit dem Kreuz aufhört, bekommt keinen Rekord (wie beim Endlos-Spiel).
+- Ziehen geht mit Finger und Maus; ohne Bewegung bei „weniger Bewegung“. Video: `lernspiele/blockwerk-handy.mp4` im
+  Projektordner.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:

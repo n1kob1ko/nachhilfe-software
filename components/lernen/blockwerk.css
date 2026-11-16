@@ -1,0 +1,564 @@
+/*
+ * Blockwerk (components/lernen/BlockFeld.tsx). Auf der Bühne der Lernspiele (lernspiel.css): das Brett ist eine dunkle
+ * Glasfläche, die Teile haben die Farben der Kisten (blau, rot, grün, gold, violett) mit hellem Rand oben und dunkler
+ * Unterkante. Bewegung nach DESIGN.md: nur transform und opacity, ease-out; bei „weniger Bewegung“ nur Farbe.
+ */
+
+/* Farben je Teil, auch für das gezogene Teil (liegt außerhalb von .ls) */
+:where(.bw-zelle, .bw-feld[data-f], .bw-weg, .bw-mini i) {
+  --b-oben: #5aa0ff;
+  --b-unten: #2b6fe6;
+  --b-kante: #1b4fb0;
+}
+[data-f="1"] {
+  --b-oben: #ff8b7a;
+  --b-unten: #ef5146;
+  --b-kante: #b8322b;
+}
+[data-f="2"] {
+  --b-oben: #47d89a;
+  --b-unten: #1aa772;
+  --b-kante: #11784f;
+}
+[data-f="3"] {
+  --b-oben: #ffd76e;
+  --b-unten: #f2a516;
+  --b-kante: #b87700;
+}
+[data-f="4"] {
+  --b-oben: #bba6ff;
+  --b-unten: #7d5cf0;
+  --b-kante: #5537b8;
+}
+
+.bw {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  max-width: 520px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 16px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  animation: bw-rein 240ms var(--ls-ease-out) both;
+}
+.bw[hidden] {
+  display: none;
+}
+@keyframes bw-rein {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+}
+
+/* ---------- Stand: Kombo, Punkte, Blitz ---------- */
+.bw-stand {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0 8px;
+}
+.bw-punkte {
+  text-align: center;
+  line-height: 1;
+}
+.bw-punkte b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 4px 18px rgba(10, 30, 90, 0.35);
+}
+.bw-punkte b[data-neu] {
+  animation: bw-zahl 260ms var(--ls-ease-out);
+}
+@keyframes bw-zahl {
+  from {
+    transform: scale(1.12);
+  }
+}
+.bw-punkte small {
+  display: block;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+.bw-kombo {
+  justify-self: start;
+  padding: 6px 11px;
+  border-radius: 999px;
+  background: var(--ls-gold);
+  color: #5a3b00;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  opacity: 0;
+  transform: scale(0.8);
+  transition:
+    opacity 200ms ease,
+    transform 200ms var(--ls-ease-out);
+}
+.bw-kombo[data-an] {
+  opacity: 1;
+  transform: none;
+}
+.bw-blitz {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 40px;
+  padding: 6px 13px 6px 10px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-gold);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    transform 160ms var(--ls-ease-out),
+    background-color 200ms ease,
+    color 200ms ease,
+    opacity 200ms ease;
+}
+.bw-blitz b {
+  color: var(--ls-on);
+}
+.bw-blitz:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.bw-blitz[data-zielen] {
+  background: var(--ls-gold);
+  color: #7a4300;
+  box-shadow: 0 0 0 4px rgba(255, 211, 77, 0.35);
+}
+.bw-blitz[data-zielen] b {
+  color: #5a3b00;
+}
+.bw-blitz:disabled {
+  opacity: 0.45;
+}
+
+/* drei Punkte: wie weit der nächste Blitz geladen ist (drei richtige Antworten) */
+.bw-ladung {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-left: 2px;
+}
+.bw-ladung i {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  transition: background-color 200ms ease;
+}
+.bw-ladung i[data-an] {
+  background: var(--ls-gold);
+}
+.bw-blitz[data-zielen] .bw-ladung i[data-an] {
+  background: #7a4300;
+}
+.bw-frage-text .bw-ladung {
+  flex-direction: row;
+  gap: 3px;
+  margin-left: 6px;
+  vertical-align: 1px;
+}
+.bw-frage-text .bw-ladung i {
+  width: 7px;
+  height: 7px;
+}
+.bw-frage-text .bw-ladung i[data-naechste] {
+  box-shadow: 0 0 0 1.5px var(--ls-gold);
+}
+
+/* ---------- Brett ---------- */
+.bw-mitte {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.bw-brett {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  gap: 3px;
+  /* so groß wie möglich, aber immer quadratisch und mit Platz für Kopf, Stand und Teile */
+  width: min(100%, 460px, calc(100dvh - 340px));
+  min-width: 240px;
+  aspect-ratio: 1;
+  padding: 6px;
+  border-radius: 18px;
+  background: rgba(8, 26, 76, 0.42);
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.25),
+    0 1px 0 rgba(255, 255, 255, 0.18);
+}
+:root[data-theme="dark"] .bw-brett {
+  background: rgba(3, 12, 40, 0.55);
+}
+.bw-feld {
+  position: relative;
+  border-radius: 22%;
+  background: rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.18);
+  transition:
+    background-color 120ms ease,
+    filter 120ms ease;
+}
+/* ein belegtes Feld: Klotz mit Licht oben und Kante unten (wie die Kisten) */
+.bw-zelle,
+.bw-feld[data-voll],
+.bw-feld[data-vor] {
+  background: linear-gradient(180deg, var(--b-oben), var(--b-unten));
+  box-shadow:
+    inset 0 -3px 0 var(--b-kante),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+}
+.bw-feld[data-vor] {
+  opacity: 0.5;
+}
+/* was abgeräumt würde, leuchtet auf */
+.bw-feld[data-raeumt] {
+  filter: brightness(1.3) saturate(1.1);
+  box-shadow:
+    inset 0 -3px 0 var(--b-kante),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 2px rgba(255, 255, 255, 0.85);
+}
+.bw-feld[data-raeumt]:not([data-voll]):not([data-vor]) {
+  background: rgba(255, 255, 255, 0.35);
+}
+/* gerade gelandet: kurz gedrückt, dann wieder ganz (zwei Namen, damit es jedes Mal neu spielt) */
+.bw-feld[data-neu="0"] {
+  animation: bw-landen-a 220ms var(--ls-ease-out);
+}
+.bw-feld[data-neu="1"] {
+  animation: bw-landen-b 220ms var(--ls-ease-out);
+}
+@keyframes bw-landen-a {
+  from {
+    transform: scale(0.86);
+  }
+}
+@keyframes bw-landen-b {
+  from {
+    transform: scale(0.86);
+  }
+}
+.bw-brett[data-zielen] .bw-feld {
+  cursor: crosshair;
+}
+.bw-feld[data-blitz] {
+  outline: 2px solid var(--ls-gold);
+  outline-offset: -1px;
+}
+.bw[data-lage="eng"] .bw-brett,
+.bw-brett[data-zielen] {
+  box-shadow:
+    inset 0 2px 10px rgba(0, 0, 0, 0.25),
+    0 0 0 3px rgba(255, 211, 77, 0.7);
+}
+.bw[data-lage="aus"] .bw-brett .bw-feld[data-voll] {
+  filter: grayscale(0.7) brightness(0.8);
+  transition: filter 600ms ease;
+}
+
+/* ein abgeräumtes Feld springt kurz auf und verschwindet (versetzt von der Stelle des Teils aus) */
+.bw-weg {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, var(--b-oben), var(--b-unten));
+  box-shadow:
+    inset 0 -3px 0 var(--b-kante),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+  animation: bw-weg 420ms var(--ls-ease-out) var(--v, 0ms) both;
+}
+@keyframes bw-weg {
+  0% {
+    transform: scale(1);
+    filter: brightness(1);
+  }
+  35% {
+    transform: scale(1.14);
+    filter: brightness(1.6);
+  }
+  100% {
+    transform: scale(0.2) rotate(18deg);
+    opacity: 0;
+  }
+}
+
+.bw-ansage {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28%;
+  z-index: 3;
+  margin: 0;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #fff;
+  text-shadow: 0 4px 20px rgba(10, 30, 90, 0.6);
+  pointer-events: none;
+  animation: ls-jubel 1300ms var(--ls-ease-out) forwards;
+}
+.bw-ansage[data-art="kombo"],
+.bw-ansage[data-art="frei"] {
+  top: 56%;
+  color: var(--ls-gold);
+  font-size: 30px;
+  rotate: -4deg;
+}
+.bw-ansage[data-art="blitz"] {
+  top: 46%;
+  color: var(--ls-gold);
+}
+
+.bw-hinweis {
+  min-height: 44px;
+  margin: 8px 0 0;
+  padding: 0 8px;
+  text-align: center;
+  font-size: 15px;
+  line-height: 1.35;
+  color: var(--ls-on-2);
+}
+.bw[data-lage="eng"] .bw-hinweis,
+.bw[data-lage="aus"] .bw-hinweis {
+  color: var(--ls-gold);
+  font-weight: 600;
+}
+
+/* ---------- die drei Teile ---------- */
+.bw-teile {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  width: min(100%, 460px);
+  margin: 0 auto;
+}
+.bw-slot {
+  /* Zellen in der Reihe: etwa halb so groß wie auf dem Brett */
+  --z: clamp(14px, 4.6vw, 22px);
+  display: flex;
+  height: calc(var(--z) * 5 + 12px);
+  max-height: 124px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: none;
+  touch-action: none;
+  cursor: grab;
+  transition: opacity 200ms ease;
+}
+.bw-slot[data-leer] {
+  cursor: default;
+}
+.bw-slot[data-zieht] .bw-teil {
+  opacity: 0.15;
+}
+.bw-slot:not([data-passt]):not([data-leer]) .bw-teil {
+  opacity: 0.38;
+  filter: grayscale(0.6);
+}
+.bw-slot .bw-teil {
+  animation: bw-teil-rein 260ms var(--ls-ease-out) both;
+}
+.bw-slot:nth-child(2) .bw-teil {
+  animation-delay: 50ms;
+}
+.bw-slot:nth-child(3) .bw-teil {
+  animation-delay: 100ms;
+}
+@keyframes bw-teil-rein {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.7);
+  }
+}
+.bw-teil {
+  display: grid;
+  gap: 2px;
+  transition:
+    opacity 160ms ease,
+    filter 160ms ease;
+}
+.bw-zelle {
+  display: block;
+  border-radius: 22%;
+}
+
+/* das gezogene Teil, über allem (liegt direkt im body) */
+.bw-zieh {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 90;
+  pointer-events: none;
+  will-change: transform;
+}
+.bw-zieh .bw-teil {
+  gap: 3px;
+  filter: drop-shadow(0 10px 14px rgba(5, 20, 70, 0.4));
+  animation: bw-heben 160ms var(--ls-ease-out);
+}
+@keyframes bw-heben {
+  from {
+    transform: scale(0.6);
+  }
+}
+
+/* ---------- über der Frage ---------- */
+.bw-frage-kopf {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 6px auto 0;
+  padding: 10px 14px;
+  width: min(100%, 520px);
+  border-radius: 16px;
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
+  animation: bw-frage-rein 260ms var(--ls-ease-out) both;
+}
+.bw-frage-kopf[data-grund="rettung"] {
+  background: rgba(255, 211, 77, 0.18);
+  border-color: rgba(255, 211, 77, 0.55);
+}
+@keyframes bw-frage-rein {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+}
+.bw-frage-teile {
+  --z: 9px;
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 7px;
+}
+.bw-frage-teile .bw-teil {
+  gap: 1px;
+}
+.bw-frage-text {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.bw-frage-text b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+}
+.bw-frage-text small {
+  font-size: 13.5px;
+  color: var(--ls-on-2);
+}
+.bw-frage-text small svg {
+  display: inline;
+  vertical-align: -2px;
+  color: var(--ls-gold);
+}
+/* die Frage kommt von unten über das Brett */
+.bw-frage {
+  animation: bw-frage-feld 280ms var(--ls-ease-out) both;
+}
+@keyframes bw-frage-feld {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+}
+
+/* Anfang: ein kleines Brett statt der Kisten */
+.bw-mini {
+  display: grid;
+  grid-template-columns: repeat(5, 18px);
+  grid-template-rows: repeat(5, 18px);
+  gap: 3px;
+  padding: 6px;
+  border-radius: 12px;
+  background: rgba(8, 26, 76, 0.42);
+  rotate: -3deg;
+}
+.bw-mini i {
+  border-radius: 22%;
+  background: rgba(255, 255, 255, 0.08);
+}
+.bw-mini i[data-f] {
+  background: linear-gradient(180deg, var(--b-oben), var(--b-unten));
+  box-shadow:
+    inset 0 -2px 0 var(--b-kante),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+.bw-fragen-aus {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 8px;
+}
+.bw-fragen-aus a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  font-size: 15px;
+  font-weight: 600;
+  transition: transform 160ms var(--ls-ease-out);
+}
+.bw-fragen-aus a:active {
+  transform: scale(0.97);
+}
+.bw-fragen-aus a[aria-current] {
+  background: #fff;
+  color: #1f5fd0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw,
+  .bw-punkte b[data-neu],
+  .bw-feld[data-neu],
+  .bw-slot .bw-teil,
+  .bw-zieh .bw-teil,
+  .bw-frage-kopf,
+  .bw-frage {
+    animation: none;
+  }
+  .bw-weg {
+    animation: bw-weg-still 300ms ease both;
+  }
+  .bw-ansage {
+    animation: bw-weg-still 1300ms ease reverse both;
+  }
+}
+@keyframes bw-weg-still {
+  to {
+    opacity: 0;
+  }
+}

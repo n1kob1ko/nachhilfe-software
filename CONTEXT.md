@@ -260,6 +260,12 @@ Ein **Lernspiel** ohne Ende: Runden zu zwölf Karten hängen aneinander, bis dre
 Herzen). Gezählt wird wie in normalen Runden; dazu Punkte und ein Rekord je Spiel. Nicht bei den Vokabel-Paaren.
 _Avoid_: Survival, Endless
 
+**Blockwerk**:
+Ein Legespiel in den **Lernspielen**: Teile auf ein Brett mit 8 × 8 Feldern ziehen, volle Reihen und Spalten
+verschwinden. Neue Teile gibt es für eine Karte aus einem Spiel des Stoffs; drei richtige Antworten laden einen
+Blitz (räumt 3 × 3 Felder frei). Gezählt wird wie im **Endlos-Modus**, dazu Punkte und ein Rekord über alle Spiele.
+_Avoid_: Block Blast, Tetris, Puzzle
+
 **Typische Fehler**:
 Was bei einer **Fähigkeit** oft falsch gemacht wird, je mit kurzem Beispiel („Zähler und Nenner
 einzeln addiert (1/2 + 1/3 = 2/5)“). Stehen mit einer kurzen Erklärung auf der Fähigkeitsseite unter

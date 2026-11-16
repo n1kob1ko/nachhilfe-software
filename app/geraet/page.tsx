@@ -29,7 +29,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeRekord, endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -149,12 +149,16 @@ export default async function DevicePage() {
     const lernstand = new Map((analyzeStudent(student.id)?.skills ?? []).map((s) => [s.skill.id, s.mastery]));
     const vorschlaege = spielVorschlaege(student, { heute, lernstand });
     const art = view.kind === "spiel" ? view.art : null;
+    const bloecke = view.kind === "spiel" && view.bloecke;
     content =
       art && vorschlaege.length ? (
         <Lernspiel
-          key={art}
+          key={`${art}${bloecke ? "-bloecke" : ""}`}
           token=""
           amTablet
+          modus={bloecke ? "bloecke" : undefined}
+          bloeckeRekord={bloeckeRekord(student.id)}
+          bloeckeLink="/geraet/ansicht?zu=bloecke:"
           art={art}
           vorschlaege={vorschlaege}
           serie={serie(student.id, heute)}
@@ -167,7 +171,7 @@ export default async function DevicePage() {
         />
       ) : vorschlaege.length ? (
         <div className="geraet-spiele">
-          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} />
+          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} />
         </div>
       ) : (
         <p className="panel px-5 py-5 text-[16px] text-ink-2">Für deine Fächer gibt es noch kein Spiel.</p>

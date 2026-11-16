@@ -285,3 +285,31 @@ test("Endlos-Modus: Runden hängen am ersten, die letzte zählt nur beantwortete
   const eg = sp.beendeRunde(student.id, g.rundeId, g.karten.slice(0, 3).map((k) => ({ key: k.key, wahl: k.richtig })), { teil: true })!;
   assert.equal(eg.anzahl, g.karten.length, "eine gewöhnliche Runde zählt immer alle Karten");
 });
+
+test("Blockwerk: Runden hängen wie Endlos aneinander, Punkte am ersten, eigener Rekord, kein Endlos-Rekord", async () => {
+  const { sp, student } = await setup();
+  const heute = "2026-11-16";
+  const a = sp.starteRunde(student, "artikel", { rng: rng(11), heute, endlos: "neu", bloecke: true });
+  assert.equal(a.endlos, a.rundeId);
+  assert.equal(sp.istBlockwerk(student.id, a.rundeId), true);
+  sp.beendeRunde(student.id, a.rundeId, a.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  const b = sp.starteRunde(student, "artikel", { rng: rng(12), heute, endlos: a.endlos, bloecke: true });
+  assert.equal(b.endlos, a.rundeId, "die nächste Runde gehört zum selben Blockwerk-Spiel");
+  sp.beendeRunde(student.id, b.rundeId, b.karten.slice(0, 2).map((k) => ({ key: k.key, wahl: k.richtig })), { teil: true });
+  assert.equal(sp.endlosStand(student.id, a.rundeId), 14, "14 Fragen beim ersten Versuch richtig");
+  sp.bloeckePunkte(student.id, a.rundeId, 1830);
+  sp.bloeckePunkte(student.id, a.rundeId, 20);
+  assert.equal(sp.bloeckeRekord(student.id), 1830, "ein zweites Ende macht die Punkte nicht kleiner");
+  assert.equal(sp.bloeckeRekord(student.id, a.rundeId), 0, "ohne dieses Spiel noch kein Rekord");
+  assert.equal(sp.endlosRekord(student.id, "artikel"), 0, "Blockwerk zählt nicht als Endlos-Spiel");
+
+  // ein Endlos-Spiel ist kein Blockwerk, und seine Runden bekommen keine Punkte
+  const e = sp.starteRunde(student, "artikel", { rng: rng(13), heute, endlos: "neu" });
+  assert.equal(sp.istBlockwerk(student.id, e.rundeId), false);
+  sp.bloeckePunkte(student.id, e.rundeId, 999);
+  assert.equal(sp.bloeckeRekord(student.id), 1830);
+  // ein Blockwerk-Spiel aus einem anderen Spiel gilt auch für den Rekord (er gilt für alle Spiele)
+  const d = sp.starteRunde(student, "dasdass", { rng: rng(14), heute, endlos: "neu", bloecke: true });
+  sp.bloeckePunkte(student.id, d.rundeId, 2400);
+  assert.equal(sp.bloeckeRekord(student.id), 2400);
+});
