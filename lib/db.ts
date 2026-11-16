@@ -1463,6 +1463,42 @@ CREATE TABLE IF NOT EXISTS vokabelrunden (
   beendet_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_vokabelrunden_student ON vokabelrunden(student_id, beendet_at);
+
+-- Stoff vorbereiten (lib/stoffpaket.ts, niko 16.11.2026): Fotos oder PDFs vom Buch und ein Text der Lehrkraft → in einem
+-- Schritt Lernzettel, Übungsblatt, Test mit Lösungen, Vorbereitungstest und Präsentation für einen Schüler.
+-- status: laeuft | fertig | fehler | uebernommen | verworfen; teile = die verlangten Teile (JSON), dateien = Material-Ids (JSON),
+-- lernzettel (JSON lib/ai/stoffpaket.ts Lernzettel), die Blätter als Übungen (Entwurf bis zum Senden), das Lernpaket für den
+-- Ablauf und die Präsentation, call_ids = die Anfragen an die KI (Kosten)
+CREATE TABLE IF NOT EXISTS stoffpakete (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  status TEXT NOT NULL DEFAULT 'laeuft',
+  schritt TEXT NOT NULL DEFAULT '',
+  fach TEXT NOT NULL DEFAULT '',
+  thema TEXT NOT NULL DEFAULT '',
+  anweisung TEXT NOT NULL DEFAULT '',
+  teile TEXT NOT NULL DEFAULT '[]',
+  dateien TEXT NOT NULL DEFAULT '[]',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  lernzettel TEXT,
+  uebung_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  test_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  vorbereitung_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  paket_id INTEGER REFERENCES lernpakete(id) ON DELETE SET NULL,
+  praes_entwurf_id INTEGER REFERENCES praesentation_entwuerfe(id) ON DELETE SET NULL,
+  praesentation_id INTEGER REFERENCES praesentationen(id) ON DELETE SET NULL,
+  pruefung_id INTEGER REFERENCES tests(id) ON DELETE SET NULL,
+  unsicher TEXT NOT NULL DEFAULT '[]',
+  weggelassen TEXT NOT NULL DEFAULT '[]',
+  fehler TEXT NOT NULL DEFAULT '',
+  call_ids TEXT NOT NULL DEFAULT '[]',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  fertig_at TEXT,
+  uebernommen_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_stoffpakete_student ON stoffpakete(student_id, id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

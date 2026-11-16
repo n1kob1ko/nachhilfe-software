@@ -92,12 +92,29 @@ export type PortalUebung = { id: number; titel: string; fach: string; mitErklaer
 export function praesentationenFuer(studentId: number): PortalPraesentation[] {
   return db()
     .prepare(
-      `SELECT p.id, p.title AS titel, p.fach, p.thema, MAX(u.started_at) AS zuletzt
-       FROM units u JOIN einheit_cockpit c ON c.unit_id = u.id JOIN lernpakete l ON l.id = c.paket_id JOIN praesentationen p ON p.id = l.praesentation_id
-       WHERE u.student_id = ? AND p.status = 'aktiv'
-       GROUP BY p.id ORDER BY zuletzt DESC, p.id DESC`,
+      `SELECT id, titel, fach, thema, MAX(zuletzt) AS zuletzt FROM (
+         SELECT p.id, p.title AS titel, p.fach, p.thema, u.started_at AS zuletzt
+         FROM units u JOIN einheit_cockpit c ON c.unit_id = u.id JOIN lernpakete l ON l.id = c.paket_id JOIN praesentationen p ON p.id = l.praesentation_id
+         WHERE u.student_id = ? AND p.status = 'aktiv'
+         UNION ALL
+         -- „Stoff vorbereiten“ (lib/stoffpaket.ts): die Präsentation eines übernommenen Stoffs gehört gleich zu den Unterlagen
+         SELECT p.id, p.title, p.fach, p.thema, s.uebernommen_at
+         FROM stoffpakete s JOIN praesentationen p ON p.id = s.praesentation_id
+         WHERE s.student_id = ? AND s.status = 'uebernommen' AND p.status = 'aktiv'
+       ) GROUP BY id ORDER BY zuletzt DESC, id DESC`,
     )
-    .all(studentId) as PortalPraesentation[];
+    .all(studentId, studentId) as PortalPraesentation[];
+}
+
+export type PortalLernzettel = { id: number; titel: string; fach: string; datum: string };
+
+/** Die Lernzettel aus „Stoff vorbereiten“ (lib/stoffpaket.ts), die die Lehrkraft übernommen hat, der neueste zuerst. */
+export function lernzettelFuer(studentId: number): PortalLernzettel[] {
+  return (
+    db()
+      .prepare("SELECT id, lernzettel, fach, COALESCE(uebernommen_at, created_at) AS datum FROM stoffpakete WHERE student_id = ? AND status = 'uebernommen' AND lernzettel IS NOT NULL ORDER BY id DESC")
+      .all(studentId) as { id: number; lernzettel: string; fach: string; datum: string }[]
+  ).map((r) => ({ id: r.id, titel: json<{ titel?: string }>(r.lernzettel, {}).titel || "Lernzettel", fach: r.fach, datum: r.datum.slice(0, 10) }));
 }
 
 /** Gehört die Präsentation zu den Unterlagen dieses Schülers? Nur dann zeigt die Schüler-App sie. */

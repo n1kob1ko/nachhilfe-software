@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import QRCode from "qrcode";
-import { BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Play, Plus, Printer, ScanLine } from "lucide-react";
+import { BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Play, Plus, Printer, ScanLine } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { bestaetigeDokuAction, endUnitAction, resumeUnitAction } from "@/app/session-actions";
 import { EinheitBeenden } from "@/components/EinheitBeenden";
@@ -675,6 +675,9 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
             <div className="btn-reihe grid gap-2 sm:flex sm:flex-wrap">
               <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
                 <Plus size={18} aria-hidden /> Neue Übung erstellen
+              </Link>
+              <Link href={`/schueler/${student.id}/stoff`} className="btn btn-secondary btn-lg" data-testid="stoff-vorbereiten-einheit">
+                <BookOpenCheck size={18} aria-hidden /> Stoff vorbereiten
               </Link>
               <Link href={`/einheiten/${unit.id}/foto`} className="btn btn-secondary btn-lg" data-testid="foto-vom-stoff">
                 <Camera size={18} aria-hidden /> Foto vom Stoff

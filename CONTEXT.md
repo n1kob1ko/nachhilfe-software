@@ -82,6 +82,19 @@ Tablet `assignments.mode = 'test'`, gedruckt nur die Übung mit
 _Avoid_: Quiz, **Diagnose**. Nicht verwechseln mit der **Probeschularbeit** (ein ganzer Test zu einer
 Schularbeit, mit Punkten und Note)
 
+**Stoff vorbereiten**:
+Alles für einen Stoff in einem Schritt, beim **Schüler** (`/schueler/[id]/stoff`, `lib/stoffpaket.ts`): Fotos
+oder PDFs vom Buch, von Arbeitsblättern oder vom Stoffzettel und ein Text der Lehrkraft werden mit einer
+KI-Anfrage zu **Lernzettel**, Vorbereitungstest, Übungsblatt, Test mit Lösungen (zur nächsten Schularbeit eine
+**Probeschularbeit**), **Lernpaket** und **Präsentation**. „Alles übernehmen“ legt den Ablauf für die nächste
+Einheit bereit ([docs/stoff-vorbereiten.md](docs/stoff-vorbereiten.md)).
+_Avoid_: Stoffpaket (nur im Code). Nicht verwechseln mit **Foto vom Stoff** (eine Übung in der laufenden Einheit)
+
+**Lernzettel**:
+Die Infos zum Stoff aus **Stoff vorbereiten**: Abschnitte mit Erklärung, Merke und Beispielen, dazu typische
+Fehler. Als A4-Blatt druckbar und nach dem Übernehmen in der Schüler-App unter „Deine Unterlagen“.
+_Avoid_: Infoblatt, Info-PDF
+
 **Foto vom Stoff**:
 Eine **Übung** aus einem Foto der Buchseite oder des Arbeitsblatts, in der laufenden
 **Einheit** (`/einheiten/[id]/foto`, `lib/foto-uebung.ts`). Die KI liest das Foto
