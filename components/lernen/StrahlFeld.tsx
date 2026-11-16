@@ -9,15 +9,15 @@ import { Funken, vibriere } from "./SpielTeile";
 /**
  * Das Spielfeld von „Zahlenstrahl“ (lib/lernspiele-strahl.ts): oben die gesuchte Zahl, darunter der Zahlenstrahl. Die
  * Zahlen stehen über den Teilstrichen, der Zeiger hängt darunter, damit der Finger nichts verdeckt. Irgendwo auf den
- * Strahl tippen oder ziehen setzt den Zeiger auf den nächsten Teilstrich (am Laptop die Pfeiltasten), „Prüfen“ zählt.
+ * Strahl tippen oder ziehen setzt den Zeiger auf den nächsten Teilstrich (am Laptop die Pfeiltasten), und das Loslassen zählt sofort (niko 2026-11-16: „dieses Prüfen ist zu anstrengend“); am Laptop zählt die Eingabetaste.
  *
  * - Richtig: der Zeiger wird grün, über dem Teilstrich steht die Zahl, die nächste Karte kommt.
  * - Falsch: der Zeiger wird rot, die richtige Stelle bekommt ein grünes Fähnchen, darunter steht, welche Zahl getroffen
  *   wurde, und der Weg. Weiter geht es, wenn der Zeiger an der richtigen Stelle sitzt (wie bei den Kisten: erst mit der
  *   richtigen Antwort).
  *
- * Welche Zahl unter dem Zeiger liegt, steht vor dem Prüfen nirgends: das abzulesen ist die Aufgabe. Gezählt wird das
- * erste Prüfen je Karte; das macht Lernspiel.tsx (`onPruefe`).
+ * Welche Zahl unter dem Zeiger liegt, steht vorher nirgends: das abzulesen ist die Aufgabe. Gezählt wird das
+ * erste Loslassen je Karte; das macht Lernspiel.tsx (`onPruefe`).
  */
 export function StrahlFeld({
   karte,
@@ -118,7 +118,10 @@ export function StrahlFeld({
   const hoch = (e: PointerEvent<HTMLDivElement>) => {
     if (!zieht.current) return;
     zieht.current = false;
-    if (!stand) gesetzt(setze(strichBei(e.clientX)));
+    if (stand) return;
+    const i = setze(strichBei(e.clientX));
+    if (daneben === null) pruefe(i);
+    else gesetzt(i);
   };
 
   // am Laptop: Pfeiltasten schieben den Zeiger, die Eingabetaste prüft
@@ -243,9 +246,9 @@ export function StrahlFeld({
         </div>
 
         {daneben === null ? (
-          <button type="button" className="ls-knopf ls-los ls-pruefen" disabled={bei === null || !!stand} onClick={() => bei !== null && pruefe(bei)} data-testid="strahl-pruefen">
-            Prüfen
-          </button>
+          <p className="ls-strahl-weiter" role="status">
+            {stand === "richtig" ? "Genau da!" : "Tipp die Stelle am Strahl an."}
+          </p>
         ) : (
           <p className="ls-strahl-weiter" role="status">
             {stand === "richtig" ? "Genau da!" : "Schieb den Zeiger zur grünen Zahl."}

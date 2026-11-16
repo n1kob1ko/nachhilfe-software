@@ -13,13 +13,14 @@ export type ZiffernTasten = { komma: boolean; minus: boolean; bruch: boolean };
 /**
  * Das Spielfeld von „Kopfrechnen“, wenn das Ergebnis eine Zahl ist (lib/lernspiele-antwort.ts): oben das Blatt mit der
  * Rechnung und dem Feld für das Ergebnis, unten beim Daumen ein Ziffernblock. Das Ergebnis wird eingetippt, nicht aus
- * drei Kisten gewählt; der goldene Haken prüft (am Laptop die Ziffern und die Eingabetaste).
+ * drei Kisten gewählt. Hat das Getippte so viele Zeichen wie das Ergebnis, zählt es sofort (niko 2026-11-16: „dieses
+ * Prüfen ist zu anstrengend“); der goldene Haken zählt ein kürzeres (am Laptop die Ziffern und die Eingabetaste).
  *
  * - Richtig: das Feld wird grün, die nächste Karte kommt.
  * - Falsch: das Feld wird rot, darunter stehen das richtige Ergebnis und der Rechenweg. Weiter geht es, wenn das
  *   richtige Ergebnis im Feld steht (wie bei den Kisten: erst mit der richtigen Antwort).
  *
- * Gezählt wird das erste Prüfen je Karte; das macht Lernspiel.tsx (`onPruefe`).
+ * Gezählt wird das erste Ergebnis je Karte; das macht Lernspiel.tsx (`onPruefe`).
  */
 export function ZiffernFeld({
   karte,
@@ -47,7 +48,7 @@ export function ZiffernFeld({
     if (!ruhig()) feld.current?.animate?.([{ translate: "0" }, { translate: "-7px" }, { translate: "6px" }, { translate: "-4px" }, { translate: "0" }], { duration: 360, easing: "cubic-bezier(0.77, 0, 0.175, 1)" });
   };
 
-  const pruefe = useCallback(() => {
+  const pruefe = useCallback((text: string) => {
     if (stand || !tippFertig(text)) return;
     const stimmt = tippStimmt(text, ziel);
     // nach dem ersten Fehler zählt nichts mehr: nur das richtige Ergebnis führt weiter
@@ -62,7 +63,7 @@ export function ZiffernFeld({
     wackle();
     // `ziel` gehört zur Karte
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stand, text, daneben, onPruefe, karte.richtig]);
+  }, [stand, daneben, onPruefe, karte.richtig]);
 
   // nach dem Prüfen: richtig → weiter; falsch → das Feld wird wieder frei, Ergebnis und Weg stehen darunter
   useEffect(() => {
@@ -84,20 +85,18 @@ export function ZiffernFeld({
 
   const druecke = useCallback(
     (taste: string) => {
-      if (stand) return;
+      // so lang wie das Ergebnis: es zählt gerade, nur Löschen geht noch
+      if (stand || (taste !== "<" && tippFertig(text) && text.length >= ziel.wert.length)) return;
       const neu = tippTaste(text, taste);
       if (neu === text) return;
       vibriere(3);
       setText(neu);
-      // nach einem Fehler reicht es, das richtige Ergebnis einzutippen
-      if (daneben !== null && tippStimmt(neu, ziel)) {
-        vibriere(12);
-        setStand("richtig");
-      }
+      // so lang wie das Ergebnis (oder schon richtig): es zählt gleich, ohne Haken
+      if (tippFertig(neu) && (neu.length >= ziel.wert.length || tippStimmt(neu, ziel))) setTimeout(() => pruefe(neu), 160);
     },
     // `ziel` gehört zur Karte
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [stand, text, daneben, karte.richtig],
+    [stand, text, karte.richtig, pruefe],
   );
 
   // am Laptop: Ziffern, Komma, Minus, Schrägstrich, Rücktaste und Eingabetaste
@@ -110,12 +109,12 @@ export function ZiffernFeld({
         druecke(taste);
       } else if (e.key === "Enter") {
         e.preventDefault();
-        pruefe();
+        pruefe(text);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [druecke, pruefe, tasten]);
+  }, [druecke, pruefe, tasten, text]);
 
   const zeile = (t: string): ReactNode => {
     if (!t.includes("/")) return tippAnzeige(t);
@@ -139,7 +138,7 @@ export function ZiffernFeld({
       style={o.breit ? { gridColumn: `span ${o.breit}` } : undefined}
       data-aus={o.aus ? "" : undefined}
       disabled={!!stand || o.aus}
-      onClick={() => (t === "ok" ? pruefe() : druecke(t))}
+      onClick={() => (t === "ok" ? pruefe(text) : druecke(t))}
       aria-label={o.name}
       data-testid={o.testid ?? `taste-${t}`}
     >
@@ -202,7 +201,7 @@ export function ZiffernFeld({
           <div className="ls-block-rand">
             {taste("<", <Delete size={24} aria-hidden />, { name: "Löschen", art: "zurueck", aus: !text })}
             {tasten.minus && taste("±", "+/−", { name: "Vorzeichen wechseln", art: "zeichen" })}
-            {taste("ok", <Check size={30} strokeWidth={3} aria-hidden />, { name: "Prüfen", art: "ok", aus: !tippFertig(text) || daneben !== null, testid: "ziffern-pruefen" })}
+            {taste("ok", <Check size={30} strokeWidth={3} aria-hidden />, { name: "Fertig", art: "ok", aus: !tippFertig(text) || daneben !== null, testid: "ziffern-pruefen" })}
           </div>
         </div>
       </div>

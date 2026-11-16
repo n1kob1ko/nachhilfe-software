@@ -9,14 +9,15 @@ import { Funken, vibriere } from "./SpielTeile";
 /**
  * Das Spielfeld von „Irregular Verbs“ und „Präteritum“ (lib/lernspiele-antwort.ts): oben das Blatt mit dem Satz und der
  * Lücke, unten beim Daumen die Buchstaben. Ein Buchstabe antippen setzt ihn in die Lücke, die Rücktaste holt den
- * letzten zurück, „Prüfen“ zählt (am Laptop die Buchstaben, die Rücktaste und die Eingabetaste). Wie lang das Wort ist,
- * steht nirgends, und es liegen ein paar Buchstaben zu viel da: so lässt sich auch „goed“ legen.
+ * letzten zurück. Liegen so viele Buchstaben wie das Wort lang ist, zählt es sofort (niko 2026-11-16: „dieses Prüfen
+ * ist zu anstrengend“); am Laptop zählt auch die Eingabetaste ein kürzeres Wort. Wie lang das Wort ist, steht nirgends,
+ * und es liegen ein paar Buchstaben zu viel da: so lässt sich auch „goed“ legen.
  *
  * - Richtig: das Wort wird grün, die nächste Karte kommt.
  * - Falsch: das Wort wird rot, darunter stehen die richtige Form und die Regel. Weiter geht es, wenn die richtige Form
  *   gelegt ist (wie bei den Kisten: erst mit der richtigen Antwort).
  *
- * Gezählt wird das erste Prüfen je Karte; das macht Lernspiel.tsx (`onPruefe`).
+ * Gezählt wird das erste gelegte Wort je Karte; das macht Lernspiel.tsx (`onPruefe`).
  */
 export function LegeFeld({
   karte,
@@ -83,18 +84,17 @@ export function LegeFeld({
 
   const setze = useCallback(
     (i: number) => {
-      if (stand || gelegt.includes(i)) return;
+      const lang = legeZiel(karte).length;
+      if (stand || gelegt.includes(i) || gelegt.length >= lang) return;
       flug.current = tasten.current.get(i)?.getBoundingClientRect() ?? null;
       vibriere(3);
       const neu = [...gelegt, i];
       setGelegt(neu);
-      // nach einem Fehler reicht es, die richtige Form zu legen
-      if (hatFehler && legeStimmt(neu.map((n) => kacheln[n]).join(""), karte)) {
-        vibriere(12);
-        setStand("richtig");
-      }
+      // so lang wie das Wort (oder nach einem Fehler die richtige Form): es zählt, sobald der Buchstabe gelandet ist
+      const w = neu.map((n) => kacheln[n]).join("");
+      if (neu.length >= lang || (hatFehler && legeStimmt(w, karte))) setTimeout(() => pruefe(w), 200);
     },
-    [stand, gelegt, hatFehler, kacheln, karte],
+    [stand, gelegt, hatFehler, kacheln, karte, pruefe],
   );
   const zurueck = useCallback(() => {
     if (stand || !gelegt.length) return;
@@ -204,14 +204,10 @@ export function LegeFeld({
           <button type="button" className="ls-knopf ls-lege-zurueck" data-zweit="" onClick={zurueck} disabled={!!stand || !wort} aria-label="Letzten Buchstaben zurücknehmen" data-testid="lege-zurueck">
             <Delete size={24} aria-hidden />
           </button>
-          {hatFehler ? (
+          {hatFehler && (
             <p className="ls-strahl-weiter" role="status">
               {stand === "richtig" ? "Genau so!" : "Die richtige Form steht oben."}
             </p>
-          ) : (
-            <button type="button" className="ls-knopf ls-los ls-pruefen" disabled={!wort || !!stand} onClick={() => pruefe(wort)} data-testid="lege-pruefen">
-              Prüfen
-            </button>
           )}
         </div>
       </div>

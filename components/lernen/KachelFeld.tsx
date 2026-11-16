@@ -11,14 +11,14 @@ import { Funken, vibriere } from "./SpielTeile";
  * Fall“, „Adjektiv-Endungen“, „English Tenses“, „English Grammar“ und „Wortschatz“. Oben das Blatt mit dem Satz,
  * darunter beim Daumen die Antworten als große Kacheln, wie man es aus beliebten Lern-Apps kennt (Wortbank):
  *
- * - Eine Kachel antippen: das Wort fliegt in die Lücke, man liest den ganzen Satz. Auf ihrem Platz bleibt ein leerer
- *   Rahmen. Eine andere Kachel tauscht das Wort, die Lücke antippen holt es zurück.
- * - „Prüfen“ zählt. Unten kommt ein Streifen hoch: grün „Super!“ (die nächste Karte kommt), oder rot mit der
- *   richtigen Antwort und der Regel. Die falsche Kachel ist dann durchgestrichen, die richtige leuchtet; weiter geht
- *   es mit der richtigen Antwort (wie bei den Kisten).
+ * - Eine Kachel antippen: das Wort fliegt in die Lücke und zählt sofort (niko 2026-11-16: „dieses Prüfen ist zu
+ *   anstrengend … wenn der Spieler klickt, soll es sofort zählen“). Auf ihrem Platz bleibt ein leerer Rahmen.
+ * - Unten kommt ein Streifen hoch: grün „Super!“ (die nächste Karte kommt), oder rot mit der richtigen Antwort und der
+ *   Regel. Die falsche Kachel ist dann durchgestrichen, die richtige leuchtet; weiter geht es mit der richtigen
+ *   Antwort (wie bei den Kisten).
  *
- * Am Laptop: die Ziffern setzen eine Kachel ein, die Eingabetaste prüft, die Rücktaste holt das Wort zurück.
- * Gezählt wird das erste Prüfen je Karte; das macht Lernspiel.tsx (`onPruefe`).
+ * Am Laptop: die Ziffern tippen eine Kachel an.
+ * Gezählt wird der erste Tipp je Karte; das macht Lernspiel.tsx (`onPruefe`).
  */
 export function KachelFeld({
   karte,
@@ -49,11 +49,8 @@ export function KachelFeld({
 
   const setze = useCallback(
     (i: number) => {
-      if (stand || i < 0 || i >= optionen.length || i === daneben) return;
-      if (i === bei) {
-        setBei(-1);
-        return;
-      }
+      // eine Kachel ist schon in der Lücke: sie zählt gleich, bis dahin geht nichts anderes
+      if (stand || bei >= 0 || i < 0 || i >= optionen.length || i === daneben) return;
       const el = kacheln.current.get(i);
       if (el) flug.current = el.getBoundingClientRect();
       vibriere(4);
@@ -77,9 +74,14 @@ export function KachelFeld({
 
   const pruefe = useCallback(() => {
     if (stand || bei < 0) return;
-    const wahl = optionen[bei];
-    // nach dem ersten Fehler zählt nichts mehr: nur die richtige Antwort führt weiter
-    const ok = hatFehler ? bei === ziel : onPruefe(wahl);
+    // nach dem ersten Fehler zählt nichts mehr: nur die richtige Antwort führt weiter, eine andere springt zurück
+    if (hatFehler && bei !== ziel) {
+      vibriere([28, 40, 28]);
+      if (!ruhig()) blatt.current?.animate?.([{ translate: "0" }, { translate: "-7px" }, { translate: "6px" }, { translate: "-4px" }, { translate: "0" }], { duration: 360, easing: "cubic-bezier(0.77, 0, 0.175, 1)" });
+      setBei(-1);
+      return;
+    }
+    const ok = hatFehler || onPruefe(optionen[bei]);
     if (ok) {
       vibriere(12);
       setStand("richtig");
@@ -108,34 +110,25 @@ export function KachelFeld({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stand]);
 
-  // nach einem Fehler reicht es, die richtige Kachel anzutippen
+  // die Kachel zählt, sobald sie in der Lücke gelandet ist (kurz den ganzen Satz zeigen)
   useEffect(() => {
-    if (!hatFehler || stand || bei !== ziel) return;
-    const t = setTimeout(() => {
-      vibriere(12);
-      setStand("richtig");
-    }, 320);
+    if (stand || bei < 0) return;
+    const t = setTimeout(pruefe, 260);
     return () => clearTimeout(t);
-  }, [hatFehler, stand, bei, ziel]);
+  }, [stand, bei, pruefe]);
 
-  // am Laptop: Ziffern setzen ein, die Eingabetaste prüft, die Rücktaste holt zurück
+  // am Laptop: die Ziffern tippen eine Kachel an
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey || stand) return;
       if (/^[1-9]$/.test(e.key) && Number(e.key) <= optionen.length) {
         e.preventDefault();
         setze(Number(e.key) - 1);
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (!hatFehler) pruefe();
-      } else if (e.key === "Backspace" && bei >= 0) {
-        e.preventDefault();
-        setBei(-1);
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [stand, bei, optionen.length, hatFehler, setze, pruefe]);
+  }, [stand, optionen.length, setze]);
 
   const kartenStand: Stand = stand === "richtig" ? { wahl: karte.richtig, richtig: true } : stand === "falsch" ? { wahl: optionen[daneben], richtig: false } : null;
   // lange Antworten (englische Zeiten) stehen untereinander, kurze zu zweit nebeneinander
@@ -146,13 +139,7 @@ export function KachelFeld({
       <p className="ls-auftrag">{hatFehler && stand !== "richtig" ? "Tipp jetzt die richtige Antwort an." : auftrag}</p>
       <div className="ls-reihe ls-kachelfeld">
         <div ref={blatt} className="ls-satzblatt ls-kachelblatt" data-stand={stand ?? undefined} data-knapp={hatFehler ? "" : undefined} data-testid="kachel-blatt">
-          {/* die Lücke antippen holt das Wort zurück */}
-          <div
-            className="ls-kachel-satz"
-            onClick={(e) => {
-              if (!stand && bei >= 0 && (e.target as HTMLElement).closest(".ls-luecke")) setBei(-1);
-            }}
-          >
+          <div className="ls-kachel-satz">
             <KartenInhalt karte={karte} stand={kartenStand} probe={bei >= 0 ? optionen[bei] : undefined} />
           </div>
           {stand === "richtig" && !hatFehler && <Funken />}
@@ -174,7 +161,7 @@ export function KachelFeld({
                 data-falsch={i === daneben ? "" : undefined}
                 data-zeigen={hatFehler && i === ziel && !drin ? "" : undefined}
                 aria-pressed={drin}
-                disabled={!!stand || i === daneben}
+                disabled={!!stand || i === daneben || (bei >= 0 && !drin)}
                 onClick={() => setze(i)}
                 aria-keyshortcuts={String(i + 1)}
                 data-testid={`kachel-${i}`}
@@ -185,7 +172,7 @@ export function KachelFeld({
           })}
         </div>
 
-        {/* unten beim Daumen: „Prüfen“, danach der Streifen mit dem Ergebnis */}
+        {/* unten beim Daumen: der Streifen mit dem Ergebnis */}
         <div className="ls-kachel-fuss">
           {stand === "richtig" ? (
             <div className="ls-bescheid" data-art="richtig" role="status" data-testid="kachel-bescheid">
@@ -200,11 +187,7 @@ export function KachelFeld({
               </p>
               <p className="ls-bescheid-text">{karte.regel}</p>
             </div>
-          ) : (
-            <button type="button" className="ls-knopf ls-los ls-pruefen" disabled={bei < 0 || !!stand} onClick={pruefe} data-testid="kachel-pruefen">
-              Prüfen
-            </button>
-          )}
+          ) : null}
         </div>
       </div>
     </>
