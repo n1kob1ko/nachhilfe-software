@@ -9,7 +9,8 @@ import { assignWorksheetAction, deleteWorksheetAction } from "@/app/actions";
 import { archiveWorksheetAction, restoreWorksheetAction } from "@/app/archiv-actions";
 import { ArchivBanner, ArchivKnopf, ArchivMeldung, WiederherstellenKnopf } from "@/components/Archiv";
 import { LoeschenMitWarnung } from "@/components/LoeschenMitWarnung";
-import { copyAsDraftAction, setFreigabeAction } from "@/app/builder-actions";
+import { copyAsDraftAction, setBlattAction, setFreigabeAction } from "@/app/builder-actions";
+import { alsBlatt } from "@/lib/blatt";
 import { FREIGABE_INFO, FREIGABE_LABEL, FREIGABEN, freigabeVon, type Freigabe } from "@/lib/freigabe";
 import { isMinitest, quickRoundProblem } from "@/lib/quick-round";
 import { BoardSendButton, SendToBoard } from "@/components/SendToBoard";
@@ -318,6 +319,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
             <span className="text-[13px] text-ink-3">{probe ? "Als A4 mit Punkten und Notenschlüssel" : "Als A4-Arbeitsblatt, mit oder ohne Lösungen"}</span>
           </div>
         )}
+        {tasks.length > 1 && !tasks.some((t) => t.type === "reading") && <BlattWahl worksheetId={w.id} an={alsBlatt(w.settings)} />}
       </section>
 
       {!editable && (
@@ -479,6 +481,28 @@ function FreigabeWahl({ assignmentId, student, current }: { assignmentId: number
         ))}
       </div>
       <p className="text-[12px] text-ink-3">{FREIGABE_INFO[current]}</p>
+    </div>
+  );
+}
+
+/** Am Tablet: das ganze Blatt wie auf Papier oder eine Aufgabe nach der anderen (lib/blatt.ts). */
+function BlattWahl({ worksheetId, an }: { worksheetId: number; an: boolean }) {
+  return (
+    <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-accent/15 pt-4" data-testid="blatt-wahl">
+      <span className="text-[14px] font-medium">Am Tablet:</span>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label="Am Tablet zeigen">
+        {([true, false] as const).map((x) => (
+          <form key={String(x)} action={setBlattAction.bind(null, worksheetId, x)}>
+            <button
+              aria-pressed={x === an}
+              className={`treffer inline-flex min-h-[36px] items-center rounded-full px-3 text-[13px] font-semibold ${x === an ? "bg-accent text-on-fill" : "bg-surface text-ink-2 hover:text-accent"}`}
+            >
+              {x ? "Ganzes Blatt" : "Eine Aufgabe nach der anderen"}
+            </button>
+          </form>
+        ))}
+      </div>
+      <span className="text-[13px] text-ink-3">{an ? "Alle Aufgaben untereinander, wie auf Papier." : "Immer nur eine Aufgabe zu sehen."}</span>
     </div>
   );
 }

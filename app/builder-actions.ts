@@ -22,6 +22,7 @@ import {
 } from "@/lib/builder";
 import { DIFFICULTIES, type Difficulty, type TaskType, TASK_TYPES } from "@/lib/curriculum";
 import { figurFehler } from "@/lib/figur";
+import { mitBlatt } from "@/lib/blatt";
 import { freigabeVon, isFreigabe, zeigtHilfen } from "@/lib/freigabe";
 import { noteActivity } from "@/lib/learning";
 import { readingSet, withText } from "@/lib/lesen";
@@ -236,6 +237,20 @@ export async function setFreigabeAction(assignmentId: number, freigabe: string) 
   const unit = runningUnitForStudent(a.student_id);
   if (unit) pushLive(unit.id);
   revalidatePath(`/uebungen/${a.worksheet_id}`);
+  revalidatePath("/lernen", "layout");
+}
+
+/** Am Tablet als ganzes Blatt oder eine Aufgabe nach der anderen (lib/blatt.ts); gilt sofort, auch für schon gesendete. */
+export async function setBlattAction(worksheetId: number, an: boolean) {
+  await requireTeacher();
+  const w = repo.getWorksheet(worksheetId);
+  if (!w) return;
+  repo.updateWorksheetMeta(worksheetId, { settings: mitBlatt(w.settings, an) });
+  for (const a of repo.listAssignmentsForWorksheet(worksheetId)) {
+    const unit = runningUnitForStudent(a.student_id);
+    if (unit) pushLive(unit.id);
+  }
+  revalidatePath(`/uebungen/${worksheetId}`);
   revalidatePath("/lernen", "layout");
 }
 

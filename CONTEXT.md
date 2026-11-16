@@ -90,6 +90,13 @@ KI-Anfrage zu **Lernzettel**, Vorbereitungstest, Übungsblatt, Test mit Lösunge
 Einheit bereit ([docs/stoff-vorbereiten.md](docs/stoff-vorbereiten.md)).
 _Avoid_: Stoffpaket (nur im Code). Nicht verwechseln mit **Foto vom Stoff** (eine Übung in der laufenden Einheit)
 
+**Ganzes Blatt**:
+Eine Übung am Gerät mit allen Aufgaben untereinander wie auf Papier, statt einer nach der anderen (`lib/blatt.ts`).
+Gilt für die Blätter aus **Stoff vorbereiten** und jede Übung, bei der die Lehrkraft „Am Tablet: Ganzes Blatt“ wählt.
+In der Übung prüft jede Aufgabe für sich, im Test gibt der Schüler mit „Blatt abgeben“ alles auf einmal ab; die Zeit
+zählt je Aufgabe, und die Lehrkraft sieht live „hängt fest“ ([docs/blatt-am-tablet.md](docs/blatt-am-tablet.md)).
+_Avoid_: PDF ausfüllen, Formular
+
 **Lernzettel**:
 Die Infos zum Stoff aus **Stoff vorbereiten**: Abschnitte mit Erklärung, Merke und Beispielen, dazu typische
 Fehler. Als A4-Blatt druckbar und nach dem Übernehmen in der Schüler-App unter „Deine Unterlagen“.
