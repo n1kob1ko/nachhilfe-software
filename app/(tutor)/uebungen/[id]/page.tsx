@@ -277,6 +277,11 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                   Ergebnis ansehen <ArrowRight size={18} aria-hidden />
                 </Link>
               )}
+              {mainAssignment.done_count > 0 && (
+                <Link href={`/arbeitsblatt/zuweisung/${mainAssignment.id}`} className="btn btn-secondary btn-lg">
+                  <Printer size={18} aria-hidden /> Ausgefüllt drucken
+                </Link>
+              )}
             </div>
           </>
         ) : (

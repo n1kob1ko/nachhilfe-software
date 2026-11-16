@@ -97,6 +97,13 @@ In der Übung prüft jede Aufgabe für sich, im Test gibt der Schüler mit „Bl
 zählt je Aufgabe, und die Lehrkraft sieht live „hängt fest“ ([docs/blatt-am-tablet.md](docs/blatt-am-tablet.md)).
 _Avoid_: PDF ausfüllen, Formular
 
+**Ausgefülltes Blatt**:
+Ein gesendetes Blatt so, wie der Schüler es am Gerät ausgefüllt hat, als A4 zum Drucken (`/arbeitsblatt/zuweisung/[id]`,
+`lib/blatt-druck.ts`): Antworten, ✓ und ✗, die richtige Lösung bei Fehlern, Zeit und Hilfen, bei einer
+**Probeschularbeit** Punkte je Aufgabe und Note ([docs/blatt-drucken.md](docs/blatt-drucken.md)). Wie die **Mappe**,
+nur für ein Blatt.
+_Avoid_: ausgefülltes PDF
+
 **Lernzettel**:
 Die Infos zum Stoff aus **Stoff vorbereiten**: Abschnitte mit Erklärung, Merke und Beispielen, dazu typische
 Fehler. Als A4-Blatt druckbar und nach dem Übernehmen in der Schüler-App unter „Deine Unterlagen“.

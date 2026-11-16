@@ -1,6 +1,7 @@
 import { Fragment } from "react";
 import { BrandLogo } from "@/components/Brand";
 import { DEFAULTS, buildSheet, shortAnswer, type SheetOptions, type SheetTask } from "@/lib/arbeitsblatt";
+import type { BlattMappe } from "@/lib/blatt-druck";
 import { inDieLuecke, lueckenFuerMappe, type Antwort, type Bewertung, type Mappe, type MappeAufgabe, type MappeUebung } from "@/lib/mappe";
 import type { MappeOptionen } from "@/lib/mappe-druck";
 import * as repo from "@/lib/repo";
@@ -13,6 +14,7 @@ import { belegPasst } from "@/lib/englisch-matura-pruefen";
 import { EnglischAntworten, MitWortKasten } from "./EnglischMatura";
 import { Pictures, TextBody } from "./TextPrint";
 
+const zahl = (n: number) => n.toLocaleString("de-AT");
 const letter = (i: number) => String.fromCharCode(97 + i);
 const longDate = (iso: string) => new Date(iso).toLocaleDateString("de-AT", { day: "numeric", month: "long", year: "numeric", timeZone: "Europe/Vienna" });
 
@@ -146,7 +148,7 @@ function AntwortBlock({ t, a, zeigeLoesung }: { t: SheetTask; a: Antwort; zeigeL
 }
 
 /** Eine bearbeitete Aufgabe: Aufgabe, Antwort des Schülers, Zeichen am Rand und bei Fehlern die richtige Lösung. */
-function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptionen }) {
+function MappeTask({ t, a, o, punkte }: { t: SheetTask; a: MappeAufgabe; o: MappeOptionen; punkte?: { erreicht: number | null; max: number } }) {
   const { task } = t;
   const matura = maturaFormat(task);
   const en = englischFormat(task);
@@ -195,9 +197,16 @@ function MappeTask({ t, a, o }: { t: SheetTask; a: MappeAufgabe; o: MappeOptione
         {antwort ? (
           <AntwortBlock t={t} a={antwort} zeigeLoesung={zeigeLoesung} />
         ) : (
-          <p className="mp-antwort ab-muted">keine Antwort</p>
+          <p className="mp-antwort ab-muted">{a.leer ? "nicht bearbeitet" : "keine Antwort"}</p>
         )}
+        {/* eine Auswahl ohne Kreuz: die Möglichkeiten stehen da, dazu warum nichts angekreuzt ist */}
+        {a.leer && antwort && <p className="mp-antwort ab-muted">nicht bearbeitet</p>}
         {o.marks && <Hinweis a={a} />}
+        {punkte && o.marks && (
+          <p className="mp-punkte num">
+            {punkte.erreicht === null ? `wird bewertet · ${punkte.max} P` : `${zahl(punkte.erreicht)} von ${zahl(punkte.max)} ${punkte.max === 1 ? "Punkt" : "Punkten"}`}
+          </p>
+        )}
         {loesung && !loesungInLuecke && task.data.options === undefined && !matura && !enTabelle && (
           <p className="mp-loesung">
             <span className="mp-label">Richtig:</span> <MathLine text={loesung} />
@@ -218,7 +227,7 @@ function aufzaehlen(nummern: number[]) {
 }
 
 /** Eine Übung der Einheit: Überschrift, Lesetext, die Aufgaben mit Antworten; nicht bearbeitete nur auf Wunsch. */
-function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; leer?: boolean }) {
+function UebungAbschnitt({ u, o, leer, punkte, ohneKopf }: { u: MappeUebung; o: MappeOptionen; leer?: boolean; punkte?: Map<number, { erreicht: number | null; max: number }>; ohneKopf?: boolean }) {
   const doc = buildSheet(
     { title: u.titel, subject: u.worksheet.subject, klasseLabel: u.klasse, topic: u.worksheet.topic, studentName: null, tasks: u.aufgaben.map((a) => a.task) },
     (sid) => repo.getSkill(sid)?.name ?? null,
@@ -229,6 +238,7 @@ function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; lee
   const meta = [u.worksheet.subject, u.worksheet.topic && u.worksheet.topic !== u.titel ? u.worksheet.topic : ""].filter(Boolean);
   return (
     <section className="mp-abschnitt" data-testid="mappe-uebung">
+      {!ohneKopf && (
       <h2 className="mp-h2">
         {leer && <span className="mp-h2-vor">Zum Weiterüben: </span>}
         <MathLine text={u.titel} />
@@ -238,7 +248,8 @@ function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; lee
           </span>
         )}
       </h2>
-      {meta.length > 0 && <p className="ab-meta mp-meta">{meta.join(" · ")}</p>}
+      )}
+      {!ohneKopf && meta.length > 0 && <p className="ab-meta mp-meta">{meta.join(" · ")}</p>}
       {doc.reading && zuZeigen.length > 0 && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={false} zeilen={doc.reading.zeilen} leerzeilen={doc.reading.leerzeilen} />}
       <div className="ab-tasks">
         {doc.tasks.map((t, i) => {
@@ -247,7 +258,7 @@ function UebungAbschnitt({ u, o, leer }: { u: MappeUebung; o: MappeOptionen; lee
           return (
             <Fragment key={t.n}>
               <TaskPassage t={t} teacher={false} />
-              {a.bewertung === "nicht" ? <StudentTask t={t} o={BLATT} /> : <MappeTask t={t} a={a} o={o} />}
+              {a.bewertung === "nicht" ? <StudentTask t={t} o={BLATT} /> : <MappeTask t={t} a={a} o={o} punkte={punkte?.get(a.task.id)} />}
             </Fragment>
           );
         })}
@@ -336,6 +347,71 @@ export function MappeDokument({ m, o }: { m: Mappe; o: MappeOptionen }) {
           </div>
         </section>
       )}
+    </article>
+  );
+}
+
+/**
+ * Ein einzelnes ausgefülltes Blatt (lib/blatt-druck.ts): Kopf mit Name und Datum, was dabei herauskam (richtig, Zeit,
+ * Hilfen; bei einer Probeschularbeit Punkte und Note), dann die Aufgaben mit den Antworten wie in der Mappe.
+ */
+export function BlattDokument({ b, o }: { b: BlattMappe; o: MappeOptionen }) {
+  const u = b.uebung;
+  const pe = b.probe?.ergebnis ?? null;
+  const note = pe?.note ?? null;
+  const offen = u.aufgaben.filter((a) => a.bewertung === "offen").length;
+  const nichtBearbeitet = u.aufgaben.filter((a) => a.bewertung === "nicht" || a.leer).length;
+  const zeile = [
+    `${u.richtig} von ${u.aufgaben.length} richtig`,
+    nichtBearbeitet > 0 && `${nichtBearbeitet} nicht bearbeitet`,
+    offen > 0 && `${offen} noch zu bewerten`,
+    b.minuten > 0 && `${b.minuten} ${b.minuten === 1 ? "Minute" : "Minuten"}`,
+    b.hilfen > 0 && `${b.hilfen} ${b.hilfen === 1 ? "Hilfe" : "Hilfen"}`,
+  ].filter(Boolean) as string[];
+  const meta = [u.worksheet.subject, b.klasse, u.worksheet.topic && u.worksheet.topic !== u.titel ? u.worksheet.topic : ""].filter(Boolean);
+  return (
+    <article className="ab-sheet mp" lang="de" data-testid="blatt-druck">
+      <header className="ab-head">
+        <div className="ab-head-main">
+          <h1 className="ab-title">
+            <MathLine text={o.title} />
+          </h1>
+          {meta.length > 0 && <p className="ab-meta">{meta.join(" · ")}</p>}
+          {o.marks && <p className="ab-meta num" data-testid="blatt-druck-zeile">{zeile.join(" · ")}</p>}
+        </div>
+        {(o.logo || o.name || o.date) && (
+          <div className="mp-kopf-rechts">
+            {o.logo && <BrandLogo width={70} className="mp-logo" />}
+            {(o.name || o.date) && (
+              <div className="ab-fields">
+                {o.name && (
+                  <p className="ab-field">
+                    <span>Name:</span>
+                    <span className="ab-field-line">{b.student.name}</span>
+                  </p>
+                )}
+                {o.date && (
+                  <p className="ab-field">
+                    <span>Datum:</span>
+                    <span className="ab-field-line">{longDate(b.datum)}</span>
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </header>
+      {pe && o.marks && (
+        <p className="mp-ergebnis num" data-testid="blatt-druck-note">
+          <span>
+            Punkte: <strong>{zahl(pe.erreicht)}</strong> von {zahl(pe.gesamt)}
+          </span>
+          <span>
+            Note: <strong>{note ? `${note.note} (${note.label})` : "folgt, wenn alles bewertet ist"}</strong>
+          </span>
+        </p>
+      )}
+      <UebungAbschnitt u={u} o={o} punkte={b.probe?.jeAufgabe} ohneKopf />
     </article>
   );
 }

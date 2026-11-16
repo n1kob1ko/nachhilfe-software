@@ -160,6 +160,8 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
           .map((b) => {
             const tasks = b.id ? repo.listTasks(b.id) : [];
             const w = b.id ? repo.getWorksheet(b.id) : null;
+            // schon bearbeitet: das ausgefüllte Blatt (lib/blatt-druck.ts) und wie es ausging
+            const bearbeitet = b.id ? repo.listAssignmentsForWorksheet(b.id).find((a) => a.student_id === p.student_id && a.done_count > 0) : undefined;
             return (
               <section key={b.blatt} className="panel grid gap-3 px-5 py-5" aria-label={b.titel} data-testid={`stoffpaket-blatt-${b.blatt}`}>
                 <div className="flex flex-wrap items-center gap-2">
@@ -168,7 +170,13 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
                     {b.blatt === "test" && pruefung ? `Probeschularbeit zur ${pruefung.kind || "Prüfung"} am ${Number(pruefung.date.slice(8, 10))}.${Number(pruefung.date.slice(5, 7))}.` : b.titel}
                     {b.id && <span className="font-normal text-ink-3"> · {tasks.length} Aufgaben</span>}
                   </h2>
-                  {w?.status === "freigegeben" && <Pill tone="green">gesendet</Pill>}
+                  {bearbeitet ? (
+                    <Pill tone="green">
+                      {bearbeitet.correct_count} von {tasks.length} richtig
+                    </Pill>
+                  ) : (
+                    w?.status === "freigegeben" && <Pill tone="green">gesendet</Pill>
+                  )}
                 </div>
                 {!b.id ? (
                   <p className="text-[14.5px] text-ink-2">Dafür hat die KI keine brauchbaren Aufgaben geliefert.</p>
@@ -185,6 +193,11 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
                       ))}
                     </ol>
                     <div className="flex flex-wrap items-center gap-2 pt-1">
+                      {bearbeitet && (
+                        <Link href={`/arbeitsblatt/zuweisung/${bearbeitet.id}`} className="btn btn-primary btn-sm" data-testid="ausgefuellt-drucken">
+                          <Printer size={15} aria-hidden /> Ausgefüllt drucken
+                        </Link>
+                      )}
                       {!fertig && targets.length > 0 && <TabletSend targets={targets} worksheetId={b.id} small />}
                       <Link href={`/uebungen/${b.id}`} className="btn btn-secondary btn-sm">
                         <Pencil size={15} aria-hidden /> Ansehen und ändern
