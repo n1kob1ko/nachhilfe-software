@@ -2,10 +2,12 @@ import Link from "next/link";
 import { Frisch } from "@/components/Frisch";
 import { ChevronRight, Swords, Trophy } from "lucide-react";
 import { notFound } from "next/navigation";
+import { BestenlisteTafel } from "@/components/lernen/BestenlisteTafel";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { meineDuelle } from "@/lib/duelle";
-import { spielVorschlaege } from "@/lib/lernspiele";
+import { bloeckeBestenliste, spielVorschlaege } from "@/lib/lernspiele";
+import { hatEndlos } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -46,13 +48,17 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   const dran = duelle.filter((d) => d.binDran).length;
   const liga = profil?.liga ? ligaTabelle(student, heute) : null;
   const ich = liga?.zeilen.find((z) => z.ich);
+  // Blockwerk: die Bestenliste zum Anschauen, auch ohne zu spielen
+  const blockArt = vorschlaege.find((v) => hatEndlos(v.art))?.art;
+  const bestenliste = blockArt ? bloeckeBestenliste(student) : null;
+  const blockLink = (art: string) => `${base}/spiel?modus=bloecke&art=${art}`;
 
   return (
     <>
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={(art) => `${base}/spiel?modus=bloecke&art=${art}`} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">
@@ -96,6 +102,8 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
           </div>
         )}
       </section>
+
+      {bestenliste && blockArt && <BestenlisteTafel liste={bestenliste} spielen={blockLink(blockArt)} arena={`${base}/arena`} />}
     </>
   );
 }

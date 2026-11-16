@@ -390,10 +390,16 @@ export function offeneFehler(studentId: number, art: SpielArt, runden = 5): stri
   return offen;
 }
 
-/** Karten der letzten zwei Runden: kommen in der nächsten nicht gleich wieder (außer als Fehler). */
-function zuletztGespielt(studentId: number, art: SpielArt): string[] {
-  const rows = db().prepare("SELECT karten FROM spielrunden WHERE student_id = ? AND art = ? ORDER BY id DESC LIMIT 2").all(studentId, art) as { karten: string }[];
-  return rows.flatMap((r) => json<SpielKarte[]>(r.karten, []).map((k) => k.key));
+/** So viele Runden zurück merkt sich ein Spiel, welche Karten dran waren (Blockwerk und Endlos hängen viele Runden aneinander). */
+export const GESEHEN_RUNDEN = 40;
+
+/**
+ * Karten der letzten Runden, die neueste zuerst, jede einmal: kommen erst wieder, wenn alle anderen dran waren, und dann
+ * die am längsten nicht gesehenen zuerst (außer als Fehler). niko 2026-11-16: „die fragen wiederholen sich mit der zeit“.
+ */
+export function zuletztGespielt(studentId: number, art: SpielArt): string[] {
+  const rows = db().prepare("SELECT karten FROM spielrunden WHERE student_id = ? AND art = ? ORDER BY id DESC LIMIT ?").all(studentId, art, GESEHEN_RUNDEN) as { karten: string }[];
+  return [...new Set(rows.flatMap((r) => json<SpielKarte[]>(r.karten, []).map((k) => k.key)))];
 }
 
 /** Startet eine Runde: wählt die Karten und merkt sie sich, damit das Ergebnis nur gegen sie geprüft wird. */

@@ -536,14 +536,16 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
     if (k && !genommen.has(key) && !(k.gruppe && gruppen.has(k.gruppe)) && gewaehlt.length < Math.min(WIEDERHOLUNGEN_MAX, anzahl)) nimm(k);
   }
 
-  const zuletzt = new Set(o.zuletzt ?? []);
+  // `zuletzt`: die neueste zuerst. Erst Karten, die nicht darin stehen; dann die, die am längsten her sind.
+  const alter = new Map((o.zuletzt ?? []).map((key, i) => [key, i]));
   const reihen: Stufe[][] = [o.stufen, [0, 1, 2, 3].filter((s) => !o.stufen.includes(s as Stufe)) as Stufe[]];
   for (const stufen of reihen) {
     for (const ohneZuletzt of [true, false]) {
-      const pool = mischen(
-        alle.filter((k) => stufen.includes(k.stufe) && !genommen.has(k.karte.key) && (!ohneZuletzt || !zuletzt.has(k.karte.key))),
+      const passend = mischen(
+        alle.filter((k) => stufen.includes(k.stufe) && !genommen.has(k.karte.key) && (!ohneZuletzt || !alter.has(k.karte.key))),
         rng,
       );
+      const pool = ohneZuletzt ? passend : passend.sort((a, b) => (alter.get(b.karte.key) ?? 1e9) - (alter.get(a.karte.key) ?? 1e9));
       for (const k of pool) {
         if (gewaehlt.length >= anzahl) break;
         if ((proAntwort.get(k.karte.richtig) ?? 0) >= grenze) continue;

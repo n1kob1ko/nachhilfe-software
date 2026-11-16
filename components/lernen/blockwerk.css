@@ -562,3 +562,58 @@
     opacity: 0;
   }
 }
+
+/* Blockwerk vorbei: Ring, eine Zeile Titel, eine schmale Zeile Stand, die Bestenliste knapp (niko 2026-11-16: „ist überfüllt“) */
+.ls-ring-zahl[data-lang="5"] b,
+.ls-ring-zahl[data-lang="6"] b {
+  font-size: 40px;
+}
+.ls-ring-zahl[data-lang="7"] b {
+  font-size: 32px;
+}
+.ls-ring-zahl[data-lang="8"] b,
+.ls-ring-zahl[data-lang="9"] b {
+  font-size: 26px;
+}
+.bw-ende-titel {
+  display: inline-flex;
+  align-self: center;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 14px;
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ls-on);
+}
+.bw-ende-titel svg {
+  color: var(--ls-gold);
+}
+.bw-ende-stand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 10px 16px;
+  border-radius: 16px;
+  font-size: 15px;
+  text-align: left;
+}
+.bw-besten .ar-reihe {
+  gap: 10px;
+  padding: 6px 12px;
+  border-radius: 14px;
+}
+.bw-besten .ar-bild {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  font-size: 19px;
+}
+.bw-besten .ar-punkte {
+  font-size: 16px;
+}
