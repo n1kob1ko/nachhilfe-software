@@ -40,8 +40,12 @@ export const MAPPE_CHECKS: [BoolKey, string, string][] = [
 type Params = Record<string, string | string[] | undefined>;
 const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
-export function leseMappeOptionen(sp: Params, defaultTitle: string): MappeOptionen {
-  const o: MappeOptionen = { ...DEFAULTS, title: one(sp.titel)?.trim().slice(0, 140) || defaultTitle };
+/** Eigene Standardwerte, z. B. für das einzelne ausgefüllte Blatt (lib/blatt-druck.ts): alle Aufgaben und das Datum. */
+export type MappeStandard = Partial<Omit<MappeOptionen, "title">>;
+export const BLATT_STANDARD: MappeStandard = { open: true, date: true };
+
+export function leseMappeOptionen(sp: Params, defaultTitle: string, standard: MappeStandard = {}): MappeOptionen {
+  const o: MappeOptionen = { ...DEFAULTS, ...standard, title: one(sp.titel)?.trim().slice(0, 140) || defaultTitle };
   for (const [k, param] of MAPPE_CHECKS) {
     const v = one(sp[param]);
     if (v === "1" || v === "0") o[k] = v === "1";
@@ -50,9 +54,10 @@ export function leseMappeOptionen(sp: Params, defaultTitle: string): MappeOption
 }
 
 /** Abfrage aus den Einstellungen, die vom Standard abweichen (und dem Titel, wenn geändert). */
-export function mappeQuery(o: MappeOptionen, defaultTitle: string): string {
+export function mappeQuery(o: MappeOptionen, defaultTitle: string, standard: MappeStandard = {}): string {
+  const d = { ...DEFAULTS, ...standard };
   const q = new URLSearchParams();
   if (o.title !== defaultTitle) q.set("titel", o.title);
-  for (const [k, param] of MAPPE_CHECKS) if (o[k] !== DEFAULTS[k]) q.set(param, o[k] ? "1" : "0");
+  for (const [k, param] of MAPPE_CHECKS) if (o[k] !== d[k]) q.set(param, o[k] ? "1" : "0");
   return q.toString();
 }

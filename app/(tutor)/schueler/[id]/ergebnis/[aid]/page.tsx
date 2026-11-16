@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { runningUnitForStudent } from "@/lib/units";
-import { CheckCircle2, CircleDashed, Lightbulb, Plus, XCircle } from "lucide-react";
+import { CheckCircle2, CircleDashed, Lightbulb, Plus, Printer, XCircle } from "lucide-react";
 import { deleteAssignmentAction } from "@/app/actions";
 import { archiveAssignmentAction, restoreAssignmentAction, restoreWorksheetAction } from "@/app/archiv-actions";
 import { ArchivBanner, ArchivKnopf, ArchivMeldung } from "@/components/Archiv";
@@ -85,6 +85,11 @@ export default async function ResultPage({ params, searchParams }: { params: Pro
         <Link href={`/uebungen/neu?schueler=${student.id}`} className="btn btn-primary btn-lg">
           <Plus size={18} aria-hidden /> Nächste Übung erstellen
         </Link>
+        {finals.length > 0 && (
+          <Link href={`/arbeitsblatt/zuweisung/${assignment.id}`} className="btn btn-secondary btn-lg" data-testid="ausgefuellt-drucken">
+            <Printer size={18} aria-hidden /> Ausgefülltes Blatt drucken
+          </Link>
+        )}
         {w.kind === "diagnose" && (
           <Link href={`/diagnose/${assignment.id}`} className="btn btn-secondary btn-lg">
             Diagnose-Auswertung

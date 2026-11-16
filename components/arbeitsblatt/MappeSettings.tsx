@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { ArrowLeft, Printer } from "lucide-react";
-import { MAPPE_CHECKS, mappeQuery, type MappeOptionen } from "@/lib/mappe-druck";
+import { MAPPE_CHECKS, mappeQuery, type MappeOptionen, type MappeStandard } from "@/lib/mappe-druck";
 
 type Props = {
   options: MappeOptionen;
@@ -13,17 +13,20 @@ type Props = {
   back: { href: string; label: string };
   /** was es in dieser Einheit gibt; Häkchen für Dinge, die es nicht gibt, bleiben weg */
   inhalt: { uebungen: number; aufgaben: number; offen: number; texte: number; tafel: number };
+  /** eigene Standardwerte (das einzelne Blatt: lib/mappe-druck.ts BLATT_STANDARD) und die Überschrift */
+  standard?: MappeStandard;
+  ueberschrift?: string;
 };
 
 /** Einstellungen neben der A4-Vorschau der Mappe (wie beim Arbeitsblatt und beim Text). */
-export function MappeSettings({ options, defaultTitle, path, back, inhalt }: Props) {
+export function MappeSettings({ options, defaultTitle, path, back, inhalt, standard, ueberschrift = "Mappe drucken" }: Props) {
   const router = useRouter();
   const [o, setO] = useState(options);
   const [pending, start] = useTransition();
   const set = <K extends keyof MappeOptionen>(k: K, v: MappeOptionen[K]) => {
     const next = { ...o, [k]: v };
     setO(next);
-    const q = mappeQuery(next, defaultTitle);
+    const q = mappeQuery(next, defaultTitle, standard);
     start(() => router.replace(q ? `${path}?${q}` : path, { scroll: false }));
   };
   const fehlt: Partial<Record<keyof MappeOptionen, boolean>> = {
@@ -43,7 +46,7 @@ export function MappeSettings({ options, defaultTitle, path, back, inhalt }: Pro
       <Link href={back.href} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-ink-2 hover:text-accent">
         <ArrowLeft size={16} aria-hidden /> {back.label}
       </Link>
-      <h1 className="mt-1 text-[20px] font-semibold">Mappe drucken</h1>
+      <h1 className="mt-1 text-[20px] font-semibold">{ueberschrift}</h1>
       <p className="mb-4 text-[13px] text-ink-3">A4 Hochformat{teile.length > 0 && ` · ${teile.join(", ")}`}</p>
       <button type="button" className="btn btn-primary btn-lg w-full" onClick={() => window.print()} disabled={pending} data-testid="mappe-drucken">
         <Printer size={18} aria-hidden /> Drucken / PDF

@@ -133,6 +133,8 @@ export type MappeAufgabe = {
   antwort: Antwort | null;
   /** im wievielten Versuch die gezeigte Antwort kam */
   versuch: number;
+  /** im Test leer abgegeben (ganzes Blatt, lib/blatt.ts): nicht bearbeitet, aber abgeschlossen */
+  leer?: boolean;
 };
 
 export type MappeUebung = {
@@ -174,12 +176,14 @@ function bewerte(list: repo.Attempt[]): Pick<MappeAufgabe, "bewertung" | "versuc
   return { bewertung, versuch: gezeigt?.attempt_no ?? 0, gezeigt };
 }
 
-function uebung(assignment: repo.Assignment, vorname: string, versuche: repo.Attempt[]): MappeUebung | null {
+/** Eine Übung mit den Antworten aus `versuche` (auch für das einzelne ausgefüllte Blatt, lib/blatt-druck.ts). */
+export function uebung(assignment: repo.Assignment, vorname: string, versuche: repo.Attempt[]): MappeUebung | null {
   const worksheet = repo.getWorksheet(assignment.worksheet_id);
   if (!worksheet) return null;
   const aufgaben = repo.listTasks(worksheet.id).map((task): MappeAufgabe => {
     const { bewertung, versuch, gezeigt } = bewerte(versuche.filter((a) => a.task_id === task.id));
-    return { task, bewertung, versuch, antwort: gezeigt ? leseAntwort(task, gezeigt.answer) : null };
+    const leer = Boolean(gezeigt && !gezeigt.answer && gezeigt.error_label === "nicht bearbeitet");
+    return { task, bewertung, versuch, antwort: gezeigt && !leer ? leseAntwort(task, gezeigt.answer) : null, ...(leer ? { leer } : {}) };
   });
   return {
     assignmentId: assignment.id,

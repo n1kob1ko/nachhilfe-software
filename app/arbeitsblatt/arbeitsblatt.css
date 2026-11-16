@@ -1070,6 +1070,22 @@
 .mp-loesung .mp-label {
   color: inherit;
 }
+.mp-punkte {
+  margin: 1mm 0 0;
+  font-size: 9.5pt;
+  font-weight: 600;
+  color: #333;
+}
+.mp-ergebnis {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2mm 8mm;
+  margin: 0 0 5mm;
+  padding: 2.5mm 4mm;
+  border: 0.4mm solid #222;
+  border-radius: 2mm;
+  font-size: 12pt;
+}
 .mp-hinweis {
   margin: 1mm 0 0;
   font-size: 9.5pt;
