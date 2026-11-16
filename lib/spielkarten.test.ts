@@ -168,3 +168,23 @@ test("Dein Stoff: ältere Karten nur noch zum Wiederholen, und nie im Duell", as
   const d = duelle.erstelleDuell(student, "stoff");
   assert.equal(d.ok, false);
 });
+
+test("Blockwerk und Endlos: keine Karte kommt wieder, bevor alle dran waren; dann die am längsten nicht gesehenen", async () => {
+  const { student, teacher, sk, sp } = await setup();
+  const heute = new Date().toISOString().slice(0, 10);
+  const text = Array.from({ length: 30 }, (_, i) => `Frage ${i + 1} = richtig ${i + 1} | falsch ${i + 1} | anders ${i + 1}`).join("\n");
+  assert.ok(sk.speichereSatz({ studentId: student.id, teacherId: teacher.id, titel: "Viele", fach: "Biologie", text }).ok);
+  const erste = sp.starteRunde(student, "stoff", { heute, endlos: "neu", bloecke: true });
+  const lauf = erste.endlos!;
+  const runden = [erste.karten.map((k) => k.key)];
+  for (let i = 0; i < 4; i++) runden.push(sp.starteRunde(student, "stoff", { heute, endlos: lauf }).karten.map((k) => k.key));
+  const alle = runden.flat();
+  assert.equal(new Set(alle.slice(0, 24)).size, 24, "die ersten zwei Runden: 24 verschiedene Fragen");
+  assert.equal(new Set(runden.slice(0, 3).flat()).size, 30, "nach drei Runden waren alle 30 dran");
+  // Runde 3 füllt mit den ältesten auf: aus Runde 1, nicht aus Runde 2
+  const dritte = runden[2].filter((k) => alle.slice(0, 24).includes(k));
+  assert.equal(dritte.length, 6);
+  assert.ok(dritte.every((k) => runden[0].includes(k)));
+  // auch danach: in zwei Runden hintereinander nie dieselbe Karte
+  for (let i = 1; i < runden.length; i++) assert.ok(!runden[i].some((k) => runden[i - 1].includes(k)), `Runde ${i + 1}`);
+});

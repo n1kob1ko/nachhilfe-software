@@ -2,7 +2,7 @@ import "@/components/lernen/spiele.css";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Flame } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
-import { hatEndlos, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { hatEndlos, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
 
 /** Warum ein Spiel gerade passt, kurz für das Schild auf der Kachel. */
@@ -20,6 +20,7 @@ export function SpieleListe({
   vorschlaege,
   href,
   bloecke,
+  blockPlatz,
 }: {
   student: repo.Student;
   heute: string;
@@ -28,6 +29,8 @@ export function SpieleListe({
   href: (art: SpielArt) => string;
   /** Blockwerk mit den Karten eines Spiels; ohne Angabe keine Kachel */
   bloecke?: (art: SpielArt) => string;
+  /** Blockwerk: der eigene Platz in der Bestenliste (steht dann auf der Kachel) */
+  blockPlatz?: BestenZeile | null;
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
@@ -76,6 +79,11 @@ export function SpieleListe({
               <span className="sp-schild">Neu</span>
             </span>
             <span className="sp-kurz">Teile legen, Reihen räumen. Neue Teile gibt es für Fragen aus {SPIEL_TITEL[blockArt]}.</span>
+            {blockPlatz && (
+              <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-blockwerk-platz">
+                Platz {blockPlatz.platz} · Rekord {blockPlatz.punkte.toLocaleString("de-AT")}
+              </span>
+            )}
           </span>
           <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
         </Link>

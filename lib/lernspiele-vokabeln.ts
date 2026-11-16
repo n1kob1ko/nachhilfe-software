@@ -102,7 +102,9 @@ export function waehleVokabeln(
     if (k && gewaehlt.length < Math.min(WIEDERHOLUNGEN_MAX, anzahl) && passt(k)) gewaehlt.push(k);
   }
 
-  const zuletzt = new Set(o.zuletzt ?? []);
+  // `zuletzt`: die neueste zuerst; was nicht darin steht, ist frisch, sonst kommt das am längsten Gesehene zuerst
+  const alter = new Map((o.zuletzt ?? []).map((key, i) => [key, i]));
+  const zuletzt = new Set(alter.keys());
   const inStufe = (k: VokabelKandidat) => !o.stufen || o.stufen.includes(k.stufe);
   const frisch = (k: VokabelKandidat) => !zuletzt.has(k.karte.key);
   const gaenge: { nimm: (k: VokabelKandidat) => boolean; bis: number }[] = [
@@ -113,7 +115,7 @@ export function waehleVokabeln(
     { nimm: () => true, bis: anzahl },
   ];
   for (const g of gaenge) {
-    for (const k of mischen(pool.filter(g.nimm), rng)) {
+    for (const k of mischen(pool.filter(g.nimm), rng).sort((a, b) => (alter.get(b.karte.key) ?? 1e9) - (alter.get(a.karte.key) ?? 1e9))) {
       if (gewaehlt.length >= g.bis) break;
       if (passt(k)) gewaehlt.push(k);
     }

@@ -942,25 +942,19 @@ export function Lernspiel({
               <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-spur" />
               <circle cx="60" cy="60" r="50" pathLength={100} className="ls-ring-wert" style={{ strokeDashoffset: 100 - anteil } as CSSProperties} />
             </svg>
-            <div className="ls-ring-zahl">
+            {/* große Zahlen werden kleiner, damit sie im Ring Luft haben (niko 2026-11-16: „ist überfüllt“) */}
+            <div className="ls-ring-zahl" data-lang={Math.min(9, Math.max(3, stand.toLocaleString("de-AT").length))}>
               <b>{stand.toLocaleString("de-AT")}</b>
               <span>Punkte</span>
             </div>
           </div>
-          {neuerRekord ? (
-            <p className="ls-rekord" style={{ "--n": 1 } as CSSProperties}>
-              <Trophy size={20} strokeWidth={2.4} aria-hidden /> Neuer Rekord
-            </p>
-          ) : (
-            <p className="ls-rekord" data-alt="" style={{ "--n": 1 } as CSSProperties}>
-              <Trophy size={18} strokeWidth={2.4} aria-hidden /> {bisher > 0 ? `Dein Rekord: ${bisher.toLocaleString("de-AT")}` : "Dein erster Rekord"}
-            </p>
-          )}
-          <h1 className="ls-titel mt-3" style={{ "--n": 2 } as CSSProperties}>
-            {neuerRekord ? "Stark gebaut!" : "Kein Platz mehr"}
+          <h1 className="bw-ende-titel" style={{ "--n": 1 } as CSSProperties}>
+            {neuerRekord && <Trophy size={26} strokeWidth={2.4} aria-hidden />}
+            {neuerRekord ? "Neuer Rekord!" : "Kein Platz mehr"}
           </h1>
-          <p className="ls-text mt-1" style={{ "--n": 2 } as CSSProperties}>
-            {e?.bloecke ? `${e.bloecke.fragen} ${e.bloecke.fragen === 1 ? "Frage" : "Fragen"} beim ersten Versuch richtig` : "Gezählt wird der erste Versuch"}
+          <p className="ls-text mt-1" style={{ "--n": 1 } as CSSProperties}>
+            {e?.bloecke ? `${e.bloecke.fragen} ${e.bloecke.fragen === 1 ? "Frage" : "Fragen"} richtig` : "Gezählt wird der erste Versuch"}
+            {!neuerRekord && bisher > 0 ? ` · Rekord ${bisher.toLocaleString("de-AT")}` : ""}
           </p>
           {ergebnis && "fehler" in ergebnis && (
             <p className="ls-fehler mt-4" role="alert">
@@ -968,36 +962,18 @@ export function Lernspiel({
             </p>
           )}
 
-          <div className="mt-6 grid grid-cols-2 gap-3 text-left" style={{ "--n": 3 } as CSSProperties}>
-            <div className="ls-glas p-4">
-              <p className="ls-klein">{SPIEL_TITEL[art]}</p>
-              <p className="text-[21px] font-semibold tabular-nums">
-                {e ? (
-                  e.lernstandVorher === null ? (
-                    pct(e.lernstandNachher)
-                  ) : (
-                    <>
-                      {pct(e.lernstandVorher)} → {pct(e.lernstandNachher)}
-                    </>
-                  )
-                ) : (
-                  "…"
-                )}
-              </p>
-              <div className="ls-balken mt-2">
-                <span style={{ transform: `scaleX(${e?.lernstandNachher ?? e?.lernstandVorher ?? lernstand ?? 0})` }} />
-              </div>
-            </div>
-            <div className="ls-glas p-4">
-              <p className="ls-klein">Serie</p>
-              <p className="flex items-center gap-1.5 text-[21px] font-semibold tabular-nums">
-                <Flame size={20} className="ls-flamme" fill="currentColor" aria-hidden />
-                {e ? (e.serie === 1 ? "1 Tag" : `${e.serie} Tage`) : "…"}
-              </p>
-            </div>
+          <div className="bw-ende-stand ls-glas" style={{ "--n": 2 } as CSSProperties}>
+            <span className="min-w-0 truncate">
+              <span className="opacity-75">{SPIEL_TITEL[art]}</span>{" "}
+              <b className="tabular-nums">{e ? (e.lernstandVorher === null || pct(e.lernstandVorher) === pct(e.lernstandNachher) ? pct(e.lernstandNachher) : `${pct(e.lernstandVorher)} → ${pct(e.lernstandNachher)}`) : "…"}</b>
+            </span>
+            <span className="flex shrink-0 items-center gap-1">
+              <Flame size={16} className="ls-flamme" fill="currentColor" aria-hidden />
+              <b className="tabular-nums">{e ? (e.serie === 1 ? "1 Tag" : `${e.serie} Tage`) : "…"}</b>
+            </span>
           </div>
 
-          {(e?.bloecke?.bestenliste ?? bestenlisteAnfang) && <BestenListe liste={(e?.bloecke?.bestenliste ?? bestenlisteAnfang)!} arenaLink={arenaLink} n={4} />}
+          {(e?.bloecke?.bestenliste ?? bestenlisteAnfang) && <BestenListe liste={(e?.bloecke?.bestenliste ?? bestenlisteAnfang)!} arenaLink={arenaLink} n={3} />}
 
           {nochmal.length > 0 && (
             <div className="ls-blatt mt-4 p-4 text-left" style={{ "--n": 4 } as CSSProperties}>
@@ -1412,25 +1388,22 @@ function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: 
   const ichUnten = liste.ich && !oben.some((z) => z.ich) ? liste.ich : null;
   if (!oben.length) return null;
   return (
-    <section className="ls-glas mt-4 p-3 text-left" aria-label="Bestenliste" style={{ "--n": 4 } as CSSProperties} data-testid="bw-bestenliste">
+    <section className="bw-besten ls-glas mt-3 p-3 text-left" aria-label="Bestenliste" style={{ "--n": 3 } as CSSProperties} data-testid="bw-bestenliste">
       <p className="ls-klein flex items-center gap-1.5 px-1">
         <Trophy size={14} strokeWidth={2.4} aria-hidden /> Bestenliste
       </p>
-      <ol className="mt-2 grid gap-1.5">
+      <ol className="mt-2 grid gap-1">
         {oben.map((z) => (
           <BestenReihe key={`${z.platz}-${z.name}`} z={z} />
         ))}
         {ichUnten && (
           <>
-            <li className="text-center text-[13px] leading-none opacity-60" aria-hidden>
-              …
-            </li>
             <BestenReihe z={ichUnten} />
           </>
         )}
       </ol>
       {liste.profil !== "da" && (
-        <p className="mt-2 px-1 text-[13px] leading-snug opacity-80">
+        <p className="mt-2 px-1 text-[12px] leading-snug opacity-75">
           {liste.profil === "anlegen" ? (
             arenaLink ? (
               <>

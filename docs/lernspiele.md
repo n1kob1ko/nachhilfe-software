@@ -383,10 +383,15 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   Projektordner.
 
 - **Bestenliste** (niko 2026-11-16: „mach einen highscore also leaderboard für alle“, `bloeckeBestenliste`): je
-  Schüler der beste Blockwerk-Stand, die Besten zuerst, auf dem Anfang (5 Plätze) und am Ende (4 Plätze). Andere stehen
+  Schüler der beste Blockwerk-Stand, die Besten zuerst, auf dem Anfang (5 Plätze) und am Ende (3 Plätze), und ganz
+  (10 Plätze) unten im Tab „Spiele“ (components/lernen/BestenlisteTafel.tsx; Platz und Rekord auch auf der
+  Blockwerk-Kachel, niko: „man soll wo auch das leaderboard sehen können“). Andere stehen
   nur mit Spielprofil und Erlaubnis drin (wie Liga und Duelle, lib/spielprofil.ts), nur mit Spitzname und Tierbild.
-  Die eigene Zeile sieht jeder, auch weiter unten nach „…“; ohne Profil als „Du“ mit dem Hinweis, wie man für alle
+  Die eigene Zeile sieht jeder, auch weiter unten; ohne Profil als „Du“ mit dem Hinweis, wie man für alle
   sichtbar wird.
+- **Ende** (niko: „ist überfüllt hier“): Ring mit den Punkten (lange Zahlen kleiner, `data-lang`), eine Zeile Titel
+  („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen
+  Zeile, dann die knappe Bestenliste.
 
 ## Dein Stoff (eigene Spielkarten)
 
@@ -429,7 +434,9 @@ kein Spiel.
 
 `waehleKarten`: zuerst bis zu vier Karten, die in den letzten fünf Runden falsch waren und seither nicht richtig,
 dann neue aus den Stufen nach Schulstufe und Lernstand (`stufenFuer`: unsicher → leichter, sicher → schwerer),
-ohne die Karten der letzten zwei Runden. Keine Antwort steht öfter als bei der Hälfte der Karten (sonst gewinnt bei
+zuerst Karten, die in den letzten 40 Runden nicht dran waren; reicht das nicht, die am längsten nicht gesehenen
+(`zuletztGespielt`, die neueste zuerst; niko 2026-11-16 „die fragen wiederholen sich mit der zeit“: vorher zählten nur
+die letzten zwei Runden, im Blockwerk kamen Fragen so schon nach 24 wieder). Keine Antwort steht öfter als bei der Hälfte der Karten (sonst gewinnt bei
 den Endungen „-en“ fast immer); bei zwei Kisten sind es bis zu sieben von zwölf, damit es nicht immer genau sechs
 und sechs sind.
 
