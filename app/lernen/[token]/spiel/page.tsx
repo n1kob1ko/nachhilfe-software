@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
-import { bloeckeRekord, endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeBestenliste, bloeckeRekord, endlosRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -38,6 +38,8 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       zurueck={von === "start" ? `/lernen/${token}` : undefined}
       modus={modus === "bloecke" ? "bloecke" : undefined}
       bloeckeRekord={bloeckeRekord(student.id)}
+      bestenliste={modus === "bloecke" ? bloeckeBestenliste(student) : undefined}
+      arenaLink={`/lernen/${token}/arena`}
       bloeckeLink={`/lernen/${token}/spiel?modus=bloecke${von === "start" ? "&von=start" : ""}&art=`}
     />
   );

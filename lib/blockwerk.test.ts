@@ -69,15 +69,15 @@ test("eine volle Reihe und eine volle Spalte verschwinden zugleich", () => {
 test("Punkte: Felder, Linien im Quadrat, Kombo und leeres Brett", () => {
   const b = brettAus(["#######.", "........", "........", "........", "........", "........", "........", "........"]);
   const zug = setze(b, teilAus("1"), 0, 7);
-  assert.equal(punkteFuer(zug, 1, 1), 1 + 10 + 300);
-  assert.equal(punkteFuer(zug, 1, 3), 1 + 30 + 300);
+  assert.equal(punkteFuer(zug, 1, 1), 3 * (1 + 10 + 300), "alles mal drei");
+  assert.equal(punkteFuer(zug, 1, 3), 3 * (1 + 30 + 300));
   const ohne = setze(leeresBrett(), teilAus("Q2"), 3, 3);
-  assert.equal(punkteFuer(ohne, 4, 5), 4, "ohne Linie zählt die Kombo nicht");
+  assert.equal(punkteFuer(ohne, 4, 5), 12, "ohne Linie zählt die Kombo nicht");
   // zwei Linien zugleich: 40
   const zwei = brettAus(["#######.", "#######.", "........", "........", "........", "........", "........", "#......."]);
   const z = setze(zwei, teilAus("2|"), 0, 7);
   assert.equal(z.reihen.length, 2);
-  assert.equal(punkteFuer(z, 2, 1), 2 + 40);
+  assert.equal(punkteFuer(z, 2, 1), 3 * (2 + 40));
 });
 
 test("Kombo steigt beim Abräumen und endet nach drei Zügen ohne Linie", () => {
@@ -144,5 +144,5 @@ test("Punkte vom Gerät werden begrenzt", () => {
   assert.equal(gueltigePunkte(-5), 0);
   assert.equal(gueltigePunkte("100"), 0);
   assert.equal(gueltigePunkte(Number.POSITIVE_INFINITY), 0);
-  assert.equal(gueltigePunkte(5e9), 1_000_000);
+  assert.equal(gueltigePunkte(5e9), 3_000_000);
 });

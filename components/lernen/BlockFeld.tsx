@@ -4,14 +4,14 @@ import "./blockwerk.css";
 import { Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
-import { blitz, blitzFelder, BLITZE_MAX, BLITZE_START, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
+import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
 import { vibriere } from "./SpielTeile";
 
 /**
  * Blockwerk (lib/blockwerk.ts, docs/lernspiele.md „Blockwerk“): das Brett mit 8 × 8 Feldern und drei Teilen darunter.
  * Ein Teil wird aufs Brett gezogen; volle Reihen und Spalten verschwinden. Sind alle drei gelegt, fragt das Feld nach
  * neuen Teilen (`onFrage`): Lernspiel.tsx zeigt dann eine Karte aus dem Stoff, und mit `antwort` kommen die Teile.
- * Beim ersten Versuch richtig gibt es 20 Punkte dazu, und der Blitz lädt: drei richtige Antworten sind ein Blitz, der
+ * Beim ersten Versuch richtig gibt es 60 Punkte dazu (FRAGE_PUNKTE), und der Blitz lädt: drei richtige Antworten sind ein Blitz, der
  * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Passt kein Teil mehr und
  * ist kein Blitz da, kommt eine Rettungsfrage: richtig gibt einen Blitz, sonst ist das Spiel aus (`onEnde`).
  *
@@ -132,8 +132,8 @@ export function BlockFeld({
     }
     if (f.grund === "teile") {
       if (antwort.sauber) {
-        setPunkte((p) => p + 20);
-        if (bl === blitze) setTimeout(() => sage("+20", "punkte"), 260);
+        setPunkte((p) => p + FRAGE_PUNKTE);
+        if (bl === blitze) setTimeout(() => sage(`+${FRAGE_PUNKTE}`, "punkte"), 260);
       }
       setTeile(f.vorschau);
       pruefe(brett, f.vorschau, bl);
@@ -429,7 +429,7 @@ export function FrageKopf({ frage }: { frage: BlockFrage }) {
           <span className="bw-frage-text">
             <b>Antworte für neue Teile</b>
             <small>
-              Richtig beim 1. Versuch: +20 und <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="der Blitz" /> lädt
+              Richtig beim 1. Versuch: +{FRAGE_PUNKTE} und <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="der Blitz" /> lädt
               <span className="bw-ladung" aria-label={`${frage.ladung} von ${LADUNG}`}>
                 {Array.from({ length: LADUNG }, (_, i) => (
                   <i key={i} data-an={i < frage.ladung ? "" : undefined} data-naechste={i === frage.ladung ? "" : undefined} />

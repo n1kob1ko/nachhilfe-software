@@ -24,13 +24,14 @@ import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { SPIEL_THEMEN, spielbareThemen, THEMA_KARTEN_MIN, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
 import { WORTFELDER, wortfeldArtikel, wortfeldPraeteritum, type Wortfeld } from "./lernspiele-wortfelder";
-import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
+import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type BestenZeile, type Bestenliste, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
 import { THEMEN } from "./themen";
 import { leseListe } from "./vokabeln";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
+import { AB_SCHULSTUFE, BILDER, erlaubnis, profilVon } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
@@ -498,6 +499,35 @@ export function istBlockwerk(studentId: number, lauf: number): boolean {
 export function bloeckeRekord(studentId: number, ohne?: number): number {
   const z = db().prepare("SELECT COALESCE(MAX(bloecke), 0) AS rekord FROM spielrunden WHERE student_id = ? AND bloecke IS NOT NULL AND id != ?").get(studentId, ohne ?? -1) as { rekord: number };
   return z.rekord;
+}
+
+/** So viele Plätze zeigt die Blockwerk-Bestenliste. */
+export const BESTENLISTE_PLAETZE = 10;
+
+/**
+ * Die Blockwerk-Bestenliste für alle (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): je Schüler sein
+ * bester Stand, die Besten zuerst. Andere sieht man nur mit Spielprofil und Erlaubnis (lib/spielprofil.ts, wie Liga und
+ * Duelle), und nur mit Spitzname und Tierbild. Die eigene Zeile sieht jeder, auch ohne Profil („Du“).
+ */
+export function bloeckeBestenliste(student: Pick<repo.Student, "id" | "grade">, anzahl = BESTENLISTE_PLAETZE): Bestenliste {
+  const rows = db()
+    .prepare(
+      `SELECT r.student_id AS id, MAX(r.bloecke) AS punkte, MIN(r.id) AS zuerst, sp.name, sp.bild, s.grade, s.wettspiel
+       FROM spielrunden r JOIN students s ON s.id = r.student_id LEFT JOIN spielprofile sp ON sp.student_id = r.student_id
+       WHERE r.bloecke > 0 GROUP BY r.student_id ORDER BY punkte DESC, zuerst ASC`,
+    )
+    .all() as { id: number; punkte: number; name: string | null; bild: string | null; grade: number; wettspiel: string | null }[];
+  const sichtbar = (z: (typeof rows)[number]) => !!z.name && z.wettspiel !== "nein" && (z.wettspiel === "ja" || z.grade >= AB_SCHULSTUFE);
+  const eigenes = profilVon(student.id);
+  const darf = erlaubnis(student).darf;
+  const liste = rows
+    .filter((z) => z.id === student.id || sichtbar(z))
+    .map((z, i): BestenZeile => {
+      const ich = z.id === student.id;
+      const zeigen = ich ? (darf && eigenes ? eigenes.name : "Du") : z.name!;
+      return { platz: i + 1, name: zeigen, bild: (ich && !(darf && eigenes) ? "🙂" : BILDER[z.bild ?? ""]) ?? "🙂", punkte: z.punkte, ich };
+    });
+  return { zeilen: liste.slice(0, anzahl), ich: liste.find((z) => z.ich) ?? null, profil: !darf ? "erlaubnis" : eigenes ? "da" : "anlegen" };
 }
 
 /**

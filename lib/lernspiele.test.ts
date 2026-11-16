@@ -313,3 +313,51 @@ test("Blockwerk: Runden hängen wie Endlos aneinander, Punkte am ersten, eigener
   sp.bloeckePunkte(student.id, d.rundeId, 2400);
   assert.equal(sp.bloeckeRekord(student.id), 2400);
 });
+
+test("Blockwerk-Bestenliste: andere nur mit Spielprofil und Erlaubnis, die eigene Zeile immer", async () => {
+  const { sp, repo, student: a } = await setup();
+  const profil = await import("./spielprofil");
+  const neu = (name: string) => {
+    const id = repo.createStudent({ name, grade: 7, klasse: 3, teacher_id: a.teacher_id, school: "", school_type: "AHS", subjects: ["Deutsch"], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "" });
+    return repo.getStudent(id)!;
+  };
+  const b = neu("Ben Probe");
+  const c = neu("Cleo Probe");
+  const spiel = (s: typeof a, punkte: number) => {
+    const r = sp.starteRunde(s, "artikel", { rng: rng(punkte), heute: "2026-11-16", endlos: "neu", bloecke: true });
+    sp.bloeckePunkte(s.id, r.rundeId, punkte);
+  };
+  profil.setzeWettspiel(a.id, "ja");
+  assert.ok(profil.speichereProfil(a, { vorne: profil.NAME_VORNE[0], hinten: profil.NAME_HINTEN[0], bild: profil.BILD_SCHLUESSEL[0], liga: true, duelle: true }).ok);
+  profil.setzeWettspiel(c.id, "ja");
+  assert.ok(profil.speichereProfil(c, { vorne: profil.NAME_VORNE[1], hinten: profil.NAME_HINTEN[1], bild: profil.BILD_SCHLUESSEL[1], liga: true, duelle: true }).ok);
+  profil.setzeWettspiel(c.id, "nein");
+  spiel(a, 900);
+  spiel(a, 2700);
+  spiel(b, 1200);
+  spiel(c, 3000);
+
+  const fuerA = sp.bloeckeBestenliste(a);
+  assert.deepEqual(
+    fuerA.zeilen.map((z) => [z.platz, z.punkte, z.ich]),
+    [[1, 2700, true]],
+    "B ohne Profil und C ausgeschaltet sieht A nicht; A zählt mit dem besten Stand",
+  );
+  assert.equal(fuerA.zeilen[0].name, profil.spitzname(profil.NAME_VORNE[0], profil.NAME_HINTEN[0]));
+  assert.equal(fuerA.profil, "da");
+
+  const fuerB = sp.bloeckeBestenliste(b);
+  assert.deepEqual(
+    fuerB.zeilen.map((z) => [z.platz, z.name === "Du" ? "Du" : "A", z.punkte]),
+    [
+      [1, "A", 2700],
+      [2, "Du", 1200],
+    ],
+  );
+  assert.equal(fuerB.ich?.platz, 2);
+  assert.equal(fuerB.profil, "erlaubnis");
+  // nie der echte Name
+  assert.ok(!JSON.stringify([fuerA, fuerB, sp.bloeckeBestenliste(c)]).match(/Probe|Mira|Ben|Cleo/));
+  assert.equal(sp.bloeckeBestenliste(c).zeilen[0].name, "Du", "ausgeschaltet: auch der eigene Spitzname nicht");
+  assert.equal(sp.bloeckeBestenliste(b, 1).ich?.platz, 2, "die eigene Zeile auch unter den ersten Plätzen");
+});
