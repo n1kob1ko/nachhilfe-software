@@ -52,6 +52,9 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   const blockArt = vorschlaege.find((v) => hatEndlos(v.art))?.art;
   const bestenliste = blockArt ? punkteBestenliste(student, "bloecke") : null;
   const blockLink = (art: string) => `${base}/spiel?modus=bloecke&art=${art}`;
+  // Funkelfeld: genauso, mit eigener Bestenliste
+  const funkelListe = blockArt ? punkteBestenliste(student, "funkel") : null;
+  const funkelLink = (art: string) => `${base}/spiel?modus=funkel&art=${art}`;
   // Glasklar: das passendste Thema und die eigene Bestenliste
   const glasThema = glasThemen(student, heute)[0];
   const glasListe = glasThema ? punkteBestenliste(student, "glas") : null;
@@ -62,7 +65,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">
@@ -108,6 +111,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
       </section>
 
       {bestenliste && blockArt && <BestenlisteTafel liste={bestenliste} spielen={blockLink(blockArt)} arena={`${base}/arena`} />}
+      {funkelListe && blockArt && <BestenlisteTafel liste={funkelListe} spielen={funkelLink(blockArt)} arena={`${base}/arena`} spiel="Funkelfeld" />}
       {glasListe && <BestenlisteTafel liste={glasListe} spielen={glasLink} arena={`${base}/arena`} spiel="Glasklar" />}
     </>
   );

@@ -393,6 +393,32 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen
   Zeile, dann die knappe Bestenliste.
 
+## Funkelfeld
+
+niko 2026-11-16: „mach weitere spiele“ (nach Blockwerk und Glasklar; vorgeschlagen war zuerst ein Drei-in-einer-Reihe-
+Spiel, bei dem eine Antwort neue Züge bringt, wie auf niko's erstem Bild). Eigener Name, eigene Steine (fünf Formen in
+fünf Farben, Form und Farbe zugleich), kein Nachbau eines bekannten Spiels (`components/lernen/FunkelFeld.tsx`,
+`components/lernen/FunkelSteine.tsx`, Logik in `lib/funkelfeld.ts`).
+
+- **Wo**: wie Blockwerk: breite Kachel im Tab „Spiele“ unter Blockwerk, auf dem Anfang jedes Spiels außer den
+  Vokabel-Paaren ein Knopf neben Blockwerk (auf Handys unter 375 px ohne Zeichen), eigener Anfang mit „Fragen aus“
+  (`/lernen/[token]/spiel?modus=funkel&art=…`, am Tablet `funkel:<art>`). In Lernspiel.tsx heißen beide Bretter
+  `brett` („bloecke“ oder „funkel“); Fragen, Runden und Ende sind dieselben.
+- **Feld**: 7 × 7 Steine. Zwei Nachbarn tauschen (wischen oder nacheinander antippen; am Laptop Pfeile, Leertaste
+  wählt). Drei oder mehr gleiche in einer Linie leuchten auf und verschwinden, die Steine darüber fallen, neue kommen
+  von oben; jede weitere Welle („Kette!“) zählt mehr. Ein Tausch, der nichts auflöst, springt zurück und kostet keinen
+  Zug. Geht kein Zug mehr, wird gemischt; nach acht Sekunden ohne Zug wippen zwei Steine, die gehen.
+- **Strahl und Funke**: vier in einer Linie werden ein Strahl (drei helle Linien), der beim Auflösen seine Reihe
+  (waagrecht gelegt) oder Spalte räumt. Fünf in einer Linie oder ein Winkel (L, T, Kreuz) werden ein Funke (Stern):
+  mit einem Stein getauscht räumt er alle Steine dieser Form, zwei Funken räumen alles.
+- **Züge und Fragen**: man beginnt mit 8 Zügen. Sind sie weg, kommt die nächste Karte als Frage („Antworte für neue
+  Züge“). Beim ersten Versuch richtig: +60 Punkte und 6 Züge (alle sechs Fragen einer weniger, mindestens 3, damit
+  ein Spiel nicht ewig dauert). Falsch: 2 Züge und ein Herz weg; nach drei Herzen ist das Spiel aus.
+- **Punkte**: 10 je Stein mal der Welle der Kette, +60 für einen neuen Strahl, +120 für einen Funken. Gezählt und
+  gespeichert wie Blockwerk, aber in `spielrunden.funkel` mit eigenem Rekord (`punkteRekord(…, "funkel")`) und eigener
+  Bestenliste (Anfang, Ende und unten im Tab „Spiele“). Der Endlos-Rekord zählt Funkelfeld nicht mit.
+- Bilder und Video: `lernspiele/funkelfeld-*.png` und `lernspiele/funkelfeld-handy.mp4` im Projektordner.
+
 ## Glasklar
 
 niko 2026-11-16 (Frage, welche Spiele so beliebt sind wie Blockwerk; Antwort „ja“ zu einem Sortier-Spiel wie die

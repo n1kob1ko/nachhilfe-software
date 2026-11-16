@@ -240,6 +240,20 @@
   background: rgba(255, 255, 255, 0.12);
   box-shadow: none;
 }
+/* Funkelfeld: neun kleine Steine, die mittlere Reihe leuchtet */
+.sp-funkel-bild {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(3, 17px);
+  gap: 1px;
+  padding: 6px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3f8ef5, #173f9a);
+  rotate: -3deg;
+}
+.sp-funkel-bild .ff-bild {
+  padding: 4%;
+}
 /* Glasklar: drei kleine Gläser, das rechte ist zu */
 .sp-glas-bild {
   display: flex;

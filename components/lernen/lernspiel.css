@@ -3004,6 +3004,35 @@
   font-size: 13px;
   font-weight: 600;
 }
+/* Blockwerk und Funkelfeld nebeneinander: Zeichen und Name oben, der Rekord darunter */
+.ls-bretter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.ls-bretter .ls-endlos-knopf {
+  display: grid;
+  grid-template-columns: auto auto;
+  justify-content: center;
+  align-content: center;
+  gap: 4px 7px;
+  min-height: 64px;
+  padding: 8px 10px;
+  font-size: 17px;
+}
+.ls-bretter .ls-endlos-knopf small {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+/* ganz schmale Handys: ohne Zeichen, damit der Name ganz Platz hat */
+@media (max-width: 374px) {
+  .ls-bretter .ls-endlos-knopf > :first-child:not(span:not(.ff-zeichen)) {
+    display: none;
+  }
+  .ls-bretter .ls-endlos-knopf {
+    grid-template-columns: auto;
+  }
+}
 /* Ende: „Neuer Rekord“ in Gold, sonst der alte Rekord leise */
 .ls-rekord {
   display: inline-flex;
