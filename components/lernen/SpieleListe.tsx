@@ -21,6 +21,7 @@ export function SpieleListe({
   href,
   bloecke,
   blockPlatz,
+  glas,
 }: {
   student: repo.Student;
   heute: string;
@@ -31,6 +32,8 @@ export function SpieleListe({
   bloecke?: (art: SpielArt) => string;
   /** Blockwerk: der eigene Platz in der Bestenliste (steht dann auf der Kachel) */
   blockPlatz?: BestenZeile | null;
+  /** Glasklar (lib/glasklar.ts): wohin die Kachel führt, das passendste Thema und der eigene Platz; ohne Angabe keine Kachel */
+  glas?: { href: string; thema: string; platz?: BestenZeile | null };
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
@@ -82,6 +85,37 @@ export function SpieleListe({
             {blockPlatz && (
               <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-blockwerk-platz">
                 Platz {blockPlatz.platz} · Rekord {blockPlatz.punkte.toLocaleString("de-AT")}
+              </span>
+            )}
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+        </Link>
+      )}
+
+      {glas && (
+        <Link href={glas.href} className="sp-block panel mt-3" data-testid="spiele-glasklar">
+          <span className="sp-glas-bild" aria-hidden>
+            {[
+              [0, 1, 0],
+              [1, 0, 1],
+              [2, 2, 2],
+            ].map((r, i) => (
+              <span key={i} data-zu={i === 2 ? "" : undefined}>
+                {r.map((f, j) => (
+                  <i key={j} data-f={f} />
+                ))}
+              </span>
+            ))}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="sp-titel">Glasklar</span>
+              <span className="sp-schild">Neu</span>
+            </span>
+            <span className="sp-kurz">Sortier die Begriffe in die richtigen Gläser: {glas.thema}.</span>
+            {glas.platz && (
+              <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-glasklar-platz">
+                Platz {glas.platz.platz} · Rekord {glas.platz.punkte.toLocaleString("de-AT")}
               </span>
             )}
           </span>

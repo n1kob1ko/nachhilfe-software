@@ -38,13 +38,17 @@ export type View =
   // Lernspiele (lib/lernspiele.ts) am Tablet: die Liste der Spiele des Schülers, oder eines davon im Spiel
   | { kind: "spiele" }
   // `bloecke`: Blockwerk mit den Karten dieses Spiels (components/lernen/BlockFeld.tsx)
-  | { kind: "spiel"; art: SpielArt; bloecke?: true };
+  | { kind: "spiel"; art: SpielArt; bloecke?: true }
+  // Glasklar (lib/glasklar.ts) mit einem Thema (lib/glasklar-themen.ts; „“ = das passendste)
+  | { kind: "glas"; thema: string };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
   if (raw === "spiele") return { kind: "spiele" };
   const s = /^spiel:([a-z]+)$/.exec(raw);
   if (s && istSpielArt(s[1])) return { kind: "spiel", art: s[1] };
+  const g = /^glas:([a-z0-9]*)$/.exec(raw);
+  if (g) return { kind: "glas", thema: g[1] };
   const b = /^bloecke:([a-z]+)$/.exec(raw);
   if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const m = /^aufgabe:(\d+)$/.exec(raw);
@@ -55,7 +59,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : "spiel"}:${v.art}` : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -348,7 +352,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     current,
     text: textNow,
     praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
-    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : null,
+    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : null,
     answers,
     ai: aiLiveState(unit.id),
   };

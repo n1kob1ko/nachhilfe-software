@@ -3,23 +3,23 @@ import { Trophy } from "lucide-react";
 import type { Bestenliste } from "@/lib/lernspiele-typen";
 
 /**
- * Die Blockwerk-Bestenliste im Tab „Spiele“ (niko 2026-11-16: „man soll wo auch das leaderboard sehen können“). Dieselbe
+ * Die Bestenliste von Blockwerk oder Glasklar im Tab „Spiele“ (niko 2026-11-16: „man soll wo auch das leaderboard sehen können“). Dieselbe
  * Liste wie am Anfang und Ende von Blockwerk (lib/lernspiele.ts bloeckeBestenliste): andere nur mit Spitzname und
  * Erlaubnis, die eigene Zeile immer.
  */
-export function BestenlisteTafel({ liste, spielen, arena }: { liste: Bestenliste; spielen: string; arena: string }) {
+export function BestenlisteTafel({ liste, spielen, arena, spiel = "Blockwerk" }: { liste: Bestenliste; spielen: string; arena: string; /** Blockwerk oder Glasklar */ spiel?: string }) {
   const ichUnten = liste.ich && !liste.zeilen.some((z) => z.ich) ? liste.ich : null;
   const zeilen = ichUnten ? [...liste.zeilen, ichUnten] : liste.zeilen;
   return (
-    <section className="mt-9" aria-labelledby="spiele-bestenliste" data-testid="spiele-bestenliste">
-      <h2 id="spiele-bestenliste" className="mb-3 flex items-center gap-2 text-[18px] font-semibold">
-        <Trophy size={18} className="text-amber" aria-hidden /> Bestenliste Blockwerk
+    <section className="mt-9" aria-labelledby={`spiele-bestenliste-${spiel}`} data-testid={spiel === "Blockwerk" ? "spiele-bestenliste" : `spiele-bestenliste-${spiel.toLowerCase()}`}>
+      <h2 id={`spiele-bestenliste-${spiel}`} className="mb-3 flex items-center gap-2 text-[18px] font-semibold">
+        <Trophy size={18} className="text-amber" aria-hidden /> Bestenliste {spiel}
       </h2>
       {zeilen.length === 0 ? (
         <p className="panel px-5 py-4 text-[15px] text-ink-2">
           Noch hat niemand Punkte.{" "}
           <Link href={spielen} className="font-semibold text-accent underline">
-            Spiel Blockwerk
+            Spiel {spiel}
           </Link>{" "}
           und hol dir Platz 1.
         </p>

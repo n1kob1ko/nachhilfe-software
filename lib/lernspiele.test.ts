@@ -368,3 +368,63 @@ test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen),
   assert.equal(fuerC.profil, "erlaubnis");
   assert.equal(sp.bloeckeBestenliste(b, 1).ich?.platz, 2, "die eigene Zeile auch unter den ersten Plätzen");
 });
+
+test("Glasklar: Themen nach Fach und Schulstufe, Stufen werden größer, Thema bleibt, Punkte und Bestenliste getrennt von Blockwerk", async () => {
+  const { sp, repo, db, student } = await setup({ grade: 6, subjects: ["Deutsch", "Mathematik", "Englisch"] });
+  const heute = "2026-11-16";
+  const themen = sp.glasThemen(student, heute).map((t) => t.id);
+  assert.ok(themen.includes("faelle") && themen.includes("wortarten") && themen.includes("artikel"), "Deutsch-Themen der 6. Schulstufe");
+  assert.ok(themen.includes("brueche") && themen.includes("laengen") && themen.includes("irregular"));
+  assert.ok(!themen.includes("plus10") && !themen.includes("einmaleins"), "keine Volksschul-Themen");
+  assert.ok(!sp.spielVorschlaege(student, { heute }).some((v) => v.art === "glas"), "Glasklar ist keine Kachel bei den Fächern");
+
+  const a = sp.starteRunde(student, "glas", { rng: rng(3), heute, endlos: "neu", glasThema: "faelle" });
+  assert.equal(a.stufe, 1);
+  assert.equal(a.karten.length, 6, "Stufe 1: zwei Sorten mit je drei");
+  assert.equal(new Set(a.karten.map((k) => k.richtig)).size, 2);
+  assert.ok(a.karten.every((k) => k.key.startsWith("glas:faelle:") && k.skill === "deutsch.grammatik.faelle"));
+  // die erste Stufe fertig, die zweite folgt im selben Spiel und mit demselben Thema (auch wenn ein anderes gewünscht ist)
+  const r1 = sp.beendeRunde(student.id, a.rundeId, a.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  assert.equal(r1?.richtig, 6);
+  const b = sp.starteRunde(student, "glas", { rng: rng(4), heute, endlos: a.endlos, glasThema: "artikel" });
+  assert.equal(b.endlos, a.endlos);
+  assert.equal(b.stufe, 2);
+  assert.equal(b.karten.length, 9);
+  assert.ok(b.karten.every((k) => k.key.startsWith("glas:faelle:")));
+  const c = sp.starteRunde(student, "glas", { rng: rng(5), heute, endlos: a.endlos });
+  assert.equal(c.stufe, 3);
+  assert.equal(c.karten.length, 12);
+
+  // Lernstand: die Runde hängt an der Fähigkeit des Themas
+  const zeile = db().prepare("SELECT skill_id, glas, bloecke FROM spielrunden WHERE id = ?").get(a.rundeId) as { skill_id: string; glas: number | null; bloecke: number | null };
+  assert.equal(zeile.skill_id, "deutsch.grammatik.faelle");
+  assert.equal(zeile.glas, 0);
+  assert.equal(zeile.bloecke, null);
+  assert.ok(sp.laufIst(student.id, a.rundeId, "glas") && !sp.istBlockwerk(student.id, a.rundeId));
+
+  sp.laufPunkte(student.id, a.rundeId, 860, "glas");
+  sp.laufPunkte(student.id, a.rundeId, 10, "glas");
+  assert.equal(sp.punkteRekord(student.id, "glas"), 860);
+  assert.equal(sp.bloeckeRekord(student.id), 0, "Glasklar zählt nicht für Blockwerk");
+  const liste = sp.punkteBestenliste(student, "glas");
+  assert.equal(liste.ich?.punkte, 860);
+  assert.equal(sp.bloeckeBestenliste(student).ich, null);
+
+  // ein Fehler kommt in der nächsten Stufe wieder
+  const falsch = c.karten[0];
+  sp.beendeRunde(student.id, c.rundeId, c.karten.map((k) => ({ key: k.key, wahl: k.key === falsch.key ? "anders" : k.richtig })));
+  const d = sp.starteRunde(student, "glas", { rng: rng(6), heute, endlos: a.endlos });
+  assert.ok(d.karten.some((k) => k.key === falsch.key));
+
+  // Volksschule ohne Englisch: Einmaleins, der/die/das und Wortarten
+  const vs = repo.getStudent(
+    repo.createStudent({ name: "Vera Test", grade: 3, klasse: 3, teacher_id: student.teacher_id, school: "", school_type: "Volksschule", subjects: ["Deutsch", "Mathematik"], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "" }),
+  )!;
+  const vsThemen = sp.glasThemen(vs, heute).map((t) => t.id);
+  assert.deepEqual([...vsThemen].sort(), ["artikel", "einmaleins", "wortarten"]);
+  // ohne passendes Fach: kein Glasklar
+  const ohne = repo.getStudent(
+    repo.createStudent({ name: "Otto Test", grade: 7, klasse: 3, teacher_id: student.teacher_id, school: "", school_type: "AHS", subjects: ["Biologie"], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "" }),
+  )!;
+  assert.deepEqual(sp.glasThemen(ohne, heute), []);
+});

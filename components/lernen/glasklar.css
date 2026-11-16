@@ -1,0 +1,583 @@
+/*
+ * Glasklar (components/lernen/GlasSpiel.tsx). Auf der Bühne der Lernspiele (lernspiel.css): hohe Gläser aus hellem Glas
+ * mit weißen Kärtchen. Die Begriffe haben keine Farbe, solange sie offen sind (die Farbe würde die Sorte verraten); erst
+ * ein zugemachtes Glas bekommt die Farbe seiner Sorte und einen Deckel mit dem Namen. Farben wie die Kisten und Blockwerk
+ * (blau, rot, grün, gold, violett; der, die, das: blau, rot, grün). Bewegung nach DESIGN.md „Bewegung“: nur transform und
+ * opacity; bei „weniger Bewegung“ nur Farbe.
+ */
+
+:where(.gk-glas, .gk-begriff, .gk-sorten span, .gk-regel-paar i, .gk-mini i) {
+  --g-hell: #5aa0ff;
+  --g-voll: #2b6fe6;
+  --g-kante: #1b4fb0;
+}
+:where(.gk-glas, .gk-begriff, .gk-sorten span, .gk-regel-paar i, .gk-mini i)[data-f="1"] {
+  --g-hell: #ff8b7a;
+  --g-voll: #ef5146;
+  --g-kante: #b8322b;
+}
+:where(.gk-glas, .gk-begriff, .gk-sorten span, .gk-regel-paar i, .gk-mini i)[data-f="2"] {
+  --g-hell: #47d89a;
+  --g-voll: #1aa772;
+  --g-kante: #11784f;
+}
+:where(.gk-glas, .gk-begriff, .gk-sorten span, .gk-regel-paar i, .gk-mini i)[data-f="3"] {
+  --g-hell: #ffd76e;
+  --g-voll: #e89a0c;
+  --g-kante: #a86a00;
+}
+:where(.gk-glas, .gk-begriff, .gk-sorten span, .gk-regel-paar i, .gk-mini i)[data-f="4"] {
+  --g-hell: #bba6ff;
+  --g-voll: #7d5cf0;
+  --g-kante: #5537b8;
+}
+
+.gk {
+  --chip-h: clamp(30px, 5.1vh, 42px);
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  max-width: 560px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 4px 16px 12px;
+}
+
+.gk-stufe {
+  flex-shrink: 0;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ls-on);
+}
+
+/* oben: wonach sortiert wird */
+.gk-sorten {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+}
+/* Anfang: nur eine Textzeile, damit es nicht wie die Themen-Knöpfe aussieht */
+.gk-sorten-vorschau {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+.gk-sorten span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ls-on);
+  transition:
+    background-color 240ms ease,
+    border-color 240ms ease;
+}
+.gk-sorten span[data-zu] {
+  background: var(--g-voll);
+  border-color: var(--g-hell);
+}
+
+/* ---------- das Brett ---------- */
+/* Flex statt Grid: eine kürzere zweite Reihe steht in der Mitte */
+.gk-brett {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  column-gap: var(--gk-luecke, 12px);
+  row-gap: 18px;
+  padding-top: 8px;
+}
+.gk-glas {
+  position: relative;
+  display: flex;
+  width: calc((100% - (var(--spalten) - 1) * var(--gk-luecke, 12px)) / var(--spalten));
+  max-width: 96px;
+  min-width: 0;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  touch-action: manipulation;
+  cursor: pointer;
+}
+.gk-glas:focus-visible {
+  outline: none;
+}
+.gk-glas:focus-visible .gk-rohr {
+  box-shadow:
+    0 0 0 3px #fff,
+    inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+/* über dem Glas schwebt der angehobene Begriff */
+.gk-luft {
+  display: flex;
+  height: calc(var(--chip-h) + 10px);
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 4px 6px;
+}
+.gk-rohr {
+  position: relative;
+  display: flex;
+  height: calc(var(--hoehe) * (var(--chip-h) + 5px) + 14px);
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 6px 5px 8px;
+  border-radius: 12px 12px 26px 26px;
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-top-color: rgba(255, 255, 255, 0.85);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.2) 0 9%, rgba(255, 255, 255, 0) 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.16));
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 240ms ease,
+    background-color 240ms ease,
+    transform 200ms var(--ls-ease-out);
+}
+.gk-glas[data-offen] .gk-rohr {
+  border-color: var(--ls-gold);
+  transform: translateY(2px);
+}
+.gk-glas:active .gk-rohr {
+  transform: scale(0.97);
+}
+.gk-inhalt {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 5px;
+}
+.gk-nummer {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.45);
+}
+@media (pointer: coarse) {
+  .gk-nummer {
+    display: none;
+  }
+}
+
+/* ein zugemachtes Glas: farbiger Rand, Deckel mit dem Namen der Sorte */
+.gk-glas[data-zu] {
+  cursor: default;
+}
+.gk-glas[data-zu] .gk-rohr {
+  border-color: var(--g-hell);
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.22) 0 9%, rgba(255, 255, 255, 0) 22%),
+    color-mix(in srgb, var(--g-voll) 30%, transparent);
+}
+.gk-deckel {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: -32px;
+  display: flex;
+  min-height: 26px;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 6px;
+  border-radius: 9px;
+  background: linear-gradient(180deg, var(--g-hell), var(--g-voll));
+  box-shadow: 0 3px 0 var(--g-kante);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  color: #fff;
+  animation: gk-deckel 380ms var(--ls-ease-out) both;
+}
+.gk-glas[data-f="3"] .gk-deckel {
+  color: #4a2c00;
+}
+@keyframes gk-deckel {
+  from {
+    opacity: 0;
+    transform: translateY(-16px) scale(1.08);
+  }
+}
+
+/* ---------- ein Begriff ---------- */
+.gk-begriff {
+  position: relative;
+  display: flex;
+  height: var(--chip-h);
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border-radius: 10px;
+  background: #fff;
+  color: #13233f;
+  box-shadow: 0 2px 0 rgba(10, 30, 80, 0.25);
+  font-family: var(--font-display);
+  font-weight: 800;
+  line-height: 1.05;
+  text-align: center;
+  overflow: hidden;
+  will-change: transform;
+}
+.gk-wort {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.gk-begriff[data-lang="s"] {
+  font-size: 17px;
+}
+.gk-begriff[data-lang="m"] {
+  font-size: 14.5px;
+}
+.gk-begriff[data-lang="l"] {
+  font-size: 12.5px;
+}
+.gk-begriff[data-lang="xl"] {
+  font-size: 11.5px;
+  font-weight: 700;
+}
+.gk-begriff .frac {
+  font-size: 0.86em;
+}
+.gk-begriff[data-schwebt] {
+  width: 100%;
+  box-shadow:
+    0 10px 18px -6px rgba(5, 20, 60, 0.55),
+    0 0 0 3px var(--ls-gold);
+}
+/* nach einem Fehler: die Sorte klein darunter */
+.gk-etikett {
+  margin-top: 1px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--g-voll);
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.35;
+  color: #fff;
+}
+.gk-begriff[data-f="3"] .gk-etikett {
+  color: #4a2c00;
+}
+.gk-begriff[data-zu] {
+  background: linear-gradient(180deg, var(--g-hell), var(--g-voll));
+  box-shadow: 0 2px 0 var(--g-kante);
+  color: #fff;
+  transition:
+    background-color 240ms ease,
+    color 240ms ease;
+}
+.gk-begriff[data-zu][data-f="3"] {
+  color: #4a2c00;
+}
+
+/* falsch oder voll: das Glas wackelt kurz (zwei gleiche Namen, damit es jedes Mal neu anfängt) */
+.gk-glas[data-wackelt="0"] .gk-rohr {
+  animation: gk-wackeln-a 360ms var(--ls-ease-out);
+}
+.gk-glas[data-wackelt="1"] .gk-rohr {
+  animation: gk-wackeln-b 360ms var(--ls-ease-out);
+}
+@keyframes gk-wackeln-a {
+  20% {
+    transform: translateX(-6px) rotate(-2deg);
+  }
+  45% {
+    transform: translateX(5px) rotate(1.5deg);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+}
+@keyframes gk-wackeln-b {
+  20% {
+    transform: translateX(-6px) rotate(-2deg);
+  }
+  45% {
+    transform: translateX(5px) rotate(1.5deg);
+  }
+  70% {
+    transform: translateX(-3px);
+  }
+}
+
+/* ---------- unten ---------- */
+.gk-leiste {
+  display: flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding-top: 8px;
+}
+.gk-knopf {
+  display: inline-flex;
+  min-height: 46px;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  font-size: 16px;
+  font-weight: 700;
+  transition:
+    transform 160ms var(--ls-ease-out),
+    opacity 160ms ease;
+}
+.gk-knopf:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.gk-knopf:disabled {
+  opacity: 0.4;
+}
+.gk-knopf[data-hell] {
+  background: #fff;
+  color: #1f5fd0;
+}
+.gk-fest {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+
+/* kurze Meldung oben („der: zu! +40“); „div“, damit es „.ls > :not(…)“ in lernspiel.css schlägt */
+.ls > div.gk-meldung {
+  position: absolute;
+  left: 50%;
+  top: calc(env(safe-area-inset-top) + 138px); /* unter der Reihe mit den Sorten */
+  z-index: 3;
+  translate: -50% 0;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(10, 30, 80, 0.55);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff;
+  animation: gk-meldung 1600ms var(--ls-ease-out) both;
+  pointer-events: none;
+}
+.gk-meldung[data-gut] {
+  background: rgba(19, 135, 79, 0.85);
+}
+@keyframes gk-meldung {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  12%,
+  80% {
+    opacity: 1;
+    transform: none;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* Stufe geschafft: groß in der Mitte, dann geht es von selbst weiter */
+.ls > div.gk-geschafft {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(8, 22, 64, 0.74);
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  animation: ls-rein 240ms var(--ls-ease-out) both;
+  pointer-events: none;
+}
+.gk-geschafft-titel {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  animation: gk-hoch 420ms var(--ls-ease-out) both;
+}
+.gk-geschafft-punkte {
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--ls-gold);
+  animation: gk-hoch 420ms var(--ls-ease-out) 80ms both;
+}
+.gk-geschafft-herz {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffd0d6;
+  animation: gk-hoch 420ms var(--ls-ease-out) 160ms both;
+}
+.gk-geschafft-herz svg {
+  color: #ff6f7d;
+}
+@keyframes gk-hoch {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.96);
+  }
+}
+
+/* Fehler: ein weißes Blatt unten */
+.ls > div.gk-blatt-schirm {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 12px calc(env(safe-area-inset-bottom) + 12px);
+  background: rgba(8, 24, 70, 0.35);
+}
+.gk-regel {
+  position: relative;
+  left: auto;
+  bottom: auto;
+  translate: none;
+}
+.gk-regel-paar {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+.gk-regel-paar span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  line-height: 1.25;
+}
+.gk-regel-paar b {
+  min-width: 0;
+  font-weight: 800;
+}
+.gk-regel-paar i {
+  flex-shrink: 0;
+  padding: 3px 11px;
+  border-radius: 999px;
+  background: var(--g-voll);
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 800;
+  color: #fff;
+}
+.gk-regel-paar i[data-f="3"] {
+  color: #4a2c00;
+}
+
+/* Anfang: vier kleine Gläser */
+.gk-mini {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.gk-mini-glas {
+  display: flex;
+  width: 34px;
+  height: 76px;
+  flex-direction: column-reverse;
+  gap: 4px;
+  padding: 4px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-radius: 7px 7px 14px 14px;
+  background: rgba(255, 255, 255, 0.12);
+}
+.gk-mini i {
+  height: 18px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, var(--g-hell), var(--g-voll));
+}
+
+/* dunkel: die Kärtchen wie die Blätter */
+:root[data-theme="dark"] .gk-begriff:not([data-zu]) {
+  background: #1c2b47;
+  color: #eef3fb;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.12) inset,
+    0 2px 0 rgba(0, 0, 0, 0.35);
+}
+/* Tablet: größere Gläser und Begriffe, das Brett darf breiter werden */
+@media (min-width: 700px) and (min-height: 700px) {
+  .gk {
+    --chip-h: clamp(40px, 5.4vh, 58px);
+    max-width: 820px;
+  }
+  .gk-glas {
+    max-width: 140px;
+  }
+  .gk-brett {
+    --gk-luecke: 18px;
+    row-gap: 26px;
+  }
+  .gk-begriff[data-lang="s"] {
+    font-size: 22px;
+  }
+  .gk-begriff[data-lang="m"] {
+    font-size: 18px;
+  }
+  .gk-begriff[data-lang="l"] {
+    font-size: 15.5px;
+  }
+  .gk-begriff[data-lang="xl"] {
+    font-size: 14px;
+  }
+  .gk-etikett {
+    font-size: 12px;
+  }
+  .gk-deckel {
+    font-size: 15px;
+  }
+}
+@media (max-height: 640px) {
+  .gk {
+    --chip-h: clamp(28px, 4.9vh, 36px);
+  }
+  .gk-nummer {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gk-glas[data-wackelt] .gk-rohr,
+  .gk-deckel,
+  .gk-meldung,
+  .gk-geschafft,
+  .gk-geschafft-titel,
+  .gk-geschafft-punkte,
+  .gk-geschafft-herz {
+    animation: none;
+  }
+  .gk-glas[data-offen] .gk-rohr,
+  .gk-glas:active .gk-rohr {
+    transform: none;
+  }
+}

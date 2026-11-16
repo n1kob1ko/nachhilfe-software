@@ -34,6 +34,9 @@ import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
 import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
+import { stufeFuer, type GlasThemaInfo } from "./glasklar";
+import { GLAS_THEMEN, glasKandidaten, glasStufen, glasThema, sortenVon, STOFF_THEMA, stoffKandidaten, themaVonKey, waehleGlasKarten, type GlasKandidat } from "./glasklar-themen";
+import { leseKarten } from "./spielkarten-text";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
@@ -60,9 +63,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   strahl: "mathe.zahlenstrahl",
   // Dein Stoff: die Fähigkeit hängt am Satz Spielkarten (lib/spielkarten.ts)
   stoff: EIGENER_STOFF,
+  // Glasklar: die Fähigkeit hängt am Thema der Runde (glasPlan); diese hier hat niemand im Lernstand
+  glas: "spiel.glasklar",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -123,6 +128,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
+    if (art === "glas") continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -354,6 +360,59 @@ export function duellThema(art: SpielArt, schulstufe: number, rng: () => number 
   return waehleKarten(art, { pool: themenKandidaten(thema.skill), stufen: stufenFuer(art, schulstufe, null), rng });
 }
 
+// ---------- Glasklar: welches Thema (lib/glasklar-themen.ts) ----------
+
+/** Ein Thema von Glasklar für diesen Schüler; `grund`: warum es gerade passt („Dein aktueller Stoff“). */
+export type GlasWahl = GlasThemaInfo & { skill: string; grund?: string };
+
+/** Die Spielkarten der Lehrkraft, wenn sie sich zu Gläsern sortieren lassen (sonst null). */
+function glasStoff(studentId: number): { satz: NonNullable<ReturnType<typeof spielSatz>>; pool: GlasKandidat[] } | null {
+  const satz = spielSatz(studentId);
+  if (!satz) return null;
+  const pool = stoffKandidaten(leseKarten(satz.text).karten, satzSkill(satz));
+  return pool.length ? { satz, pool } : null;
+}
+
+/** Alle Begriffe eines Themas für diesen Schüler. */
+function glasPool(student: repo.Student, thema: string): GlasKandidat[] {
+  return thema === STOFF_THEMA ? (glasStoff(student.id)?.pool ?? []) : glasKandidaten(thema, student.grade);
+}
+
+/**
+ * Die Themen von Glasklar, das passendste zuerst: die Spielkarten der Lehrkraft (wenn sie Gläser ergeben, in den ersten
+ * 30 Tagen), Themen aus dem Stoff (Prüfung, aktueller Stoff, letzte Einheit), dann die Themen der Fächer des Schülers
+ * für seine Schulstufe (das Neueste zuerst), ältere Spielkarten zum Schluss. Leer: Glasklar gibt es für ihn nicht.
+ */
+export function glasThemen(student: repo.Student, heute: string): GlasWahl[] {
+  const out: GlasWahl[] = [];
+  const add = (w: GlasWahl) => {
+    if (!out.some((x) => x.id === w.id)) out.push(w);
+  };
+  const thema = (t: (typeof GLAS_THEMEN)[number], grund?: string): GlasWahl => ({ id: t.id, name: t.name, fach: t.fach, skill: t.skill, sorten: sortenVon(t.id, glasKandidaten(t.id, student.grade)).slice(0, 4), grund });
+  const stoff = glasStoff(student.id);
+  const stoffWahl = (grund: string): GlasWahl | null => (stoff ? { id: STOFF_THEMA, name: stoff.satz.titel || "Dein Stoff", fach: "Dein Stoff", skill: satzSkill(stoff.satz), sorten: sortenVon(STOFF_THEMA, stoff.pool).slice(0, 4), grund } : null);
+  const frisch = stoff && istFrisch(stoff.satz, heute);
+  if (frisch) add(stoffWahl(`Dein Stoff: ${stoff.satz.titel}`)!);
+  for (const q of stoffQuellen(student, heute))
+    for (const id of q.ids) for (const t of GLAS_THEMEN) if (themaPasst(t, id) && (t.fach !== "Englisch" || student.grade >= 5)) add(thema(t, q.grund));
+  const passt = (t: (typeof GLAS_THEMEN)[number]) => t.ab <= student.grade && (t.bis ?? Infinity) >= student.grade;
+  for (const fach of ["Deutsch", "Mathematik", "Englisch"] as const) {
+    if (!student.subjects.includes(fach)) continue;
+    const reihe = GLAS_THEMEN.map((t, i) => ({ t, i }))
+      .filter(({ t }) => t.fach === fach && passt(t))
+      .sort((a, b) => b.t.ab - a.t.ab || a.i - b.i);
+    for (const { t } of reihe) add(thema(t));
+  }
+  if (stoff && !frisch) add(stoffWahl("Zum Wiederholen")!);
+  return out;
+}
+
+/** Das Thema eines Glasklar-Spiels (die erste Runde trägt es in ihren Karten). */
+function glasLaufThema(studentId: number, lauf: number): string | null {
+  const z = db().prepare("SELECT karten FROM spielrunden WHERE id = ? AND student_id = ? AND art = 'glas'").get(lauf, studentId) as { karten: string } | undefined;
+  return z ? themaVonKey(json<SpielKarte[]>(z.karten, [])[0]?.key ?? "") : null;
+}
+
 // ---------- Runden ----------
 
 type Zeile = {
@@ -415,12 +474,42 @@ export function starteRunde(
     endlos?: "neu" | number;
     /** Blockwerk: mit `endlos: "neu"` beginnt ein Blockwerk-Spiel statt eines Endlos-Spiels (die Runden hängen gleich aneinander) */
     bloecke?: boolean;
+    /** Glasklar: das gewünschte Thema (beim Fortsetzen bleibt es beim Thema des Spiels) */
+    glasThema?: string;
   } = {},
-): { rundeId: number; karten: SpielKarte[]; endlos?: number } {
+): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
   db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
   let karten: SpielKarte[];
-  if (art === "vokabeln") {
+  // Glasklar: die wievielte Stufe (eine Runde je Stufe); nur für `art === "glas"`
+  let stufe: number | undefined;
+  if (art === "glas") {
+    const heute = o.heute ?? wienerDatum();
+    const weiter = typeof o.endlos === "number" ? endlosLauf(student.id, art, o.endlos) : null;
+    const themen = glasThemen(student, heute);
+    const gewuenscht = weiter ? glasLaufThema(student.id, weiter) : o.glasThema;
+    // ein Thema, das nicht (mehr) passt, wird durch das erste ersetzt; beim Fortsetzen bleibt es, solange es Begriffe hat
+    const thema = (weiter && gewuenscht) || themen.find((t) => t.id === gewuenscht)?.id || themen[0]?.id;
+    stufe = weiter ? (db().prepare("SELECT COUNT(*) AS n FROM spielrunden WHERE student_id = ? AND endlos = ?").get(student.id, weiter) as { n: number }).n + 1 : 1;
+    karten = [];
+    if (thema) {
+      const pool = glasPool(student, thema);
+      const groesse = stufeFuer(stufe);
+      // reicht eine Sorte nicht für vier Begriffe (eigene Spielkarten), werden die Gläser niedriger
+      for (let hoehe = groesse.hoehe; hoehe >= 3 && new Set(karten.map((k) => k.richtig)).size < 2; hoehe--) {
+        karten = waehleGlasKarten(pool, {
+          reihenfolge: sortenVon(thema, pool),
+          sorten: groesse.sorten,
+          hoehe,
+          stufen: glasStufen(thema, student.grade, o.lernstand ?? null),
+          wiederholen: offeneFehler(student.id, art),
+          zuletzt: zuletztGespielt(student.id, art),
+          rng: o.rng,
+        });
+      }
+      if (new Set(karten.map((k) => k.richtig)).size < 2) karten = [];
+    }
+  } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
       // eigene Listen haben keine Stufen: alle Wörter sind Stoff
@@ -451,13 +540,14 @@ export function starteRunde(
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
     .run(student.id, art, karten[0]?.skill ?? (art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]), o.grund ?? "fach", JSON.stringify(karten), karten.length);
   const rundeId = Number(r.lastInsertRowid);
-  if (o.endlos === undefined) return { rundeId, karten };
+  if (o.endlos === undefined) return { rundeId, karten, stufe };
   // ein Endlos-Spiel setzt nur fort, wer es begonnen hat, und nur im selben Spiel
   const lauf = o.endlos === "neu" ? rundeId : endlosLauf(student.id, art, o.endlos) ?? rundeId;
   db().prepare("UPDATE spielrunden SET endlos = ? WHERE id = ?").run(lauf, rundeId);
-  // Blockwerk: die erste Runde trägt die Punkte (später `bloeckePunkte`); eine Fortsetzung erbt das von ihr
+  // Blockwerk und Glasklar: die erste Runde trägt die Punkte (später `laufPunkte`); eine Fortsetzung erbt das von ihr
   if (lauf === rundeId && o.bloecke) db().prepare("UPDATE spielrunden SET bloecke = 0 WHERE id = ?").run(rundeId);
-  return { rundeId, karten, endlos: lauf };
+  if (lauf === rundeId && art === "glas") db().prepare("UPDATE spielrunden SET glas = 0 WHERE id = ?").run(rundeId);
+  return { rundeId, karten, endlos: lauf, stufe };
 }
 
 /** Die id eines Endlos-Spiels dieses Schülers in diesem Spiel (null, wenn es es nicht gibt). */
@@ -489,46 +579,57 @@ export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): n
 }
 
 /**
- * Blockwerk (lib/blockwerk.ts): das Spiel zählt seine Punkte auf dem Gerät und meldet sie am Ende; der Server merkt sie
- * sich an der ersten Runde. Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
+ * Blockwerk (lib/blockwerk.ts) und Glasklar (lib/glasklar.ts) zählen ihre Punkte auf dem Gerät und melden sie am Ende;
+ * der Server merkt sie sich an der ersten Runde (Spalte `bloecke` oder `glas`). Eine Fortsetzung oder ein zweites Ende
+ * kann sie nicht kleiner machen.
  */
-export function bloeckePunkte(studentId: number, lauf: number, punkte: number) {
-  db().prepare("UPDATE spielrunden SET bloecke = MAX(COALESCE(bloecke, 0), ?) WHERE id = ? AND student_id = ? AND bloecke IS NOT NULL").run(punkte, lauf, studentId);
-}
+export type PunkteSpiel = "bloecke" | "glas";
+/** Die Spalte ist nie eine Eingabe: nur diese zwei Namen kommen in die Abfragen. */
+const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : "bloecke");
 
-/** Ist dieser Lauf ein Blockwerk-Spiel? */
-export function istBlockwerk(studentId: number, lauf: number): boolean {
-  return !!db().prepare("SELECT 1 FROM spielrunden WHERE id = ? AND student_id = ? AND bloecke IS NOT NULL").get(lauf, studentId);
+export function laufPunkte(studentId: number, lauf: number, punkte: number, spiel: PunkteSpiel) {
+  const c = spalte(spiel);
+  db().prepare(`UPDATE spielrunden SET ${c} = MAX(COALESCE(${c}, 0), ?) WHERE id = ? AND student_id = ? AND ${c} IS NOT NULL`).run(punkte, lauf, studentId);
 }
+export const bloeckePunkte = (studentId: number, lauf: number, punkte: number) => laufPunkte(studentId, lauf, punkte, "bloecke");
 
-/** Der beste Blockwerk-Stand des Schülers über alle Spiele; `ohne`: dieses Blockwerk-Spiel nicht mitzählen. */
-export function bloeckeRekord(studentId: number, ohne?: number): number {
-  const z = db().prepare("SELECT COALESCE(MAX(bloecke), 0) AS rekord FROM spielrunden WHERE student_id = ? AND bloecke IS NOT NULL AND id != ?").get(studentId, ohne ?? -1) as { rekord: number };
+/** Ist dieser Lauf ein Blockwerk- oder Glasklar-Spiel? */
+export function laufIst(studentId: number, lauf: number, spiel: PunkteSpiel): boolean {
+  return !!db().prepare(`SELECT 1 FROM spielrunden WHERE id = ? AND student_id = ? AND ${spalte(spiel)} IS NOT NULL`).get(lauf, studentId);
+}
+export const istBlockwerk = (studentId: number, lauf: number) => laufIst(studentId, lauf, "bloecke");
+
+/** Der beste Stand des Schülers (Blockwerk über alle Spiele, Glasklar über alle Themen); `ohne`: dieses Spiel nicht mitzählen. */
+export function punkteRekord(studentId: number, spiel: PunkteSpiel, ohne?: number): number {
+  const c = spalte(spiel);
+  const z = db().prepare(`SELECT COALESCE(MAX(${c}), 0) AS rekord FROM spielrunden WHERE student_id = ? AND ${c} IS NOT NULL AND id != ?`).get(studentId, ohne ?? -1) as { rekord: number };
   return z.rekord;
 }
+export const bloeckeRekord = (studentId: number, ohne?: number) => punkteRekord(studentId, "bloecke", ohne);
 
-/** So viele Plätze zeigt die Blockwerk-Bestenliste. */
+/** So viele Plätze zeigt eine Bestenliste. */
 export const BESTENLISTE_PLAETZE = 10;
 
 /**
- * Die Blockwerk-Bestenliste für alle (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): je Schüler sein
- * bester Stand, die Besten zuerst. Jeder steht nur mit Spitzname und Tierbild drin (lib/spielprofil.ts); wer Punkte hat,
- * aber noch keinen Spitznamen, bekommt hier einen (niko 2026-11-16: „es soll generell erlaubt sein“). Nur wen der
- * Lehrer ausgeschaltet hat, sehen die anderen nicht; er selbst sieht sich als „Du“.
+ * Die Bestenliste für alle (niko 2026-11-16: „mach einen highscore also leaderboard für alle“), je Spiel (Blockwerk,
+ * Glasklar): je Schüler sein bester Stand, die Besten zuerst. Jeder steht nur mit Spitzname und Tierbild drin
+ * (lib/spielprofil.ts); wer Punkte hat, aber noch keinen Spitznamen, bekommt hier einen (niko 2026-11-16: „es soll
+ * generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht; er selbst sieht sich als „Du“.
  */
-export function bloeckeBestenliste(student: Pick<repo.Student, "id" | "grade">, anzahl = BESTENLISTE_PLAETZE): Bestenliste {
+export function punkteBestenliste(student: Pick<repo.Student, "id" | "grade">, spiel: PunkteSpiel, anzahl = BESTENLISTE_PLAETZE): Bestenliste {
+  const c = spalte(spiel);
   const ohneName = db()
     .prepare(
       `SELECT DISTINCT s.id, s.grade FROM spielrunden r JOIN students s ON s.id = r.student_id
-       WHERE r.bloecke > 0 AND COALESCE(s.wettspiel, '') != 'nein' AND NOT EXISTS (SELECT 1 FROM spielprofile sp WHERE sp.student_id = s.id)`,
+       WHERE r.${c} > 0 AND COALESCE(s.wettspiel, '') != 'nein' AND NOT EXISTS (SELECT 1 FROM spielprofile sp WHERE sp.student_id = s.id)`,
     )
     .all() as { id: number; grade: number }[];
   for (const s of ohneName) sorgeFuerProfil(s);
   const rows = db()
     .prepare(
-      `SELECT r.student_id AS id, MAX(r.bloecke) AS punkte, MIN(r.id) AS zuerst, sp.name, sp.bild, s.grade, s.wettspiel
+      `SELECT r.student_id AS id, MAX(r.${c}) AS punkte, MIN(r.id) AS zuerst, sp.name, sp.bild, s.grade, s.wettspiel
        FROM spielrunden r JOIN students s ON s.id = r.student_id LEFT JOIN spielprofile sp ON sp.student_id = r.student_id
-       WHERE r.bloecke > 0 GROUP BY r.student_id ORDER BY punkte DESC, zuerst ASC`,
+       WHERE r.${c} > 0 GROUP BY r.student_id ORDER BY punkte DESC, zuerst ASC`,
     )
     .all() as { id: number; punkte: number; name: string | null; bild: string | null; grade: number; wettspiel: string | null }[];
   const sichtbar = (z: (typeof rows)[number]) => !!z.name && darfMitspielen(z.wettspiel);
@@ -543,6 +644,7 @@ export function bloeckeBestenliste(student: Pick<repo.Student, "id" | "grade">, 
     });
   return { zeilen: liste.slice(0, anzahl), ich: liste.find((z) => z.ich) ?? null, profil: !darf ? "erlaubnis" : eigenes ? "da" : "anlegen" };
 }
+export const bloeckeBestenliste = (student: Pick<repo.Student, "id" | "grade">, anzahl = BESTENLISTE_PLAETZE) => punkteBestenliste(student, "bloecke", anzahl);
 
 /**
  * Startet eine Runde mit vorgegebenen Karten (Duell, lib/duelle.ts): beide Spieler bekommen dieselben Karten. Zählt im

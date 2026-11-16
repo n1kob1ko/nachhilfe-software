@@ -441,7 +441,7 @@ export function kandidaten(art: SpielArt): Kandidat[] {
       .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
-  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff") {
+  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "glas") {
     // kein fester Vorrat: Vokabel-Paare nehmen die Listen des Schülers, die Themenspiele die Karten ihres Themas
     // (lib/lernspiele.ts gibt sie als `pool` mit)
     out = [];
