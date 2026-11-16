@@ -32,15 +32,16 @@ export default async function LearnLayout({ children, params }: { children: Reac
   return (
     <div className="min-h-screen bg-paper">
       <header>
-        <div className="mx-auto flex max-w-[860px] items-center justify-between px-4 py-3">
-          <a href={`/lernen/${token}`} className="treffer display flex items-center gap-2.5 text-[17px] font-semibold">
+        {/* schmale Handys (320 px): der Name wird gekürzt, „DreamStudy“ steht erst ab 360 px, nichts ragt über den Rand */}
+        <div className="mx-auto flex max-w-[860px] items-center justify-between gap-2 px-4 py-3">
+          <a href={`/lernen/${token}`} className="treffer display flex shrink-0 items-center gap-2.5 text-[17px] font-semibold">
             <BrandMark height={36} />
-            DreamStudy
+            <span className="hidden min-[360px]:inline">DreamStudy</span>
           </a>
-          <span className="flex items-center gap-2">
-            <span className="flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">
+          <span className="flex min-w-0 items-center gap-2">
+            <span className="flex min-w-0 items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-[14px] font-medium">
               <Avatar name={student.name} size={28} />
-              {student.name}
+              <span className="truncate">{student.name}</span>
             </span>
             <ThemeToggle />
           </span>

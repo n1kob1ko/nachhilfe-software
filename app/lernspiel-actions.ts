@@ -2,11 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, endlosRekord, endlosStand, glasThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, endlosRekord, endlosStand, glasThemen, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
 import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
+import { gueltigeWortPunkte } from "@/lib/wortschloss";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -37,6 +38,13 @@ export async function glasStartenAction(token: string, thema: string | undefined
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   return glasStarten(student, thema, lauf);
+}
+
+/** Wortschloss (lib/wortschloss.ts): wie Glasklar, `lauf` fehlt beim Start, sonst die nächste Stufe dieses Spiels. */
+export async function wortStartenAction(token: string, thema: string | undefined, lauf?: number): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return wortStarten(student, thema, lauf);
 }
 
 /** `o.teil`: das Ende eines Endlos- oder Blockwerk-Spiels; es zählen nur die beantworteten Karten. `o.punkte`: die Punkte im Blockwerk. */
@@ -70,6 +78,12 @@ export async function tabletGlasStartenAction(thema: string | undefined, lauf?: 
   return glasStarten(student, thema, lauf);
 }
 
+export async function tabletWortStartenAction(thema: string | undefined, lauf?: number): Promise<SpielStart> {
+  const student = await tabletSchueler();
+  if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
+  return wortStarten(student, thema, lauf);
+}
+
 export async function tabletSpielBeendenAction(rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
@@ -83,6 +97,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   if (!istSpielArt(art)) return { fehler: "Dieses Spiel gibt es nicht." };
   // Glasklar startet nur über glasStarten (Thema und Stufe)
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
+  if (art === "wort") return wortStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
   const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
@@ -105,14 +120,26 @@ function glasStarten(student: repo.Student, thema: string | undefined, lauf?: nu
   return runde;
 }
 
+function wortStarten(student: repo.Student, thema: string | undefined, lauf?: number): SpielStart {
+  const heute = wienerDatum();
+  const weiter = Number.isInteger(lauf) && Number(lauf) > 0 ? Number(lauf) : undefined;
+  const wahl = wortThemen(student, heute);
+  const gemeint = wahl.find((t) => t.id === thema) ?? wahl[0];
+  if (!weiter && !gemeint) return { fehler: "Für Wortschloss gibt es gerade keine Wörter." };
+  const lernstand = gemeint ? lernstandVon(student.id, gemeint.skill) : null;
+  const runde = starteRunde(student, "wort", { heute, lernstand, endlos: weiter ?? "neu", wortThema: gemeint?.id });
+  if (!runde.karten.length) return { fehler: "Für Wortschloss gibt es gerade keine Wörter." };
+  return runde;
+}
+
 function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number }): SpielErgebnis {
   const zeile = rundenSkill(student.id, Number(rundeId));
-  // Blockwerk, Funkelfeld und Glasklar: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
+  // Blockwerk, Funkelfeld, Glasklar und Wortschloss: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
   const lauf = zeile?.endlos ?? null;
   const spiel: PunkteSpiel | null = lauf ? (PUNKTE_SPIELE.find((s) => laufIst(student.id, lauf, s)) ?? null) : null;
   // Blockwerk und Funkelfeld: ein Brett zwischen den Karten (gleiches Ergebnis)
   const block = spiel === "bloecke" || spiel === "funkel" ? spiel : null;
-  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
+  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
   const vorher = zeile ? lernstandVon(student.id, zeile.skillId) : null;
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : [], { teil: o?.teil === true });
   if (!e) return { fehler: "Diese Runde gibt es nicht mehr." };
@@ -131,6 +158,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     liga: liga.punkte > 0 || liga.grund ? { punkte: liga.punkte, grund: liga.grund } : undefined,
     endlos: zeile?.endlos && !spiel ? { stand: endlosStand(student.id, zeile.endlos), rekord: endlosRekord(student.id, zeile.art, zeile.endlos) } : undefined,
     bloecke: zeile?.endlos && block ? { rekord: punkteRekord(student.id, block, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, block) : undefined } : undefined,
+    wort: zeile?.endlos && spiel === "wort" ? { rekord: punkteRekord(student.id, "wort", zeile.endlos), woerter: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "wort") : undefined } : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
 }

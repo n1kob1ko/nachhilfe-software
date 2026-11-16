@@ -455,6 +455,36 @@ Gläser auf der Bühne, Farben der Kisten); geprüft wird ohne KI (`components/l
   nur die beantworteten. Falsche kommen beim nächsten Mal zuerst wieder; sonst keine Begriffe der letzten 40 Runden.
 - Video: `lernspiele/glasklar-handy.mp4` im Projektordner.
 
+## Wortschloss
+
+niko 2026-11-16 „mach weitere spiele“: ein Wort-Rätsel zum Stoff, eigene Kachel im Tab „Spiele“ (wie Glasklar), eigenes
+Spielfeld (`components/lernen/WortSchloss.tsx`), Regeln in `lib/wortschloss.ts`, Wörter in `lib/wortschloss-themen.ts`.
+
+- **Spielfeld**: oben der Hinweis (ein weißes Kärtchen: „bleiben“ mit dem Schild „Präteritum · er, sie, es“), in der
+  Mitte das Schloss (ein Messing-Rahmen mit sechs Reihen, so viele Felder, wie das Wort Buchstaben hat), unten eine
+  QWERTZ-Tastatur. Umlaute und ß gibt es nur, wenn ein Wort der Stufe sie braucht. Ist eine Reihe voll, zählt sie
+  sofort, ohne Knopf. Die Felder drehen sich nacheinander: grün sitzt, gold kommt an einer anderen Stelle vor, grau kommt
+  nicht vor (doppelte Buchstaben leuchten nur so oft, wie sie im Wort sind). Die Tasten färben sich mit. Es gibt kein
+  Wörterbuch: jede Reihe aus Buchstaben zählt.
+- **Gelöst**: die Reihe hüpft, der Bügel springt auf, unten am Schloss „Auf Anhieb! +100“; das nächste Wort kommt.
+  **Nicht gelöst** nach sechs Reihen: das Schloss wackelt, ein Herz ist weg, ein Blatt zeigt das Wort und die Regel
+  („kommen: er kam, sie kamen (nicht „kommte“)“), „Weiter“.
+- **Stufen**: vier Wörter je Stufe (eine Runde am Server). Stufe 1 nur Wörter bis 6 Buchstaben, Stufe 2 bis 8, dann
+  bis 10. Am Ende der Stufe 50 × Stufe Bonus, alle in der ersten Reihe +100 × Stufe; kein Wort verloren: ein Herz
+  zurück. Drei Herzen; ohne Herzen ist das Spiel aus.
+- **Punkte** je Wort nach der Reihe: 100, 60, 40, 25, 15, 10, mal die Stufe. Gerät zählt, Server nimmt sie am Ende
+  (`gueltigeWortPunkte`), eigener Rekord und eigene Bestenliste (Spalte `spielrunden.wort`).
+- **Gezählt** für den Lernstand wird je Wort die erste Reihe: richtig ist sie nur, wenn das Wort gleich beim ersten
+  Mal stimmt (`ersteWahl`). Nicht gewusste Wörter kommen in der nächsten Stufe zuerst wieder.
+- **Themen** (`wortThemen`, das passendste zuerst): „Dein Stoff“ (Spielkarten mit einem Wort als Antwort, frisch zuerst),
+  die eigene Vokabelliste, Themen aus dem Stoff, dann je Fach: Englisch „Vokabeln“ (Deutsch → Englisch, wie bei
+  Vokabel-Paare die eigene oder eine Themenliste) und „Irregular Verbs“ (ab 6. Schulstufe: Simple Past und Past
+  Participle), Deutsch „Präteritum“ und „Perfekt-Formen“ (ab 4.: die Verben aus `lib/deutsch-woerter.ts`, ohne
+  trennbare) und „Mehrzahl“ (2. bis 6.: `MEHRZAHL` aus `lib/deutsch-mehr.ts`, nur eindeutige). Nur Wörter aus 3 bis 10
+  Buchstaben ohne Leerzeichen.
+- **Tablet**: Ansicht `wort:<thema>` (leer = das passendste), wie Glasklar.
+- **Laptop**: Buchstaben tippen, die Rücktaste löscht.
+
 ## Dein Stoff (eigene Spielkarten)
 
 niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für

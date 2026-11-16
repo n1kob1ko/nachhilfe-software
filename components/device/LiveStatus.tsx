@@ -102,7 +102,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
   const noTabletHere = parallel && s.tablet.paired && !s.parallel.tablets.some((t) => t.unitId === unitId);
   const tablet = !s.tablet.paired ? "kein" : noTabletHere ? "anderswo" : s.tablet.online ? "online" : "offline";
   const onLaptop = s.device === "laptop";
-  const spielt = s.view === "spiele" || s.view === "spiel" || s.view === "glas";
+  const spielt = s.view === "spiele" || s.view === "spiel" || s.view === "glas" || s.view === "wort";
   const dev = onLaptop ? "Laptop" : "Tablet";
   const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
   // lib/blatt.ts: lange an derselben Aufgabe oder mehrmals falsch

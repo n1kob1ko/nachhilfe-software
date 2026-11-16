@@ -1490,6 +1490,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   strahl: [],
   stoff: ["richtig", "falsch"],
   glas: ["der", "die", "das"],
+  wort: ["W", "O", "R", "T"],
 };
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";

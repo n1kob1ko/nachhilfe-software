@@ -25,6 +25,7 @@ export function SpieleListe({
   funkel,
   funkelPlatz,
   glas,
+  wort,
 }: {
   student: repo.Student;
   heute: string;
@@ -40,6 +41,8 @@ export function SpieleListe({
   funkelPlatz?: BestenZeile | null;
   /** Glasklar (lib/glasklar.ts): wohin die Kachel führt, das passendste Thema und der eigene Platz; ohne Angabe keine Kachel */
   glas?: { href: string; thema: string; platz?: BestenZeile | null };
+  /** Wortschloss (lib/wortschloss.ts): wie `glas` */
+  wort?: { href: string; thema: string; platz?: BestenZeile | null };
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
@@ -147,6 +150,31 @@ export function SpieleListe({
             {glas.platz && (
               <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-glasklar-platz">
                 Platz {glas.platz.platz} · Rekord {glas.platz.punkte.toLocaleString("de-AT")}
+              </span>
+            )}
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+        </Link>
+      )}
+
+      {wort && (
+        <Link href={wort.href} className="sp-block panel mt-3" data-testid="spiele-wortschloss">
+          <span className="sp-wort-bild" aria-hidden>
+            {(["ja", "nein", "fast", "ja"] as const).map((f, i) => (
+              <i key={i} data-f={f}>
+                {"WORT"[i]}
+              </i>
+            ))}
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="sp-titel">Wortschloss</span>
+              <span className="sp-schild">Neu</span>
+            </span>
+            <span className="sp-kurz">Errate das Wort zum Hinweis in sechs Versuchen: {wort.thema}.</span>
+            {wort.platz && (
+              <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-wortschloss-platz">
+                Platz {wort.platz.platz} · Rekord {wort.platz.punkte.toLocaleString("de-AT")}
               </span>
             )}
           </span>
