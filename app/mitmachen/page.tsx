@@ -7,6 +7,7 @@ import { LeaveButton } from "@/components/laptop/LeaveButton";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { EndedCleanup, JoinCleanup } from "@/components/laptop/LocalDrafts";
 import { Solver } from "@/components/Solver";
+import { alsBlatt } from "@/lib/blatt";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
@@ -182,6 +183,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
         test={isMinitest(current.mode)}
         probe={Boolean(repo.getWorksheet(current.worksheet_id)?.probe_test_id)}
         kontrolle={current.note === LERNKONTROLLE}
+        blatt={tasks.length > 1 && alsBlatt(repo.getWorksheet(current.worksheet_id)?.settings)}
       />
     );
   } else {

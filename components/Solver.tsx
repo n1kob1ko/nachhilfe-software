@@ -87,7 +87,10 @@ export type ClientTask = {
   finished: { correct: boolean | null; solution: string; review?: string | null; sample?: string | null; given?: string | null; expected?: string | null; math?: MathView | null } | null;
 };
 
-type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; submissionId: string };
+type AnswerInput = { assignmentId: number; taskId: number; answer: string; timeMs: number; activeMs: number; hintsUsed: number; giveUp?: boolean; leer?: boolean; submissionId: string };
+
+/** Ganzes Blatt im Test: so gibt das Blatt eine Aufgabe mit „Blatt abgeben“ ab (lib/blatt.ts). */
+type BlattAufgabe = { bereit: () => boolean; senden: (leer: boolean) => void };
 
 /** One id per click on "Prüfen": a repeat after a lost connection carries the same id and is stored once. */
 export function newSubmissionId() {
@@ -152,6 +155,7 @@ export function Solver({
   test = false,
   probe = false,
   kontrolle = false,
+  blatt = false,
 }: {
   token: string;
   assignmentId: number;
@@ -167,6 +171,8 @@ export function Solver({
   probe?: boolean;
   /** Lernkontrolle am Ende eines Themas (lib/cockpit.ts, Notiz LERNKONTROLLE): läuft wie ein Minitest, ist aber über den Stoff von heute */
   kontrolle?: boolean;
+  /** Ganzes Blatt (lib/blatt.ts): alle Aufgaben untereinander wie auf Papier; im Test gibt der Schüler das Blatt auf einmal ab */
+  blatt?: boolean;
   /** "geraet": on the teacher's student tablet, "laptop": on the student's own laptop for this unit; both authorised by
    * their device instead of the student link */
   via?: Via;
@@ -207,12 +213,18 @@ export function Solver({
   const noun = reading ? "Frage" : "Aufgabe";
   const tone = (t: ClientTask) =>
     t.finished ? (t.finished.correct === null || t.finished.review === "teilweise" ? "amber" : t.finished.correct ? "green" : "red") : null;
+  const testName = probe ? "Probeschularbeit" : kontrolle ? "Lernkontrolle" : blatt ? "Test" : "Minitest";
+  // ganzes Blatt im Test: alles abgegeben, dann das Ergebnis
+  const alleFertig = tasks.every((t) => t.finished);
+  useEffect(() => {
+    if (blatt && test && alleFertig) setIndex(tasks.length);
+  }, [blatt, test, alleFertig, tasks.length]);
 
   if (test && index >= tasks.length) {
     return (
       <div className="py-6 text-center" data-testid="minitest-ende">
         <p className="text-[15px] font-medium text-ink-2">{title}</p>
-        <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">{probe ? "Probeschularbeit geschafft" : kontrolle ? "Lernkontrolle geschafft" : "Minitest geschafft"}</h1>
+        <h1 className="mt-2 text-[34px] font-semibold tracking-[-0.02em]">{testName} geschafft</h1>
         <p className="num mt-2 text-[20px]">{testErgebnis(correct, tasks.length, waiting, done)}</p>
         {waiting > 0 && (
           <p className="num mt-1 text-[16px] text-ink-2">
@@ -259,16 +271,23 @@ export function Solver({
           <ClipboardCheck size={28} strokeWidth={1.75} />
         </span>
         <p className="mt-4 text-[15px] font-medium text-ink-2">{title}</p>
-        <h1 className="mt-1 text-[34px] font-semibold tracking-[-0.02em]">{probe ? "Probeschularbeit" : kontrolle ? "Lernkontrolle" : "Minitest"}</h1>
+        <h1 className="mt-1 text-[34px] font-semibold tracking-[-0.02em]">{testName}</h1>
         <p className="num mt-2 text-[20px]">
-          {probe ? `${tasks.length} Aufgaben wie bei der Schularbeit` : kontrolle ? `${tasks.length} Aufgaben zu dem, was du heute geübt hast` : `${tasks.length} Aufgaben über den Stoff vom letzten Mal`}
+          {probe
+            ? `${tasks.length} Aufgaben wie bei der Schularbeit`
+            : kontrolle
+              ? `${tasks.length} Aufgaben zu dem, was du heute geübt hast`
+              : blatt
+                ? `${tasks.length} Aufgaben auf einem Blatt`
+                : `${tasks.length} Aufgaben über den Stoff vom letzten Mal`}
         </p>
         <ul className="mx-auto mt-6 grid max-w-[440px] gap-3 text-left text-[17px]">
           <li className="flex gap-3">
             <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Ohne Tipps, jede Aufgabe gibst du einmal ab.
           </li>
           <li className="flex gap-3">
-            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden /> Weißt du etwas nicht? Mach mit „Später“ weiter und komm am Schluss zurück.
+            <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />{" "}
+            {blatt ? "Du siehst alle Aufgaben auf einmal. Am Ende gibst du das ganze Blatt ab." : "Weißt du etwas nicht? Mach mit „Später“ weiter und komm am Schluss zurück."}
           </li>
           <li className="flex gap-3">
             <Check size={20} className="mt-0.5 shrink-0 text-accent" aria-hidden />{" "}
@@ -279,6 +298,25 @@ export function Solver({
           Los geht&apos;s <ChevronRight size={18} aria-hidden />
         </button>
       </div>
+    );
+  }
+
+  if (blatt && !reading) {
+    return (
+      <BlattAnsicht
+        title={title}
+        home={home}
+        via={via}
+        token={token}
+        assignmentId={assignmentId}
+        maxTries={maxTries}
+        tasks={tasks}
+        aktuell={Math.min(index, tasks.length - 1)}
+        setAktuell={setIndex}
+        test={test}
+        tone={tone}
+        onFinished={(id, f) => setTasks((all) => all.map((t) => (t.id === id ? { ...t, finished: f } : t)))}
+      />
     );
   }
 
@@ -460,6 +498,190 @@ export function Solver({
   );
 }
 
+/**
+ * Das ganze Blatt (lib/blatt.ts): alle Aufgaben untereinander wie auf Papier. Wo der Schüler tippt oder schreibt, ist
+ * die aktuelle Aufgabe (für die Zeit je Aufgabe und den Live-Stand der Lehrkraft). In der Übung prüft jede Aufgabe für
+ * sich (mit Versuchen und Hilfen), im Test gibt der Schüler am Ende das ganze Blatt ab.
+ */
+function BlattAnsicht({
+  title,
+  home,
+  via,
+  token,
+  assignmentId,
+  maxTries,
+  tasks,
+  aktuell,
+  setAktuell,
+  test,
+  tone,
+  onFinished,
+}: {
+  title: string;
+  home: string;
+  via: Via;
+  token: string;
+  assignmentId: number;
+  maxTries: number;
+  tasks: ClientTask[];
+  aktuell: number;
+  setAktuell: (i: number) => void;
+  test: boolean;
+  tone: (t: ClientTask) => "amber" | "green" | "red" | null;
+  onFinished: (taskId: number, f: NonNullable<ClientTask["finished"]>) => void;
+}) {
+  const apis = useRef(new Map<number, BlattAufgabe>());
+  const melde = useCallback((id: number, api: BlattAufgabe | null) => {
+    if (api) apis.current.set(id, api);
+    else apis.current.delete(id);
+  }, []);
+  const [frage, setFrage] = useState<number[] | null>(null);
+  const [abgabe, setAbgabe] = useState(false);
+  const done = tasks.filter((t) => t.finished).length;
+  const correct = tasks.filter((t) => t.finished?.correct).length;
+  const waiting = tasks.filter((t) => t.finished && t.finished.correct === null).length;
+  const zu = (i: number) => {
+    setAktuell(i);
+    document.getElementById(`blatt-aufgabe-${i + 1}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+  const abgeben = (trotzdem: boolean) => {
+    const offen = tasks.map((t, i) => ({ t, nr: i + 1 })).filter((x) => !x.t.finished);
+    const leer = offen.filter((x) => !apis.current.get(x.t.id)?.bereit()).map((x) => x.nr);
+    if (leer.length && !trotzdem) return setFrage(leer);
+    setFrage(null);
+    setAbgabe(true);
+    for (const { t } of offen) {
+      const api = apis.current.get(t.id);
+      api?.senden(!api.bereit());
+    }
+    window.setTimeout(() => setAbgabe(false), 8000);
+  };
+
+  return (
+    <div className="mx-auto max-w-[820px]" data-testid="blatt">
+      <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-line bg-[var(--paper)] py-3 pr-14 pl-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <HomeLink href={home} plain={via !== "link"} className="min-w-0 truncate text-[14px] font-medium text-ink-2 hover:text-ink">
+            ← {title}
+          </HomeLink>
+          <span className="num shrink-0 text-[14px] text-ink-2" aria-live="polite">
+            {done} von {tasks.length} {test ? "abgegeben" : "erledigt"}
+          </span>
+        </div>
+        <nav className="mt-2 flex flex-wrap gap-1.5" aria-label="Aufgaben auf dem Blatt">
+          {tasks.map((t, i) => {
+            const c = test ? (t.finished ? "fertig" : null) : tone(t);
+            return (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => zu(i)}
+                aria-current={i === aktuell ? "step" : undefined}
+                aria-label={`Aufgabe ${i + 1}${t.finished ? (test ? ", abgegeben" : c === "green" ? ", richtig" : c === "amber" ? ", wird bewertet" : ", falsch") : ""}`}
+                className={`num treffer flex h-9 min-w-9 items-center justify-center rounded-full border px-2 text-[14px] font-semibold transition-colors ${
+                  i === aktuell
+                    ? "border-accent bg-accent text-on-fill"
+                    : c === "green"
+                      ? "border-transparent bg-green-wash text-green"
+                      : c === "amber"
+                        ? "border-transparent bg-amber-wash text-amber"
+                        : c === "red"
+                          ? "border-transparent bg-red-wash text-red"
+                          : c === "fertig"
+                            ? "border-transparent bg-panel text-ink-2"
+                            : "border-line-strong bg-surface text-ink-2"
+                }`}
+              >
+                {i + 1}
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+
+      <div className="rounded-2xl border border-line bg-surface px-5 py-2 shadow-[var(--shadow-card)] md:px-8">
+        {tasks.map((t, i) => {
+          const c = tone(t);
+          return (
+            <section
+              key={t.id}
+              id={`blatt-aufgabe-${i + 1}`}
+              aria-label={`Aufgabe ${i + 1}`}
+              data-testid="blatt-aufgabe"
+              onFocusCapture={() => i !== aktuell && setAktuell(i)}
+              onPointerDownCapture={() => i !== aktuell && setAktuell(i)}
+              className="scroll-mt-28 border-t border-line py-6 first:border-t-0"
+            >
+              <p className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-ink-2">
+                <span className={`num flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-[14px] ${i === aktuell ? "bg-accent text-on-fill" : "bg-panel text-ink"}`}>{i + 1}</span>
+                Aufgabe {i + 1}
+                {t.finished && test && <span className="font-normal text-ink-3">· abgegeben</span>}
+                {t.finished && !test && c === "green" && <Check size={16} className="text-green" aria-label="richtig" />}
+                {t.finished && !test && c === "red" && <X size={16} className="text-red" aria-label="falsch" />}
+                {t.finished && !test && c === "amber" && <CircleDashed size={16} className="text-amber" aria-label="wird bewertet" />}
+              </p>
+              <TaskCard
+                task={t}
+                token={token}
+                via={via}
+                assignmentId={assignmentId}
+                maxTries={maxTries}
+                onFinished={(f) => onFinished(t.id, f)}
+                onNext={() => {}}
+                isLast={i === tasks.length - 1}
+                test={test}
+                blatt={{ aktuell: i === aktuell, melde: test ? melde : undefined }}
+              />
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-line bg-surface px-5 py-5 md:px-8" data-testid="blatt-ende">
+        {test ? (
+          frage ? (
+            <div role="alert">
+              <p className="text-[17px] font-semibold">
+                {frage.length === 1 ? `Aufgabe ${frage[0]} ist noch leer.` : `Die Aufgaben ${frage.join(", ")} sind noch leer.`}
+              </p>
+              <p className="mt-1 text-ink-2">Leere Aufgaben zählen als nicht bearbeitet.</p>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button type="button" className="btn btn-secondary h-11" onClick={() => (setFrage(null), zu(frage[0] - 1))}>
+                  Weiterarbeiten
+                </button>
+                <button type="button" className="btn btn-primary h-11" onClick={() => abgeben(true)} data-testid="blatt-trotzdem">
+                  Trotzdem abgeben
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-wrap items-center gap-3">
+              <button type="button" className="btn btn-primary btn-lg" disabled={abgabe} onClick={() => abgeben(false)} data-testid="blatt-abgeben">
+                {abgabe ? "Wird abgegeben …" : "Blatt abgeben"}
+              </button>
+              <span className="text-[14px] text-ink-2">Schau alles noch einmal durch. Danach kannst du nichts mehr ändern.</span>
+            </div>
+          )
+        ) : done === tasks.length ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="num text-[17px] font-semibold">
+              Geschafft: {correct} von {tasks.length} richtig
+              {waiting > 0 && <span className="font-normal text-ink-2"> · {waiting === 1 ? "1 Antwort wird" : `${waiting} Antworten werden`} noch bewertet</span>}
+            </p>
+            <HomeLink href={home} plain={via !== "link"} className="btn btn-primary">
+              Zurück zur Übersicht
+            </HomeLink>
+          </div>
+        ) : (
+          <p className="num text-ink-2">
+            {done} von {tasks.length} erledigt. Jede Aufgabe prüfst du mit „Prüfen“.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function TaskCard({
   task,
   token,
@@ -472,6 +694,7 @@ function TaskCard({
   reading = false,
   test = false,
   onSkip,
+  blatt,
 }: {
   task: ClientTask;
   token: string;
@@ -487,6 +710,11 @@ function TaskCard({
   test?: boolean;
   /** Minitest: die Aufgabe für später lassen (nur, wenn es noch eine andere offene gibt) */
   onSkip?: () => void;
+  /**
+   * Ganzes Blatt (lib/blatt.ts): alle Aufgaben stehen untereinander. Die Zeit zählt nur, solange der Schüler an dieser
+   * Aufgabe ist (aktuell). Im Test hat die Aufgabe keinen eigenen Knopf, sondern meldet dem Blatt, wie sie abgegeben wird.
+   */
+  blatt?: { aktuell: boolean; melde?: (taskId: number, api: BlattAufgabe | null) => void };
 }) {
   const [choice, setChoice] = useState<number | null>(null);
   const [text, setText] = useState(task.faulty ?? "");
@@ -534,7 +762,21 @@ function TaskCard({
   const [wrongGaps, setWrongGaps] = useState<number[]>([]);
   const [pending, start] = useTransition();
   const startedAt = useRef(Date.now());
-  const active = useActiveTime();
+  const aktuell = blatt ? blatt.aktuell : true;
+  const aktuellRef = useRef(aktuell);
+  aktuellRef.current = aktuell;
+  const active = useActiveTime(blatt ? () => aktuellRef.current : undefined);
+  // ganzes Blatt: die Zeit an dieser Aufgabe, nur solange der Schüler hier ist
+  const uhr = useRef<{ ms: number; seit: number | null }>({ ms: 0, seit: null });
+  useEffect(() => {
+    if (!blatt) return;
+    const u = uhr.current;
+    if (aktuell && u.seit === null) u.seit = Date.now();
+    if (!aktuell && u.seit !== null) {
+      u.ms += Date.now() - u.seit;
+      u.seit = null;
+    }
+  }, [aktuell, blatt]);
   const inputRef = useRef<HTMLInputElement | HTMLTextAreaElement | null>(null);
   const final = feedback?.final ?? false;
 
@@ -561,7 +803,8 @@ function TaskCard({
       }
     }
     restored.current = true;
-    inputRef.current?.focus();
+    // am ganzen Blatt springt der Fokus nicht in jede Aufgabe
+    if (!blatt) inputRef.current?.focus();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once per task
   }, []);
   useEffect(() => {
@@ -603,10 +846,9 @@ function TaskCard({
               : text;
   // a correction task needs a changed text: the faulty one as it is is never the answer
   const unchanged = task.faulty !== null && text.trim() === task.faulty.trim();
-  const canSubmit =
-    !pending &&
-    !final &&
+  const ausgefuellt =
     (m && math ? mathReady(m, math) : task.zuordnung ? pairs.every((p) => p !== null) : task.options ? (mehrfach ? picks.length > 0 : choice !== null) : task.steps ? true : task.blanks > 0 ? (task.endings ? gaps.some((g) => g.trim()) : gaps.every((g) => g.trim())) : text.trim().length > 0 && !unchanged);
+  const canSubmit = !pending && !final && ausgefuellt;
   const move = (pos: number, dir: -1 | 1) =>
     setOrder((o) => {
       const j = pos + dir;
@@ -661,17 +903,33 @@ function TaskCard({
     [via, token, test],
   );
 
-  const send = (extra: { giveUp?: boolean } = {}) => {
+  const send = (extra: { giveUp?: boolean; leer?: boolean } = {}) => {
     // still waiting to be sent: the same submission again, not a second attempt
     if (unsent && unsent.input.answer === answer && Boolean(unsent.input.giveUp) === Boolean(extra.giveUp)) {
       deliver(unsent.input);
       return;
     }
-    const elapsed = Date.now() - startedAt.current;
-    startedAt.current = Date.now();
+    const now = Date.now();
+    const u = uhr.current;
+    const elapsed = blatt ? u.ms + (u.seit === null ? 0 : now - u.seit) : now - startedAt.current;
+    startedAt.current = now;
+    if (blatt) uhr.current = { ms: 0, seit: aktuellRef.current ? now : null };
     const activeMs = active.take();
     deliver({ assignmentId, taskId: task.id, answer, timeMs: elapsed, activeMs, hintsUsed: hintsShown, ...extra, submissionId: newSubmissionId() });
   };
+
+  // ganzes Blatt im Test: das Blatt gibt diese Aufgabe mit „Blatt abgeben“ ab
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  const bereitRef = useRef(ausgefuellt);
+  bereitRef.current = ausgefuellt;
+  const melde = blatt?.melde;
+  useEffect(() => {
+    if (!melde) return;
+    if (final) return melde(task.id, null);
+    melde(task.id, { bereit: () => bereitRef.current, senden: (leer) => sendRef.current(leer ? { leer: true } : {}) });
+    return () => melde(task.id, null);
+  }, [melde, final, task.id]);
 
   // back online: send what is waiting
   useEffect(() => {
@@ -729,7 +987,8 @@ function TaskCard({
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (canSubmit) send();
+          // ganzes Blatt im Test: abgegeben wird das ganze Blatt auf einmal
+          if (canSubmit && !(blatt && test)) send();
         }}
       >
         {bildKopf && (
@@ -1330,8 +1589,9 @@ function TaskCard({
           </div>
         )}
 
-        <div className="mt-8 flex flex-wrap items-center gap-3">
-          {!final && (
+        {((!final && !(blatt && test)) || (final && !test && !blatt)) && (
+        <div className={`${blatt ? "mt-5" : "mt-8"} flex flex-wrap items-center gap-3`}>
+          {!final && !(blatt && test) && (
             <>
               <button className="btn btn-primary h-11 px-6 text-[15px]" disabled={!canSubmit}>
                 {pending ? (handIn ? "Wird gesendet …" : "Wird geprüft …") : handIn ? "Abgeben" : "Prüfen"}
@@ -1358,12 +1618,13 @@ function TaskCard({
               )}
             </>
           )}
-          {final && !test && (
+          {final && !test && !blatt && (
             <button type="button" className="btn btn-primary h-11 px-6 text-[15px]" onClick={onNext} autoFocus>
               {isLast ? "Fertig" : reading ? "Nächste Frage" : "Nächste Aufgabe"} <ChevronRight size={17} aria-hidden />
             </button>
           )}
         </div>
+        )}
       </form>
     </article>
   );
@@ -1374,9 +1635,12 @@ function TaskCard({
  * (typing, clicking, scrolling) within the last minute. Long pauses show up as the
  * difference to the total time. Exported so the Schnellrunde measures time the same way.
  */
-export function useActiveTime() {
+export function useActiveTime(zaehlt?: () => boolean) {
   const ms = useRef(0);
   const lastInput = useRef(Date.now());
+  // ganzes Blatt: nur die Aufgabe, an der der Schüler gerade ist, zählt mit
+  const gate = useRef(zaehlt);
+  gate.current = zaehlt;
   useEffect(() => {
     const mark = () => {
       lastInput.current = Date.now();
@@ -1386,7 +1650,7 @@ export function useActiveTime() {
     let last = Date.now();
     const tick = window.setInterval(() => {
       const now = Date.now();
-      if (document.visibilityState === "visible" && now - lastInput.current < 60_000) ms.current += now - last;
+      if (document.visibilityState === "visible" && now - lastInput.current < 60_000 && (gate.current?.() ?? true)) ms.current += now - last;
       last = now;
     }, 1000);
     return () => {

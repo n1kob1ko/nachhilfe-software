@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ArrowDown, ArrowUp, CheckCircle2, ChevronDown, CircleDashed, Eye, Gamepad2, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
+import { ArrowDown, ArrowUp, CheckCircle2, Hand, ChevronDown, CircleDashed, Eye, Gamepad2, ListChecks, MonitorPlay, PenLine, Presentation, Printer, RotateCcw, SkipForward, Sparkles, TabletSmartphone, XCircle } from "lucide-react";
 import { assignTabletAction, currentTaskToBoardAction, newExerciseAction, resendAction, retryTaskAction, sendNextTaskAction, showSolutionAction, tabletViewAction } from "@/app/device-actions";
 import { ACTION_LABEL } from "@/lib/ai/labels";
 import type { AILive } from "@/lib/ai/realtime";
 import type { LiveSnapshot } from "@/lib/live";
+import { haengtFest } from "@/lib/blatt";
 import { LaptopAccess, type JoinInfo } from "./LaptopAccess";
 import { ConnectTablet } from "./TabletSend";
 import { Gleiter } from "@/components/Bewegung";
@@ -27,6 +28,16 @@ function Timer({ since }: { since: string }) {
     return () => clearInterval(id);
   }, []);
   return <span suppressHydrationWarning>{clock(now - Date.parse(since))}</span>;
+}
+
+/** Die Uhrzeit, alle paar Sekunden neu: für „hängt fest“, das ohne neue Meldung vom Gerät eintreten kann. */
+function useJetzt(ms: number) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), ms);
+    return () => clearInterval(id);
+  }, [ms]);
+  return now;
 }
 
 /** Saved within the last 20 seconds: the student is writing right now (the editor saves every few seconds while typing). */
@@ -78,6 +89,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
   }, [unitId, router]);
 
   const run = (fn: () => Promise<unknown>) => start(async () => void (await fn()));
+  const jetzt = useJetzt(10_000);
   // aufs Whiteboard: der Lehrer sieht es gleich mit (niko: „ich habe keine Möglichkeit, das Whiteboard zu sehen“)
   const zurTafel = (fn: () => Promise<unknown>) =>
     start(async () => {
@@ -93,6 +105,8 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
   const spielt = s.view === "spiele" || s.view === "spiel";
   const dev = onLaptop ? "Laptop" : "Tablet";
   const devOnline = onLaptop ? Boolean(s.laptop.active?.online) : tablet === "online";
+  // lib/blatt.ts: lange an derselben Aufgabe oder mehrmals falsch
+  const fest = c && !s.text && s.running ? haengtFest(c, jetzt) : null;
 
   const inhalt = (
     <>
@@ -210,6 +224,12 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
               </>
             )}
           </dl>
+          {fest && (
+            <p role="alert" className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl bg-amber-wash px-3 py-2 text-[15px] font-semibold text-amber" data-testid="haengt-fest">
+              <Hand size={17} aria-hidden /> {s.student} hängt bei Aufgabe {Math.min(c.taskNo, c.total)} fest
+              <span className="font-normal">({fest})</span>
+            </p>
+          )}
           {c.last && (
             <p className={`mt-3 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[14px] font-semibold ${c.last.pending ? "text-ink-2" : c.last.correct ? "text-green" : "text-red"}`} role="status">
               {c.last.pending ? <CircleDashed size={16} aria-hidden /> : c.last.correct ? <CheckCircle2 size={16} aria-hidden /> : <XCircle size={16} aria-hidden />}
@@ -299,6 +319,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
     if (fehler > 0 && c.state !== "fertig") teile.push({ text: fehler === 1 ? "1 Aufgabe falsch" : `${fehler} Aufgaben falsch`, ton: "text-red" });
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: c.last.answer ? `Letzte Antwort falsch: „${c.last.answer.length > 30 ? `${c.last.answer.slice(0, 29)}…` : c.last.answer}“${c.last.label && c.last.label.length <= 32 ? ` (${c.last.label})` : ""}` : "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
+    if (fest) teile.push({ text: `hängt bei Aufgabe ${Math.min(c.taskNo, c.total)} fest (${fest})`, ton: "font-semibold text-amber" });
   } else if (!spielt) teile.push({ text: "Noch nichts gesendet" });
   if (s.view === "tafel" && tablet !== "kein" && !onLaptop) teile.push({ text: "am Whiteboard", ton: "font-semibold text-accent" });
   if (spielt && tablet !== "kein" && !onLaptop) teile.push({ text: s.spiel ? `spielt „${s.spiel.titel}“` : "bei den Spielen", ton: "font-semibold text-accent" });

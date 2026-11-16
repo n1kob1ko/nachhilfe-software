@@ -171,6 +171,11 @@ export type SubmitInput = {
   activeMs?: number;
   /** Student gave up and opened the solution. */
   giveUp?: boolean;
+  /**
+   * Ganzes Blatt im Test (lib/blatt.ts): beim „Blatt abgeben“ eine Aufgabe, in der nichts steht. Zählt als nicht
+   * bearbeitet (falsch, abgeschlossen), nicht als Antwort für die Lehrkraft. Nur im Minitest/Test, sonst ignoriert.
+   */
+  leer?: boolean;
   /** Older devices: the student's own rating of a free answer. Free answers are graded by the teacher now; it is ignored. */
   selfAssessed?: boolean | null;
   /**
@@ -218,6 +223,7 @@ let learningModule: Promise<typeof import("./learning")> | null = null;
 const learning = () => (learningModule ??= import("./learning"));
 
 const GAVE_UP = "Hier ist der Lösungsweg. Schau ihn dir in Ruhe an.";
+const NICHT_BEARBEITET = "Nicht bearbeitet.";
 const PENDING = "Deine Antwort ist gespeichert. Deine Lehrerin bzw. dein Lehrer schaut sie sich an.";
 
 /** What the student sees for a stored answer: the same text the first time and on a repeat. */
@@ -358,6 +364,13 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   // nothing stored: the same submission got there first (its result), or another answer finished the task
   const settled = (a: Parameters<typeof resultOf>[0] & { submission_id?: string | null }) =>
     sid !== null && a.submission_id === sid ? resultOf(a, task.solution, task.answer.sample) : { ...resultOf(a, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
+
+  if (input.leer && isMinitest(assignment.mode)) {
+    const out = store({ answer: "", correct: false, solutionViewed: false, errorLabel: "nicht bearbeitet", feedback: NICHT_BEARBEITET, errorType: null });
+    if (!out.fresh) return settled(out.attempt);
+    after(out.attempt, null);
+    return resultOf(out.attempt, task.solution);
+  }
 
   if (input.giveUp) {
     const out = store({ answer: input.answer, correct: false, solutionViewed: true, errorLabel: null, feedback: "Lösung angesehen", errorType: null });

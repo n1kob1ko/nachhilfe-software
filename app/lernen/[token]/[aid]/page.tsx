@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { Solver } from "@/components/Solver";
+import { alsBlatt } from "@/lib/blatt";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
 import * as repo from "@/lib/repo";
 import { isMinitest, LERNKONTROLLE, showsQuickRound } from "@/lib/quick-round";
@@ -18,5 +19,5 @@ export default async function SolvePage({ params }: { params: Promise<{ token: s
   // sonst der übliche Ablauf, unverändert.
   if (showsQuickRound(assignment.mode, tasks))
     return <StudentQuickRound token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} />;
-  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} maxTries={triesFor(assignment.mode)} test={isMinitest(assignment.mode)} probe={Boolean(w.probe_test_id)} kontrolle={assignment.note === LERNKONTROLLE} />;
+  return <Solver token={token} assignmentId={assignment.id} title={w.title} tasks={tasks} maxTries={triesFor(assignment.mode)} test={isMinitest(assignment.mode)} probe={Boolean(w.probe_test_id)} kontrolle={assignment.note === LERNKONTROLLE} blatt={tasks.length > 1 && alsBlatt(w.settings)} />;
 }

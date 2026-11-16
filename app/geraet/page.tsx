@@ -9,6 +9,7 @@ import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { PairForm } from "@/components/device/PairForm";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { Solver } from "@/components/Solver";
+import { alsBlatt } from "@/lib/blatt";
 import { StudentQuickRound } from "@/components/StudentQuickRound";
 import { WhiteboardLoader } from "@/components/whiteboard/WhiteboardLoader";
 import { deviceContext } from "@/lib/device-context";
@@ -207,6 +208,7 @@ export default async function DevicePage() {
         test={isMinitest(current.mode)}
         probe={Boolean(repo.getWorksheet(current.worksheet_id)?.probe_test_id)}
         kontrolle={current.note === LERNKONTROLLE}
+        blatt={tasks.length > 1 && alsBlatt(repo.getWorksheet(current.worksheet_id)?.settings)}
       />
     );
   } else {
