@@ -1383,7 +1383,7 @@ export function Lernspiel({
  * Spitzname und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
  * für sich selbst drin; darunter ein Satz, wie man für alle sichtbar wird.
  */
-function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: string; n: number }) {
+export function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: string; n: number }) {
   const oben = liste.zeilen.slice(0, Math.max(1, n));
   const ichUnten = liste.ich && !oben.some((z) => z.ich) ? liste.ich : null;
   if (!oben.length) return null;
@@ -1460,6 +1460,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   rechnen: ["54", "56", "63"],
   strahl: [],
   stoff: ["richtig", "falsch"],
+  glas: ["der", "die", "das"],
 };
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";
@@ -1506,7 +1507,7 @@ function laengsteSerie(v: boolean[]) {
   return best;
 }
 
-function Hintergrund({ woerter }: { woerter: string[] }) {
+export function Hintergrund({ woerter }: { woerter: string[] }) {
   return (
     <div className="ls-hintergrund" aria-hidden>
       {woerter.map((w, i) => (
@@ -1519,7 +1520,7 @@ function Hintergrund({ woerter }: { woerter: string[] }) {
 }
 
 /** Einmal Konfetti am Ende einer guten Runde. Feste Werte statt Zufall: gleich auf Server und Gerät. */
-function Konfetti() {
+export function Konfetti() {
   return (
     <div className="ls-konfetti" aria-hidden>
       {Array.from({ length: 34 }, (_, i) => (

@@ -240,6 +240,38 @@
   background: rgba(255, 255, 255, 0.12);
   box-shadow: none;
 }
+/* Glasklar: drei kleine Gläser, das rechte ist zu */
+.sp-glas-bild {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 7px 8px 6px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #3f8ef5, #173f9a);
+  rotate: 3deg;
+}
+.sp-glas-bild > span {
+  display: flex;
+  width: 16px;
+  height: 46px;
+  flex-direction: column-reverse;
+  gap: 2px;
+  padding: 2px;
+  border: 1.5px solid rgba(255, 255, 255, 0.7);
+  border-radius: 4px 4px 8px 8px;
+}
+.sp-glas-bild > span[data-zu] {
+  border-color: #47d89a;
+}
+.sp-glas-bild i {
+  height: 11px;
+  border-radius: 3px;
+  background: #fff;
+}
+.sp-glas-bild [data-zu] i {
+  background: linear-gradient(180deg, #47d89a, #1aa772);
+}
 @media (prefers-reduced-motion: reduce) {
   .sp-block {
     transition: none;

@@ -393,6 +393,42 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen
   Zeile, dann die knappe Bestenliste.
 
+## Glasklar
+
+niko 2026-11-16 (Frage, welche Spiele so beliebt sind wie Blockwerk; Antwort „ja“ zu einem Sortier-Spiel wie die
+Wasser- und Kugel-Sortierspiele): Begriffe nach Sorten in Gläser sortieren. Eigener Name und Look der Lernspiele (hohe
+Gläser auf der Bühne, Farben der Kisten); geprüft wird ohne KI (`components/lernen/GlasSpiel.tsx`, Regeln in
+`lib/glasklar.ts`, Themen in `lib/glasklar-themen.ts`).
+
+- **Wo**: im Tab „Spiele“ als breite Kachel unter Blockwerk (mit dem passendsten Thema, Platz in der Bestenliste),
+  `/lernen/[token]/spiel?modus=glas&thema=…`, am Tablet `glas:<thema>`. Der Anfang zeigt „Sortieren nach“ mit den
+  Themen zum Umschalten und darunter eine Zeile „Gläser für: …“.
+- **Themen** (`GLAS_THEMEN`, je Schulstufe): der/die/das (ab 1), Wortarten (ab 2; 3 Sorten bis Stufe 4, 5 in Stufe
+  5, 7 ab 6), die vier Fälle (ab 5), Irregular Verbs (1./2./3. Form, ab 6), Plus bis 10 (1), Plus bis 20 (1–2),
+  Einmaleins (2–5, Sorten „= 12“), Gleich lang (Längen, 5–7), Gleich viel (Bruch, Dezimalzahl, Prozent, ab 6). Dazu
+  **Dein Stoff**: Spielkarten mit mehreren Antworten werden nach ihrer richtigen Antwort gruppiert (eine Sorte
+  braucht mindestens 3 Karten, ein Thema mindestens 2 Sorten). Reihenfolge wie bei den Spielen: frischer Stoff zuerst,
+  dann Themen zum Stoff, dann die zur Schulstufe, alter Stoff am Ende „Zum Wiederholen“.
+- **Regeln**: Glas antippen hebt den obersten Begriff an, ein zweites Glas legt ihn ab: in ein leeres Glas oder auf
+  einen Begriff derselben Sorte. Ein volles Glas mit nur einer Sorte geht zu (Deckel mit dem Namen, Farbe der Sorte).
+  Die Begriffe sind weiß, solange sie offen sind, sonst würde die Farbe die Sorte verraten.
+- **Fehler**: auf eine andere Sorte gelegt = falsche Antwort. Ein Herz weg (3 Herzen), der Begriff bleibt, wo er war,
+  beide Begriffe tragen danach ihre Sorte klein als Etikett, und ein Blatt zeigt beide Sorten mit der Regel der Karte.
+  Eine Stufe ohne Fehler gibt ein Herz zurück. Ohne Herzen ist das Spiel aus.
+- **Stufen** (`stufeFuer`): 1: 2 Sorten × 3 und ein leeres Glas; 2: 3 × 3, zwei leer; 3: 3 × 4; 4: 4 × 4; 5–6: 5 × 4;
+  ab 7: 4 × 4 mit nur einem leeren Glas. Jede Auslage ist geprüft lösbar (Suche mit Gedächtnis), kein Glas ist schon
+  sortiert. „Zurück“ nimmt Züge bis zum letzten zugemachten Glas zurück; geht kein Zug mehr, kommt „Neu mischen“.
+  Tasten 1–9 wählen ein Glas, Rückschritt nimmt zurück.
+- **Punkte** (`GLAS_PUNKTE`): jeder Begriff 10 (einmal), jedes zugemachte Glas 40 × Stufe, jede Stufe 100 × Stufe,
+  ohne Fehler noch einmal 100 × Stufe. Gespeichert in `spielrunden.glas` an der ersten Runde, höchstens drei
+  Millionen, nie kleiner. Eigener Rekord und eigene **Bestenliste** (`punkteBestenliste(student, "glas")`), wie bei
+  Blockwerk für alle, mit Spitznamen.
+- **Gezählt**: jede Stufe ist eine Runde (`spielrunden.endlos` hängt sie aneinander, die Fähigkeit ist die des
+  Themas). Die erste Bewegung eines Begriffs auf einen anderen ist seine Antwort (die Sorte darunter); Begriffe, die
+  nie auf einem anderen lagen, zählen als richtig, wenn ihr Glas zugeht. In der letzten, nicht fertigen Stufe zählen
+  nur die beantworteten. Falsche kommen beim nächsten Mal zuerst wieder; sonst keine Begriffe der letzten 40 Runden.
+- Video: `lernspiele/glasklar-handy.mp4` im Projektordner.
+
 ## Dein Stoff (eigene Spielkarten)
 
 niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für

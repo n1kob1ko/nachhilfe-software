@@ -32,14 +32,18 @@
  * „Dein Stoff“ (niko 2026-11-16, Bio-Test: „wie könnte ich das in blockpuzzle implementieren“): die Spielkarten, die die
  * Lehrkraft für diesen Schüler geschrieben oder aus „Stoff vorbereiten“ übernommen hat, in jedem Fach
  * (lib/spielkarten.ts). Jede Karte bringt ihre Form mit: Wischen, Kacheln oder eine Reihenfolge.
+ *
+ * „Glasklar“ (niko 2026-11-16, ein Sortier-Puzzle): Begriffe in Gläsern sortieren, je Runde eine Stufe eines Themas
+ * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
+ * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
-/** Spiele für ein Duell: „Dein Stoff“ hat nur dieser Schüler (lib/spielkarten.ts). */
-export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff");
-export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff";
+/** Spiele für ein Duell: „Dein Stoff“ hat nur dieser Schüler (lib/spielkarten.ts), Glasklar ist ein Puzzle für einen. */
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas");
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas";
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -59,6 +63,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   rechnen: "Kopfrechnen",
   strahl: "Zahlenstrahl",
   stoff: "Dein Stoff",
+  glas: "Glasklar",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -80,6 +85,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   rechnen: "Mathematik",
   strahl: "Mathematik",
   stoff: "Dein Stoff",
+  // Glasklar steht nicht bei den Fächern (eigene Kachel); das Thema bringt sein Fach mit (lib/glasklar-themen.ts)
+  glas: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -101,6 +108,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   rechnen: "Schnell im Kopf gerechnet: wie viel kommt heraus?",
   strahl: "Wo liegt die Zahl? Schieb den Zeiger an die richtige Stelle.",
   stoff: "Die Karten, die deine Lehrkraft für dich geschrieben hat",
+  glas: "Sortier die Begriffe, bis jedes Glas nur eine Sorte hat",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -122,6 +130,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   rechnen: ["7 · 8", "56", "+"],
   strahl: ["0", "0,5", "1"],
   stoff: ["?", "✓", "→"],
+  glas: ["der", "Verb", "Dativ"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -143,6 +152,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   rechnen: "Welches Ergebnis stimmt?",
   strahl: "Wo liegt die Zahl am Zahlenstrahl?",
   stoff: "Welche Antwort stimmt?",
+  glas: "Sortier die Begriffe in die Gläser.",
 };
 
 /**
@@ -256,8 +266,8 @@ export type SpielAntwort = { key: string; wahl: string };
 /** Warum das Spiel gerade dran ist, in Worten für den Schüler. */
 export type SpielVorschlag = { art: SpielArt; grund: string; quelle: "pruefung" | "stoff" | "einheit" | "lernstand" | "fach" };
 
-/** `endlos`: im Endlos-Modus die id des Endlos-Spiels (für die nächste Runde). */
-export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: number } | { fehler: string };
+/** `endlos`: im Endlos-Modus die id des Endlos-Spiels (für die nächste Runde). `stufe`: Glasklar, die Nummer der Stufe (ab 1). */
+export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } | { fehler: string };
 
 /** Spiele mit Endlos-Modus: alle außer „Vokabel-Paare“ (dort liegen alle Karten einer Runde auf einmal am Brett). */
 export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
@@ -289,6 +299,8 @@ export type SpielErgebnis =
       endlos?: { stand: number; rekord: number };
       /** Blockwerk: der beste Stand davor (über alle Spiele), wie viele Fragen beim ersten Versuch richtig waren, die Bestenliste danach */
       bloecke?: { rekord: number; fragen: number; bestenliste?: Bestenliste };
+      /** Glasklar: der beste Stand davor, wie viele Begriffe beim ersten Versuch richtig waren, die Bestenliste danach */
+      glas?: { rekord: number; begriffe: number; bestenliste?: Bestenliste };
     }
   | { fehler: string };
 

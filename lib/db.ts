@@ -1844,6 +1844,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Blockwerk (lib/blockwerk.ts, niko 2026-11-16): die erste Runde eines Blockwerk-Spiels trägt dessen Punkte (0 beim
   // Start); NULL = kein Blockwerk. Die Runden danach hängen wie im Endlos-Modus über `endlos` an ihr.
   ["spielrunden", "bloecke", "INTEGER"],
+  // Glasklar (lib/glasklar.ts, niko 2026-11-16): wie `bloecke`, die Punkte eines Glasklar-Spiels an seiner ersten Runde
+  ["spielrunden", "glas", "INTEGER"],
   // ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts): '' = Standard (ab der 9. Schulstufe),
   // 'ja' = erlaubt (bei Jüngeren: Eltern sind einverstanden), 'nein' = aus
   ["students", "wettspiel", "TEXT NOT NULL DEFAULT ''"],
