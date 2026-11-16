@@ -31,6 +31,7 @@ import * as repo from "./repo";
 import { THEMEN } from "./themen";
 import { leseListe } from "./vokabeln";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
+import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 
@@ -56,9 +57,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   grammatik: "englisch.grammar",
   rechnen: "mathe.kopfrechnen",
   strahl: "mathe.zahlenstrahl",
+  // Dein Stoff: die Fähigkeit hängt am Satz Spielkarten (lib/spielkarten.ts)
+  stoff: EIGENER_STOFF,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -110,6 +113,10 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
     for (const art of arten) if (!out.some((v) => v.art === art)) out.push({ art, grund, quelle });
   };
 
+  // eigene Spielkarten (lib/spielkarten.ts): die Lehrkraft hat sie für genau diesen Stoff geschrieben, darum zuerst
+  const satz = spielSatz(student.id);
+  const frisch = satz && istFrisch(satz, o.heute);
+  if (satz && frisch) add(["stoff"], `Dein Stoff: ${satz.titel}`, "stoff");
   for (const q of stoffQuellen(student, o.heute)) add(spieleZuSkills(q.ids), q.grund, q.quelle);
   // eine eigene Vokabelliste ist aktueller Stoff: die Lehrkraft hat sie für genau diese Wörter angelegt
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
@@ -135,6 +142,8 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
       "fach",
     );
   if (student.subjects.includes("Mathematik")) add(["rechnen", "strahl"], "Zum Üben", "fach");
+  // ältere Spielkarten bleiben zum Wiederholen
+  if (satz && !frisch) add(["stoff"], "Zum Wiederholen", "fach");
   return out;
 }
 
@@ -277,11 +286,17 @@ export function wortfeldPlan(student: repo.Student, art: SpielArt, heute: string
 /** Woher die Karten der nächsten Runde kommen, für den Schüler („Thema: Familie“, „Deine Liste …“); leer bei festen Spielen. */
 export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
   if (art === "vokabeln") return vokabelPlan(student, heute).titel;
+  if (art === "stoff") return spielSatz(student.id)?.titel;
   return wortfeldPlan(student, art, heute)?.titel ?? themenPlan(student, art, heute)?.titel;
 }
 
 /** Die Kisten einer Karte des Themas, für den Anfang des Spiels (damit dort nicht „some, any“ steht, wenn es um if-Sätze geht). */
 export function spielVorschau(student: repo.Student, art: SpielArt, heute: string): string[] | undefined {
+  if (art === "stoff") {
+    const satz = spielSatz(student.id);
+    const wahl = satz ? satzKandidaten(satz).filter((k) => k.karte.form !== "reihe") : [];
+    return wahl.map((k) => k.karte.faecher).sort((x, y) => x.join("").length - y.join("").length)[0];
+  }
   const plan = themenPlan(student, art, heute);
   if (!plan) return undefined;
   // von den ersten Karten die mit den kürzesten Aufschriften: drei kleine Kisten in einer Zeile
@@ -298,6 +313,10 @@ export function spielVorschau(student: repo.Student, art: SpielArt, heute: strin
  */
 export function spielAntwort(student: repo.Student, art: SpielArt, heute: string): SpielForm | undefined {
   if (SPIEL_FORM[art]) return SPIEL_FORM[art];
+  if (art === "stoff") {
+    const satz = spielSatz(student.id);
+    return satz ? haeufigsteForm(art, satzKandidaten(satz).map((k) => k.karte)) : undefined;
+  }
   const plan = themenPlan(student, art, heute);
   if (!plan) return undefined;
   const stufen = stufenFuer(art, student.grade, null);
@@ -313,6 +332,10 @@ const satzbauSkill = (student: Pick<repo.Student, "grade" | "school_type">) => (
 export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: string): string {
   if (art === "vokabeln") return vokabelPlan(student, heute).skillId;
   if (art === "satzbau") return satzbauSkill(student);
+  if (art === "stoff") {
+    const satz = spielSatz(student.id);
+    return satz ? satzSkill(satz) : EIGENER_STOFF;
+  }
   return themenPlan(student, art, heute)?.skillId ?? SPIEL_SKILL[art];
 }
 
@@ -400,6 +423,12 @@ export function starteRunde(
       vorrang: plan.vorrang,
       rng: o.rng,
     });
+  } else if (art === "stoff") {
+    // Dein Stoff: der aktuelle Satz Spielkarten, alle Karten gleich wichtig
+    const satz = spielSatz(student.id);
+    karten = satz
+      ? waehleKarten(art, { pool: satzKandidaten(satz), stufen: [1], wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng })
+      : [];
   } else {
     const heute = o.heute ?? wienerDatum();
     const plan = themenPlan(student, art, heute);

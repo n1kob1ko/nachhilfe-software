@@ -18,7 +18,7 @@ import { db, json } from "./db";
 import { beendeRunde, duellThema, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
 import { SPIEL_THEMEN } from "./lernspiele-themen";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
-import { istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
+import { istDuellArt, istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
 import { aktivesProfil, BILDER, profilVon } from "./spielprofil";
 
@@ -84,7 +84,7 @@ function karten(art: SpielArt, a: repo.Student, b: repo.Student, rng?: () => num
 export type Antwort<T> = ({ ok: true } & T) | { ok: false; fehler: string };
 
 export function erstelleDuell(student: repo.Student, art: string, rng?: () => number): Antwort<{ id: number; code: string }> {
-  if (!istSpielArt(art)) return { ok: false, fehler: "Dieses Spiel gibt es nicht." };
+  if (!istDuellArt(art)) return { ok: false, fehler: "Dieses Spiel gibt es nicht." };
   if (!aktivesProfil(student)?.duelle) return { ok: false, fehler: "Für Duelle brauchst du ein Spielprofil mit Duellen." };
   aufraeumen();
   const offen = (db().prepare("SELECT COUNT(*) AS n FROM spielduelle WHERE von_id = ? AND status = 'offen' AND live = 0").get(student.id) as { n: number }).n;
@@ -132,7 +132,7 @@ export function revanche(student: repo.Student, duellId: number, rng?: () => num
 
 /** Der Lehrer startet ein Live-Duell zwischen zwei Schülern; beide sehen es sofort in ihrer App. */
 export function starteLiveDuell(lehrerId: number, aId: number, bId: number, art: string, rng?: () => number): Antwort<{ id: number }> {
-  if (!istSpielArt(art)) return { ok: false, fehler: "Dieses Spiel gibt es nicht." };
+  if (!istDuellArt(art)) return { ok: false, fehler: "Dieses Spiel gibt es nicht." };
   const a = repo.getStudent(aId);
   const b = repo.getStudent(bId);
   if (!a || !b || a.id === b.id) return { ok: false, fehler: "Dafür braucht es zwei Schüler." };

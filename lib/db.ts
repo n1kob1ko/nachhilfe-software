@@ -1499,6 +1499,23 @@ CREATE TABLE IF NOT EXISTS stoffpakete (
   uebernommen_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_stoffpakete_student ON stoffpakete(student_id, id);
+-- Spielkarten (lib/spielkarten.ts): eigener Stoff eines Schülers für die Lernspiele („Dein Stoff“ und Blockwerk), in
+-- jedem Fach. Gespeichert wie die Vokabellisten als der Text, den die Lehrkraft schreibt oder die KI vorschlägt
+-- (lib/spielkarten-text.ts liest ihn). aktiv = 0: bleibt gespeichert, kommt aber nicht ins Spiel.
+CREATE TABLE IF NOT EXISTS spielkarten (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  titel TEXT NOT NULL,
+  fach TEXT NOT NULL DEFAULT '',
+  text TEXT NOT NULL DEFAULT '',
+  skill_id TEXT,
+  stoffpaket_id INTEGER REFERENCES stoffpakete(id) ON DELETE SET NULL,
+  aktiv INTEGER NOT NULL DEFAULT 1,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_spielkarten_student ON spielkarten(student_id, updated_at);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

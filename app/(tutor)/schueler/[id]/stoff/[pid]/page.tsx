@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CheckCircle2, ClipboardCheck, FileText, Loader2, Pencil, Presentation, Printer, RotateCcw, ShieldAlert } from "lucide-react";
+import { CheckCircle2, ClipboardCheck, FileText, Gamepad2, Loader2, Pencil, Presentation, Printer, RotateCcw, ShieldAlert } from "lucide-react";
 import { nochmalStoffpaketAction, uebernimmStoffpaketAction, verwirfStoffpaketAction } from "@/app/stoffpaket-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { TabletSend } from "@/components/device/TabletSend";
@@ -15,6 +15,8 @@ import { getPraesEntwurf } from "@/lib/praesentation-ki";
 import { getPraesentation } from "@/lib/praesentationen";
 import * as repo from "@/lib/repo";
 import { blaetterVon, getStoffpaket, kostenUsd } from "@/lib/stoffpaket";
+import { spielkartenVon } from "@/lib/spielkarten";
+import { leseKarten } from "@/lib/spielkarten-text";
 import { runningUnitForStudent } from "@/lib/units";
 
 export const metadata = { title: "Stoff vorbereiten" };
@@ -73,6 +75,7 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
   }
 
   const blaetter = blaetterVon(p);
+  const spielkarten = spielkartenVon(p.id);
   const entwurf = p.praes_entwurf_id ? getPraesEntwurf(p.praes_entwurf_id) : null;
   const praes = p.praesentation_id ? getPraesentation(p.praesentation_id) : null;
   const usd = kostenUsd(p);
@@ -98,7 +101,7 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
         {fertig ? (
           <section className="panel grid gap-3 px-5 py-4" data-testid="stoffpaket-fertig">
             <p className="text-[15.5px]">
-              Alles ist fertig. Schau es kurz durch. Mit <span className="font-semibold">„Alles übernehmen“</span> steht der Ablauf mit der Präsentation für die {unit ? "laufende" : "nächste"} Einheit bereit und der Lernzettel in {first}s App. Die Blätter schickst du dann aufs Tablet oder druckst sie.
+              Alles ist fertig. Schau es kurz durch. Mit <span className="font-semibold">„Alles übernehmen“</span> steht der Ablauf mit der Präsentation für die {unit ? "laufende" : "nächste"} Einheit bereit und der Lernzettel{spielkarten.length ? " und die Spielkarten" : ""} in {first}s App. Die Blätter schickst du dann aufs Tablet oder druckst sie.
             </p>
             <div className="flex flex-wrap gap-2">
               <form action={uebernimmStoffpaketAction.bind(null, p.id)}>
@@ -154,6 +157,47 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
             </Reveal>
           </section>
         )}
+
+        {spielkarten.map((satz) => {
+          const karten = leseKarten(satz.text).karten;
+          return (
+            <section key={satz.id} className="panel grid gap-3 px-5 py-5" aria-label="Spielkarten" data-testid="stoffpaket-spielkarten">
+              <div className="flex flex-wrap items-center gap-2">
+                <Gamepad2 size={18} className="text-accent" aria-hidden />
+                <h2 className="min-w-0 flex-1 text-[17px] font-semibold">
+                  Spielkarten <span className="font-normal text-ink-3">· {karten.length} Karten</span>
+                </h2>
+                {satz.aktiv ? <Pill tone="green">im Spiel</Pill> : null}
+                <Link href={`/schueler/${student.id}/spielkarten/${satz.id}`} className="btn btn-secondary btn-sm">
+                  <Pencil size={15} aria-hidden /> Ansehen und ändern
+                </Link>
+              </div>
+              <p className="text-[14px] text-ink-2">
+                {satz.aktiv
+                  ? `${first} spielt sie in der Schüler-App unter Spiele › Dein Stoff und im Blockwerk.`
+                  : `Mit „Alles übernehmen“ spielt ${first} sie in der Schüler-App unter Spiele › Dein Stoff und im Blockwerk. Die richtige Antwort ist grün.`}
+              </p>
+              <ol className="grid gap-1.5 text-[14.5px]">
+                {karten.slice(0, 6).map((k, i) => (
+                  <li key={i} className="min-w-0">
+                    <span className="line-clamp-2">
+                      {k.frage}{" "}
+                      {k.art === "wahl" ? (
+                        <>
+                          <b className="text-green">{k.richtig}</b>
+                          <span className="text-ink-3"> · {k.falsch.join(" · ")}</span>
+                        </>
+                      ) : (
+                        <span className="text-ink-2">{k.teile.join(" → ")}</span>
+                      )}
+                    </span>
+                  </li>
+                ))}
+              </ol>
+              {karten.length > 6 && <p className="text-[13.5px] text-ink-3">und {karten.length - 6} weitere</p>}
+            </section>
+          );
+        })}
 
         {blaetter
           .filter((b) => b.verlangt)

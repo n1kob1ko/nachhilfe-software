@@ -18,6 +18,7 @@
  * des Schülers, wie bei jeder Übung.
  */
 import fs from "node:fs";
+import { loescheSatz, setzeAktiv, speichereSatz, spielkartenVon } from "./spielkarten";
 import { ALLE_TEILE, ANZAHL, STOFFPAKET_SYSTEM, StoffpaketSchema, stoffpaketAusAntwort, stoffpaketText, TEILE, type Blatt, type Lernzettel, type StoffpaketAuftrag, type Teil } from "./ai/stoffpaket";
 import { budget, costOf, isLocalModel, routeFor } from "./ai/config";
 import { jsonSchemaOf } from "./ai/providers/schema";
@@ -154,7 +155,7 @@ export function stoffpaketMoeglich(o: { studentId: number; dateien: number }): {
 
 /**
  * Was ein Lauf kostet, vor dem Klick: die Anfrage mit etwa 4 Fotos (je rund 1 600 Tokens), Schülerdaten und Liste der
- * Fähigkeiten (rund 6 000 Tokens), 10 000 bis 22 000 Tokens Antwort mit Denken, dazu die Präsentation.
+ * Fähigkeiten (rund 6 000 Tokens), 12 000 bis 26 000 Tokens Antwort mit Denken (mit den Spielkarten), dazu die Präsentation.
  */
 export function kostenSchaetzung(o: { dateien?: number; praesentation?: boolean } = {}): string {
   const route = routeFor("stoffpaket");
@@ -164,7 +165,7 @@ export function kostenSchaetzung(o: { dateien?: number; praesentation?: boolean 
   const usd = (output: number) => costOf(route.model, "standard", { input, output, cacheWrite: 0, cacheRead: 0 });
   const praes = o.praesentation === false ? { usdVon: 0, usdBis: 0 } : praesKostenSchaetzung();
   const cent = (x: number) => Math.round((x / budget().usdPerEur) * 100);
-  return `etwa ${cent(usd(10_000) + praes.usdVon)}–${cent(usd(22_000) + praes.usdBis)} Cent`;
+  return `etwa ${cent(usd(12_000) + praes.usdVon)}–${cent(usd(26_000) + praes.usdBis)} Cent`;
 }
 
 /** Die nächste geplante Prüfung im Fach (heute oder später), mit ihrem Stoff in Worten. */
@@ -353,6 +354,13 @@ async function fuehreAus(id: number): Promise<void> {
 
   let paketId: number | null = null;
   const weggelassen = [...entwurf.weggelassen];
+  // Spielkarten: gespeichert, aber erst mit „Alles übernehmen“ im Spiel (lib/spielkarten.ts)
+  let spielkarten = 0;
+  if (entwurf.spielkarten) {
+    const r = speichereSatz({ studentId: student.id, teacherId: p.teacher_id, titel: thema.slice(0, 80), fach: p.fach, text: entwurf.spielkarten, aktiv: false, skillId: entwurf.skillIds[0] ?? null, stoffpaketId: id });
+    if (r.ok) spielkarten = r.id;
+    else weggelassen.push(`Spielkarten: ${r.fehler.slice(0, 2).join(" ")}`);
+  } else if (p.teile.includes("spielkarten")) weggelassen.push("Spielkarten: Die KI hat keine brauchbaren Karten geliefert.");
   if (entwurf.lernpaket) {
     const r = importiereLernpaket(entwurf.lernpaket, p.teacher_id, { quelle: "ki", kiCallId: out.callId });
     if ("fehler" in r) weggelassen.push(`Ablauf für die Präsentation: ${r.fehler.slice(0, 2).join(" ")}`);
@@ -386,7 +394,7 @@ async function fuehreAus(id: number): Promise<void> {
     weggelassen.push("Präsentation: Die KI hat keinen brauchbaren Ablauf geliefert.");
     setze(id, { weggelassen: JSON.stringify(weggelassen) });
   }
-  const leer = !entwurf.lernzettel && !ws.uebung && !ws.test && !ws.vorbereitung && !paketId;
+  const leer = !entwurf.lernzettel && !ws.uebung && !ws.test && !ws.vorbereitung && !paketId && !spielkarten;
   if (leer) return setze(id, { status: "fehler", schritt: "", fehler: "Die KI hat nichts Brauchbares geliefert. Bitte noch einmal versuchen, eventuell mit schärferen Fotos." });
   setze(id, { status: "fertig", schritt: "", fertig_at: new Date().toISOString() });
 }
@@ -444,6 +452,8 @@ export function uebernimmStoffpaket(id: number, teacherId: number): { ok: true; 
       }
     }
   }
+  // die Spielkarten kommen ins Spiel: „Dein Stoff“ und Blockwerk in der Schüler-App
+  for (const s of spielkartenVon(id)) setzeAktiv(s.id, true);
   setze(id, { status: "uebernommen", uebernommen_at: new Date().toISOString() });
   return { ok: true, ziel };
 }
@@ -454,6 +464,10 @@ export function verwirfStoffpaket(id: number): boolean {
   if (!p || p.status === "laeuft" || p.status === "verworfen") return false;
   for (const w of [p.uebung_id, p.test_id, p.vorbereitung_id]) {
     if (w && !repo.listAssignmentsForWorksheet(w).length && repo.getWorksheet(w)?.status === "entwurf") repo.deleteWorksheet(w);
+  }
+  for (const s of spielkartenVon(id)) {
+    if (p.status === "uebernommen") setzeAktiv(s.id, false);
+    else loescheSatz(s.id);
   }
   if (p.status !== "uebernommen") {
     if (p.praes_entwurf_id) verwirfPraesEntwurf(p.praes_entwurf_id);

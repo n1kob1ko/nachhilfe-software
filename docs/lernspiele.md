@@ -381,6 +381,25 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
 - Ziehen geht mit Finger und Maus; ohne Bewegung bei „weniger Bewegung“. Video: `lernspiele/blockwerk-handy.mp4` im
   Projektordner.
 
+## Dein Stoff (eigene Spielkarten)
+
+niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für
+den schüler kann ich das wo anlegen?“. Für jeden Stoff, den die fertigen Spiele nicht haben, in jedem Fach:
+
+- **Anlegen**: beim Schüler im Tab Übungen › **Spielkarten** (`/schueler/<id>/spielkarten`), wie die Vokabellisten
+  als Text mit Vorschau. Eine Karte pro Zeile: `Frage = richtig | falsch | falsch` (2 bis 6 Antworten, die erste
+  stimmt; `___` in der Frage ist die Lücke), `Auftrag: erstes > zweites > drittes` für eine Reihenfolge (3 bis 8
+  Teile), `Merke: …` darunter erscheint nach einem Fehler. Regeln in lib/spielkarten-text.ts.
+- **Aus Unterlagen**: bei **Stoff vorbereiten** das Häkchen „Spielkarten“; die KI schlägt im selben Lauf etwa 40
+  Karten vor. Jede geht durch dieselbe Prüfung wie getippte Karten; erst „Alles übernehmen“ nimmt sie ins Spiel.
+- **Spielen**: der zuletzt geänderte Satz, der im Spiel ist und mindestens 4 Karten hat, ist das Spiel „Dein Stoff“
+  (Art `stoff`). In den ersten 30 Tagen steht es zuerst unter „Für dich“, danach am Ende „Zum Wiederholen“. Blockwerk
+  nimmt dann seine Fragen von dort. Zwei Antworten werden gewischt, drei bis sechs sind Kacheln, eine Reihenfolge
+  wird gelegt wie beim Satzbau. Falsche Karten kommen wieder (der Schlüssel hängt an der Frage).
+- **Lernstand**: die Runden hängen an der ersten Fähigkeit des Stoffpakets, sonst an `stoff.eigen` (zählt für keine
+  Fähigkeit). Die Liste der Spielkarten zeigt je Satz Runden, Anteil richtig und was oft falsch war.
+- Kein Duell mit „Dein Stoff“: die Karten hat nur dieser Schüler.
+
 ## Welches Spiel dran ist
 
 `spielVorschlaege` (lib/lernspiele.ts), das wichtigste zuerst:

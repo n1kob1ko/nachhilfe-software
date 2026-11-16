@@ -3,7 +3,7 @@ import { Arena } from "@/components/lernen/Arena";
 import { meineDuelle } from "@/lib/duelle";
 import { ligaTabelle } from "@/lib/liga";
 import { spielVorschlaege } from "@/lib/lernspiele";
-import { SPIEL_ARTEN } from "@/lib/lernspiele-typen";
+import { DUELL_ARTEN } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { erlaubnis, namensTeile, profilVon, vorschlag } from "@/lib/spielprofil";
@@ -23,8 +23,8 @@ export default async function ArenaSeite({ params, searchParams }: { params: Pro
   const profil = p && teile ? { ...teile, bild: p.bild, liga: p.liga, duelle: p.duelle, name: p.name } : null;
   const heute = wienerDatum();
   // zuerst die Spiele, die zum Stoff passen; sonst alle
-  const passend = spielVorschlaege(student, { heute }).map((v) => v.art);
-  const spiele = [...new Set([...passend, ...SPIEL_ARTEN])];
+  const passend = spielVorschlaege(student, { heute }).map((v) => v.art).filter((a) => DUELL_ARTEN.includes(a));
+  const spiele = [...new Set([...passend, ...DUELL_ARTEN])];
   return (
     <Arena
       token={token}

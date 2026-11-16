@@ -49,6 +49,14 @@ const ANTWORT = () => ({
   uebungsblatt: [aufgabe({ category: "gibtsnicht", prompt: "x" }), ...kuerzen(8)],
   test: kuerzen(6, "schwer"),
   vorbereitungstest: kuerzen(4),
+  spielkarten: [
+    { art: "wahl", frage: "Kürze 6/8.", richtig: "3/4", falsch: ["6/4", "3/8", "2/4"], teile: [], merke: "Zähler und Nenner durch 2." },
+    { art: "wahl", frage: "Beim Kürzen bleibt der ___ gleich.", richtig: "Wert", falsch: ["Nenner"], teile: [], merke: "" },
+    { art: "wahl", frage: "Kürze 10/15.", richtig: "2/3", falsch: ["1/3", "5/3"], teile: [], merke: "" },
+    { art: "wahl", frage: "Kürze 9/12.", richtig: "3/4", falsch: ["3/3"], teile: [], merke: "" },
+    { art: "reihe", frage: "Ordne die Schritte", richtig: "", falsch: [], teile: ["ggT suchen", "Zähler teilen", "Nenner teilen"], merke: "" },
+    { art: "wahl", frage: "Kaputt", richtig: "", falsch: [], teile: [], merke: "" },
+  ],
 });
 
 const block = (text: string) => ({ art: "text", text, punkte: [], zeilen: [], schritt: false });
@@ -187,6 +195,14 @@ test("„Alles übernehmen“: package checked, presentation saved, chosen for t
   const portal = await import("./schuelerportal");
   assert.deepEqual(portal.lernzettelFuer(sid).map((z) => z.titel), ["Brüche kürzen"]);
   assert.ok(portal.praesentationFreigegeben(sid, p.praesentation_id!));
+  // die Spielkarten sind jetzt im Spiel „Dein Stoff“ (lib/spielkarten.ts)
+  const sk = await import("./spielkarten");
+  const [satz] = sk.spielkartenVon(r.id);
+  assert.equal(satz.karten, 5, "die kaputte Karte ist weggefallen");
+  assert.equal(satz.aktiv, 1);
+  assert.equal(satz.titel, "Brüche kürzen");
+  assert.equal(sk.spielSatz(sid)?.id, satz.id);
+  assert.ok(p.weggelassen.some((w) => /^Spielkarte 6:/.test(w)));
   ki.aus();
 });
 
@@ -206,6 +222,19 @@ test("„Verwerfen“ removes the unsent drafts and archives the package; a fail
   const { getLernpaket } = await import("./lernpakete");
   assert.equal(getLernpaket(p.paket_id!)!.status, "archiviert");
   ki.aus();
+
+  // Spielkarten eines Laufs sind bis „Alles übernehmen“ nicht im Spiel; „Verwerfen“ löscht sie
+  const ki3 = await mitKi();
+  const r3 = sp.starteStoffpaket({ studentId: sid, teacherId: teacher.id, fach: "Mathematik", anweisung: "Brüche kürzen", materialIds: [], teile: ["spielkarten"], keinName: false });
+  assert.ok("id" in r3);
+  await sp.warteAuf(r3.id);
+  assert.equal(sp.getStoffpaket(r3.id)!.status, "fertig", "nur Spielkarten ist auch ein Ergebnis");
+  const sk = await import("./spielkarten");
+  assert.equal(sk.spielkartenVon(r3.id)[0].aktiv, 0);
+  assert.equal(sk.spielSatz(sid), null);
+  assert.ok(sp.verwirfStoffpaket(r3.id));
+  assert.deepEqual(sk.spielkartenVon(r3.id), []);
+  ki3.aus();
 
   const leer = await mitKi(() => ({ thema: "", skill_ids: [], unsicher: [], lernzettel: null, unterricht: null, uebungsblatt: [], test: [], vorbereitungstest: [] }));
   const r2 = sp.starteStoffpaket({ studentId: sid, teacherId: teacher.id, fach: "Mathematik", anweisung: "", materialIds: [foto(4)], teile: ["lernzettel", "uebung"], keinName: true });

@@ -51,6 +51,7 @@ import { einheitenFuerWoche, istNichtStattgefunden, mitNamen, slotDatum } from "
 import { datumLabel, datumLabelTeile, minutenLabel, wienerDatum, wienerWochenstart, wochenLabel } from "@/lib/planung/zeit";
 import { nachtragenHref } from "@/lib/heute";
 import { listenVon } from "@/lib/vokabellisten";
+import { saetzeVon } from "@/lib/spielkarten";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
@@ -1194,6 +1195,27 @@ function Vokabellisten({ student, first }: { student: repo.Student; first: strin
   );
 }
 
+/** Spielkarten (lib/spielkarten.ts): eigener Stoff für die Lernspiele „Dein Stoff“ und Blockwerk, in jedem Fach. */
+function SpielkartenPanel({ student, first }: { student: repo.Student; first: string }) {
+  const saetze = saetzeVon(student.id);
+  const aktiv = saetze.filter((s) => s.aktiv);
+  return (
+    <div className="panel flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4" data-testid="spielkarten-profil">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">Spielkarten</p>
+        <p className="text-[13px] text-ink-2">
+          {saetze.length
+            ? `${saetze.length} ${saetze.length === 1 ? "Satz" : "Sätze"}${aktiv[0] ? `, im Spiel: ${aktiv[0].titel} (${aktiv[0].karten} Karten)` : ", keiner im Spiel"}`
+            : `Eigene Fragen für die Lernspiele und Blockwerk von ${first}, in jedem Fach (zum Beispiel Biologie oder Geschichte).`}
+        </p>
+      </div>
+      <Link href={`/schueler/${student.id}/spielkarten`} className="btn btn-secondary btn-sm">
+        {saetze.length ? "Karten ansehen" : "Karten anlegen"}
+      </Link>
+    </div>
+  );
+}
+
 /** Audit 2026-11-07: die letzten fünf Übungen, ältere hinter „Ältere Übungen“. */
 const UEBUNGEN_SICHTBAR = 5;
 
@@ -1258,6 +1280,7 @@ function Exercises({ student }: { student: repo.Student }) {
         <SchuelerAppLink token={student.access_token} first={first} />
       </div>
       <Vokabellisten student={student} first={first} />
+      <SpielkartenPanel student={student} first={first} />
       {(() => {
         const drafts = repo.listWorksheets().filter((w) => w.student_id === student.id && w.status === "entwurf");
         if (!drafts.length) return null;
