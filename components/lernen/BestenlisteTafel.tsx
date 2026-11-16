@@ -55,7 +55,7 @@ export function BestenlisteTafel({ liste, spielen, arena }: { liste: Bestenliste
                   , dann sehen dich alle.
                 </>
               ) : (
-                "Nur du siehst dich hier. Frag deinen Lehrer, ob du mit Spitzname mitspielen darfst."
+                "Nur du siehst dich hier. Dein Lehrer hat Liga und Duelle für dich ausgeschaltet."
               )}
             </p>
           )}

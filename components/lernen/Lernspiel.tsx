@@ -1417,7 +1417,7 @@ function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: 
               "Nur du siehst dich hier. Mit einem Spitznamen (Spiele › Liga) sehen dich alle."
             )
           ) : (
-            "Nur du siehst dich hier. Frag deinen Lehrer, ob du mit Spitzname mitspielen darfst."
+            "Nur du siehst dich hier. Dein Lehrer hat Liga und Duelle für dich ausgeschaltet."
           )}
         </p>
       )}

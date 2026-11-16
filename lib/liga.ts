@@ -14,7 +14,7 @@
 import { parseTime } from "./analysis";
 import { db } from "./db";
 import { tagAddieren, wienerDatum, wochenstartVon } from "./planung/zeit";
-import { AB_SCHULSTUFE, aktivesProfil, BILDER } from "./spielprofil";
+import { aktivesProfil, BILDER, darfMitspielen } from "./spielprofil";
 import type { Student } from "./repo";
 
 export const STUFEN = ["Bronze", "Silber", "Gold", "Diamant"] as const;
@@ -158,7 +158,7 @@ export function ligaTabelle(student: Pick<Student, "id" | "grade">, heute: strin
   );
   const sichtbar = (id: number) => {
     const z = profile.get(id);
-    return !!z && !!z.liga && z.wettspiel !== "nein" && (z.wettspiel === "ja" || z.grade >= AB_SCHULSTUFE);
+    return !!z && !!z.liga && darfMitspielen(z.wettspiel);
   };
   const liste = rangliste(woche, platz.stufe, platz.gruppe).filter((x) => x.studentId === student.id || sichtbar(x.studentId));
   const tageRest = 8 - (new Date(`${heute}T12:00:00Z`).getUTCDay() || 7);

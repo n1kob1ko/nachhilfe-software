@@ -110,7 +110,7 @@ export async function duellBeendenAction(token: string, duellId: number, antwort
 
 // ---------- Lehrerseite ----------
 
-/** Im Profil: ob der Schüler bei Liga und Duellen mitmachen darf (Standard ab 9. Schulstufe, „Erlaubt“, „Aus“). */
+/** Im Profil: ob der Schüler bei Liga und Duellen mitmachen darf („An“ für alle, „Aus“ sperrt es). */
 export async function wettspielSetzenAction(studentId: number, wert: string) {
   await requireTeacher();
   const w: Wettspiel = wert === "ja" || wert === "nein" ? wert : "";

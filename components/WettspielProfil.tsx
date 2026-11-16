@@ -2,7 +2,7 @@ import { Swords } from "lucide-react";
 import { spielprofilLoeschenAction, wettspielSetzenAction } from "@/app/wettspiel-actions";
 import { ligaTabelle } from "@/lib/liga";
 import type { Student } from "@/lib/repo";
-import { AB_SCHULSTUFE, BILDER, erlaubnis, profilVon, wettspielEinstellung, type Wettspiel } from "@/lib/spielprofil";
+import { BILDER, erlaubnis, profilVon, wettspielEinstellung, type Wettspiel } from "@/lib/spielprofil";
 
 /**
  * Im Profil unter Lernstand: ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts). Standard:
@@ -16,10 +16,10 @@ export function WettspielProfil({ student }: { student: Student }) {
   const liga = p?.liga && darf ? ligaTabelle(student) : null;
   const ich = liga?.zeilen.find((z) => z.ich);
   const first = student.name.split(" ")[0];
-  const wahl: { wert: Wettspiel; text: string }[] = [
-    { wert: "", text: `Standard (ab ${AB_SCHULSTUFE}. Schulstufe)` },
-    { wert: "ja", text: "Erlaubt (Eltern einverstanden)" },
-    { wert: "nein", text: "Aus" },
+  // für alle erlaubt (niko 2026-11-16); „ja“ von früher zählt wie „An“
+  const wahl: { wert: Wettspiel; text: string; an: boolean }[] = [
+    { wert: "", text: "An", an: e !== "nein" },
+    { wert: "nein", text: "Aus", an: e === "nein" },
   ];
   return (
     <section aria-labelledby="wettspiel-titel" data-testid="profil-wettspiel">
@@ -30,16 +30,16 @@ export function WettspielProfil({ student }: { student: Student }) {
         {darf
           ? p
             ? `${first} spielt als ${BILDER[p.bild] ?? ""} ${p.name}${ich && liga ? `, diese Woche Platz ${ich.platz} in der ${liga.stufenName}-Liga mit ${ich.punkte} Punkten` : ""}.`
-            : `${first} darf mitmachen, hat aber noch keinen Spielnamen gewählt.`
-          : `${first} spielt nur allein. Andere sehen nie den echten Namen, nur einen Spitznamen aus einer Liste.`}
+            : `${first} darf mitmachen und bekommt mit den ersten Blockwerk-Punkten einen Spitznamen (oder wählt selbst einen unter Spiele › Duelle).`
+          : `${first} spielt nur allein (ausgeschaltet). Andere sehen nie den echten Namen, nur einen Spitznamen aus einer Liste.`}
       </p>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Liga und Duelle erlauben">
         {wahl.map((w) => (
           <form key={w.wert || "standard"} action={wettspielSetzenAction.bind(null, student.id, w.wert)}>
             <button
               type="submit"
-              aria-pressed={e === w.wert}
-              className={`treffer min-h-[40px] rounded-full px-3.5 text-[14px] font-semibold ${e === w.wert ? "bg-ink text-surface" : "bg-panel text-ink hover:bg-line"}`}
+              aria-pressed={w.an}
+              className={`treffer min-h-[40px] rounded-full px-3.5 text-[14px] font-semibold ${w.an ? "bg-ink text-surface" : "bg-panel text-ink hover:bg-line"}`}
             >
               {w.text}
             </button>
