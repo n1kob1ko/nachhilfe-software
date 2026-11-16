@@ -37,6 +37,8 @@ import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { stufeFuer, type GlasThemaInfo } from "./glasklar";
 import { GLAS_THEMEN, glasKandidaten, glasStufen, glasThema, sortenVon, STOFF_THEMA, stoffKandidaten, themaVonKey, waehleGlasKarten, type GlasKandidat } from "./glasklar-themen";
 import { leseKarten } from "./spielkarten-text";
+import { WOERTER_JE_STUFE } from "./wortschloss";
+import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
@@ -65,9 +67,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   stoff: EIGENER_STOFF,
   // Glasklar: die Fähigkeit hängt am Thema der Runde (glasPlan); diese hier hat niemand im Lernstand
   glas: "spiel.glasklar",
+  // Wortschloss: ebenso am Thema der Runde (wortThemen)
+  wort: "spiel.wortschloss",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -128,7 +132,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas") continue;
+    if (art === "glas" || art === "wort") continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -413,6 +417,76 @@ function glasLaufThema(studentId: number, lauf: number): string | null {
   return z ? themaVonKey(json<SpielKarte[]>(z.karten, [])[0]?.key ?? "") : null;
 }
 
+// ---------- Wortschloss: welches Thema (lib/wortschloss-themen.ts) ----------
+
+/** Ein Thema von Wortschloss für diesen Schüler: `beispiel` zeigt, wie ein Hinweis aussieht; `grund`: warum es passt. */
+export type WortWahl = { id: string; name: string; fach: string; skill: string; beispiel: string; grund?: string };
+/** So viele Wörter braucht ein Thema, damit sich ein Spiel lohnt. */
+const WORT_POOL_MIN = WOERTER_JE_STUFE + 2;
+
+/** Die Spielkarten der Lehrkraft mit einem Wort als Antwort (sonst null). */
+function wortStoff(studentId: number): { satz: NonNullable<ReturnType<typeof spielSatz>>; pool: WortKandidat[] } | null {
+  const satz = spielSatz(studentId);
+  if (!satz) return null;
+  const pool = stoffWoerter(leseKarten(satz.text).karten, satzSkill(satz));
+  return pool.length >= WORT_POOL_MIN ? { satz, pool } : null;
+}
+
+/** Vokabeln für Wortschloss: wie bei „Vokabel-Paare“ die eigene Liste oder eine Themenliste. */
+function wortVokabeln(student: repo.Student, heute: string): { titel: string; skill: string; pool: WortKandidat[] } | null {
+  if (!student.subjects.includes("Englisch") && eigeneVokabeln(student.id).length < PAARE_MIN) return null;
+  const plan = vokabelPlan(student, heute);
+  const pool = vokabelWoerter(plan.pool, plan.skillId);
+  return pool.length >= WORT_POOL_MIN ? { titel: plan.titel, skill: plan.skillId, pool } : null;
+}
+
+/** Alle Wörter eines Themas für diesen Schüler. */
+function wortPool(student: repo.Student, thema: string, heute: string): WortKandidat[] {
+  if (thema === STOFF_WORT) return wortStoff(student.id)?.pool ?? [];
+  if (thema === VOKABEL_WORT) return wortVokabeln(student, heute)?.pool ?? [];
+  return wortKandidaten(thema);
+}
+
+/**
+ * Die Themen von Wortschloss, das passendste zuerst: die Spielkarten der Lehrkraft (in den ersten 30 Tagen), die
+ * eigene Vokabelliste, Themen aus dem Stoff, dann die Themen der Fächer für die Schulstufe (das Neueste zuerst), ältere
+ * Spielkarten zum Schluss. Leer: Wortschloss gibt es für ihn nicht.
+ */
+export function wortThemen(student: repo.Student, heute: string): WortWahl[] {
+  const out: WortWahl[] = [];
+  const add = (w: WortWahl | null) => {
+    if (w && !out.some((x) => x.id === w.id)) out.push(w);
+  };
+  const bsp = (pool: WortKandidat[]) => (pool[0] ? `${pool[0].karte.wort} → ${pool[0].karte.richtig}` : "");
+  const thema = (t: (typeof WORT_THEMEN)[number], grund?: string): WortWahl => ({ id: t.id, name: t.name, fach: t.fach, skill: t.skill, beispiel: t.kurz, grund });
+  const stoff = wortStoff(student.id);
+  const stoffWahl = (grund: string): WortWahl | null => (stoff ? { id: STOFF_WORT, name: stoff.satz.titel || "Dein Stoff", fach: "Dein Stoff", skill: satzSkill(stoff.satz), beispiel: bsp(stoff.pool), grund } : null);
+  const vok = wortVokabeln(student, heute);
+  const vokWahl = (grund?: string): WortWahl | null => (vok ? { id: VOKABEL_WORT, name: vok.titel.startsWith("Thema: ") ? `Vokabeln: ${vok.titel.slice(7)}` : vok.titel, fach: "Englisch", skill: vok.skill, beispiel: bsp(vok.pool), grund } : null);
+  const frisch = stoff && istFrisch(stoff.satz, heute);
+  if (frisch) add(stoffWahl(`Dein Stoff: ${stoff.satz.titel}`));
+  if (vok && vok.skill === EIGENE_VOKABELN) add(vokWahl("Deine Vokabelliste"));
+  for (const q of stoffQuellen(student, heute))
+    for (const id of q.ids) for (const t of WORT_THEMEN) if (themaPasst(t, id) && (t.fach !== "Englisch" || student.grade >= 5)) add(thema(t, q.grund));
+  const passt = (t: (typeof WORT_THEMEN)[number]) => t.ab <= student.grade && (t.bis ?? Infinity) >= student.grade;
+  for (const fach of ["Deutsch", "Englisch"] as const) {
+    if (!student.subjects.includes(fach)) continue;
+    if (fach === "Englisch") add(vokWahl());
+    const reihe = WORT_THEMEN.map((t, i) => ({ t, i }))
+      .filter(({ t }) => t.fach === fach && passt(t))
+      .sort((a, b) => b.t.ab - a.t.ab || a.i - b.i);
+    for (const { t } of reihe) add(thema(t));
+  }
+  if (stoff && !frisch) add(stoffWahl("Zum Wiederholen"));
+  return out;
+}
+
+/** Das Thema eines Wortschloss-Spiels (die erste Runde trägt es in ihren Karten). */
+function wortLaufThema(studentId: number, lauf: number): string | null {
+  const z = db().prepare("SELECT karten FROM spielrunden WHERE id = ? AND student_id = ? AND art = 'wort'").get(lauf, studentId) as { karten: string } | undefined;
+  return z ? wortThemaVonKey(json<SpielKarte[]>(z.karten, [])[0]?.key ?? "") : null;
+}
+
 // ---------- Runden ----------
 
 type Zeile = {
@@ -478,12 +552,14 @@ export function starteRunde(
     funkel?: boolean;
     /** Glasklar: das gewünschte Thema (beim Fortsetzen bleibt es beim Thema des Spiels) */
     glasThema?: string;
+    /** Wortschloss: ebenso */
+    wortThema?: string;
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
   db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
   let karten: SpielKarte[];
-  // Glasklar: die wievielte Stufe (eine Runde je Stufe); nur für `art === "glas"`
+  // Glasklar und Wortschloss: die wievielte Stufe (eine Runde je Stufe)
   let stufe: number | undefined;
   if (art === "glas") {
     const heute = o.heute ?? wienerDatum();
@@ -511,6 +587,13 @@ export function starteRunde(
       }
       if (new Set(karten.map((k) => k.richtig)).size < 2) karten = [];
     }
+  } else if (art === "wort") {
+    const heute = o.heute ?? wienerDatum();
+    const weiter = typeof o.endlos === "number" ? endlosLauf(student.id, art, o.endlos) : null;
+    const gewuenscht = weiter ? wortLaufThema(student.id, weiter) : o.wortThema;
+    const thema = (weiter && gewuenscht) || wortThemen(student, heute).find((t) => t.id === gewuenscht)?.id || wortThemen(student, heute)[0]?.id;
+    stufe = weiter ? (db().prepare("SELECT COUNT(*) AS n FROM spielrunden WHERE student_id = ? AND endlos = ?").get(student.id, weiter) as { n: number }).n + 1 : 1;
+    karten = thema ? waehleWortKarten(wortPool(student, thema, heute), { stufe, wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng }) : [];
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
@@ -550,6 +633,7 @@ export function starteRunde(
   if (lauf === rundeId && o.bloecke) db().prepare("UPDATE spielrunden SET bloecke = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && o.funkel && !o.bloecke) db().prepare("UPDATE spielrunden SET funkel = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && art === "glas") db().prepare("UPDATE spielrunden SET glas = 0 WHERE id = ?").run(rundeId);
+  if (lauf === rundeId && art === "wort") db().prepare("UPDATE spielrunden SET wort = 0 WHERE id = ?").run(rundeId);
   return { rundeId, karten, endlos: lauf, stufe };
 }
 
@@ -582,14 +666,14 @@ export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): n
 }
 
 /**
- * Blockwerk (lib/blockwerk.ts), Funkelfeld (lib/funkelfeld.ts) und Glasklar (lib/glasklar.ts) zählen ihre Punkte auf
- * dem Gerät und melden sie am Ende; der Server merkt sie sich an der ersten Runde (Spalte `bloecke`, `funkel` oder
- * `glas`). Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
+ * Blockwerk (lib/blockwerk.ts), Funkelfeld (lib/funkelfeld.ts), Glasklar (lib/glasklar.ts) und Wortschloss
+ * (lib/wortschloss.ts) zählen ihre Punkte auf dem Gerät und melden sie am Ende; der Server merkt sie sich an der ersten
+ * Runde (Spalte `bloecke`, `funkel`, `glas` oder `wort`). Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
  */
-export type PunkteSpiel = "bloecke" | "funkel" | "glas";
-export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas"];
+export type PunkteSpiel = "bloecke" | "funkel" | "glas" | "wort";
+export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas", "wort"];
 /** Die Spalte ist nie eine Eingabe: nur diese Namen kommen in die Abfragen. */
-const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : "bloecke");
+const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : spiel === "wort" ? "wort" : "bloecke");
 
 export function laufPunkte(studentId: number, lauf: number, punkte: number, spiel: PunkteSpiel) {
   const c = spalte(spiel);

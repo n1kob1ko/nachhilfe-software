@@ -286,6 +286,37 @@
 .sp-glas-bild [data-zu] i {
   background: linear-gradient(180deg, #47d89a, #1aa772);
 }
+/* Wortschloss: vier Felder in einem Messing-Rahmen */
+.sp-wort-bild {
+  display: grid;
+  flex-shrink: 0;
+  grid-template-columns: repeat(2, 22px);
+  gap: 3px;
+  padding: 6px;
+  border-radius: 12px;
+  background: linear-gradient(160deg, #ffe6a6 0%, #f3c45a 38%, #d99b2b 100%);
+  rotate: -3deg;
+}
+.sp-wort-bild i {
+  display: grid;
+  place-items: center;
+  height: 22px;
+  border-radius: 5px;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 800;
+  color: #fff;
+}
+.sp-wort-bild i[data-f="ja"] {
+  background: #1f9d5c;
+}
+.sp-wort-bild i[data-f="fast"] {
+  background: #f0b429;
+  color: #3d2800;
+}
+.sp-wort-bild i[data-f="nein"] {
+  background: #5b6b8c;
+}
 @media (prefers-reduced-motion: reduce) {
   .sp-block {
     transition: none;

@@ -394,6 +394,37 @@ test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen),
   assert.equal(sp.bloeckeBestenliste(b, 1).ich?.platz, 2, "die eigene Zeile auch unter den ersten Plätzen");
 });
 
+test("Wortschloss: Themen nach Fach und Schulstufe, Stufen mit vier Wörtern, Thema bleibt, Punkte eigen, die erste Reihe zählt", async () => {
+  const { sp, db, repo, student } = await setup({ grade: 6, subjects: ["Deutsch", "Englisch"] });
+  const heute = "2026-11-16";
+  const themen = sp.wortThemen(student, heute).map((t) => t.id);
+  assert.ok(themen.includes("praeteritum") && themen.includes("partizip") && themen.includes("mehrzahl") && themen.includes("irregular") && themen.includes("vokabeln"), themen.join(","));
+  assert.ok(!sp.spielVorschlaege(student, { heute }).some((v) => v.art === "wort"), "Wortschloss ist keine Kachel bei den Fächern");
+  const nurDeutsch = repo.getStudent(repo.createStudent({ ...student, name: "Volksschule", grade: 3, subjects: ["Deutsch"] }))!;
+  assert.deepEqual(sp.wortThemen(nurDeutsch, heute).map((t) => t.id), ["mehrzahl"]);
+
+  const a = sp.starteRunde(student, "wort", { rng: rng(3), heute, endlos: "neu", wortThema: "praeteritum" });
+  assert.equal(a.stufe, 1);
+  assert.equal(a.karten.length, 4);
+  assert.ok(a.karten.every((k) => k.key.startsWith("wort:praeteritum:") && k.skill === "deutsch.grammatik.praeteritum" && k.richtig.length <= 6));
+  const zeile = db().prepare("SELECT wort, glas, bloecke FROM spielrunden WHERE id = ?").get(a.rundeId) as { wort: number | null; glas: number | null; bloecke: number | null };
+  assert.deepEqual(zeile, { wort: 0, glas: null, bloecke: null });
+  // die erste Reihe zählt: ein Wort falsch, es kommt in der nächsten Stufe wieder
+  const falsch = a.karten[0];
+  const r1 = sp.beendeRunde(student.id, a.rundeId, a.karten.map((k) => ({ key: k.key, wahl: k.key === falsch.key ? "xyz" : k.richtig })));
+  assert.equal(r1?.richtig, 3);
+  const b = sp.starteRunde(student, "wort", { rng: rng(4), heute, endlos: a.endlos, wortThema: "mehrzahl" });
+  assert.equal(b.stufe, 2);
+  assert.ok(b.karten.every((k) => k.key.startsWith("wort:praeteritum:")), "das Thema bleibt");
+  assert.ok(b.karten.some((k) => k.key === falsch.key), "der Fehler kommt wieder");
+
+  sp.laufPunkte(student.id, a.rundeId, 540, "wort");
+  assert.equal(sp.punkteRekord(student.id, "wort"), 540);
+  assert.equal(sp.punkteRekord(student.id, "glas"), 0);
+  assert.equal(sp.punkteBestenliste(student, "wort").ich?.punkte, 540);
+  assert.ok(sp.laufIst(student.id, a.rundeId, "wort") && !sp.laufIst(student.id, a.rundeId, "glas"));
+});
+
 test("Glasklar: Themen nach Fach und Schulstufe, Stufen werden größer, Thema bleibt, Punkte und Bestenliste getrennt von Blockwerk", async () => {
   const { sp, repo, db, student } = await setup({ grade: 6, subjects: ["Deutsch", "Mathematik", "Englisch"] });
   const heute = "2026-11-16";

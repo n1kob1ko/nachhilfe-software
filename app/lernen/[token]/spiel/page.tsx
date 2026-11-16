@@ -1,7 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
-import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { WortSchloss } from "@/components/lernen/WortSchloss";
+import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -37,6 +38,26 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
         bestenliste={punkteBestenliste(student, "glas")}
         zurueck={von === "start" ? `/lernen/${token}` : undefined}
         themaLink={`/lernen/${token}/spiel?modus=glas${von === "start" ? "&von=start" : ""}&thema=`}
+        arenaLink={`/lernen/${token}/arena`}
+      />
+    );
+  }
+  // Wortschloss (lib/wortschloss.ts): ebenso mit Themen
+  if (modus === "wort" || gewuenscht === "wort") {
+    const themen = wortThemen(student, heute);
+    if (!themen.length) redirect(`/lernen/${token}/spiele`);
+    const gewaehlt = themen.find((t) => t.id === thema) ?? themen[0];
+    return (
+      <WortSchloss
+        key={gewaehlt.id}
+        token={token}
+        themen={themen}
+        thema={gewaehlt.id}
+        serie={serie(student.id, heute)}
+        rekord={punkteRekord(student.id, "wort")}
+        bestenliste={punkteBestenliste(student, "wort")}
+        zurueck={von === "start" ? `/lernen/${token}` : undefined}
+        themaLink={`/lernen/${token}/spiel?modus=wort${von === "start" ? "&von=start" : ""}&thema=`}
         arenaLink={`/lernen/${token}/arena`}
       />
     );

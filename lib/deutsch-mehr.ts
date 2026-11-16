@@ -96,7 +96,7 @@ function ausListe<X extends { st?: number }>(
 // ---------- Mehrzahl (Volksschule) ----------
 // =====================================================================
 type MzGruppe = "umlautE" | "e" | "n" | "n2" | "en" | "er" | "umlaut" | "s" | "gleich" | "innen" | "fremd";
-const MZ_TIPP: Record<MzGruppe, string> = {
+export const MZ_TIPP: Record<MzGruppe, string> = {
   umlautE: "Viele kurze Nomen bekommen in der Mehrzahl ein -e und dazu oft einen Umlaut: der Stall, die Ställe.",
   e: "Viele Nomen bekommen in der Mehrzahl nur ein -e: der Tisch, die Tische.",
   n: "Nomen auf -e bekommen in der Mehrzahl meist ein -n: die Tasche, die Taschen.",
@@ -109,14 +109,14 @@ const MZ_TIPP: Record<MzGruppe, string> = {
   innen: "Nach -in kommt in der Mehrzahl -nen: die Freundin, die Freundinnen.",
   fremd: "Manche Fremdwörter ändern in der Mehrzahl ihr Ende: das Zentrum, die Zentren.",
 };
-type Mz = { art: string; ez: string; mz: string[]; g: MzGruppe; satz: string; f: Fehler[]; st?: number };
+export type Mz = { art: string; ez: string; mz: string[]; g: MzGruppe; satz: string; f: Fehler[]; st?: number };
 const UML = (von: string, zu: string) => `Umlaut vergessen: aus ${von} wird ${zu}`;
 const MZ_DAT = "Das -n kommt nur im 3. Fall dazu, zum Beispiel nach „mit“. Hier steht die Mehrzahl ohne -n";
 const MZ_S = "Diese Mehrzahl hat kein -s";
 const MZ_EZ = "Das ist die Einzahl. Hier sind es mehrere";
 const MZ_KEIN_UML = (w: string) => `${w} bekommt in der Mehrzahl keinen Umlaut`;
 const M = (art: string, ez: string, mz: string | string[], g: MzGruppe, satz: string, f: Fehler[], st?: number): Mz => ({ art, ez, mz: typeof mz === "string" ? [mz] : mz, g, satz, f, st });
-const MEHRZAHL: Mz[] = [
+export const MEHRZAHL: Mz[] = [
   M("der", "Baum", "Bäume", "umlautE", "Im Park stehen drei hohe ___.", [F("Baume", UML("a", "ä")), F("Bäumen", MZ_DAT), F("Baums", MZ_S)]),
   M("der", "Hund", "Hunde", "e", "Im Garten bellen zwei ___.", [F("Hunds", MZ_S), F("Hunden", MZ_DAT), F("Hünde", MZ_KEIN_UML("Hund"))]),
   M("die", "Katze", "Katzen", "n", "Auf dem Dach sitzen drei ___.", [F("Katzes", MZ_S), F("Kätzen", MZ_KEIN_UML("Katze")), F("Katze", MZ_EZ)]),

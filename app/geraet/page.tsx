@@ -6,6 +6,7 @@ import { BrandMark } from "@/components/Brand";
 import { DeviceLive } from "@/components/device/DeviceLive";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { GlasSpiel } from "@/components/lernen/GlasSpiel";
+import { WortSchloss } from "@/components/lernen/WortSchloss";
 import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { PairForm } from "@/components/device/PairForm";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
@@ -31,7 +32,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher } from "@/lib/lernspiele";
+import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -108,7 +109,7 @@ export default async function DevicePage() {
   // a Textarbeit of this student: written here, saved continuously
   const text = view.kind === "text" && !onLaptop ? unitText(unit, view.textId) : null;
 
-  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas";
+  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas" && view.kind !== "wort";
   let content: React.ReactNode;
   if (onLaptop) {
     content = (
@@ -166,6 +167,27 @@ export default async function DevicePage() {
     ) : (
       <p className="panel px-5 py-5 text-[16px] text-ink-2">Für Glasklar gibt es gerade keine Begriffe.</p>
     );
+  } else if (view.kind === "wort") {
+    // Wortschloss am Tablet: wie Glasklar
+    const heute = wienerDatum();
+    const themen = wortThemen(student, heute);
+    const gewaehlt = themen.find((t) => t.id === view.thema) ?? themen[0];
+    content = gewaehlt ? (
+      <WortSchloss
+        key={gewaehlt.id}
+        token=""
+        amTablet
+        themen={themen}
+        thema={gewaehlt.id}
+        serie={serie(student.id, heute)}
+        rekord={punkteRekord(student.id, "wort")}
+        bestenliste={punkteBestenliste(student, "wort")}
+        zurueck="/geraet/ansicht?zu=spiele"
+        themaLink="/geraet/ansicht?zu=wort:"
+      />
+    ) : (
+      <p className="panel px-5 py-5 text-[16px] text-ink-2">Für Wortschloss gibt es gerade keine Wörter.</p>
+    );
   } else if (view.kind === "spiele" || view.kind === "spiel") {
     // Lernspiele in der Einheit (niko 2026-11-12: „was wenn der schüler in der einheit spielen will“): dieselben Spiele
     // wie in der Schüler-App, gezählt für den Schüler der Einheit; der geheime Link kommt nie aufs Tablet
@@ -201,6 +223,9 @@ export default async function DevicePage() {
           <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} funkel={(a) => `/geraet/ansicht?zu=funkel:${a}`} glas={(() => {
               const t = glasThemen(student, heute)[0];
               return t ? { href: "/geraet/ansicht?zu=glas:", thema: t.name } : undefined;
+            })()} wort={(() => {
+              const t = wortThemen(student, heute)[0];
+              return t ? { href: "/geraet/ansicht?zu=wort:", thema: t.name } : undefined;
             })()}
           />
         </div>
@@ -321,8 +346,8 @@ export default async function DevicePage() {
             {!onLaptop && (
               <a
                 href="/geraet/ansicht?zu=spiele"
-                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" ? "page" : undefined}
-                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" ? "page" : undefined}
+                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
                 data-testid="geraet-spiele"
               >
                 <Gamepad2 size={18} aria-hidden /> Spiele

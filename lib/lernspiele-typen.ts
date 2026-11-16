@@ -37,13 +37,13 @@
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
 /** Spiele für ein Duell: „Dein Stoff“ hat nur dieser Schüler (lib/spielkarten.ts), Glasklar ist ein Puzzle für einen. */
-export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas");
-export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas";
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas" && a !== "wort");
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas" && x !== "wort";
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -64,6 +64,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   strahl: "Zahlenstrahl",
   stoff: "Dein Stoff",
   glas: "Glasklar",
+  wort: "Wortschloss",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -87,6 +88,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   stoff: "Dein Stoff",
   // Glasklar steht nicht bei den Fächern (eigene Kachel); das Thema bringt sein Fach mit (lib/glasklar-themen.ts)
   glas: "Dein Stoff",
+  // Wortschloss ebenso (lib/wortschloss-themen.ts)
+  wort: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -109,6 +112,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   strahl: "Wo liegt die Zahl? Schieb den Zeiger an die richtige Stelle.",
   stoff: "Die Karten, die deine Lehrkraft für dich geschrieben hat",
   glas: "Sortier die Begriffe, bis jedes Glas nur eine Sorte hat",
+  wort: "Errate das Wort zum Hinweis in sechs Versuchen",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -131,6 +135,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   strahl: ["0", "0,5", "1"],
   stoff: ["?", "✓", "→"],
   glas: ["der", "Verb", "Dativ"],
+  wort: ["trank", "went", "Gläser"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -153,6 +158,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   strahl: "Wo liegt die Zahl am Zahlenstrahl?",
   stoff: "Welche Antwort stimmt?",
   glas: "Sortier die Begriffe in die Gläser.",
+  wort: "Tipp das Wort zum Hinweis.",
 };
 
 /**
@@ -301,6 +307,8 @@ export type SpielErgebnis =
       bloecke?: { rekord: number; fragen: number; bestenliste?: Bestenliste };
       /** Glasklar: der beste Stand davor, wie viele Begriffe beim ersten Versuch richtig waren, die Bestenliste danach */
       glas?: { rekord: number; begriffe: number; bestenliste?: Bestenliste };
+      /** Wortschloss: der beste Stand davor, wie viele Wörter in der ersten Reihe gelöst waren, die Bestenliste danach */
+      wort?: { rekord: number; woerter: number; bestenliste?: Bestenliste };
     }
   | { fehler: string };
 
