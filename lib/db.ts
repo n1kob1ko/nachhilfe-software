@@ -1516,6 +1516,14 @@ CREATE TABLE IF NOT EXISTS spielkarten (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_spielkarten_student ON spielkarten(student_id, updated_at);
+-- Fehlerprotokoll je Schüler (lib/fehlerprotokoll.ts): „falsch → richtig“ aus den eigenen Texten, eine Zeile ein Fehler.
+-- Gespielt als „Meine Fehler“; ob ein Fehler geschafft ist, steht in den Runden (zweimal hintereinander richtig).
+CREATE TABLE IF NOT EXISTS fehlerprotokolle (
+  student_id INTEGER PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  text TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
