@@ -143,3 +143,17 @@ test("Schreibauftrag: Aufbau und Probe-Schularbeit werden gespeichert, geändert
   const kurz = store.cleanAuftragSettings("textinterpretation", { title: "T", story: b.BEISPIEL_GESCHICHTE, probeMin: "3" });
   assert.ok(!("error" in kurz) && kurz.settings.probeMin === null);
 });
+
+test("Quiz Textinterpretation: über 100 Karten zu Deuten, Wirkung, Zitieren und Ton, alle zum Wählen", async () => {
+  const q = await import("./lernspiele-quiz");
+  const karten = q.quizKandidaten("deutsch.os.matura.textinterpretation");
+  assert.ok(karten.length >= 100, `${karten.length} Karten`);
+  assert.ok(karten.every((k) => k.karte.form !== "reihe" && k.karte.faecher.includes(k.karte.richtig)));
+  const deuten = karten.filter((k) => k.karte.vor.startsWith("Der Satz „") && ["deutet", "beschreibt nur", "erzählt nach"].includes(k.karte.richtig));
+  assert.ok(deuten.length >= 30, `${deuten.length} Sätze zum Einordnen`);
+  for (const art of ["deutet", "beschreibt nur", "erzählt nach"]) assert.ok(deuten.filter((k) => k.karte.richtig === art).length >= 9, art);
+  assert.ok(karten.some((k) => k.karte.richtig === "(vgl. Z. 37–40)"));
+  assert.ok(karten.some((k) => k.karte.richtig === "aus Eitelkeit"));
+  // nach einem Fehler kommt die Regel
+  assert.ok(deuten.every((k) => k.karte.regel));
+});

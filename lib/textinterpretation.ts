@@ -626,11 +626,11 @@ const TEIL_PROMPTS: Record<TeilKey, ((s: TeilSource, ref: string) => string)[]> 
     (s) => `Welche Merkmale ${STORY_KINDS[s.kind].des} findest du in „${s.title}“? Nenne drei und belege jedes mit einer Zeilenangabe.`,
   ],
   sprache: [
-    () => "Such zwei Stilmittel im Text. Schreib zu jedem: das Zitat mit Zeilenangabe, den Namen des Stilmittels und seine Wirkung.",
+    () => "Such zwei Stilmittel im Text. Schreib zu jedem die Kette: Behauptung (welches Stilmittel), Zitat mit Zeilenangabe, Wirkung („Dadurch wird deutlich, dass …“) und was das für den Text bedeutet.",
     () => "Untersuche den Satzbau: Wo stehen lange, verschachtelte Sätze, wo kurze Hauptsätze? Zitiere je ein Beispiel mit Zeile und erkläre die Wirkung.",
   ],
   figur: [
-    () => "Charakterisiere die Hauptfigur in 4 bis 5 Sätzen. Belege jede Eigenschaft mit einem Zitat und der Zeile.",
+    () => "Charakterisiere die Hauptfigur in 4 bis 5 Sätzen. Für jede Eigenschaft die Kette: Behauptung, Zitat mit Zeile, dann ein Satz, was das über die Figur zeigt.",
     () => "Wie verändert sich die Hauptfigur oder ihre Lage im Lauf des Textes? Belege mit zwei Zitaten und Zeilen.",
   ],
   deutung: [
@@ -647,8 +647,8 @@ const TEIL_CRITERIA: Record<TeilKey, string[]> = {
   einleitung: ["Autor oder Autorin, Titel und Textsorte genannt", "Thema in einem Satz", "Deutungshypothese am Ende"],
   inhalt: ["Präsens", "nur das Wichtigste, in der richtigen Reihenfolge", "keine Zitate, keine Wertung"],
   form: ["Abschnitte mit Zeilenangaben", "jeder Abschnitt in einem Satz zusammengefasst", "Merkmale der Textsorte erkannt"],
-  sprache: ["Zitat wörtlich, mit Zeilenangabe", "Stilmittel richtig benannt", "Wirkung erklärt, nicht nur genannt"],
-  figur: ["Eigenschaften genannt", "jede Eigenschaft mit Zitat und Zeile belegt", "Verhalten begründet"],
+  sprache: ["Zitat wörtlich, mit Zeilenangabe", "Stilmittel richtig benannt", "nach jedem Zitat ein Satz zur Wirkung, nicht nur genannt"],
+  figur: ["Eigenschaften genannt", "jede Eigenschaft mit Zitat und Zeile belegt", "nach jedem Zitat erklärt, was es über die Figur zeigt"],
   deutung: ["Aussageabsicht formuliert", "Bedeutung des Titels erklärt", "mit Textstellen begründet"],
   schluss: ["Gesamtdeutung in einem Satz", "eigene Meinung begründet", "keine neuen Inhalte"],
 };

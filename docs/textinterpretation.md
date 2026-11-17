@@ -81,6 +81,18 @@ Die Hinweise sind Tipps, keine Note, und sie markieren nie etwas als falsch, das
 
 Ein Test prüft, dass die Musterinterpretation keinen einzigen Tipp bekommt und dass richtige Arten zu zitieren nie angemerkt werden: „f.“ und „ff.“, Bereiche, „Zeile 24“, „vgl.“, „ebd.“, die Angabe vor dem Zitat, eine Zeile daneben, ein Zitat, das zweimal im Text steht, und angepasste Zitate mit [ ].
 
+## Quiz zur Interpretation
+
+Zur Fähigkeit Textinterpretation gibt es rund 110 Quizkarten ohne KI (`lib/quiz/deutsch-interpretation.ts`, niko, 17.11.2026). Sie laufen im Deutsch-Quiz, in Blockwerk, Funkelfeld und Torlauf, sobald Textinterpretation im Stoff des Schülers ist (Prüfung, aktueller Stoff oder letzte Einheit):
+
+- **Deutet, beschreibt oder erzählt nach?** Ein Satz aus einer Interpretation wird eingeordnet; nach einem Fehler kommt die Regel.
+- **Welche Wirkung passt?** Zu Anapher, kurzen Sätzen, Ellipse, Symbol, offenem Ende, Ich-Erzähler und Co.
+- **Zitieren:** „…“ (Z. 12), (vgl. Z. 37–40), (Z. 4f.), […], richtig oder falsch belegt, die Kette Behauptung, Zitat, Wirkung, Bedeutung.
+- **Sachlicher Ton:** „Ego“, „lächerlich“, „checken“ und ihr sachliches Wort.
+- **Kurzgeschichte und Arbeitsweise:** Merkmale, Operatoren, Lesemethode.
+
+Die Teilübungen „Sprache“ und „Figur“ verlangen die Kette ausdrücklich: Zitat mit Zeile, danach ein Satz zur Wirkung.
+
 ## Teilübungen im Übungs-Builder
 
 Wählt man im Builder die Fähigkeit Textinterpretation, entstehen keine Mini-Interpretationen mehr, sondern **Teilübungen** ohne KI: je eine freie Aufgabe zu einem Teil des Schreibplans (Einleitung mit Deutungshypothese, Inhaltsangabe im Präsens, Abschnitte mit Zeilen, Stilmittel mit Zitat und Wirkung, Figur, Deutung, Schluss), mit der ganzen Geschichte mit Zeilennummern als gemeinsamem Lesetext, Musterlösung und Erwartungshorizont. Grundlage ist die letzte Textinterpretation des Schülers, sonst die Beispielgeschichte. Höchstens 14 Teilübungen pro Übung; „Neu erzeugen“ wechselt zur zweiten Formulierung. Ein Hinweis im Builder führt zum ganzen Schreibauftrag. Aus einer Textinterpretation heraus macht „Teilübungen dazu“ sieben Teilübungen zu genau dieser Geschichte. Andere Fähigkeiten ändern sich nicht.

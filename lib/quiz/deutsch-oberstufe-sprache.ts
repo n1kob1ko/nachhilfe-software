@@ -1,5 +1,6 @@
 /** Deutsch-Quiz Oberstufe (9.–13. Schulstufe): Matura-Textsorten, Argumentieren, Stil, Medien, Sprache. Format wie Spielkarten. */
 import type { QuizBank } from "../lernspiele-quiz";
+import { INTERPRETATION_LEICHT, INTERPRETATION_SCHWER } from "./deutsch-interpretation";
 
 export const DEUTSCH_OBERSTUFE_SPRACHE: QuizBank = {
   "deutsch.os.matura.leserbrief": `Ein Leserbrief antwortet auf ___ = einen Artikel in einer Zeitung | einen Privatbrief | eine Rechnung
@@ -209,9 +210,11 @@ Den Inhalt gibt man in der Interpretation ___ = kurz wieder | ausführlich nache
 Die Epoche eines Textes ___ = kann die Deutung stützen | ist unwichtig | ersetzt die Deutung
 Eine Interpretation ist ___ = begründete Deutung | reine Meinung | eine Inhaltsangabe
 „Das Bild der Nacht steht für …“ ist ___ = eine Deutung | eine Inhaltsangabe | ein Zitat
+${INTERPRETATION_LEICHT}
 # schwer
 Textimmanent interpretieren heißt ___ = nur vom Text ausgehen | nur die Biografie nutzen | nur die Epoche nutzen
-Eine Interpretation, die die Biografie nutzt, heißt ___ = biografisch | textimmanent | formal`,
+Eine Interpretation, die die Biografie nutzt, heißt ___ = biografisch | textimmanent | formal
+${INTERPRETATION_SCHWER}`,
   "deutsch.os.stil.klang": `„Milch macht müde Männer munter.“ – Stilmittel: ___ = Alliteration | Anapher | Epipher
 Gleicher Anfang mehrerer Verse oder Sätze: ___ = Anapher | Epipher | Alliteration
 Gleiches Ende mehrerer Verse oder Sätze: ___ = Epipher | Anapher | Ellipse
