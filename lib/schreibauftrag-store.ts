@@ -24,6 +24,7 @@ import {
 } from "./schreibauftrag";
 import { cleanBeilageZiel, MIN_BEILAGE } from "./schreibauftrag-umfang";
 import { countWords } from "./text-doc";
+import { geschichteMitText, verstaendnisFragen } from "./kurzgeschichten";
 import { AUFBAU_TARGET, cleanAufbau, cleanStory, cleanTarget, lastLine, MAX_STORY_CHARS, MAX_STORY_LINES, MIN_STORY_LINES, numberedLines, type Aufbau } from "./textinterpretation";
 
 export type AuftragRow = {
@@ -128,8 +129,28 @@ export const auftragView = (r: AuftragRow): AuftragView => {
     situation: r.situation,
     aufbau: sorte === "textinterpretation" ? cleanAufbau(r.aufbau) : "teile",
     probeMin: cleanProbeMin(r.probe_min),
+    ...fragenZu(sorte, r.story_text),
   };
 };
+
+/** Eine Geschichte aus der Sammlung (lib/kurzgeschichten.ts) bringt ihre Verständnisfragen mit Musterantworten mit. */
+function fragenZu(sorte: SorteKey, text: string): Pick<AuftragView, "fragen"> {
+  const g = sorte === "textinterpretation" ? geschichteMitText(text) : undefined;
+  return g ? { fragen: verstaendnisFragen(g, true) } : {};
+}
+
+/** Die Geschichten der Sammlung, die der Schüler schon als Textinterpretation hatte (ids, die neueste zuerst). */
+export function gelesenVon(studentId: number): string[] {
+  const rows = db()
+    .prepare("SELECT ti.story_text FROM text_interpretations ti JOIN texts t ON t.id = ti.text_id WHERE t.student_id = ? AND ti.sorte = 'textinterpretation' ORDER BY ti.created_at DESC")
+    .all(studentId) as { story_text: string }[];
+  return [...new Set(rows.map((r) => geschichteMitText(r.story_text)?.id).filter((id): id is string => Boolean(id)))];
+}
+
+/** Was das Gerät des Schülers bekommt: die Fragen ohne Musterantworten. */
+export function fuerSchueler(v: AuftragView): AuftragView {
+  return v.fragen ? { ...v, fragen: v.fragen.map((f) => ({ frage: f.frage })) } : v;
+}
 
 /** The Schreibauftrag of a text for the writing view, the print and the hints, or null for any other text. */
 export function auftragFor(textId: number): AuftragView | null {
