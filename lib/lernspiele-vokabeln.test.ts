@@ -120,7 +120,7 @@ test("Welche Wörter: eigene Listen vor Themen, das Thema aus dem Stoff, sonst d
   assert.equal(plan.skillId, "englisch.vocab.freizeit");
   assert.equal(plan.titel, "Thema: Freizeit und Hobbys");
   assert.equal(sp.skillFuerSpiel(student, "vokabeln", HEUTE), "englisch.vocab.freizeit");
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"], ["irregular", "fach"], ["zeiten", "fach"], ["grammatik", "fach"]], "nur Englisch: nur die Englisch-Spiele, Vokabeln zuerst");
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"], ["irregular", "fach"], ["zeiten", "fach"], ["grammatik", "fach"], ["quizenglisch", "fach"]], "nur Englisch: nur die Englisch-Spiele, Vokabeln zuerst");
 
   // eine Prüfung mit einem Vokabelthema: dieses Thema
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Englisch", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["englisch.vocab.stadt"], title: "Vocabulary Test", status: "geplant" });
@@ -153,7 +153,7 @@ test("Welche Wörter: eigene Listen vor Themen, das Thema aus dem Stoff, sonst d
   assert.ok((await import("./vokabellisten")).speichereListe({ studentId: beide.student.id, teacherId: beide.teacher.id, title: "Unit 3", text: "bridge = die Brücke\nriver = der Fluss\nvalley = das Tal\nhill = der Hügel" }).ok);
   const v = beide.sp.spielVorschlaege(beide.student, { heute: HEUTE });
   assert.deepEqual([v[0].art, v[0].quelle, v[0].grund], ["vokabeln", "stoff", "Deine Vokabelliste"]);
-  assert.equal(v.length, 11);
+  assert.equal(v.length, 12);
   assert.equal(beide.sp.vokabelPlan(beide.student, HEUTE).titel, "Deine Liste „Unit 3“");
 });
 

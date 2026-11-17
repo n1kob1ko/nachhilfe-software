@@ -91,7 +91,7 @@ test("Reihenfolge: das Neueste der Schulstufe zuerst; die Erste Klasse beginnt v
 
 test("Vorschlag und Thema: aus dem Stoff, sonst der Reihe nach; die Runde hängt am Thema", async () => {
   const { sp, repo, student } = await setup();
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"], ["irregular", "fach"], ["zeiten", "fach"], ["grammatik", "fach"]]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["vokabeln", "fach"], ["irregular", "fach"], ["zeiten", "fach"], ["grammatik", "fach"], ["quizenglisch", "fach"]]);
   // 3. Klasse (7. Schulstufe) ohne Stoff: das erste Thema der 7. Schulstufe
   assert.deepEqual(sp.themenPlan(student, "zeiten", HEUTE), { skillId: "englisch.tenses.pastprogressive", titel: "Thema: Past Progressive" });
   assert.equal(sp.themenPlan(student, "grammatik", HEUTE)!.skillId, "englisch.grammar.modal-must");
@@ -141,7 +141,7 @@ test("Thema: bleibt, bis zwei Runden mit 80 % gelungen sind, dann das nächste",
   spiele(0.84, 3);
   assert.equal(sp.themenPlan(student, "zeiten", HEUTE)!.skillId, "englisch.tenses.presentprogressive");
   // 5. Schulstufe: noch keine Irregular Verbs zum Üben
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => x.art), ["vokabeln", "zeiten", "grammatik"]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => x.art), ["vokabeln", "zeiten", "grammatik", "quizenglisch"]);
 });
 
 test("Duell: ein Thema, das der Jüngere schon hatte, für beide dieselben Karten", async () => {

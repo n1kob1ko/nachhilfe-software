@@ -552,6 +552,11 @@ lib/lernspiele-quiz.ts), ohne KI:
   (`FUEHRT_ZU`), Blockwerk, Torlauf und Funkelfeld nehmen dann seine Fragen. Ohne Stoff kommt es „zum Üben“ mit dem
   nächsten Thema der Schulstufe; ab der 9. Schulstufe steht es vor den anderen Spielen des Fachs.
 - **Antworten**: zwei werden gewischt, drei bis sechs sind Kacheln; Brüche und Hochzahlen stehen gesetzt da.
+- **Stand 2026-11-17**: jedes Thema aus lib/themen hat ein Spiel, Mathe 291, Deutsch 139, Englisch 162 (Volksschule
+  bis Oberstufe, auch HAK/HTL-Business und Technik). Deutsch und Englisch sind reine Textkarten
+  (`deutsch-unterstufe.ts`, `deutsch-oberstufe-literatur.ts`, `deutsch-oberstufe-sprache.ts`, `englisch-unterstufe.ts`,
+  `englisch-oberstufe-sprache.ts`, `englisch-oberstufe-schreiben.ts`). Gleiche Fragen in einem Thema zählen nur
+  einmal, also braucht „Welcher Satz ist richtig?“ einen Zusatz.
 - Ein Fach ohne Fragen hat kein Quiz. Der Test lib/lernspiele-quiz.test.ts liest jede Frage (keine Fehler, mindestens
   12 Karten je Thema, richtige Antwort dabei, Fach passt).
 
