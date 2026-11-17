@@ -623,3 +623,16 @@ Nach DESIGN.md „Bewegung“ (`components/lernen/lernspiel.css`): nur transform
 Fliegen über den Schirm ease-in-out (geworfen: ease-out, die Karte ist schon in Fahrt), Ziehen ohne Übergang mit
 Reibung nach oben, ein schneller Wurf reicht auch über kurze Strecke, die Karten dahinter rücken nach. Kurze
 Vibration am Handy (richtig kurz, falsch doppelt). Bei „weniger Bewegung“ nur Farbe und Deckkraft.
+
+## Spiele testen (Lehrer und Verwaltung)
+
+niko 2026-11-17: „wie kann ich als Lehrer und Verwalter Spiele spielen und testen“. **Mehr › Spiele testen**
+(`/mehr/spiele-testen`, für jede Lehrkraft): Klasse wählen, „Spiele öffnen“, und es geht der Tab „Spiele“ der
+Schüler-App auf, mit einem eigenen Test-Schüler der Lehrkraft („Niko Test“, `students.spiele_test` = Lehrer-ID,
+lib/spiele-testen.ts). Er hat immer Mathematik, Deutsch und Englisch und die gewählte Klasse.
+
+Damit nichts zählt: Er steht in keiner Liste (`listStudents`, Planung, Export, `hasData`), hat keine Lehrkraft
+(`teacher_id` leer, zählt beim Löschen eines Lehrers nicht als Verlauf), und Liga und Duelle sind aus
+(`wettspiel = 'nein'`): Kinder sehen ihn nie in Bestenliste oder Wochenliga, er sieht sich dort als „Du“. Oben in
+der Schüler-App steht „Testmodus: zählt bei keinem Schüler“ mit „Zurück“. „Spielstand löschen“ löscht seine
+Spielrunden (Rekorde, Serie, Endlos-Stände). Duelle lassen sich so nicht testen.

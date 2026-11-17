@@ -190,7 +190,7 @@ const PROFILES: Profile[] = [
 ];
 
 export function hasData() {
-  return (db().prepare("SELECT COUNT(*) AS n FROM students").get() as { n: number }).n > 0;
+  return (db().prepare("SELECT COUNT(*) AS n FROM students WHERE spiele_test IS NULL").get() as { n: number }).n > 0;
 }
 
 function seeded(seed: number) {

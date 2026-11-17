@@ -1855,6 +1855,9 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts): '' = Standard (ab der 9. Schulstufe),
   // 'ja' = erlaubt (bei Jüngeren: Eltern sind einverstanden), 'nein' = aus
   ["students", "wettspiel", "TEXT NOT NULL DEFAULT ''"],
+  // Spiele testen (lib/spiele-testen.ts, niko 2026-11-17): der unsichtbare Test-Schüler einer Lehrkraft trägt hier
+  // ihre ID (ohne Fremdschlüssel, damit er beim Löschen des Lehrers nicht als Verlauf zählt); sonst leer
+  ["students", "spiele_test", "INTEGER"],
 ];
 
 /** Teachers to start with; more can be added later. */
