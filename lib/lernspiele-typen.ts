@@ -37,11 +37,15 @@
  * „Englisch-Quiz“ sind Themenspiele mit großen Fragensammlungen ohne KI, je Thema des Lehrplans eigene Karten
  * (lib/lernspiele-quiz.ts, Fragen in lib/quiz/). Gewischt oder mit Kacheln beantwortet.
  *
+ * „Stilmittel“ (niko 2026-11-17: „es sollen sätze kommen und man soll auswählen was das für ein stilmittel ist“): ein
+ * Satz mit angestrichener Stelle, darunter vier Namen von Stilmitteln als Kacheln, je Schulstufe die, die schon dran
+ * waren (lib/stilmittel.ts, Sätze in lib/stilmittel-saetze.ts).
+ *
  * „Glasklar“ (niko 2026-11-16, ein Sortier-Puzzle): Begriffe in Gläsern sortieren, je Runde eine Stufe eines Themas
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -72,6 +76,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   quizmathe: "Mathe-Quiz",
   quizdeutsch: "Deutsch-Quiz",
   quizenglisch: "Englisch-Quiz",
+  stilmittel: "Stilmittel",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -100,6 +105,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   quizmathe: "Mathematik",
   quizdeutsch: "Deutsch",
   quizenglisch: "Englisch",
+  stilmittel: "Deutsch",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -126,6 +132,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   quizmathe: "Fragen zu deinem Thema, vom Einmaleins bis zur Ableitung",
   quizdeutsch: "Fragen zu deinem Thema, von Wortarten bis Erörterung",
   quizenglisch: "Fragen zu deinem Thema, von Grammatik bis Writing",
+  stilmittel: "Metapher, Vergleich oder Hyperbel? Erkenn das Stilmittel im Satz",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -152,6 +159,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   quizmathe: ["a² + b²", "π", "f′"],
   quizdeutsch: ["Metapher", "Verb", "Reim"],
   quizenglisch: ["since", "although", "would"],
+  stilmittel: ["Metapher", "Anapher", "Ironie"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -178,6 +186,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   quizmathe: "Welche Antwort stimmt?",
   quizdeutsch: "Welche Antwort stimmt?",
   quizenglisch: "Welche Antwort stimmt?",
+  stilmittel: "Welches Stilmittel steckt im markierten Teil?",
 };
 
 /**
@@ -203,6 +212,7 @@ export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   satzteile: "wischen",
   praepositionen: "kacheln",
   deklination: "kacheln",
+  stilmittel: "kacheln",
 };
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */

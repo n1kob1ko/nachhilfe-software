@@ -21,6 +21,7 @@ import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istDuellArt, istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
 import { aktivesProfil, BILDER, profilVon } from "./spielprofil";
+import { stilmittelKandidaten } from "./stilmittel";
 
 export const CODE_ZEICHEN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
 export const ANNEHMEN_STUNDEN = 48;
@@ -76,6 +77,8 @@ function karten(art: SpielArt, a: repo.Student, b: repo.Student, rng?: () => num
   if (art === "vokabeln") return duellVokabeln(stufe, stufe <= 4, rng);
   // Themenspiele: ein Thema, das der Jüngere schon hatte
   if (SPIEL_THEMEN[art]) return duellThema(art, stufe, rng);
+  // Stilmittel: die, die der Jüngere schon kennt
+  if (art === "stilmittel") return waehleKarten(art, { pool: stilmittelKandidaten(stufe), stufen: stufenFuer(art, stufe, null), rng });
   return waehleKarten(art, { stufen: stufenFuer(art, stufe, null), rng });
 }
 
