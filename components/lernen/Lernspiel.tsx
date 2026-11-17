@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
-import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, torTauglich, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
 import { PaarFeld } from "./PaarFeld";
@@ -23,6 +23,7 @@ import { BrettFrage, brettOptionen } from "./BrettFrage";
 import { aufTon, setzeTon, tonAn } from "./klang";
 import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
 import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
+import { TorLauf } from "./TorLauf";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
@@ -48,10 +49,13 @@ import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
  *
  * Funkelfeld (niko 2026-11-16, components/lernen/FunkelFeld.tsx): genauso, aber das Brett ist ein Drei-in-einer-Reihe-
  * Feld; sind die Züge weg, bringt die nächste Karte neue. Beide Bretter heißen hier `brett`.
+ *
+ * Torlauf (niko 2026-11-17, components/lernen/TorLauf.tsx): ebenso ein `brett`, aber ein Lauf: die Karte steht oben, ihre
+ * Antworten stehen auf Toren, durch die der Läufer rennt. Das Tor zählt wie ein Tipp auf die Antwort.
  */
 
-/** Ein Spielbrett zwischen den Karten: Blockwerk (Teile legen) oder Funkelfeld (Steine tauschen). */
-export type Brett = "bloecke" | "funkel";
+/** Ein Spielbrett zwischen den Karten: Blockwerk (Teile legen), Funkelfeld (Steine tauschen) oder Torlauf (durch Tore laufen). */
+export type Brett = "bloecke" | "funkel" | "tor";
 
 /**
  * Für Duelle (components/lernen/Duell.tsx, lib/duelle.ts): eigener Start und eigenes Ende mit denselben Karten für beide,
@@ -96,6 +100,8 @@ export function Lernspiel({
   bloeckeLink,
   funkelRekord = 0,
   funkelLink,
+  torRekord = 0,
+  torLink,
   bestenliste: bestenlisteAnfang,
   arenaLink,
 }: {
@@ -118,7 +124,7 @@ export function Lernspiel({
   rekord?: number;
   /** am Schüler-Tablet in der Einheit (app/geraet/page.tsx): der Server findet den Schüler über das Tablet */
   amTablet?: boolean;
-  /** „bloecke“: der Anfang zeigt Blockwerk, „funkel“ Funkelfeld (aus dem Tab „Spiele“) */
+  /** „bloecke“: der Anfang zeigt Blockwerk, „funkel“ Funkelfeld, „tor“ Torlauf (aus dem Tab „Spiele“) */
   modus?: Brett;
   /** der beste Blockwerk-Stand des Schülers (0: noch keiner) */
   bloeckeRekord?: number;
@@ -128,6 +134,10 @@ export function Lernspiel({
   funkelRekord?: number;
   /** Funkelfeld: wie `bloeckeLink` („…?modus=funkel&art=“) */
   funkelLink?: string;
+  /** der beste Torlauf-Stand des Schülers (0: noch keiner) */
+  torRekord?: number;
+  /** Torlauf: wie `bloeckeLink` („…?modus=tor&art=“) */
+  torLink?: string;
   /** Blockwerk oder Funkelfeld: die Bestenliste aller Schüler (lib/lernspiele.ts bloeckeBestenliste) */
   bestenliste?: Bestenliste;
   /** Liga und Duelle: dort legt der Schüler sein Spielprofil an (fehlt am Tablet) */
@@ -678,7 +688,7 @@ export function Lernspiel({
         <>
           <span className="flex-1" />
           {/* Töne an oder aus (klang.ts) */}
-          {brett === "bloecke" && (
+          {(brett === "bloecke" || brett === "tor") && (
             <button type="button" className="ls-zu treffer" onClick={() => setzeTon(!ton)} aria-pressed={!ton} aria-label={ton ? "Töne ausschalten" : "Töne einschalten"} data-testid="ls-ton">
               {ton ? <Volume2 size={22} aria-hidden /> : <VolumeX size={22} aria-hidden />}
             </button>
@@ -754,10 +764,11 @@ export function Lernspiel({
 
   if ((phase === "start" || phase === "laden") && modus && !duell) {
     const info = BRETT_INFO[modus];
-    const brettRekord = modus === "funkel" ? funkelRekord : bloeckeRekord;
-    const quellLink = modus === "funkel" ? funkelLink : bloeckeLink;
-    // die Spiele, aus denen die Fragen kommen können (Vokabel-Paare nicht: dort liegen alle Karten auf einmal da)
-    const passend = vorschlaege.filter((v) => hatEndlos(v.art));
+    const brettRekord = modus === "funkel" ? funkelRekord : modus === "tor" ? torRekord : bloeckeRekord;
+    const quellLink = modus === "funkel" ? funkelLink : modus === "tor" ? torLink : bloeckeLink;
+    // die Spiele, aus denen die Fragen kommen können (Vokabel-Paare nicht: dort liegen alle Karten auf einmal da;
+    // Torlauf braucht Antworten zum Wählen, also kein Satzbau und kein Zahlenstrahl)
+    const passend = vorschlaege.filter((v) => (modus === "tor" ? torTauglich(v.art) : hatEndlos(v.art)));
     const quellen = passend.slice(0, 6).some((v) => v.art === art) ? passend.slice(0, 6) : [...passend.filter((v) => v.art === art), ...passend.filter((v) => v.art !== art).slice(0, 5)];
     return (
       <div className="ls" role="dialog" aria-modal="true" aria-label={`Lernspiel ${info.titel}`}>
@@ -774,7 +785,7 @@ export function Lernspiel({
             {info.text}
           </p>
           <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
-            {modus === "funkel" ? <MiniFunkel /> : <MiniBrett />}
+            {modus === "funkel" ? <MiniFunkel /> : modus === "tor" ? <MiniTor /> : <MiniBrett />}
           </div>
           <p className="ls-klein mt-5" style={{ "--n": 3 } as CSSProperties}>
             Fragen aus
@@ -965,6 +976,13 @@ export function Lernspiel({
                   <span>Funkelfeld</span>
                   <small>{funkelRekord > 0 ? `Rekord ${funkelRekord.toLocaleString("de-AT")}` : "Steine tauschen"}</small>
                 </button>
+                {torTauglich(art) && (
+                  <button type="button" className="ls-knopf ls-endlos-knopf" data-zweit="" onClick={() => void starten(false, "tor")} disabled={phase === "laden"} data-testid="tl-start-spiel">
+                    <TorZeichen />
+                    <span>Torlauf</span>
+                    <small>{torRekord > 0 ? `Rekord ${torRekord.toLocaleString("de-AT")}` : "Durch Tore laufen"}</small>
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -975,7 +993,7 @@ export function Lernspiel({
 
   if (phase === "ende" && brett) {
     const info = BRETT_INFO[brett];
-    const brettRekord = brett === "funkel" ? funkelRekord : bloeckeRekord;
+    const brettRekord = brett === "funkel" ? funkelRekord : brett === "tor" ? torRekord : bloeckeRekord;
     const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
     const stand = blockPunkte.current;
     const bisher = e?.bloecke?.rekord ?? brettRekord;
@@ -1306,6 +1324,7 @@ export function Lernspiel({
       {duell?.leiste}
       {brett === "bloecke" && <BlockFeld aktiv={!frage || imBrett} frage={brettFrage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
       {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
+      {brett === "tor" && <TorLauf karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} />}
       {(!bloecke || (frage && !imBrett)) && inhalt}
     </div>
   );
@@ -1675,7 +1694,30 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
 const BRETT_INFO: Record<Brett, { titel: string; text: string; ende: string; kurz: string }> = {
   bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort, schnell ist mehr wert. Drei richtig hintereinander: Fieber, alles zählt doppelt!", ende: "Kein Platz mehr", kurz: "bw" },
   funkel: { titel: "Funkelfeld", text: "Tausch zwei Steine, und drei gleiche in einer Linie verschwinden. Sind die Züge weg, bringt eine richtige Antwort neue.", ende: "Keine Herzen mehr", kurz: "ff" },
+  tor: { titel: "Torlauf", text: "Wisch nach links und rechts, spring über Hürden und sammle Sterne. Oben steht eine Frage: lauf durch das Tor mit der richtigen Antwort. Drei richtig hintereinander: Fieber, und ein verlorenes Herz kommt zurück!", ende: "Keine Herzen mehr", kurz: "tl" },
 };
+
+/** Eine kleine Strecke mit drei Toren für den Anfang von Torlauf (auch die Kachel im Tab „Spiele“). */
+function MiniTor() {
+  return (
+    <span className="tl-mini">
+      <i />
+      <i />
+      <i />
+      <b />
+    </span>
+  );
+}
+
+/** Das Zeichen für Torlauf auf dem Knopf: ein Tor. */
+function TorZeichen() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 22 22" aria-hidden>
+      <path d="M4 20V7a7 7 0 0 1 14 0v13" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+      <circle cx="11" cy="15" r="3" fill="currentColor" opacity="0.6" />
+    </svg>
+  );
+}
 
 /** Ein kleines Brett mit ein paar Teilen für den Anfang von Blockwerk. */
 function MiniBrett() {

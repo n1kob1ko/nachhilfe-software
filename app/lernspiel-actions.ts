@@ -7,6 +7,7 @@ import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
 import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
+import { gueltigeTorPunkte } from "@/lib/torlauf";
 import { gueltigeWortPunkte } from "@/lib/wortschloss";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -91,7 +92,7 @@ export async function tabletSpielBeendenAction(rundeId: number, antworten: Spiel
 }
 
 /** Ein Spielbrett zwischen den Karten (`true` heißt Blockwerk, wie früher). */
-type Brett = boolean | "bloecke" | "funkel";
+type Brett = boolean | "bloecke" | "funkel" | "tor";
 
 function starten(student: repo.Student, art: string, endlos?: "neu" | number, bloecke?: Brett): SpielStart {
   if (!istSpielArt(art)) return { fehler: "Dieses Spiel gibt es nicht." };
@@ -102,8 +103,8 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
   const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
   const lauf = !hatEndlos(art) ? undefined : endlos === "neu" ? "neu" : Number.isInteger(endlos) && Number(endlos) > 0 ? Number(endlos) : undefined;
-  const brett = bloecke === true || bloecke === "bloecke" ? "bloecke" : bloecke === "funkel" ? "funkel" : null;
-  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu" });
+  const brett = bloecke === true || bloecke === "bloecke" ? "bloecke" : bloecke === "funkel" ? "funkel" : bloecke === "tor" ? "tor" : null;
+  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu" });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
 }
@@ -138,8 +139,8 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
   const lauf = zeile?.endlos ?? null;
   const spiel: PunkteSpiel | null = lauf ? (PUNKTE_SPIELE.find((s) => laufIst(student.id, lauf, s)) ?? null) : null;
   // Blockwerk und Funkelfeld: ein Brett zwischen den Karten (gleiches Ergebnis)
-  const block = spiel === "bloecke" || spiel === "funkel" ? spiel : null;
-  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
+  const block = spiel === "bloecke" || spiel === "funkel" || spiel === "tor" ? spiel : null;
+  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : spiel === "tor" ? gueltigeTorPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
   const vorher = zeile ? lernstandVon(student.id, zeile.skillId) : null;
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : [], { teil: o?.teil === true });
   if (!e) return { fehler: "Diese Runde gibt es nicht mehr." };

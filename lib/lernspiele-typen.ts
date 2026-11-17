@@ -277,6 +277,8 @@ export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: numbe
 
 /** Spiele mit Endlos-Modus: alle außer „Vokabel-Paare“ (dort liegen alle Karten einer Runde auf einmal am Brett). */
 export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
+/** Torlauf (lib/torlauf.ts) braucht Antworten zum Wählen: kein Satzbau, kein Zahlenstrahl, keine eigenen Spiele (Glasklar, Wortschloss). */
+export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau" && art !== "strahl" && art !== "glas" && art !== "wort";
 /** So viele Fehler verzeiht ein Endlos-Spiel. */
 export const ENDLOS_HERZEN = 3;
 

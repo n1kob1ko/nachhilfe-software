@@ -195,7 +195,7 @@ export default async function DevicePage() {
     const lernstand = new Map((analyzeStudent(student.id)?.skills ?? []).map((s) => [s.skill.id, s.mastery]));
     const vorschlaege = spielVorschlaege(student, { heute, lernstand });
     const art = view.kind === "spiel" ? view.art : null;
-    const brett = view.kind === "spiel" ? (view.bloecke ? "bloecke" : view.funkel ? "funkel" : undefined) : undefined;
+    const brett = view.kind === "spiel" ? (view.bloecke ? "bloecke" : view.funkel ? "funkel" : view.tor ? "tor" : undefined) : undefined;
     content =
       art && vorschlaege.length ? (
         <Lernspiel
@@ -205,9 +205,11 @@ export default async function DevicePage() {
           modus={brett}
           bloeckeRekord={bloeckeRekord(student.id)}
           funkelRekord={punkteRekord(student.id, "funkel")}
+          torRekord={punkteRekord(student.id, "tor")}
           bestenliste={brett ? punkteBestenliste(student, brett) : undefined}
           bloeckeLink="/geraet/ansicht?zu=bloecke:"
           funkelLink="/geraet/ansicht?zu=funkel:"
+          torLink="/geraet/ansicht?zu=tor:"
           art={art}
           vorschlaege={vorschlaege}
           serie={serie(student.id, heute)}
@@ -220,7 +222,7 @@ export default async function DevicePage() {
         />
       ) : vorschlaege.length ? (
         <div className="geraet-spiele">
-          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} funkel={(a) => `/geraet/ansicht?zu=funkel:${a}`} glas={(() => {
+          <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} funkel={(a) => `/geraet/ansicht?zu=funkel:${a}`} tor={(a) => `/geraet/ansicht?zu=tor:${a}`} glas={(() => {
               const t = glasThemen(student, heute)[0];
               return t ? { href: "/geraet/ansicht?zu=glas:", thema: t.name } : undefined;
             })()} wort={(() => {

@@ -171,6 +171,26 @@ export const klang = {
   aus() {
     [7, 4, 2, 0].forEach((s, i) => ton(note(s, 261.63), { t: i * 0.14, lang: 0.4, welle: "triangle", laut: 0.22 }));
   },
+  /** Torlauf: abspringen */
+  sprung() {
+    ton(330, { lang: 0.16, welle: "triangle", laut: 0.16, bis: 660 });
+  },
+  /** Torlauf: ein Stern; `n`: der wievielte am Stück (höher) */
+  stern(n = 0) {
+    const f = note(Math.min(12, 5 + (n % 8)));
+    ton(f, { lang: 0.12, welle: "sine", laut: 0.12 });
+    ton(f * 2, { t: 0.03, lang: 0.08, welle: "sine", laut: 0.04 });
+  },
+  /** Torlauf: gegen eine Kiste */
+  aua() {
+    ton(120, { lang: 0.25, welle: "square", laut: 0.12, bis: 60 });
+    rauschen({ lang: 0.12, laut: 0.25, tief: 900 });
+  },
+  /** Torlauf: eine neue Strecke beginnt */
+  strecke() {
+    [0, 4, 7].forEach((s, i) => ton(note(s), { t: i * 0.08, lang: 0.35, welle: "triangle", laut: 0.24 }));
+    ton(note(9), { t: 0.26, lang: 0.6, welle: "sine", laut: 0.2 });
+  },
   /** Neuer Rekord */
   rekord() {
     [0, 2, 4, 5, 7, 10].forEach((s, i) => ton(note(s), { t: i * 0.1, lang: 0.6, welle: "triangle", laut: 0.25 }));

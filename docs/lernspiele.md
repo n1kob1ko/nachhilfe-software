@@ -438,6 +438,35 @@ fünf Farben, Form und Farbe zugleich), kein Nachbau eines bekannten Spiels (`co
   Bestenliste (Anfang, Ende und unten im Tab „Spiele“). Der Endlos-Rekord zählt Funkelfeld nicht mit.
 - Bilder und Video: `lernspiele/funkelfeld-*.png` und `lernspiele/funkelfeld-handy.mp4` im Projektordner.
 
+## Torlauf
+
+niko 2026-11-17 auf der Karte „Welches Spiel als Nächstes?“: „Läufer mit Antwort-Toren“ (nach „was … generell schon
+beliebt ist … nachmachen und etwas umändern“). Ein Endlos-Läufer mit eigenem Namen, eigener Figur (runder oranger
+Läufer mit blauem Schulrucksack) und eigenem Look, kein Nachbau eines bekannten Spiels
+(`components/lernen/TorLauf.tsx`, `components/lernen/torlauf.css`, Logik in `lib/torlauf.ts`).
+
+- **Wo**: wie Blockwerk und Funkelfeld: Kachel „Torlauf“ im Tab „Spiele“, ein Knopf auf dem Anfang jedes Spiels mit
+  Antworten zum Wählen (`torTauglich`: nicht Satzbau, Zahlenstrahl, Glasklar, Wortschloss), eigener Anfang
+  (`/lernen/[token]/spiel?modus=tor&art=…`, am Tablet `tor:<art>`). In Lernspiel.tsx ist es das dritte `brett` („tor“).
+- **Laufen**: der Läufer rennt von selbst auf drei Spuren, erst 9 m/s, alle 230 m einen m/s schneller, höchstens 19.
+  Wischen links/rechts wechselt die Spur (lang gewischt zwei), nach oben springt er; Tippen links oder rechts vom
+  Läufer geht auch, am Laptop Pfeile, A/D, W und Leertaste. Kisten muss man umlaufen, über Hürden springt man (oder
+  läuft vorbei), Sterne sammelt man ein (+10, mit einem höher werdenden Ton). Jede Reihe lässt einen Weg frei; auf der
+  ersten Strecke steht nur ein Hindernis je Reihe.
+- **Tore**: oben steht die Frage mit den Antworten (bis zu drei, `torOptionen`: die richtige und die ersten falschen
+  der Karte, die richtige je Karte an fester, aber anderer Stelle). Die Torreihe kommt erst, wenn man die Frage mindestens
+  6,5 s lesen konnte (später 4,5 s), vor und hinter den Toren bleibt die Strecke frei. Ein Tipp auf eine Antwort oben
+  oder die Taste 1–3 schickt den Läufer auf ihre Spur. Bei zwei Antworten stehen die Tore außen, in der Mitte eine Wand.
+- **Richtig**: +100 Punkte mal Fieber, Funken, ein Lobwort; drei richtige am Stück sind **Fieber** (×2, ab sechs ×3,
+  wie Blockwerk) und bringen ein verlorenes Herz zurück. **Falsch** oder gegen Kiste oder Wand: ein Herz weg (3 Herzen),
+  die richtige Antwort und die Regel stehen kurz über der Strecke. Ohne Herzen ist der Lauf aus.
+- **Strecken**: alle fünf Tore beginnt eine neue Strecke mit anderem Himmel (Morgen, Mittag, Abend, Nacht,
+  Polarlicht), dichteren Hindernissen und kürzerer Lesezeit.
+- **Punkte**: 1 je Meter, 10 je Stern, 100 je Tor, alles mal Fieber. Gespeichert wie Funkelfeld in `spielrunden.tor`
+  mit eigenem Rekord und eigener Bestenliste; der Endlos-Rekord zählt Torlauf nicht mit. Gezählt wird wie im
+  Endlos-Modus (Runden hängen aneinander).
+- Bilder und Video: `lernspiele/torlauf-bilder/` und `lernspiele/torlauf-handy.mp4` im Projektordner.
+
 ## Glasklar
 
 niko 2026-11-16 (Frage, welche Spiele so beliebt sind wie Blockwerk; Antwort „ja“ zu einem Sortier-Spiel wie die

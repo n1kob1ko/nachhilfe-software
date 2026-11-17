@@ -35,6 +35,10 @@ test("Tablet-Ansicht Spiele: hin und zurück gelesen, Live-Status zeigt das Spie
   assert.deepEqual(live.parseView("funkel:dasdass"), { kind: "spiel", art: "dasdass", funkel: true });
   live.showOnTablet(unit, { kind: "spiel", art: "dasdass", funkel: true });
   assert.equal(units.getUnit(unit.id)!.device_view, "funkel:dasdass");
+  // Torlauf genauso
+  assert.deepEqual(live.parseView("tor:zeiten"), { kind: "spiel", art: "zeiten", tor: true });
+  live.showOnTablet(unit, { kind: "spiel", art: "zeiten", tor: true });
+  assert.equal(units.getUnit(unit.id)!.device_view, "tor:zeiten");
   // Wortschloss mit einem Thema
   assert.deepEqual(live.parseView("wort:mehrzahl"), { kind: "wort", thema: "mehrzahl" });
   live.showOnTablet(unit, { kind: "wort", thema: "mehrzahl" });
