@@ -22,13 +22,17 @@ export const runde = (x: number, stellen = 2) => {
 export function zahl(x: number, stellen = 2): string {
   const r = runde(x, stellen);
   const neg = r < 0;
-  const [vor, nach] = Math.abs(r).toFixed(stellen).replace(/\.?0+$/, "").split(".");
+  const [vor, nach] = Math.abs(r).toFixed(stellen).replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "").split(".");
   const gruppiert = vor.length > 4 ? vor.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : vor;
   return `${neg ? "−" : ""}${gruppiert}${nach ? `,${nach}` : ""}`;
 }
 
 /** Ein Geldbetrag: „12,50 €“. */
-export const euro = (x: number) => `${runde(x, 2).toFixed(2).replace(".", ",")} €`;
+export function euro(x: number): string {
+  const r = runde(x, 2);
+  const [vor, nach] = Math.abs(r).toFixed(2).split(".");
+  return `${r < 0 ? "−" : ""}${vor.length > 4 ? vor.replace(/\B(?=(\d{3})+(?!\d))/g, " ") : vor},${nach} €`;
+}
 
 /**
  * Eine Karte mit Auswahl: die richtige Antwort und bis zu `max` falsche (die ersten zuerst). Gleiche Antworten und
