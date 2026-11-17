@@ -591,6 +591,25 @@ lib/stilmittel-saetze.ts, ohne KI:
 - Wie jedes Spiel mit Kacheln auch als Endlos, Blockwerk, Funkelfeld, Torlauf (drei Tore) und im Duell (Stilmittel
   des Jüngeren).
 
+## Meine Fehler (Fehlerprotokoll)
+
+niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers
+(„Falsch | Richtig“ auf Papier), mit seiner Regel „eine Karte fliegt raus, wenn sie zweimal hintereinander richtig war“.
+Spiel `fehler` (lib/fehlerprotokoll.ts, Text in lib/fehlerprotokoll-text.ts), ohne KI:
+
+- **Schreiben**: beim Schüler unter Übungen › Fehlerprotokoll, eine Zeile ein Fehler: `falsch → richtig` (auch `->`
+  oder `=>`), `Merke: …` darunter. Anführungszeichen außen fallen weg. Rechts steht gleich die Vorschau der Karten.
+- **Karte**: was links und rechts gleich ist, bleibt stehen, der Unterschied ist die Lücke („Die Schule muss ___
+  unterstützen“), gewischt wird zu „Kinder“ oder „Kindern“ (die richtige je Fehler fest links oder rechts). Nach einem
+  Fehler steht der Merksatz da, ohne Merksatz „Richtig: … Nicht: …“. Ein Unterschied über 48 Zeichen hält das
+  Speichern auf (dann zwei Zeilen schreiben).
+- **Raus nach zweimal**: gezählt wird der erste Versuch je Karte in den beendeten Runden „Meine Fehler“ (auch Blockwerk,
+  Torlauf, Endlos); ein Fehler setzt die Folge auf null. Geschaffte Fehler bleiben im Text und sind auf der Seite
+  abgehakt; eine geänderte falsche Form ist ein neuer Fehler. Der Stand wird aus den Runden gerechnet, nicht gespeichert.
+- **Vorschlag**: solange ein Fehler offen ist, steht „Meine Fehler“ ganz oben („Dein Fehlerprotokoll“, für die 5 Minuten
+  am Anfang); sind alle geschafft, verschwindet das Spiel. Kein Duell (nur dieser Schüler hat die Karten). Die Runden
+  zählen für `stoff.fehler`, keine Fähigkeit im Lernstand.
+
 ## Dein Stoff (eigene Spielkarten)
 
 niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für

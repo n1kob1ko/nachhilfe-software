@@ -45,13 +45,13 @@
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
-/** Spiele für ein Duell: „Dein Stoff“ hat nur dieser Schüler (lib/spielkarten.ts), Glasklar ist ein Puzzle für einen. */
-export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas" && a !== "wort");
-export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas" && x !== "wort";
+/** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas" && a !== "wort" && a !== "fehler");
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas" && x !== "wort" && x !== "fehler";
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -77,6 +77,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   quizdeutsch: "Deutsch-Quiz",
   quizenglisch: "Englisch-Quiz",
   stilmittel: "Stilmittel",
+  fehler: "Meine Fehler",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -106,6 +107,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   quizdeutsch: "Deutsch",
   quizenglisch: "Englisch",
   stilmittel: "Deutsch",
+  // die eigenen Fehler (lib/fehlerprotokoll.ts) stehen neben den eigenen Karten
+  fehler: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -133,6 +136,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   quizdeutsch: "Fragen zu deinem Thema, von Wortarten bis Erörterung",
   quizenglisch: "Fragen zu deinem Thema, von Grammatik bis Writing",
   stilmittel: "Metapher, Vergleich oder Hyperbel? Erkenn das Stilmittel im Satz",
+  fehler: "Deine Fehler aus deinen Texten, bis du sie zweimal richtig hast",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -160,6 +164,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   quizdeutsch: ["Metapher", "Verb", "Reim"],
   quizenglisch: ["since", "although", "would"],
   stilmittel: ["Metapher", "Anapher", "Ironie"],
+  fehler: ["✗", "✓", "✓"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -187,6 +192,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   quizdeutsch: "Welche Antwort stimmt?",
   quizenglisch: "Welche Antwort stimmt?",
   stilmittel: "Welches Stilmittel steckt im markierten Teil?",
+  fehler: "Welche Form ist richtig?",
 };
 
 /**
@@ -213,6 +219,7 @@ export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   praepositionen: "kacheln",
   deklination: "kacheln",
   stilmittel: "kacheln",
+  fehler: "wischen",
 };
 
 /** Trennt die Teile in der Antwort einer Reihe („gehen | wir | ins Kino“). */

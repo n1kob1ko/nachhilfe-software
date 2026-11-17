@@ -34,6 +34,7 @@ import { leseListe } from "./vokabeln";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
 import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
+import { FEHLER_SKILL, fehlerKandidaten, offeneFehlerZahl } from "./fehlerprotokoll";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { stufeFuer, type GlasThemaInfo } from "./glasklar";
 import { GLAS_THEMEN, glasKandidaten, glasStufen, glasThema, sortenVon, STOFF_THEMA, stoffKandidaten, themaVonKey, waehleGlasKarten, type GlasKandidat } from "./glasklar-themen";
@@ -77,9 +78,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   quizenglisch: "spiel.quiz.englisch",
   // Stilmittel: Unterstufe „Sprachliche Bilder“, Oberstufe je Karte die Gruppe (stilPlan, lib/stilmittel.ts)
   stilmittel: STIL_UNTERSTUFE,
+  // Meine Fehler: das Fehlerprotokoll des Schülers (lib/fehlerprotokoll.ts), zählt für keine Fähigkeit im Lernstand
+  fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -138,6 +141,8 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
     for (const art of arten) if (!out.some((v) => v.art === art) && (!istQuiz(art) || spielbareThemen(art).length)) out.push({ art, grund, quelle });
   };
 
+  // das Fehlerprotokoll (lib/fehlerprotokoll.ts): die eigenen Fehler, 5 Minuten am Anfang, solange welche offen sind
+  if (offeneFehlerZahl(student.id) > 0) add(["fehler"], "Dein Fehlerprotokoll", "stoff");
   // eigene Spielkarten (lib/spielkarten.ts): die Lehrkraft hat sie für genau diesen Stoff geschrieben, darum zuerst
   const satz = spielSatz(student.id);
   const frisch = satz && istFrisch(satz, o.heute);
@@ -147,7 +152,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -320,6 +325,10 @@ export function wortfeldPlan(student: repo.Student, art: SpielArt, heute: string
 export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
   if (art === "vokabeln") return vokabelPlan(student, heute).titel;
   if (art === "stoff") return spielSatz(student.id)?.titel;
+  if (art === "fehler") {
+    const n = offeneFehlerZahl(student.id);
+    return n === 1 ? "Noch 1 Fehler offen" : `Noch ${n} Fehler offen`;
+  }
   if (art === "stilmittel") return stilPlan(student, heute).titel;
   return wortfeldPlan(student, art, heute)?.titel ?? themenPlan(student, art, heute)?.titel;
 }
@@ -331,6 +340,7 @@ export function spielVorschau(student: repo.Student, art: SpielArt, heute: strin
     const wahl = satz ? satzKandidaten(satz).filter((k) => k.karte.form !== "reihe") : [];
     return wahl.map((k) => k.karte.faecher).sort((x, y) => x.join("").length - y.join("").length)[0];
   }
+  if (art === "fehler") return fehlerKandidaten(student.id).map((k) => k.karte.faecher).sort((x, y) => x.join("").length - y.join("").length)[0];
   const plan = themenPlan(student, art, heute);
   if (!plan) return undefined;
   // von den ersten Karten die mit den kürzesten Aufschriften: drei kleine Kisten in einer Zeile
@@ -367,6 +377,7 @@ export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: stri
   if (art === "vokabeln") return vokabelPlan(student, heute).skillId;
   if (art === "satzbau") return satzbauSkill(student);
   if (art === "stilmittel") return stilPlan(student, heute).skillId;
+  if (art === "fehler") return FEHLER_SKILL;
   if (art === "stoff") {
     const satz = spielSatz(student.id);
     return satz ? satzSkill(satz) : EIGENER_STOFF;
@@ -638,6 +649,9 @@ export function starteRunde(
     karten = satz
       ? waehleKarten(art, { pool: satzKandidaten(satz), stufen: [1], wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng })
       : [];
+  } else if (art === "fehler") {
+    // Meine Fehler: nur die, die noch nicht zweimal hintereinander richtig waren
+    karten = waehleKarten(art, { pool: fehlerKandidaten(student.id), stufen: [1], wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng });
   } else {
     const heute = o.heute ?? wienerDatum();
     const plan = themenPlan(student, art, heute);
