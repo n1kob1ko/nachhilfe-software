@@ -90,7 +90,21 @@ export function lineLabel(from: number, to = from): string {
 // ---------- Schreibplan and word budget ----------
 
 export type TeilKey = "einleitung" | "inhalt" | "form" | "sprache" | "figur" | "deutung" | "schluss";
-export type PlanPart = { key: TeilKey; title: string; hint: string; words: number };
+/** The parts of the Aufbau „Einleitung und vier Operatoren“. */
+export type OpKey = "einleitung" | "op1" | "op2" | "op3" | "op4";
+export type PlanPart = { key: TeilKey | OpKey; title: string; hint: string; words: number };
+
+/**
+ * How the interpretation is built: the seven parts of the SRDP ("teile", the default), or a short Einleitung and the
+ * four Operatoren many schools use (niko, 17.11.2026, from a Professorin of an HTL): OP1 Inhalt, OP2 Form und Sprache,
+ * OP3 Deuten, OP4 Aktualität und Stellungnahme, about 550 words.
+ */
+export type Aufbau = "teile" | "operatoren";
+export const AUFBAU_NAMEN: Record<Aufbau, string> = { teile: "Sieben Teile (Matura)", operatoren: "Einleitung und 4 Operatoren" };
+export const isAufbau = (x: unknown): x is Aufbau => x === "teile" || x === "operatoren";
+export const cleanAufbau = (x: unknown): Aufbau => (isAufbau(x) ? x : "teile");
+/** The word target an Aufbau starts with. */
+export const AUFBAU_TARGET: Record<Aufbau, number> = { teile: 500, operatoren: 550 };
 
 /** The seven parts of a school interpretation, with their share of the words. */
 const PARTS: { key: TeilKey; title: string; share: number; hint: (k: StoryKind) => string }[] = [
@@ -116,10 +130,36 @@ export function cleanTarget(v: unknown, fallback = DEFAULT_TARGET): number {
   return Math.max(MIN_TARGET, Math.min(MAX_TARGET, n));
 }
 
-/** The seven parts with a rough word budget each (rounded to 5). */
-export function schreibplan(target = DEFAULT_TARGET, kind: StoryKind = "Kurzgeschichte"): PlanPart[] {
+/** Einleitung and the four Operatoren: 30, 80, 180, 180 and 80 of 550 words. */
+const OP_PARTS: { key: OpKey; title: string; share: number; hint: (k: StoryKind) => string }[] = [
+  { key: "einleitung", title: "Einleitung", share: 30 / 550, hint: (k) => `Ein Satz: „Die ${k === "Märchen" || k === "Romanauszug" ? "Geschichte" : k} „Titel“ von … behandelt die Thematik …“ oder „… beschäftigt sich mit der Problematik …“. Kein Zitat.` },
+  { key: "op1", title: "OP1 Inhalt", share: 80 / 550, hint: () => "Kurz und im Präsens, ohne Zitate und ohne Wertung. Was vorher passiert ist, im Perfekt." },
+  { key: "op2", title: "OP2 Form und Sprache", share: 180 / 550, hint: (k) => `Merkmale ${STORY_KINDS[k].des}, Aufbau mit Zeilen (z. B. Z. 1–15), Sprache (Satzbau, Wortwahl) und 3–4 Stilmittel. Immer: Zitat mit Zeile, dann „Dadurch wird deutlich, dass …“.` },
+  { key: "op3", title: "OP3 Deuten", share: 180 / 550, hint: () => "Das Verhalten aller Figuren aus der Aufgabe, nicht nur der Hauptfigur, und der Titel. Jede Aussage mit Beleg: Behauptung, Zitat mit Zeile, Wirkung, Bedeutung." },
+  { key: "op4", title: "OP4 Aktualität und Stellungnahme", share: 80 / 550, hint: () => "1–2 Parallelen zu heute: Wo gibt es das Problem noch? Dann deine begründete Meinung, sachlich." },
+];
+
+/** The parts with a rough word budget each (rounded to 5): the seven parts, or Einleitung and the four Operatoren. */
+export function schreibplan(target = DEFAULT_TARGET, kind: StoryKind = "Kurzgeschichte", aufbau: Aufbau = "teile"): PlanPart[] {
   const t = cleanTarget(target);
-  return PARTS.map((p) => ({ key: p.key, title: p.title, hint: p.hint(kind), words: round5(t * p.share) }));
+  const parts = aufbau === "operatoren" ? OP_PARTS : PARTS;
+  return parts.map((p) => ({ key: p.key, title: p.title, hint: p.hint(kind), words: round5(t * p.share) }));
+}
+
+/**
+ * „Vor der Abgabe“: what to check before handing in, as at the Schularbeit. The student ticks it off; nothing is
+ * saved or graded.
+ */
+export function abgabeCheckliste(aufbau: Aufbau = "teile"): string[] {
+  return [
+    "Alle Arbeitsaufträge bearbeitet?",
+    aufbau === "operatoren" ? "Einleitung ein Satz mit „Thematik“ oder „Problematik“?" : "Einleitung mit Autor oder Autorin, Titel, Textsorte und Thema?",
+    "Inhalt im Präsens, ohne Zitate und ohne Wertung?",
+    "Autor oder Autorin richtig?",
+    "Jedes Zitat mit Zeile, nach jedem Zitat die Wirkung erklärt?",
+    "Sachlicher Ton, keine Umgangssprache?",
+    "Fälle geprüft: unterstützen + Akkusativ, helfen + Dativ, wirkt sich auf … aus?",
+  ];
 }
 
 /** The range the Arbeitsauftrag names: 10 % below and above the target, in tens (500: 450 to 550). */
@@ -133,7 +173,7 @@ export type InterpretationView = { title: string; author: string; year: string; 
 
 // ---------- the Arbeitsauftrag ----------
 
-export type StoryInfo = { title: string; author: string; year: string; kind: StoryKind; target: number };
+export type StoryInfo = { title: string; author: string; year: string; kind: StoryKind; target: number; aufbau?: Aufbau };
 
 /** „Sieben Uhr zwölf“ von Ida Brunnhofer (2026) */
 export function storyReference(s: Pick<StoryInfo, "title" | "author" | "year">): string {
@@ -147,6 +187,17 @@ export function storyReference(s: Pick<StoryInfo, "title" | "author" | "year">):
 export function defaultArbeitsauftrag(s: StoryInfo): string {
   const k = STORY_KINDS[s.kind] ?? STORY_KINDS.Kurzgeschichte;
   const { min, max } = wordRange(s.target);
+  if (s.aufbau === "operatoren") {
+    return [
+      `Verfasse eine Textinterpretation ${k.zu} ${s.kind} ${storyReference(s)}.`,
+      "Beginne mit einer Einleitung in einem Satz und bearbeite dann die folgenden Arbeitsaufträge:",
+      `• OP1: Fasse den Inhalt ${k.des} kurz zusammen.`,
+      "• OP2: Untersuche Form und Sprache. Belege deine Aussagen mit Zitaten und Zeilenangaben und erkläre ihre Wirkung.",
+      "• OP3: Deute das Verhalten der Figuren und den Titel.",
+      "• OP4: Zeige, was der Text mit unserer Zeit zu tun hat, und nimm begründet Stellung.",
+      `Schreib zwischen ${min} und ${max} Wörter.`,
+    ].join("\n");
+  }
   return [
     `Verfasse eine Textinterpretation ${k.zu} ${s.kind} ${storyReference(s)}.`,
     "Bearbeite dabei die folgenden Arbeitsaufträge:",
@@ -300,9 +351,9 @@ export function quotesOf(doc: TextDoc): Quote[] {
 // ---------- Hinweise ----------
 
 export type HinweisTone = "gut" | "tipp" | "info";
-export type Hinweis = { key: "umfang" | "einleitung" | "zitate" | "zeilen" | "stelle" | "absaetze"; tone: HinweisTone; text: string };
+export type Hinweis = { key: "umfang" | "einleitung" | "thema" | "zitate" | "zeilen" | "stelle" | "wirkung" | "zitatort" | "ton" | "autor" | "absaetze"; tone: HinweisTone; text: string };
 
-export type HinweisInfo = { title: string; author: string; target: number; lines: StoryLine[] };
+export type HinweisInfo = { title: string; author: string; target: number; lines: StoryLine[]; aufbau?: Aufbau };
 
 export const short = (s: string, n = 40) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 export const plural = (n: number, one: string, many: string) => `${n.toLocaleString("de-AT")} ${n === 1 ? one : many}`;
@@ -419,11 +470,118 @@ export function absaetzeHinweis(doc: TextDoc, words: number, target: number, min
   return { key: "absaetze", tone: ps >= min ? "gut" : "info", text: `${plural(ps, "Absatz", "Absätze")}${ps >= min ? ": Der Aufbau ist gut zu sehen." : "."}` };
 }
 
+// ---------- Hinweise for the Kette: Behauptung → Zitat mit Zeile → Wirkung → Bedeutung ----------
+
+/** A Beleg: a line reference in brackets, „…“ (Z. 12) or (vgl. Z. 37–40). */
+const BELEG = /\((?:[^()]{0,20}?\b)?(?:vgl\.\s*)?(?:Z|Zl|Zeilen?)\.?\s*\d[^()]{0,30}\)/gi;
+/** The text without what stands in quotation marks: quoted words are not the writer's own. */
+const ohneZitate = (s: string) => s.replace(/[„“"»«][^„“”"»«]{0,600}[“”"«»]/g, " ");
+const eigeneWoerter = (s: string) => (ohneZitate(s).match(/[\p{L}\p{N}]+/gu) ?? []).length;
+/** The paragraphs that are no heading. */
+const absaetze = (doc: TextDoc) => doc.filter((b) => b.t !== "h").map(blockText).filter((t) => t.trim());
+
+/** A quote in a paragraph, with the line reference that follows it: „…“ (Z. 12), „…“ (vgl. Z. 3), „…“ (ebd.). */
+const ZITAT_MIT_BELEG = /[„“"»«]([^„“”"»«]{1,600})[“”"«»](?:[.,;:!?]?\s*\((?:[^()]{0,20}?\b)?(?:vgl\.\s*)?(?:(?:Z|Zl|Zeilen?)\.?\s*\d[^()]{0,30}|ebd\.?)\))?/g;
+
+/**
+ * Wirkung: after the last quote of a paragraph comes a sentence that explains it („Dadurch wird deutlich, dass …“).
+ * A paragraph that ends with a quote and its line (fewer than five own words after it) is pointed at. Lines without
+ * a quote, like the sections of the Aufbau (Z. 1–24), need no Wirkung; the title in quotation marks is no quote.
+ */
+export function wirkungHinweis(doc: TextDoc, words: number, title = ""): Hinweis | null {
+  if (words < 100) return null;
+  const name = bareText(title);
+  const offen: string[] = [];
+  let mitZitat = 0;
+  for (const p of absaetze(doc)) {
+    const zitate = [...p.matchAll(ZITAT_MIT_BELEG)].filter((m) => bareText(m[1]) && bareText(m[1]) !== name);
+    if (!zitate.length) continue;
+    mitZitat++;
+    const last = zitate.at(-1)!;
+    if (eigeneWoerter(p.slice(last.index! + last[0].length)) >= 5) continue;
+    offen.push(`„${short(last[1].trim().replace(/[.!?,;:]+$/, ""), 40)}“`);
+  }
+  if (!mitZitat) return null;
+  if (!offen.length) return { key: "wirkung", tone: "gut", text: "Nach deinen Zitaten erklärst du weiter, was sie zeigen." };
+  return {
+    key: "wirkung",
+    tone: "tipp",
+    text: `${offen.length === 1 ? "Nach diesem Zitat kommt" : "Nach diesen Zitaten kommt"} kein erklärender Satz: ${offen.slice(0, 3).join(", ")}${offen.length > 3 ? " …" : ""}. Erklär die Wirkung, z. B. „Dadurch wird deutlich, dass …“.`,
+  };
+}
+
+/** Zitatort: Einleitung and Inhalt (the first two paragraphs) have no quotes and no lines, when the text has four paragraphs or more. */
+export function zitatortHinweis(doc: TextDoc, title: string): Hinweis | null {
+  const ps = absaetze(doc);
+  if (ps.length < 4) return null;
+  const name = bareText(title);
+  const mit = ps.slice(0, 2).filter((p) => {
+    if (p.match(BELEG)) return true;
+    return [...p.matchAll(/[„“"»«]([^„“”"»«]{1,600})[“”"«»]/g)].some((m) => bareText(m[1]) !== name && bareText(m[1]).split(" ").length >= 3);
+  });
+  if (!mit.length) return null;
+  return { key: "zitatort", tone: "tipp", text: "In Einleitung und Inhalt stehen keine Zitate und keine Zeilen. Heb sie dir für Form, Sprache und Deutung auf." };
+}
+
+/** Words of everyday speech, with what fits an interpretation better. `klein`: only written small (Halt, Ur… are other words). */
+const UMGANGSSPRACHE: { re: RegExp; wort: string; besser: string }[] = [
+  { re: /\bego(?:s)?\b/i, wort: "Ego", besser: "Eitelkeit oder Selbstwertgefühl" },
+  { re: /\blächerlich\w*/i, wort: "lächerlich", besser: "z. B. unangemessen oder übertrieben" },
+  { re: /\bmega\b/i, wort: "mega", besser: "sehr" },
+  { re: /\bkrass\w*/i, wort: "krass", besser: "sehr, auffällig" },
+  { re: /\btotal\b/i, wort: "total", besser: "völlig" },
+  { re: /\bcool\w*/i, wort: "cool", besser: "gelassen" },
+  { re: /\bgeil\w*/i, wort: "geil", besser: "sehr gut" },
+  { re: /\bsuper\b/i, wort: "super", besser: "sehr gut" },
+  { re: /\bheftig\w*/i, wort: "heftig", besser: "stark" },
+  { re: /\birgendwie\b/i, wort: "irgendwie", besser: "weglassen oder genau sagen, wie" },
+  { re: /\b(?:checkt|checken|gecheckt|kapier\w*)\b/i, wort: "checken/kapieren", besser: "verstehen" },
+  { re: /\bchill\w*/i, wort: "chillen", besser: "sich entspannen" },
+  { re: /\bnervig\w*/i, wort: "nervig", besser: "störend, belastend" },
+  { re: /\b(?:Zeug|Kram)\b/, wort: "Zeug", besser: "Dinge" },
+  { re: /\b(?:kriegt|kriegen|gekriegt|krieg)\b/, wort: "kriegen", besser: "bekommen" },
+  { re: /\b(?:guckt|gucken|geguckt)\b/i, wort: "gucken", besser: "sehen, betrachten" },
+  { re: /\bblöd\w*/i, wort: "blöd", besser: "unklug, ungeschickt" },
+  { re: /\bBock\b/, wort: "Bock", besser: "Lust" },
+  { re: /\b(?:okay|ok)\b/i, wort: "okay", besser: "in Ordnung, angemessen" },
+  { re: /(?<![\p{L}])halt(?![\p{L}])/u, wort: "halt", besser: "weglassen" },
+  { re: /(?<![\p{L}])eh(?![\p{L}])/u, wort: "eh", besser: "ohnehin" },
+  { re: /(?<![\p{L}])ur(?![\p{L}])/u, wort: "ur", besser: "sehr" },
+];
+
+/** Ton: words of everyday speech outside quotes. Only a hint: in a quote or in direct speech they can be right. */
+export function tonHinweis(doc: TextDoc, words: number): Hinweis | null {
+  if (words < 40) return null;
+  const text = ohneZitate(absaetze(doc).join("\n"));
+  const treffer = UMGANGSSPRACHE.filter((u) => u.re.test(text));
+  if (!treffer.length) return { key: "ton", tone: "gut", text: "Der Ton ist sachlich, ich finde keine Alltagswörter." };
+  return {
+    key: "ton",
+    tone: "tipp",
+    text: `Das klingt nach Alltagssprache: ${treffer.slice(0, 3).map((u) => `„${u.wort}“ (besser: ${u.besser})`).join(", ")}${treffer.length > 3 ? " …" : ""}. In einer Interpretation schreibst du sachlich.`,
+  };
+}
+
+/** Autor oder Autorin: both forms in one text, so one of them is wrong. */
+export function autorHinweis(doc: TextDoc): Hinweis | null {
+  const text = ohneZitate(absaetze(doc).join("\n"));
+  if (/\bAutorin\b/.test(text) && /\bAutors?\b/.test(text)) return { key: "autor", tone: "tipp", text: "Du schreibst einmal „Autor“ und einmal „Autorin“. Prüf, wer den Text geschrieben hat, und bleib dabei." };
+  return null;
+}
+
+/** Thema: the one-sentence Einleitung of the Operatoren names the Thematik or Problematik. */
+export function themaHinweis(doc: TextDoc): Hinweis {
+  const first = absaetze(doc)[0] ?? "";
+  if (/\b(?:Thematik|Problematik|Thema|beschäftigt\s+sich|behandelt|handelt\s+von|thematisiert|setzt\s+sich)\b/i.test(first)) return { key: "thema", tone: "gut", text: "Die Einleitung nennt das Thema." };
+  return { key: "thema", tone: "tipp", text: "Nenn in der Einleitung das Thema: „… behandelt die Thematik …“ oder „… beschäftigt sich mit der Problematik …“." };
+}
+
 /**
  * Hinweise on a written interpretation, without KI. They only point at things to look at again: the
- * length against the target, whether the opening names author and title, how many quotes have a line
- * number, line numbers the story does not have, quotes found word for word at another place than given,
- * and the number of paragraphs. A quote that is not found word for word is never questioned.
+ * length against the target, whether the opening names author and title (and, with the Operatoren, the Thema),
+ * how many quotes have a line number, line numbers the story does not have, quotes found word for word at another
+ * place than given, a Beleg without an explaining sentence after it, quotes in Einleitung and Inhalt, words of
+ * everyday speech, „Autor“ and „Autorin“ in one text, and the number of paragraphs. A quote that is not found word for word is never questioned.
  */
 export function hinweise(doc: TextDoc, info: HinweisInfo): Hinweis[] {
   const words = countWords(doc);
@@ -441,7 +599,10 @@ export function hinweise(doc: TextDoc, info: HinweisInfo): Hinweis[] {
   else if (!author) out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Namen ${name} nicht. Nenn ihn in der Einleitung.` });
   else out.push({ key: "einleitung", tone: "tipp", text: `Im ersten Absatz finde ich den Titel „${info.title.trim()}“ nicht. Nenn ihn in der Einleitung.` });
 
+  if (info.aufbau === "operatoren") out.push(themaHinweis(doc));
+
   out.push(...zitatHinweise(doc, words, { title: info.title, lines: info.lines }));
+  for (const h of [wirkungHinweis(doc, words, info.title), zitatortHinweis(doc, info.title), tonHinweis(doc, words), autorHinweis(doc)]) if (h) out.push(h);
   out.push(absaetzeHinweis(doc, words, target));
   return out;
 }

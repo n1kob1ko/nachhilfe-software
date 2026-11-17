@@ -43,6 +43,26 @@ Die Fähigkeit `deutsch.os.matura.textinterpretation` hatte keinen eigenen Gener
 
 Zitiert wird als „…“ (Z. 12), über zwei Zeilen (Z. 38f.), über mehrere (Z. 11–13) oder bis zum Ende (Z. 41ff.).
 
+### Aufbau nach Operatoren
+
+Viele Schulen verlangen statt der sieben Teile eine kurze Einleitung und vier Operatoren (niko, 17.11.2026, nach der Vorgabe einer HTL-Professorin). Im Formular heißt das „Aufbau: Einleitung und 4 Operatoren“, das Wortziel startet dann bei 550 (`aufbau` in `text_interpretations`, `schreibplan(target, kind, "operatoren")`).
+
+| Teil | Bei 550 Wörtern | Was hineingehört |
+|---|---|---|
+| Einleitung | ca. 30 | ein Satz: „… behandelt die Thematik …“ / „… beschäftigt sich mit der Problematik …“, kein Zitat |
+| OP1 Inhalt | ca. 80 | kurz, im Präsens, ohne Zitate und Wertung; Vorgeschichte im Perfekt |
+| OP2 Form und Sprache | ca. 180 | Merkmale der Textsorte, Aufbau mit Zeilen, Sprache, 3–4 Stilmittel mit Wirkung |
+| OP3 Deuten | ca. 180 | alle Figuren aus der Aufgabe und der Titel, jede Aussage mit Beleg |
+| OP4 Aktualität und Stellungnahme | ca. 80 | 1–2 Parallelen zu heute, begründete Meinung |
+
+Der Arbeitsauftrag nennt dann OP1 bis OP4, der KI-Erwartungshorizont und die KI-Bewertung folgen dem Plan von selbst (`planFor`).
+
+### Probe-Schularbeit und „Vor der Abgabe“
+
+„Wie bei der Schularbeit: mit Zeit, ohne Hilfen“ (`probe_min`, 10 bis 300 Minuten) zeigt am Schülergerät bis zur Abgabe nur Auftrag, Geschichte, Wortzahl und eine Uhr; Schreibplan, Hinweise, Erwartungshorizont und Beispiel kommen erst danach. Die Uhr startet mit dem ersten Wort und merkt sich den Start auf dem Gerät; ist die Zeit um, kann trotzdem fertig geschrieben und abgegeben werden. Die Lehrkraft sieht immer alles.
+
+Jede Textinterpretation hat die Liste „Vor der Abgabe prüfen“ (`abgabeCheckliste()`): alle Arbeitsaufträge, Einleitung, Inhalt im Präsens, Autor oder Autorin, Zitat mit Zeile und Wirkung, sachlicher Ton, Fälle. Die Häkchen bleiben nur auf der Seite, nichts wird gespeichert.
+
 ## Hinweise ohne KI
 
 Die Hinweise sind Tipps, keine Note, und sie markieren nie etwas als falsch, das richtig sein könnte (`hinweise()` in `lib/textinterpretation.ts`):
@@ -52,6 +72,11 @@ Die Hinweise sind Tipps, keine Note, und sie markieren nie etwas als falsch, das
 - **Zitate:** ob jedes Zitat eine Zeilenangabe hat. Der Titel in Anführungszeichen zählt nicht als Zitat.
 - **Zeilen:** Angaben über der letzten Zeile des Textes.
 - **Stelle:** ein Zitat, das wörtlich im Text steht, aber nicht in der angegebenen Zeile. Eine Zeile daneben gilt als richtig; gekürzte Zitate mit […] oder … und Zitate, die nicht wörtlich im Text stehen (umformuliert, eigene Rechtschreibung), werden nicht geprüft.
+- **Thema** (nur nach Operatoren): ob die Einleitung Thematik, Problematik oder Thema nennt.
+- **Wirkung:** ein Absatz, der mit einem Zitat endet (weniger als fünf eigene Wörter danach). Die Kette ist Behauptung, Zitat mit Zeile, Wirkung („Dadurch wird deutlich, dass …“), Bedeutung. Zeilen ohne Zitat, etwa die Abschnitte des Aufbaus, brauchen keine Wirkung.
+- **Zitatort:** Zitate oder Zeilen in den ersten beiden Absätzen (Einleitung und Inhalt), ab vier Absätzen.
+- **Ton:** Alltagswörter außerhalb von Zitaten, mit einem besseren Wort („Ego“: Eitelkeit oder Selbstwertgefühl, „lächerlich“, „halt“, „krass“ …). „egoistisch“, „Halt“ und „totale“ zählen nicht.
+- **Autor:** „Autor“ und „Autorin“ im selben Text.
 - **Absätze:** ob der Aufbau in Absätzen zu sehen ist.
 
 Ein Test prüft, dass die Musterinterpretation keinen einzigen Tipp bekommt und dass richtige Arten zu zitieren nie angemerkt werden: „f.“ und „ff.“, Bereiche, „Zeile 24“, „vgl.“, „ebd.“, die Angabe vor dem Zitat, eine Zeile daneben, ein Zitat, das zweimal im Text steht, und angepasste Zitate mit [ ].

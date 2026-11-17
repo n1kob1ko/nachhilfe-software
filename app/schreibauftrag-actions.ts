@@ -30,6 +30,8 @@ const fields = (f: FormData) => ({
   sourceNote: f.get("sourceNote"),
   beilageZiel: f.get("beilageZiel"),
   testId: f.get("testId"),
+  aufbau: f.get("aufbau"),
+  probeMin: f.get("probeMin"),
 });
 
 /** Eine Prüfung gehört nur zum Auftrag, wenn sie eine Prüfung dieses Schülers ist. */

@@ -5,7 +5,7 @@ import { BookOpenText, RotateCcw, WrapText } from "lucide-react";
 import type { AuftragFormState } from "@/app/schreibauftrag-actions";
 import type { BeilageVorlage } from "@/lib/schreibauftrag-store";
 import { arbeitsauftrag, beispielFor, hasLongLines, kindsOf, planFor, SORTEN, wrapLines, type SorteKey } from "@/lib/schreibauftrag";
-import { cleanTarget, lastLine, MAX_TARGET, MIN_STORY_LINES, MIN_TARGET, numberedLines, wordRange } from "@/lib/textinterpretation";
+import { AUFBAU_NAMEN, AUFBAU_TARGET, cleanTarget, lastLine, MAX_TARGET, MIN_STORY_LINES, MIN_TARGET, numberedLines, wordRange, type Aufbau } from "@/lib/textinterpretation";
 import { beilageLaenge, MAX_BEILAGE, MIN_BEILAGE, umfangVorgabe } from "@/lib/schreibauftrag-umfang";
 import { countWords } from "@/lib/text-doc";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./NumberedStory";
@@ -29,6 +29,10 @@ export type AuftragDefaults = {
   beilageZiel: number | null;
   /** die Prüfung des Schülers, zu der der Auftrag gehört */
   testId: number | null;
+  /** Textinterpretation: sieben Teile oder Einleitung und 4 Operatoren */
+  aufbau?: Aufbau;
+  /** Probe-Schularbeit in Minuten; null = keine */
+  probeMin?: number | null;
 };
 
 /** An empty form for a new Schreibauftrag of this Textsorte; word target and length of the Textbeilage by Schulstufe. */
@@ -46,6 +50,8 @@ const emptyDefaults = (sorte: SorteKey, stufe: number | null | undefined): Auftr
   sourceNote: "",
   beilageZiel: umfangVorgabe(sorte, stufe).beilage,
   testId: null,
+  aufbau: "teile",
+  probeMin: null,
 });
 
 type Props = {
@@ -95,8 +101,17 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
   const [situation, setSituation] = useState(defaults.situation);
   const [own, setOwn] = useState(defaults.prompt);
   const [beilageZiel, setBeilageZiel] = useState(defaults.beilageZiel ? String(defaults.beilageZiel) : "");
+  const [aufbau, setAufbau] = useState<Aufbau>(defaults.aufbau ?? "teile");
+  const [probe, setProbe] = useState(Boolean(defaults.probeMin));
+  const [probeMin, setProbeMin] = useState(String(defaults.probeMin ?? 100));
   const words = cleanTarget(target, s.target);
-  const auto = arbeitsauftrag({ sorte, title: title.trim() || "…", author, year, medium, kind, target: words, situation });
+  const auto = arbeitsauftrag({ sorte, title: title.trim() || "…", author, year, medium, kind, target: words, situation, aufbau });
+  // the word target follows the Aufbau while it is still the one the old Aufbau started with
+  const aufbauStart = (a: Aufbau) => (a === "operatoren" ? AUFBAU_TARGET.operatoren : saved ? AUFBAU_TARGET.teile : emptyDefaults(sorte, stufe).target);
+  const changeAufbau = (a: Aufbau) => {
+    if (Number(target) === aufbauStart(aufbau)) setTarget(String(aufbauStart(a)));
+    setAufbau(a);
+  };
   const prompt = own || auto;
   const lines = useMemo(() => lastLine(numberedLines(text, countBlank)), [text, countBlank]);
   const blanks = useMemo(() => text.replace(/\r\n?/g, "\n").trim().split("\n").filter((l) => !l.trim()).length, [text]);
@@ -146,6 +161,19 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
             <KindSelect sorte={sorte} kind={kind} setKind={setKind} label="Textsorte" className="col-span-1 sm:col-span-2" />
             <BeilageInput value={beilageZiel} setValue={setBeilageZiel} was={was} />
             <TargetInput target={target} setTarget={setTarget} min={min} max={max} />
+            <label className="field col-span-2 sm:col-span-3">
+              <span className="label">Aufbau</span>
+              <select className="input" name="aufbau" value={aufbau} onChange={(e) => changeAufbau(e.target.value as Aufbau)} data-testid="aufbau">
+                {(Object.keys(AUFBAU_NAMEN) as Aufbau[]).map((a) => (
+                  <option key={a} value={a}>
+                    {AUFBAU_NAMEN[a]}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[13px] text-ink-2">
+                {aufbau === "operatoren" ? "Einleitung in einem Satz, dann OP1 Inhalt, OP2 Form und Sprache, OP3 Deuten, OP4 Aktualität. Ca. 550 Wörter." : "Einleitung, Inhalt, Form, Sprache, Figur, Deutung und Schluss, wie bei der Matura."}
+              </span>
+            </label>
           </div>
         ) : (
           <>
@@ -255,9 +283,25 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
       <details className="ti-box">
         <summary className="ti-summary">Schreibplan für {name} ansehen</summary>
         <p className="text-[13px] text-ink-2">Steht beim Schreiben über dem Textfeld und auf dem Arbeitsblatt. Die Wortzahlen richten sich nach dem Wortziel.</p>
-        <SchreibplanList plan={planFor({ sorte, target: words, kind })} className="mt-2" />
+        <SchreibplanList plan={planFor({ sorte, target: words, kind, aufbau })} className="mt-2" />
         <MerkmaleList merkmale={s.merkmale} className="mt-3" />
       </details>
+
+      <div className="grid gap-2" data-testid="probe">
+        <label className="flex min-h-[44px] cursor-pointer items-center gap-3 text-[15px]">
+          <input type="checkbox" checked={probe} onChange={(e) => setProbe(e.target.checked)} className="h-5 w-5 accent-[var(--accent)]" data-testid="probe-an" />
+          Wie bei der Schularbeit: mit Zeit, ohne Hilfen
+        </label>
+        {probe && (
+          <label className="field max-w-[220px]">
+            <span className="label">Zeit in Minuten</span>
+            <input className="input" name="probeMin" type="number" min={10} max={300} step={5} required value={probeMin} onChange={(e) => setProbeMin(e.target.value)} data-testid="probe-min" />
+          </label>
+        )}
+        <p className="text-[13px] text-ink-2">
+          {probe ? `${name} sieht beim Schreiben nur den Auftrag, ${story ? "die Geschichte" : "die Textbeilage"}, die Wörter und die Zeit. Schreibplan, Hinweise und Beispiel kommen erst nach der Abgabe.` : `Sonst sieht ${name} beim Schreiben Schreibplan, Hinweise und ein Beispiel.`}
+        </p>
+      </div>
 
       {pruefungen.length > 0 && (
         <label className="field">
