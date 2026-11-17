@@ -533,6 +533,28 @@ Spielfeld (`components/lernen/WortSchloss.tsx`), Regeln in `lib/wortschloss.ts`,
 - **Tablet**: Ansicht `wort:<thema>` (leer = das passendste), wie Glasklar.
 - **Laptop**: Buchstaben tippen, die Rücktaste löscht.
 
+## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)
+
+niko 2026-11-17: „spiele sind da was fehlt ist stoff“. Vorher hatten die meisten Themen des Lehrplans kein Spiel
+(Mathe: 26 von 291 Themen). Das Quiz ist ein Themenspiel je Fach (`quizmathe`, `quizdeutsch`, `quizenglisch`,
+lib/lernspiele-quiz.ts), ohne KI:
+
+- **Fragen** stehen in lib/quiz/, eine Bank je Fach und Schulstufe (`mathe-vs.ts`, `mathe-unterstufe-zahlen.ts`,
+  `mathe-unterstufe-geometrie.ts` …), der Schlüssel ist die Fähigkeit aus lib/themen. Ein Eintrag hat Text im Format
+  der eigenen Spielkarten (`Frage = richtig | falsch`, `Merke:` darunter; ab einer Zeile `# schwer` Stufe 2) und/oder
+  einen Erzeuger, der Rechenaufgaben mit typischen falschen Antworten würfelt (Bausteine in lib/quiz/hilfen.ts:
+  Zahlen mit Komma, gekürzte Brüche). „=“ in einer Antwort schreibt man in der Bank als „＝“. Ein Erzeuger bringt mit
+  demselben Thema immer dieselben 40 Karten, damit falsche wiederkommen.
+- **Themen** sind die Fähigkeiten mit Fragen, in der Reihenfolge des Lehrplans, mit Schulstufe und Schularten aus
+  lib/themen (eine HAK-Fähigkeit kommt nur bei HAK). Kein Thema hängt an zwei Spielen: was Kopfrechnen, Zahlenstrahl
+  oder ein Deutsch-/Englisch-Spiel schon hat, bekommt kein Quiz.
+- **Stoff**: eine Schularbeit, der aktuelle Stoff oder die letzte Einheit mit so einem Thema bringt das Quiz zuerst
+  (`FUEHRT_ZU`), Blockwerk, Torlauf und Funkelfeld nehmen dann seine Fragen. Ohne Stoff kommt es „zum Üben“ mit dem
+  nächsten Thema der Schulstufe; ab der 9. Schulstufe steht es vor den anderen Spielen des Fachs.
+- **Antworten**: zwei werden gewischt, drei bis sechs sind Kacheln; Brüche und Hochzahlen stehen gesetzt da.
+- Ein Fach ohne Fragen hat kein Quiz. Der Test lib/lernspiele-quiz.test.ts liest jede Frage (keine Fehler, mindestens
+  12 Karten je Thema, richtige Antwort dabei, Fach passt).
+
 ## Dein Stoff (eigene Spielkarten)
 
 niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für
@@ -558,14 +580,14 @@ den schüler kann ich das wo anlegen?“. Für jeden Stoff, den die fertigen Spi
 
 1. eine geplante Prüfung in den nächsten 21 Tagen mit passender Fähigkeit (`FUEHRT_ZU`: Die vier Fälle → „Die vier
    Fälle“ und „Präposition und Fall“, Zeiten → Perfekt und Präteritum, Satzreihe und Satzgefüge → Hauptsatz oder
-   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar, jedes Thema von Kopfrechnen → Kopfrechnen, jedes Thema von Zahlenstrahl → Zahlenstrahl;
+   Gliedsatz und Satzbau, Satzglieder → Satzbau, jede englische Zeit → English Tenses, jedes englische Grammatik-Thema → English Grammar, jedes Thema von Kopfrechnen → Kopfrechnen, jedes Thema von Zahlenstrahl → Zahlenstrahl, jedes Quiz-Thema → das Quiz des Fachs;
    Unterfähigkeiten zählen mit),
 2. der aktuelle Stoff im Profil,
 3. die letzte Einheit der letzten 14 Tage,
 4. eine Spiel-Fähigkeit mit Lernstand unter 60 %,
 5. sonst, wenn der Schüler Deutsch hat, die übrigen Deutsch-Spiele „zum Üben“, und mit Englisch die Vokabel-Paare
    (ab der 3. Schulstufe), English Tenses und English Grammar (ab der 5.) und die Irregular Verbs (ab der 6.), mit
-   Mathematik „Kopfrechnen“ und „Zahlenstrahl“.
+   Mathematik „Kopfrechnen“, das Mathe-Quiz und „Zahlenstrahl“ (ab der 9. Schulstufe das Quiz zuerst).
 
 Eine eigene Vokabelliste zählt als aktueller Stoff (Punkt 2). Ohne passendes Fach und ohne passenden Stoff gibt es
 kein Spiel.

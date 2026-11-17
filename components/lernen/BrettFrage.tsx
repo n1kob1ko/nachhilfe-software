@@ -154,7 +154,7 @@ export function BrettFrage({
       </div>
       {daneben >= 0 && karte.regel && (
         <p className="bwf-regel" role="status">
-          <Lightbulb size={16} aria-hidden /> {karte.regel}
+          <Lightbulb size={16} aria-hidden /> {gesetzt(karte, karte.regel)}
         </p>
       )}
     </div>

@@ -629,7 +629,7 @@ export function TorLauf({
         </div>
         {frage?.stand && !frage.stand.ok && frage.karte.regel && (
           <p className="bwf-regel tl-regel" role="status">
-            <Lightbulb size={16} aria-hidden /> {frage.karte.regel}
+            <Lightbulb size={16} aria-hidden /> {gesetzt(frage.karte, frage.karte.regel)}
           </p>
         )}
         {countdown !== null && (

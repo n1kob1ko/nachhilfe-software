@@ -1557,6 +1557,9 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   stoff: ["richtig", "falsch"],
   glas: ["der", "die", "das"],
   wort: ["W", "O", "R", "T"],
+  quizmathe: ["90°", "180°", "360°"],
+  quizdeutsch: ["Metapher", "Vergleich"],
+  quizenglisch: ["since", "for"],
 };
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";

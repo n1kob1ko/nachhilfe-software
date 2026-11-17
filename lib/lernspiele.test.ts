@@ -195,7 +195,7 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spie
   assert.deepEqual(ohne.sp.spielVorschlaege(ohne.student, { heute }), [], "nur Biologie und keine nahe Deutsch-Prüfung: kein Spiel");
   // mit Mathematik gibt es Kopfrechnen und den Zahlenstrahl zum Üben
   const mathe = await setup({ subjects: ["Mathematik"] });
-  assert.deepEqual(mathe.sp.spielVorschlaege(mathe.student, { heute }).map((x) => [x.art, x.quelle]), [["rechnen", "fach"], ["strahl", "fach"]]);
+  assert.deepEqual(mathe.sp.spielVorschlaege(mathe.student, { heute }).map((x) => [x.art, x.quelle]), [["rechnen", "fach"], ["quizmathe", "fach"], ["strahl", "fach"]]);
 });
 
 test("Runde zählt nur die erste Wahl, nur einmal, und geht schwach in den Lernstand", async () => {

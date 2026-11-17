@@ -112,13 +112,13 @@ test("Reihenfolge und Stufen: Volksschule nach Zahlenraum, danach das Neueste de
 
 test("Vorschlag und Runde: Thema aus dem Stoff, gezählt wird die Nummer des Teilstrichs, Fehler kommen wieder", async () => {
   const { sp, repo, student } = await setup();
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => x.art), ["rechnen", "strahl"]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => x.art), ["rechnen", "quizmathe", "strahl"]);
   assert.deepEqual(sp.themenPlan(student, "strahl", HEUTE), { skillId: "mathe.brueche.vergleichen", titel: "Thema: Brüche erweitern" });
   assert.deepEqual(sp.spieleZuSkills(["mathe.dezimal.vergleichen.stellenwert", "mathe.negativ.zahlengerade"]), ["strahl"]);
 
   repo.addTest({ student_id: student.id, date: "2026-11-20", subject: "Mathematik", kind: "Schularbeit", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: ["mathe.dezimal.vergleichen"], title: "1. Schularbeit", status: "geplant" });
   assert.equal(sp.spielWoher(student, "strahl", HEUTE), "Thema: Dezimalzahlen");
-  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["strahl", "pruefung"], ["rechnen", "fach"]]);
+  assert.deepEqual(sp.spielVorschlaege(student, { heute: HEUTE }).map((x) => [x.art, x.quelle]), [["strahl", "pruefung"], ["rechnen", "fach"], ["quizmathe", "fach"]]);
 
   const { rundeId, karten } = sp.starteRunde(student, "strahl", { rng: rng(3), heute: HEUTE });
   assert.equal(karten.length, 12);
