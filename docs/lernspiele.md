@@ -568,15 +568,18 @@ lib/stilmittel-saetze.ts, ohne KI:
 
 - **Karte**: ein Satz, die Stelle mit dem Stilmittel ist angestrichen (`mitte`; bei Anapher, Parallelismus, Chiasmus
   der ganze Satz), darunter vier Namen als Kacheln (`form: "kacheln"`), ein Tipp zählt sofort. Nach einem Fehler
-  steht die Regel des Stilmittels da („Hyperbel: eine starke Übertreibung …“).
+  steht die Regel des Stilmittels da, mit der Wirkung („Hyperbel: eine starke Übertreibung … Wirkung: betont stark,
+  oft komisch oder dramatisch.“). Die Wirkung im Satz üben die Karten „Welche Wirkung?“ im Deutsch-Quiz
+  (Textinterpretation), weil eine Wirkung je Stilmittel ohne Text oft mehrdeutig wäre.
 - **Schulstufe**: 1. Klasse Vergleich, Metapher, Personifikation, Lautmalerei, Alliteration; 2. Klasse dazu Hyperbel und
   rhetorische Frage; 3. Klasse Anapher, Ironie, Antithese, Klimax; 4. Klasse Parallelismus, Ellipse, Euphemismus,
   Oxymoron; ab der 5. Klasse (9. Schulstufe) dazu Chiasmus, Epipher, Litotes, Inversion, Synästhesie, Metonymie,
-  Paradoxon (22). Falsche Antworten sind nur Stilmittel, die schon dran waren, bis zu zwei, die man gern verwechselt,
+  Paradoxon, für die Textinterpretation auch Wiederholung, Aufzählung, Parataxe, Hypotaxe und Symbol (27). Falsche Antworten sind nur Stilmittel, die schon dran waren, bis zu zwei, die man gern verwechselt,
   dazu andere (damit man die Antwort nicht an den übrigen Kacheln erkennt).
 - **Nie eine richtige als falsch**: was in einem Stilmittel meist mitsteckt (`auch`, z. B. Parallelismus bei der
   Anapher), was im Satz zusätzlich steckt (` || ` hinter dem Satz) und was man am Satz sieht (`siehtAus`: „wie“,
-  Fragezeichen, gleiche Anlaute, gleiche Anfänge oder Enden der Satzteile, gleich lange Teile) kommt nie als falsche
+  Fragezeichen, gleiche Anlaute, gleiche Anfänge oder Enden der Satzteile, gleich lange Teile, ein Wort zweimal,
+  Kommas mit „und“, ein Nebensatz oder mehrere Hauptsätze, Gegenstände wie Kerze oder Ring) kommt nie als falsche
   Kachel. Ein neuer Satz braucht genau ein eindeutiges Stilmittel; der Test lib/stilmittel.test.ts prüft Form und
   Kacheln je Schulstufe.
 - **Lernstand**: Unterstufe für „Sprachliche Bilder“ (deutsch.literatur.sprachbilder), Oberstufe je Karte für ihre
