@@ -21,11 +21,11 @@ import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
-import { stufenFuer, waehleKarten } from "./lernspiele-karten";
+import { KARTEN_JE_RUNDE, stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istQuiz } from "./lernspiele-quiz";
 import { SPIEL_THEMEN, spielbareThemen, THEMA_KARTEN_MIN, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
 import { WORTFELDER, wortfeldArtikel, wortfeldPraeteritum, type Wortfeld } from "./lernspiele-wortfelder";
-import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type BestenZeile, type Bestenliste, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
+import { gemischt, istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type BestenZeile, type Bestenliste, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
 import { PAARE_MIN, vokabelKandidaten, vokabelKey, vokabelStufen, waehleVokabeln, type VokabelKandidat } from "./lernspiele-vokabeln";
 import { tagAddieren, wienerDatum } from "./planung/zeit";
 import * as repo from "./repo";
@@ -41,6 +41,7 @@ import { leseKarten } from "./spielkarten-text";
 import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
+import { STIL_GRUPPEN, STIL_OBERSTUFE_AB, STIL_SKILLS, STIL_UNTERSTUFE, STILMITTEL, stilmittelBis, stilmittelKandidaten, stilmittelVonKarte, type StilGruppe, type StilmittelId } from "./stilmittel";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
 export const SPIEL_SKILL: Record<SpielArt, string> = {
@@ -74,9 +75,11 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
   quizenglisch: "spiel.quiz.englisch",
+  // Stilmittel: Unterstufe „Sprachliche Bilder“, Oberstufe je Karte die Gruppe (stilPlan, lib/stilmittel.ts)
+  stilmittel: STIL_UNTERSTUFE,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -112,6 +115,8 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.schreiben.erzaehlung": ["wortschatz"],
   "deutsch.vs.schreiben.erzaehlen": ["wortschatz"],
   "deutsch.wortschatz.wortfelder": ["wortschatz"],
+  // Stilmittel: das eigene Spiel zuerst, das Deutsch-Quiz mit den Begriffen dazu
+  ...Object.fromEntries(STIL_SKILLS.map((id) => [id, ["stilmittel", "quizdeutsch"] as SpielArt[]])),
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -143,15 +148,16 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
     if (art === "glas" || art === "wort" || istQuiz(art)) continue;
-    const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]);
+    const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
 
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "wortschatz", "artikel"];
-    // ab der Oberstufe ist die Grammatik der Unterstufe kein Stoff mehr: das Quiz mit den Themen der Schulstufe zuerst
-    if (student.grade >= 9) add(["quizdeutsch"], "Zum Üben", "fach");
+    const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "stilmittel", "perfekt", "praeteritum", "wortschatz", "artikel"];
+    // ab der Oberstufe ist die Grammatik der Unterstufe kein Stoff mehr: das Quiz mit den Themen der Schulstufe und die
+    // Stilmittel (Textanalyse, Interpretation) zuerst
+    if (student.grade >= 9) add(["quizdeutsch", "stilmittel"], "Zum Üben", "fach");
     add(
       reihe.filter((art) => student.grade >= SPIEL_AB[art]),
       "Zum Üben",
@@ -314,6 +320,7 @@ export function wortfeldPlan(student: repo.Student, art: SpielArt, heute: string
 export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
   if (art === "vokabeln") return vokabelPlan(student, heute).titel;
   if (art === "stoff") return spielSatz(student.id)?.titel;
+  if (art === "stilmittel") return stilPlan(student, heute).titel;
   return wortfeldPlan(student, art, heute)?.titel ?? themenPlan(student, art, heute)?.titel;
 }
 
@@ -359,6 +366,7 @@ const satzbauSkill = (student: Pick<repo.Student, "grade" | "school_type">) => (
 export function skillFuerSpiel(student: repo.Student, art: SpielArt, heute: string): string {
   if (art === "vokabeln") return vokabelPlan(student, heute).skillId;
   if (art === "satzbau") return satzbauSkill(student);
+  if (art === "stilmittel") return stilPlan(student, heute).skillId;
   if (art === "stoff") {
     const satz = spielSatz(student.id);
     return satz ? satzSkill(satz) : EIGENER_STOFF;
@@ -622,6 +630,8 @@ export function starteRunde(
       vorrang: plan.vorrang,
       rng: o.rng,
     });
+  } else if (art === "stilmittel") {
+    karten = stilmittelRunde(student, o.heute ?? wienerDatum(), { lernstand: o.lernstand ?? null, rng: o.rng });
   } else if (art === "stoff") {
     // Dein Stoff: der aktuelle Satz Spielkarten, alle Karten gleich wichtig
     const satz = spielSatz(student.id);
@@ -641,7 +651,14 @@ export function starteRunde(
   }
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
-    .run(student.id, art, karten[0]?.skill ?? (art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]), o.grund ?? "fach", JSON.stringify(karten), karten.length);
+    .run(
+      student.id,
+      art,
+      art === "stilmittel" ? stilRundenSkill(student, karten, o.heute ?? wienerDatum()) : (karten[0]?.skill ?? (art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art])),
+      o.grund ?? "fach",
+      JSON.stringify(karten),
+      karten.length,
+    );
   const rundeId = Number(r.lastInsertRowid);
   if (o.endlos === undefined) return { rundeId, karten, stufe };
   // ein Endlos-Spiel setzt nur fort, wer es begonnen hat, und nur im selben Spiel
@@ -829,13 +846,79 @@ export function serie(studentId: number, heute: string): number {
 /** Beendete Runden als Belege für den Lernstand (lib/analysis.ts collectEvidence). */
 export function spielBelege(studentId: number): { skillId: string; score: number; at: string }[] {
   return (
-    db().prepare("SELECT skill_id, richtig, anzahl, beendet_at FROM spielrunden WHERE student_id = ? AND beendet_at IS NOT NULL AND anzahl > 0").all(studentId) as {
+    db().prepare("SELECT art, skill_id, richtig, anzahl, beendet_at, karten, antworten FROM spielrunden WHERE student_id = ? AND beendet_at IS NOT NULL AND anzahl > 0").all(studentId) as {
+      art: string;
       skill_id: string;
       richtig: number;
       anzahl: number;
       beendet_at: string;
+      karten: string;
+      antworten: string;
     }[]
-  ).map((r) => ({ skillId: r.skill_id, score: r.richtig / r.anzahl, at: r.beendet_at }));
+  ).flatMap((r) => (r.art === "stilmittel" ? stilBelege(r) : [{ skillId: r.skill_id, score: r.richtig / r.anzahl, at: r.beendet_at }]));
+}
+
+/** Eine Runde „Stilmittel“ mit Karten aus mehreren Gruppen (Oberstufe) zählt je Fähigkeit ihrer Karten. */
+function stilBelege(r: { skill_id: string; richtig: number; anzahl: number; beendet_at: string; karten: string; antworten: string }) {
+  const skillVon = new Map(json<SpielKarte[]>(r.karten, []).map((k) => [k.key, k.skill ?? r.skill_id]));
+  const je = new Map<string, { richtig: number; anzahl: number }>();
+  for (const a of json<GespeicherteAntwort[]>(r.antworten, [])) {
+    const skill = skillVon.get(a.key) ?? r.skill_id;
+    const z = je.get(skill) ?? { richtig: 0, anzahl: 0 };
+    z.anzahl++;
+    if (a.richtig) z.richtig++;
+    je.set(skill, z);
+  }
+  if (!je.size) return [{ skillId: r.skill_id, score: r.richtig / r.anzahl, at: r.beendet_at }];
+  return [...je.entries()].map(([skillId, z]) => ({ skillId, score: z.richtig / z.anzahl, at: r.beendet_at }));
+}
+
+// ---------- Stilmittel (lib/stilmittel.ts) ----------
+
+/** So viele Karten einer Runde kommen aus dem Schwerpunkt, wenn der Stoff einen hat. */
+const STIL_FOKUS_KARTEN = 8;
+
+/**
+ * Woran die nächste Runde „Stilmittel“ hängt: ist eine Fähigkeit zu Stilmitteln im Stoff (Prüfung, aktueller Stoff,
+ * letzte Einheit), kommen zwei Drittel der Karten aus ihr (`fokus`), sonst alle Stilmittel der Schulstufe gemischt.
+ * `skillId` ist die Fähigkeit für den Stand auf der Kachel: Unterstufe „Sprachliche Bilder“, Oberstufe die Gruppe im Stoff,
+ * sonst die Gedankenfiguren (die größte Gruppe).
+ */
+export function stilPlan(student: repo.Student, heute: string): { skillId: string; fokus: StilmittelId[] | null; titel?: string } {
+  const os = student.grade >= STIL_OBERSTUFE_AB;
+  const bekannt = stilmittelBis(student.grade);
+  for (const id of stoffQuellen(student, heute).flatMap((q) => q.ids)) {
+    const passt = (s: string) => id === s || id.startsWith(`${s}.`);
+    const gruppe = (Object.keys(STIL_GRUPPEN) as StilGruppe[]).find((g) => passt(STIL_GRUPPEN[g].skill));
+    if (os && gruppe) {
+      const fokus = bekannt.filter((s) => STILMITTEL[s].gruppe === gruppe);
+      return { skillId: STIL_GRUPPEN[gruppe].skill, fokus, titel: `Thema: ${STIL_GRUPPEN[gruppe].name}` };
+    }
+    if (passt(STIL_UNTERSTUFE)) return { skillId: os ? STIL_GRUPPEN.bilder.skill : STIL_UNTERSTUFE, fokus: ["vergleich", "metapher", "personifikation"], titel: "Thema: Sprachliche Bilder" };
+  }
+  return { skillId: os ? STIL_GRUPPEN.gedanken.skill : STIL_UNTERSTUFE, fokus: null };
+}
+
+/** Die Karten einer Runde „Stilmittel“: mit Schwerpunkt acht aus ihm und vier gemischte, sonst zwölf gemischte. */
+export function stilmittelRunde(student: repo.Student, heute: string, o: { lernstand: number | null; rng?: () => number }): SpielKarte[] {
+  const plan = stilPlan(student, heute);
+  const pool = stilmittelKandidaten(student.grade);
+  const gemeinsam = { stufen: stufenFuer("stilmittel", student.grade, o.lernstand), wiederholen: offeneFehler(student.id, "stilmittel"), zuletzt: zuletztGespielt(student.id, "stilmittel"), rng: o.rng };
+  if (!plan.fokus) return waehleKarten("stilmittel", { ...gemeinsam, pool });
+  const fokus = new Set<string>(plan.fokus);
+  const drin = pool.filter((k) => fokus.has(stilmittelVonKarte(k.karte) ?? ""));
+  const haupt = waehleKarten("stilmittel", { ...gemeinsam, pool: drin, anzahl: STIL_FOKUS_KARTEN });
+  const rest = waehleKarten("stilmittel", { ...gemeinsam, pool: pool.filter((k) => !fokus.has(stilmittelVonKarte(k.karte) ?? "")), anzahl: KARTEN_JE_RUNDE - haupt.length });
+  return gemischt([...haupt, ...rest], o.rng ?? Math.random);
+}
+
+/** Die Fähigkeit einer Runde „Stilmittel“: der Schwerpunkt, sonst die Fähigkeit der meisten Karten. */
+function stilRundenSkill(student: repo.Student, karten: SpielKarte[], heute: string): string {
+  const plan = stilPlan(student, heute);
+  if (plan.fokus) return plan.skillId;
+  const n = new Map<string, number>();
+  for (const k of karten) if (k.skill) n.set(k.skill, (n.get(k.skill) ?? 0) + 1);
+  return [...n.entries()].sort((a, b) => b[1] - a[1])[0]?.[0] ?? plan.skillId;
 }
 
 export type SpielUebersicht = {

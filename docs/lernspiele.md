@@ -560,6 +560,34 @@ lib/lernspiele-quiz.ts), ohne KI:
 - Ein Fach ohne Fragen hat kein Quiz. Der Test lib/lernspiele-quiz.test.ts liest jede Frage (keine Fehler, mindestens
   12 Karten je Thema, richtige Antwort dabei, Fach passt).
 
+## Stilmittel (Deutsch)
+
+niko 2026-11-17: „ich möchte ein spiel für deutsch um stilmittel zu üben. es sollen sätze kommen und man soll
+auswählen was das für ein stilmittel ist“. Spiel `stilmittel` (lib/stilmittel.ts), Sätze von Hand in
+lib/stilmittel-saetze.ts, ohne KI:
+
+- **Karte**: ein Satz, die Stelle mit dem Stilmittel ist angestrichen (`mitte`; bei Anapher, Parallelismus, Chiasmus
+  der ganze Satz), darunter vier Namen als Kacheln (`form: "kacheln"`), ein Tipp zählt sofort. Nach einem Fehler
+  steht die Regel des Stilmittels da („Hyperbel: eine starke Übertreibung …“).
+- **Schulstufe**: 1. Klasse Vergleich, Metapher, Personifikation, Lautmalerei, Alliteration; 2. Klasse dazu Hyperbel und
+  rhetorische Frage; 3. Klasse Anapher, Ironie, Antithese, Klimax; 4. Klasse Parallelismus, Ellipse, Euphemismus,
+  Oxymoron; ab der 5. Klasse (9. Schulstufe) dazu Chiasmus, Epipher, Litotes, Inversion, Synästhesie, Metonymie,
+  Paradoxon (22). Falsche Antworten sind nur Stilmittel, die schon dran waren, bis zu zwei, die man gern verwechselt,
+  dazu andere (damit man die Antwort nicht an den übrigen Kacheln erkennt).
+- **Nie eine richtige als falsch**: was in einem Stilmittel meist mitsteckt (`auch`, z. B. Parallelismus bei der
+  Anapher), was im Satz zusätzlich steckt (` || ` hinter dem Satz) und was man am Satz sieht (`siehtAus`: „wie“,
+  Fragezeichen, gleiche Anlaute, gleiche Anfänge oder Enden der Satzteile, gleich lange Teile) kommt nie als falsche
+  Kachel. Ein neuer Satz braucht genau ein eindeutiges Stilmittel; der Test lib/stilmittel.test.ts prüft Form und
+  Kacheln je Schulstufe.
+- **Lernstand**: Unterstufe für „Sprachliche Bilder“ (deutsch.literatur.sprachbilder), Oberstufe je Karte für ihre
+  Gruppe (deutsch.os.stil.klang, .satzfiguren, .gedankenfiguren, .bilder). Eine Runde zählt je Fähigkeit ihrer Karten
+  (`spielBelege`).
+- **Stoff**: eine dieser Fähigkeiten (oder deutsch.os.stil.wirkung) in Schularbeit, aktuellem Stoff oder letzter
+  Einheit bringt das Spiel zuerst; bei einer Gruppe der Oberstufe kommen 8 der 12 Karten aus ihr („Thema:
+  Satzfiguren“). Ohne Stoff ab der 2. Klasse „zum Üben“, ab der 9. Schulstufe gleich nach dem Deutsch-Quiz.
+- Wie jedes Spiel mit Kacheln auch als Endlos, Blockwerk, Funkelfeld, Torlauf (drei Tore) und im Duell (Stilmittel
+  des Jüngeren).
+
 ## Dein Stoff (eigene Spielkarten)
 
 niko 2026-11-16 mit einem Bio-Test (Evolution, Plattentektonik): „wie könnte ich das in blockpuzzle implementieren für
