@@ -1850,6 +1850,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["spielrunden", "wort", "INTEGER"],
   // Funkelfeld (lib/funkelfeld.ts, niko 2026-11-16 „mach weitere spiele“): wie `bloecke`, die Punkte an der ersten Runde
   ["spielrunden", "funkel", "INTEGER"],
+  // Torlauf (lib/torlauf.ts, niko 2026-11-17 „Läufer mit Antwort-Toren“): wie `bloecke`, die Punkte an der ersten Runde
+  ["spielrunden", "tor", "INTEGER"],
   // ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts): '' = Standard (ab der 9. Schulstufe),
   // 'ja' = erlaubt (bei Jüngeren: Eltern sind einverstanden), 'nein' = aus
   ["students", "wettspiel", "TEXT NOT NULL DEFAULT ''"],

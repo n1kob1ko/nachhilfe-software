@@ -39,7 +39,8 @@ export type View =
   | { kind: "spiele" }
   // `bloecke`: Blockwerk mit den Karten dieses Spiels (components/lernen/BlockFeld.tsx)
   // `funkel`: Funkelfeld mit den Karten dieses Spiels (components/lernen/FunkelFeld.tsx)
-  | { kind: "spiel"; art: SpielArt; bloecke?: true; funkel?: true }
+  // `tor`: Torlauf mit den Karten dieses Spiels (components/lernen/TorLauf.tsx)
+  | { kind: "spiel"; art: SpielArt; bloecke?: true; funkel?: true; tor?: true }
   // Glasklar (lib/glasklar.ts) mit einem Thema (lib/glasklar-themen.ts; „“ = das passendste)
   | { kind: "glas"; thema: string }
   // Wortschloss (lib/wortschloss.ts) mit einem Thema (lib/wortschloss-themen.ts; „“ = das passendste)
@@ -58,6 +59,8 @@ export function parseView(raw: string): View {
   if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const f = /^funkel:([a-z]+)$/.exec(raw);
   if (f && istSpielArt(f[1])) return { kind: "spiel", art: f[1], funkel: true };
+  const tl = /^tor:([a-z]+)$/.exec(raw);
+  if (tl && istSpielArt(tl[1])) return { kind: "spiel", art: tl[1], tor: true };
   const m = /^aufgabe:(\d+)$/.exec(raw);
   if (m) return { kind: "aufgabe", assignmentId: Number(m[1]) };
   const p = /^praesentation:(\d+):(\d+)$/.exec(raw);
@@ -66,7 +69,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {

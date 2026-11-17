@@ -550,6 +550,8 @@ export function starteRunde(
     bloecke?: boolean;
     /** Funkelfeld: wie `bloecke`, aber das Drei-in-einer-Reihe-Brett (components/lernen/FunkelFeld.tsx) */
     funkel?: boolean;
+    /** Torlauf: wie `bloecke`, aber der Lauf durch Tore (components/lernen/TorLauf.tsx) */
+    tor?: boolean;
     /** Glasklar: das gewünschte Thema (beim Fortsetzen bleibt es beim Thema des Spiels) */
     glasThema?: string;
     /** Wortschloss: ebenso */
@@ -632,6 +634,7 @@ export function starteRunde(
   // Blockwerk und Glasklar: die erste Runde trägt die Punkte (später `laufPunkte`); eine Fortsetzung erbt das von ihr
   if (lauf === rundeId && o.bloecke) db().prepare("UPDATE spielrunden SET bloecke = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && o.funkel && !o.bloecke) db().prepare("UPDATE spielrunden SET funkel = 0 WHERE id = ?").run(rundeId);
+  if (lauf === rundeId && o.tor && !o.bloecke && !o.funkel) db().prepare("UPDATE spielrunden SET tor = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && art === "glas") db().prepare("UPDATE spielrunden SET glas = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && art === "wort") db().prepare("UPDATE spielrunden SET wort = 0 WHERE id = ?").run(rundeId);
   return { rundeId, karten, endlos: lauf, stufe };
@@ -658,8 +661,8 @@ export function endlosStand(studentId: number, lauf: number): number {
 export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): number {
   const z = db()
     .prepare(
-      // Blockwerk- und Funkelfeld-Spiele hängen ihre Runden genauso aneinander, sind aber keine Endlos-Spiele
-      "SELECT COALESCE(MAX(n), 0) AS rekord FROM (SELECT SUM(richtig) AS n FROM spielrunden WHERE student_id = ? AND art = ? AND endlos IS NOT NULL AND endlos != ? AND beendet_at IS NOT NULL AND endlos NOT IN (SELECT id FROM spielrunden WHERE student_id = ? AND (bloecke IS NOT NULL OR funkel IS NOT NULL)) GROUP BY endlos)",
+      // Blockwerk-, Funkelfeld- und Torlauf-Spiele hängen ihre Runden genauso aneinander, sind aber keine Endlos-Spiele
+      "SELECT COALESCE(MAX(n), 0) AS rekord FROM (SELECT SUM(richtig) AS n FROM spielrunden WHERE student_id = ? AND art = ? AND endlos IS NOT NULL AND endlos != ? AND beendet_at IS NOT NULL AND endlos NOT IN (SELECT id FROM spielrunden WHERE student_id = ? AND (bloecke IS NOT NULL OR funkel IS NOT NULL OR tor IS NOT NULL)) GROUP BY endlos)",
     )
     .get(studentId, art, ohne ?? -1, studentId) as { rekord: number };
   return z.rekord;
@@ -670,10 +673,10 @@ export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): n
  * (lib/wortschloss.ts) zählen ihre Punkte auf dem Gerät und melden sie am Ende; der Server merkt sie sich an der ersten
  * Runde (Spalte `bloecke`, `funkel`, `glas` oder `wort`). Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
  */
-export type PunkteSpiel = "bloecke" | "funkel" | "glas" | "wort";
-export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas", "wort"];
+export type PunkteSpiel = "bloecke" | "funkel" | "glas" | "wort" | "tor";
+export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas", "wort", "tor"];
 /** Die Spalte ist nie eine Eingabe: nur diese Namen kommen in die Abfragen. */
-const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : spiel === "wort" ? "wort" : "bloecke");
+const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : spiel === "wort" ? "wort" : spiel === "tor" ? "tor" : "bloecke");
 
 export function laufPunkte(studentId: number, lauf: number, punkte: number, spiel: PunkteSpiel) {
   const c = spalte(spiel);

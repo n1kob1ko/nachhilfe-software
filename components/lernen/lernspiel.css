@@ -3235,3 +3235,13 @@
     transform: scale(0.96);
   }
 }
+/* drei Bretter (Blockwerk, Funkelfeld, Torlauf): das dritte geht über die ganze Breite, in einer Zeile */
+.ls-bretter > :last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+  grid-template-columns: auto auto auto;
+  align-items: center;
+  min-height: 54px;
+}
+.ls-bretter > :last-child:nth-child(odd) small {
+  grid-column: auto;
+}

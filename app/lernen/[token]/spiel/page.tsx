@@ -3,7 +3,7 @@ import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { WortSchloss } from "@/components/lernen/WortSchloss";
 import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
-import { hatEndlos, istSpielArt } from "@/lib/lernspiele-typen";
+import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -64,9 +64,11 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
   }
   const vorschlaege = spielVorschlaege(student, { heute, lernstand });
   if (!vorschlaege.length) redirect(`/lernen/${token}`);
-  // Blockwerk und Funkelfeld brauchen ein Spiel mit einzelnen Karten (nicht die Vokabel-Paare)
-  const brett = modus === "bloecke" || modus === "funkel" ? modus : undefined;
-  const art = istSpielArt(gewuenscht) ? gewuenscht : brett ? (vorschlaege.find((v) => hatEndlos(v.art))?.art ?? vorschlaege[0].art) : vorschlaege[0].art;
+  // Blockwerk und Funkelfeld brauchen ein Spiel mit einzelnen Karten (nicht die Vokabel-Paare), Torlauf eines mit
+  // Antworten zum Wählen (kein Satzbau, kein Zahlenstrahl)
+  const brett = modus === "bloecke" || modus === "funkel" || modus === "tor" ? modus : undefined;
+  const passt = (a: SpielArt) => (brett === "tor" ? torTauglich(a) : hatEndlos(a));
+  const art = istSpielArt(gewuenscht) && (!brett || passt(gewuenscht)) ? gewuenscht : brett ? (vorschlaege.find((v) => passt(v.art))?.art ?? vorschlaege[0].art) : vorschlaege[0].art;
   return (
     <Lernspiel
       key={`${art}-${modus ?? ""}`}
@@ -83,10 +85,12 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       modus={brett}
       bloeckeRekord={bloeckeRekord(student.id)}
       funkelRekord={punkteRekord(student.id, "funkel")}
+      torRekord={punkteRekord(student.id, "tor")}
       bestenliste={brett ? punkteBestenliste(student, brett) : undefined}
       arenaLink={`/lernen/${token}/arena`}
       bloeckeLink={`/lernen/${token}/spiel?modus=bloecke${von === "start" ? "&von=start" : ""}&art=`}
       funkelLink={`/lernen/${token}/spiel?modus=funkel${von === "start" ? "&von=start" : ""}&art=`}
+      torLink={`/lernen/${token}/spiel?modus=tor${von === "start" ? "&von=start" : ""}&art=`}
     />
   );
 }

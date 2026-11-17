@@ -339,6 +339,28 @@ test("Funkelfeld: Runden hängen aneinander, Punkte und Rekord getrennt von Bloc
   assert.equal(sp.punkteBestenliste(student, "bloecke").ich ?? null, null);
 });
 
+test("Torlauf: eigene Punkte, eigener Rekord und eigene Bestenliste, kein Endlos-Rekord", async () => {
+  const { sp, student } = await setup();
+  const heute = "2026-11-17";
+  const a = sp.starteRunde(student, "dasdass", { rng: rng(31), heute, endlos: "neu", tor: true });
+  assert.equal(a.endlos, a.rundeId);
+  assert.ok(sp.laufIst(student.id, a.rundeId, "tor"));
+  assert.ok(!sp.laufIst(student.id, a.rundeId, "funkel"));
+  assert.ok(!sp.istBlockwerk(student.id, a.rundeId));
+  sp.beendeRunde(student.id, a.rundeId, a.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  const b = sp.starteRunde(student, "dasdass", { rng: rng(32), heute, endlos: a.endlos, tor: true });
+  assert.equal(b.endlos, a.rundeId, "die nächste Runde gehört zum selben Lauf");
+  sp.beendeRunde(student.id, b.rundeId, b.karten.slice(0, 2).map((k) => ({ key: k.key, wahl: k.richtig })), { teil: true });
+  sp.laufPunkte(student.id, a.rundeId, 3456, "tor");
+  sp.laufPunkte(student.id, a.rundeId, 10, "tor");
+  assert.equal(sp.punkteRekord(student.id, "tor"), 3456, "ein zweites Ende macht die Punkte nicht kleiner");
+  assert.equal(sp.punkteRekord(student.id, "funkel"), 0);
+  assert.equal(sp.bloeckeRekord(student.id), 0);
+  assert.equal(sp.endlosRekord(student.id, "dasdass"), 0, "Torlauf zählt nicht als Endlos-Spiel");
+  assert.equal(sp.endlosStand(student.id, a.rundeId), a.karten.length + 2);
+  assert.equal(sp.punkteBestenliste(student, "tor").ich?.punkte, 3456);
+});
+
 test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen), ausgeschaltete nur für sich", async () => {
   const { sp, repo, student: a } = await setup();
   const profil = await import("./spielprofil");

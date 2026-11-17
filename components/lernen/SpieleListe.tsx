@@ -1,8 +1,9 @@
 import "@/components/lernen/spiele.css";
+import "@/components/lernen/torlauf.css";
 import Link from "next/link";
 import { CalendarDays, ChevronRight, Flame } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
-import { hatEndlos, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { hatEndlos, torTauglich, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
 import { SteinBild } from "./FunkelSteine";
 
@@ -24,6 +25,8 @@ export function SpieleListe({
   blockPlatz,
   funkel,
   funkelPlatz,
+  tor,
+  torPlatz,
   glas,
   wort,
 }: {
@@ -39,6 +42,9 @@ export function SpieleListe({
   /** Funkelfeld: wie `bloecke` (lib/funkelfeld.ts); ohne Angabe keine Kachel */
   funkel?: (art: SpielArt) => string;
   funkelPlatz?: BestenZeile | null;
+  /** Torlauf: wie `bloecke` (lib/torlauf.ts), mit einem Spiel, das Antworten zum Wählen hat; ohne Angabe keine Kachel */
+  tor?: (art: SpielArt) => string;
+  torPlatz?: BestenZeile | null;
   /** Glasklar (lib/glasklar.ts): wohin die Kachel führt, das passendste Thema und der eigene Platz; ohne Angabe keine Kachel */
   glas?: { href: string; thema: string; platz?: BestenZeile | null };
   /** Wortschloss (lib/wortschloss.ts): wie `glas` */
@@ -49,6 +55,7 @@ export function SpieleListe({
   const grundVon = new Map(vorschlaege.map((v) => [v.art, v]));
   // Blockwerk: die Fragen kommen aus dem Spiel, das am besten passt (nur Spiele mit einzelnen Karten)
   const blockArt = vorschlaege.find((v) => hatEndlos(v.art))?.art;
+  const torArt = vorschlaege.find((v) => torTauglich(v.art))?.art;
   const faecher = [...new Set(SPIEL_ARTEN.map((a) => SPIEL_FACH[a]))]
     .map((fach) => ({ fach, spiele: SPIEL_ARTEN.filter((a) => SPIEL_FACH[a] === fach && grundVon.has(a)) }))
     .filter((f) => f.spiele.length > 0);
@@ -94,6 +101,32 @@ export function SpieleListe({
             {blockPlatz && (
               <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-blockwerk-platz">
                 Platz {blockPlatz.platz} · Rekord {blockPlatz.punkte.toLocaleString("de-AT")}
+              </span>
+            )}
+          </span>
+          <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+        </Link>
+      )}
+
+      {tor && torArt && (
+        <Link href={tor(torArt)} className="sp-block panel mt-3" data-testid="spiele-torlauf">
+          <span className="sp-tor-bild" aria-hidden>
+            <span className="tl-mini">
+              <i />
+              <i />
+              <i />
+              <b />
+            </span>
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2">
+              <span className="sp-titel">Torlauf</span>
+              <span className="sp-schild">Neu</span>
+            </span>
+            <span className="sp-kurz">Lauf durch das Tor mit der richtigen Antwort. Fragen aus {SPIEL_TITEL[torArt]}.</span>
+            {torPlatz && (
+              <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-torlauf-platz">
+                Platz {torPlatz.platz} · Rekord {torPlatz.punkte.toLocaleString("de-AT")}
               </span>
             )}
           </span>
