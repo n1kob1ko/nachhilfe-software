@@ -361,4 +361,74 @@ Ich höre gerne [Mozart].
 [Wer sein Leben retten will, wird es verlieren.]
 [Die einzige Regel ist, dass es keine Regeln gibt.]
 [Nichts ist so sicher wie die Unsicherheit.]`,
+
+  wiederholung: `Er lief [und lief und lief], bis er nicht mehr konnte.
+Das Wasser stieg [und stieg und stieg].
+Sie las den Brief [wieder und wieder].
+Er wartete [Stunde um Stunde] am Bahnsteig.
+Der Weg führte [weiter und weiter] in den Wald hinein.
+Wir gingen [Schritt für Schritt] den Berg hinauf.
+[Tag für Tag] saß die alte Frau auf der Bank vor dem Haus.
+Der Zug fuhr [weiter, immer weiter] nach Norden. || Klimax
+# schwer
+Er hatte [Angst, große Angst], dass man ihn erwischen würde. || Klimax
+Die Nacht war [still, so still], dass man den eigenen Atem hörte. || Klimax
+Er arbeitete [Jahr um Jahr] in derselben Fabrik, ohne je zu klagen.
+Das Telefon läutete [noch einmal und noch einmal], doch keiner hob ab.`,
+
+  aufzaehlung: `Im Rucksack lagen [Brot, Käse, Äpfel und eine Flasche Wasser].
+Auf dem Markt gab es [Tomaten, Gurken, Paprika und Zwiebeln].
+Sie packte [Handtuch, Sonnencreme, Buch und Badeanzug] ein.
+In seinem Zimmer lagen [Socken, Hefte, Kabel und leere Flaschen] herum.
+Zum Geburtstag kamen [Tante Anna, Onkel Fritz, die Großeltern und zwei Nachbarn].
+Im Wald hörten wir [Vögel, Wind, raschelnde Blätter und einen Bach].
+Für die Schule braucht er [Stifte, ein Lineal, einen Zirkel und einen Taschenrechner].
+Auf dem Tisch standen [Teller, Gläser, Kerzen und Blumen].
+# schwer
+Er dachte an [die Rechnungen, den Streit mit dem Chef, die kranke Mutter und das kaputte Auto].
+[Lachen, Musik, Stimmen, klirrende Gläser] drangen aus dem Saal.
+Sie erzählte von [der Reise, dem Hotel, dem Essen und dem Wetter], nur nicht von ihm.
+In der Küche stapelten sich [Töpfe, Pfannen, Teller und Tassen].`,
+
+  parataxe: `[Der Zug hielt. Die Türen öffneten sich. Keiner stieg aus.]
+[Sie öffnete die Tür. Der Flur war leer. Niemand antwortete.]
+[Es war kalt. Der Bus kam nicht. Sie fror.]
+[Das Telefon klingelte. Er hob nicht ab. Es klingelte wieder.]
+[Der Hund bellte. Ein Fenster ging auf. Dann war es still.]
+[Sie rannte los. Der Regen wurde stärker. Ihre Schuhe waren nass.]
+[Die Ampel sprang auf Grün. Niemand fuhr los. Hinten hupte jemand.]
+[Der Lehrer kam herein. Es wurde still. Alle sahen zu Boden.]
+# schwer
+[Sie sagte nichts. Er sagte nichts. Der Kaffee wurde kalt.]
+[Die Mutter rief. Das Kind kam nicht. Sie rief noch einmal.]
+[Der Arzt kam, sah ihn an, schüttelte den Kopf.] || Ellipse
+[Er stand am Fenster. Autos fuhren vorbei. Er dachte an sie.]`,
+
+  hypotaxe: `[Obwohl sie wusste, dass er nicht kommen würde, wartete sie.]
+[Als er merkte, dass niemand ihm glaubte, weil er schon so oft gelogen hatte, schwieg er.]
+Er erzählte, [dass er den Hund, der im Hof bellte, schon seit Jahren kannte].
+[Weil es regnete, als wir ankamen, blieben wir im Auto, bis der Regen aufhörte.]
+[Nachdem sie den Brief gelesen hatte, den ihr die Mutter geschickt hatte, weinte sie.]
+Sie fragte sich, [ob er wohl wusste, wie sehr sie ihn vermisste].
+[Wenn du mir sagst, was passiert ist, kann ich dir helfen, damit es nicht wieder geschieht.]
+[Der Mann, der jeden Morgen am Kiosk stand, weil er sonst niemanden hatte, mit dem er reden konnte, fehlte heute.]
+# schwer
+[Dass sie ging, ohne sich zu verabschieden, obwohl sie es versprochen hatte, verstand er nicht.]
+[Während die anderen schliefen, saß er wach und dachte darüber nach, ob es richtig gewesen war, dass er geschwiegen hatte.]
+[Bevor er antworten konnte, weil ihm die Worte fehlten, die er sich zurechtgelegt hatte, war sie schon fort.]
+[Er wusste nicht, ob sie ihn gesehen hatte, als er an dem Haus vorbeiging, in dem sie früher gewohnt hatten.]`,
+
+  symbol: `Am Grab brannte eine [Kerze] als Zeichen der Hoffnung.
+Über der Stadt flog eine [weiße Taube], als der Krieg endlich vorbei war.
+Nach dem Streit lag ihr [Ehering] auf dem Küchentisch.
+Sie trug [Schwarz], seit ihr Mann gestorben war. || Metonymie
+Zum Abschied schenkte er ihr eine [rote Rose].
+Am Ende der Geschichte steht über dem zerstörten Dorf ein [Regenbogen].
+Der alte Mann saß vor der [stehengebliebenen Uhr] seiner verstorbenen Frau.
+Die Gefangenen sahen jeden Tag nur die [hohe Mauer] vor ihrem Fenster.
+# schwer
+Als sie das Elternhaus verließ, fiel hinter ihr die [Tür] ins Schloss.
+Mitten im kahlen Winterwald blühte [eine einzige Blume].
+Er stand an einer [Weggabelung] und wusste nicht, wohin. || Ellipse
+Im ganzen Haus war es dunkel, nur in ihrem Zimmer brannte noch [ein Licht]. || Antithese`,
 };

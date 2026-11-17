@@ -79,7 +79,9 @@ test("Karten: nur bekannte Stilmittel, nie eines als falsch, das im Satz auch st
     }
   }
   assert.deepEqual(fehler.slice(0, 20), []);
-  // 1. Klasse: die fünf ersten; Oberstufe: alle 22
+  // 1. Klasse: die fünf ersten; Oberstufe: alle 27, jede Regel mit Wirkung
+  assert.ok(s.STILMITTEL_IDS.every((id) => s.STILMITTEL[id].merke.includes("Wirkung:")));
+  assert.deepEqual(s.STILMITTEL_IDS.filter((id) => s.STILMITTEL[id].ab <= 8).length, 15);
   assert.deepEqual(s.stilmittelBis(5), ["vergleich", "personifikation", "metapher", "lautmalerei", "alliteration"]);
   assert.equal(s.stilmittelBis(9).length, s.STILMITTEL_IDS.length);
   // dieselbe Karte hat nicht für jeden Satz eines Stilmittels dieselben falschen (sonst erkennt man sie an den Kacheln)
@@ -99,6 +101,13 @@ test("Was man am Satz sieht, ist nie eine falsche Antwort", async () => {
   assert.ok(siehtAus("Du bist schuld, er ist schuld.").has("epipher"));
   assert.ok(siehtAus("Mama kocht das Essen, Papa deckt den Tisch.").has("parallelismus"));
   assert.equal(siehtAus("Die Sonne lacht vom Himmel.").size, 0);
+  // für die Textinterpretation (Oberstufe)
+  assert.ok(siehtAus("Er lief und lief.").has("wiederholung"));
+  assert.ok(siehtAus("Im Korb lagen Brot, Käse und Äpfel.").has("aufzaehlung"));
+  assert.ok(siehtAus("Obwohl es regnete, ging sie hinaus.").has("hypotaxe"));
+  assert.ok(siehtAus("Der Zug hielt. Keiner stieg aus.").has("parataxe"));
+  assert.ok(!siehtAus("Obwohl es regnete, ging sie hinaus.").has("parataxe"));
+  assert.ok(siehtAus("Am Grab brannte eine Kerze.").has("symbol"));
 });
 
 test("Runde: zwölf Karten mit Kacheln, zählt in der Unterstufe für „Sprachliche Bilder“", async () => {

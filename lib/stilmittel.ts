@@ -5,7 +5,8 @@
  * Funkelfeld, Torlauf, Endlos und Duelle wie jedes andere Spiel.
  *
  * - **Welche Stilmittel**: je Schulstufe die, die bis dahin dran waren (`ab`): in der 1. Klasse Vergleich, Metapher,
- *   Personifikation, Lautmalerei und Alliteration, bis zur Oberstufe 22 Stilmittel. Falsche Antworten sind nur
+ *   Personifikation, Lautmalerei und Alliteration, bis zur Oberstufe 27 Stilmittel (die letzten fünf für die
+ *   Textinterpretation: Wiederholung, Aufzählung, Parataxe, Hypotaxe, Symbol). Jede Regel nennt auch die Wirkung. Falsche Antworten sind nur
  *   Stilmittel, die der Schüler schon kennt, zuerst die, die man gern verwechselt (`verwechselt`).
  * - **Nie eine richtige Antwort als falsche**: viele Sätze haben mehr als ein Stilmittel („Ich kam, ich sah, ich siegte“
  *   ist Anapher, Parallelismus und Klimax). Was in einem Stilmittel meistens mitsteckt (`auch`), was im Satz zusätzlich
@@ -46,6 +47,11 @@ export const STILMITTEL_IDS = [
   "synaesthesie",
   "metonymie",
   "paradoxon",
+  "wiederholung",
+  "aufzaehlung",
+  "parataxe",
+  "hypotaxe",
+  "symbol",
 ] as const;
 export type StilmittelId = (typeof STILMITTEL_IDS)[number];
 
@@ -84,7 +90,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Vergleich",
     ab: 5,
     gruppe: "bilder",
-    merke: "Vergleich: zwei Dinge werden mit „wie“ oder „als ob“ verbunden (stark wie ein Bär).",
+    merke: "Vergleich: zwei Dinge werden mit „wie“ oder „als ob“ verbunden (stark wie ein Bär). Wirkung: macht etwas anschaulich und leicht vorstellbar.",
     verwechselt: ["metapher", "personifikation", "synaesthesie"],
     auch: ["hyperbel"],
   },
@@ -93,7 +99,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Personifikation",
     ab: 5,
     gruppe: "bilder",
-    merke: "Personifikation: Dinge, Tiere oder die Natur denken, fühlen oder handeln wie Menschen (der Wind flüstert).",
+    merke: "Personifikation: Dinge, Tiere oder die Natur denken, fühlen oder handeln wie Menschen (der Wind flüstert). Wirkung: die Dinge wirken lebendig und nah.",
     verwechselt: ["metapher", "vergleich", "metonymie"],
     auch: ["synaesthesie"],
   },
@@ -102,16 +108,16 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Metapher",
     ab: 5,
     gruppe: "bilder",
-    merke: "Metapher: ein Wort steht in übertragener Bedeutung, ohne „wie“ (Er ist ein Fuchs: er ist schlau).",
+    merke: "Metapher: ein Wort steht in übertragener Bedeutung, ohne „wie“ (Er ist ein Fuchs: er ist schlau). Wirkung: verdichtet eine Aussage in einem Bild.",
     verwechselt: ["vergleich", "personifikation", "hyperbel"],
-    auch: ["euphemismus", "metonymie", "synaesthesie"],
+    auch: ["euphemismus", "metonymie", "synaesthesie", "symbol"],
   },
   lautmalerei: {
     id: "lautmalerei",
     name: "Lautmalerei",
     ab: 5,
     gruppe: "klang",
-    merke: "Lautmalerei: das Wort klingt wie das Geräusch, das es meint (zischen, plumps, kikeriki).",
+    merke: "Lautmalerei: das Wort klingt wie das Geräusch, das es meint (zischen, plumps, kikeriki). Wirkung: man hört die Szene beim Lesen mit.",
     verwechselt: ["alliteration", "vergleich", "metapher"],
     auch: ["personifikation", "alliteration"],
   },
@@ -120,7 +126,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Alliteration",
     ab: 5,
     gruppe: "klang",
-    merke: "Alliteration: Wörter nebeneinander beginnen mit demselben Laut (Milch macht müde Männer munter).",
+    merke: "Alliteration: Wörter nebeneinander beginnen mit demselben Laut (Milch macht müde Männer munter). Wirkung: klingt einprägsam und hebt die Wörter hervor.",
     verwechselt: ["anapher", "lautmalerei", "epipher"],
     auch: [],
   },
@@ -129,7 +135,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Hyperbel",
     ab: 6,
     gruppe: "gedanken",
-    merke: "Hyperbel: eine starke Übertreibung, die niemand wörtlich nimmt (Ich habe dir das schon tausendmal gesagt).",
+    merke: "Hyperbel: eine starke Übertreibung, die niemand wörtlich nimmt (Ich habe dir das schon tausendmal gesagt). Wirkung: betont stark, oft komisch oder dramatisch.",
     verwechselt: ["metapher", "litotes", "ironie", "vergleich"],
     auch: [],
   },
@@ -138,7 +144,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "rhetorische Frage",
     ab: 6,
     gruppe: "gedanken",
-    merke: "Rhetorische Frage: eine Frage, auf die keine Antwort erwartet wird, weil sie schon feststeht (Wer will schon verlieren?).",
+    merke: "Rhetorische Frage: eine Frage, auf die keine Antwort erwartet wird, weil sie schon feststeht (Wer will schon verlieren?). Wirkung: zieht den Leser auf die eigene Seite.",
     verwechselt: ["ironie", "ellipse", "hyperbel"],
     auch: [],
   },
@@ -147,16 +153,16 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Anapher",
     ab: 7,
     gruppe: "klang",
-    merke: "Anapher: mehrere Sätze oder Satzteile beginnen mit demselben Wort (Ich hoffe, ich warte, ich glaube).",
+    merke: "Anapher: mehrere Sätze oder Satzteile beginnen mit demselben Wort (Ich hoffe, ich warte, ich glaube). Wirkung: eindringlich, das wiederholte Wort wird betont.",
     verwechselt: ["epipher", "alliteration", "chiasmus"],
-    auch: ["parallelismus", "klimax", "ellipse"],
+    auch: ["parallelismus", "klimax", "ellipse", "wiederholung"],
   },
   ironie: {
     id: "ironie",
     name: "Ironie",
     ab: 7,
     gruppe: "gedanken",
-    merke: "Ironie: man sagt das Gegenteil von dem, was man meint; die Lage zeigt es (Na super! bei strömendem Regen).",
+    merke: "Ironie: man sagt das Gegenteil von dem, was man meint; die Lage zeigt es (Na super! bei strömendem Regen). Wirkung: Kritik oder Spott, oft witzig.",
     verwechselt: ["euphemismus", "hyperbel", "rhetorisch", "litotes"],
     auch: [],
   },
@@ -165,7 +171,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Antithese",
     ab: 7,
     gruppe: "gedanken",
-    merke: "Antithese: zwei Gegensätze werden einander gegenübergestellt (Der Mensch denkt, Gott lenkt).",
+    merke: "Antithese: zwei Gegensätze werden einander gegenübergestellt (Der Mensch denkt, Gott lenkt). Wirkung: der Gegensatz wird scharf und deutlich.",
     verwechselt: ["oxymoron", "paradoxon", "vergleich"],
     auch: ["parallelismus", "chiasmus"],
   },
@@ -174,26 +180,26 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Klimax",
     ab: 7,
     gruppe: "satz",
-    merke: "Klimax: eine Steigerung, meist in drei Schritten vom Schwächeren zum Stärkeren (Ich bitte, flehe, beschwöre dich).",
+    merke: "Klimax: eine Steigerung, meist in drei Schritten vom Schwächeren zum Stärkeren (Ich bitte, flehe, beschwöre dich). Wirkung: die Spannung oder das Gefühl steigt.",
     verwechselt: ["antithese", "alliteration", "chiasmus", "ironie"],
     // die letzte Stufe ist oft eine Übertreibung („einfach himmlisch“)
-    auch: ["parallelismus", "anapher", "ellipse", "hyperbel"],
+    auch: ["parallelismus", "anapher", "ellipse", "hyperbel", "aufzaehlung"],
   },
   parallelismus: {
     id: "parallelismus",
     name: "Parallelismus",
     ab: 8,
     gruppe: "satz",
-    merke: "Parallelismus: Sätze oder Satzteile hintereinander sind gleich gebaut (Mama kocht das Essen, Papa deckt den Tisch).",
+    merke: "Parallelismus: Sätze oder Satzteile hintereinander sind gleich gebaut (Mama kocht das Essen, Papa deckt den Tisch). Wirkung: Ordnung und Rhythmus, die Teile lassen sich vergleichen.",
     verwechselt: ["chiasmus", "alliteration", "klimax"],
-    auch: ["antithese", "anapher", "epipher", "ellipse"],
+    auch: ["antithese", "anapher", "epipher", "ellipse", "parataxe"],
   },
   ellipse: {
     id: "ellipse",
     name: "Ellipse",
     ab: 8,
     gruppe: "satz",
-    merke: "Ellipse: ein Satz ist bewusst unvollständig, das Fehlende denkt man sich dazu (Hände hoch! Ende gut, alles gut).",
+    merke: "Ellipse: ein Satz ist bewusst unvollständig, das Fehlende denkt man sich dazu (Hände hoch! Ende gut, alles gut). Wirkung: knapp, wie gesprochen, oft aufgeregt.",
     verwechselt: ["rhetorisch", "inversion", "hyperbel", "lautmalerei"],
     auch: ["parallelismus", "epipher", "klimax", "anapher", "antithese"],
   },
@@ -202,7 +208,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Euphemismus",
     ab: 8,
     gruppe: "gedanken",
-    merke: "Euphemismus: etwas Unangenehmes wird beschönigt (für immer eingeschlafen statt gestorben).",
+    merke: "Euphemismus: etwas Unangenehmes wird beschönigt (für immer eingeschlafen statt gestorben). Wirkung: schont den anderen oder verschleiert etwas.",
     verwechselt: ["ironie", "litotes", "hyperbel"],
     auch: ["metapher", "metonymie"],
   },
@@ -211,7 +217,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Oxymoron",
     ab: 8,
     gruppe: "gedanken",
-    merke: "Oxymoron: zwei Wörter, die sich widersprechen, stehen in EINEM Ausdruck zusammen (bittersüß, ohrenbetäubende Stille).",
+    merke: "Oxymoron: zwei Wörter, die sich widersprechen, stehen in EINEM Ausdruck zusammen (bittersüß, ohrenbetäubende Stille). Wirkung: macht stutzig und zeigt einen inneren Zwiespalt.",
     verwechselt: ["antithese", "paradoxon", "hyperbel"],
     auch: ["synaesthesie"],
   },
@@ -220,7 +226,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Chiasmus",
     ab: 9,
     gruppe: "satz",
-    merke: "Chiasmus: Satzglieder stehen über Kreuz, A B – B A (Die Kunst ist lang, und kurz ist unser Leben).",
+    merke: "Chiasmus: Satzglieder stehen über Kreuz, A B – B A (Die Kunst ist lang, und kurz ist unser Leben). Wirkung: betont einen Gegensatz oder eine Spiegelung.",
     verwechselt: ["parallelismus", "anapher", "epipher"],
     auch: ["antithese", "inversion"],
   },
@@ -229,16 +235,16 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Epipher",
     ab: 9,
     gruppe: "klang",
-    merke: "Epipher: mehrere Sätze oder Satzteile enden mit demselben Wort (Du bist schuld, er ist schuld, ich bin schuld).",
+    merke: "Epipher: mehrere Sätze oder Satzteile enden mit demselben Wort (Du bist schuld, er ist schuld, ich bin schuld). Wirkung: das letzte Wort bleibt im Ohr.",
     verwechselt: ["anapher", "alliteration", "chiasmus"],
-    auch: ["parallelismus", "ellipse", "klimax"],
+    auch: ["parallelismus", "ellipse", "klimax", "wiederholung"],
   },
   litotes: {
     id: "litotes",
     name: "Litotes",
     ab: 9,
     gruppe: "gedanken",
-    merke: "Litotes: man verneint das Gegenteil und meint damit oft mehr (nicht schlecht = ziemlich gut).",
+    merke: "Litotes: man verneint das Gegenteil und meint damit oft mehr (nicht schlecht = ziemlich gut). Wirkung: vorsichtig und untertreibend, oft höflich.",
     verwechselt: ["euphemismus", "ironie", "hyperbel"],
     auch: [],
   },
@@ -247,7 +253,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Inversion",
     ab: 9,
     gruppe: "satz",
-    merke: "Inversion: die gewohnte Wortstellung ist umgedreht, damit ein Wort vorne betont wird (Groß war die Freude).",
+    merke: "Inversion: die gewohnte Wortstellung ist umgedreht, damit ein Wort vorne betont wird (Groß war die Freude). Wirkung: das Wort vorne ist besonders betont.",
     verwechselt: ["chiasmus", "ellipse", "parallelismus"],
     auch: [],
   },
@@ -256,7 +262,7 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Synästhesie",
     ab: 9,
     gruppe: "bilder",
-    merke: "Synästhesie: Eindrücke verschiedener Sinne werden vermischt (schreiendes Rot: Sehen und Hören).",
+    merke: "Synästhesie: Eindrücke verschiedener Sinne werden vermischt (schreiendes Rot: Sehen und Hören). Wirkung: der Sinneseindruck wird stärker.",
     verwechselt: ["oxymoron", "metonymie", "lautmalerei", "vergleich"],
     auch: ["metapher", "personifikation"],
   },
@@ -265,18 +271,63 @@ export const STILMITTEL: Record<StilmittelId, Stilmittel> = {
     name: "Metonymie",
     ab: 9,
     gruppe: "bilder",
-    merke: "Metonymie: ein Wort wird durch ein eng damit verbundenes ersetzt, etwa der Ort für die Menschen oder der Autor für sein Buch (Goethe lesen).",
+    merke: "Metonymie: ein Wort wird durch ein eng damit verbundenes ersetzt, etwa der Ort für die Menschen oder der Autor für sein Buch (Goethe lesen). Wirkung: knapp und anschaulich.",
     verwechselt: ["synaesthesie", "euphemismus", "hyperbel", "vergleich"],
-    auch: ["metapher", "personifikation"],
+    auch: ["metapher", "personifikation", "symbol"],
   },
   paradoxon: {
     id: "paradoxon",
     name: "Paradoxon",
     ab: 9,
     gruppe: "gedanken",
-    merke: "Paradoxon: eine Aussage widerspricht sich scheinbar, hat aber einen tieferen Sinn (Weniger ist mehr).",
+    merke: "Paradoxon: eine Aussage widerspricht sich scheinbar, hat aber einen tieferen Sinn (Weniger ist mehr). Wirkung: regt zum Nachdenken an.",
     verwechselt: ["ironie", "litotes", "hyperbel", "rhetorisch"],
     auch: ["antithese", "oxymoron"],
+  },
+  wiederholung: {
+    id: "wiederholung",
+    name: "Wiederholung",
+    ab: 9,
+    gruppe: "klang",
+    merke: "Wiederholung: dasselbe Wort oder dieselbe Wortgruppe kommt mehrmals vor, nicht nur am Anfang der Satzteile (er lief und lief). Wirkung: betont und verstärkt, oft eindringlich.",
+    verwechselt: ["anapher", "epipher", "klimax", "parallelismus"],
+    auch: [],
+  },
+  aufzaehlung: {
+    id: "aufzaehlung",
+    name: "Aufzählung",
+    ab: 9,
+    gruppe: "satz",
+    merke: "Aufzählung: mehrere Dinge derselben Art werden hintereinander genannt, ohne Steigerung (Brot, Käse und Äpfel). Wirkung: Fülle und Vielfalt, manchmal Überforderung.",
+    verwechselt: ["klimax", "parallelismus", "anapher"],
+    auch: [],
+  },
+  parataxe: {
+    id: "parataxe",
+    name: "Parataxe",
+    ab: 9,
+    gruppe: "satz",
+    merke: "Parataxe: kurze Hauptsätze stehen nebeneinander, ohne Nebensätze (Der Zug hielt. Keiner stieg aus.). Wirkung: knapp, sachlich oder gehetzt.",
+    verwechselt: ["ellipse", "hypotaxe", "klimax", "chiasmus"],
+    auch: ["parallelismus"],
+  },
+  hypotaxe: {
+    id: "hypotaxe",
+    name: "Hypotaxe",
+    ab: 9,
+    gruppe: "satz",
+    merke: "Hypotaxe: ein Hauptsatz mit mehreren, oft verschachtelten Nebensätzen (weil, obwohl, dass, der …). Wirkung: genau und nachdenklich, manchmal atemlos.",
+    verwechselt: ["parataxe", "ellipse", "chiasmus"],
+    auch: [],
+  },
+  symbol: {
+    id: "symbol",
+    name: "Symbol",
+    ab: 9,
+    gruppe: "bilder",
+    merke: "Symbol: ein Gegenstand, der im Text wirklich vorkommt, steht zusätzlich für etwas Abstraktes (Taube für Frieden, Ring für Treue). Wirkung: der Text bekommt eine zweite Bedeutung.",
+    verwechselt: ["metapher", "metonymie", "vergleich"],
+    auch: [],
   },
 };
 
@@ -336,10 +387,18 @@ const teileVon = (s: string) =>
     .map(WOERTER)
     .filter((w) => w.length > 0);
 
+const FUELLWOERTER = new Set(["der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "eines", "und", "oder"]);
+/** Wörter, die einen Nebensatz einleiten (großzügig: „als“ und „da“ auch, wenn sie keinen einleiten). */
+const UNTERORDNEND = new Set(["dass", "weil", "obwohl", "obgleich", "wenn", "als", "nachdem", "während", "bevor", "ehe", "damit", "ob", "da", "sodass", "bis", "seit", "seitdem", "indem", "falls", "sobald", "solange", "warum", "wohin", "woher", "wo", "wer", "was"]);
+/** Gegenstände, die oft für etwas stehen: in solchen Sätzen ist „Symbol“ nie eine falsche Antwort. */
+const SYMBOLE = new Set(["taube", "ring", "ehering", "kreuz", "rose", "rosen", "kerze", "kerzen", "herz", "anker", "licht", "regenbogen", "mauer", "tür", "uhr", "schwarz", "weiß", "fenster", "brücke", "weg", "nacht", "winter", "frühling"]);
+
 /**
  * Stilmittel, die man am Satz selbst erkennt, auch wenn sie nicht gemeint sind: ein „wie“ oder „als ob“ (Vergleich),
  * ein Fragezeichen (rhetorische Frage), zwei Wörter nebeneinander mit gleichem Anlaut (Alliteration), Satzteile mit
- * gleichem ersten (Anapher) oder letzten Wort (Epipher), gleich lange Satzteile (Parallelismus). Sie kommen nie als
+ * gleichem ersten (Anapher) oder letzten Wort (Epipher), gleich lange Satzteile (Parallelismus), ein Wort zweimal
+ * (Wiederholung), Kommas mit „und“ (Aufzählung), ein Nebensatz (Hypotaxe) oder mehrere Hauptsätze (Parataxe), ein
+ * Gegenstand, der oft für etwas steht (Symbol). Sie kommen nie als
  * falsche Antwort, damit keine richtige Beobachtung als Fehler zählt.
  */
 export function siehtAus(satz: string): Set<StilmittelId> {
@@ -354,6 +413,15 @@ export function siehtAus(satz: string): Set<StilmittelId> {
   if (new Set(anfang).size < anfang.length) out.add("anapher");
   if (new Set(ende).size < ende.length) out.add("epipher");
   for (let i = 1; i < teile.length; i++) if (teile[i].length >= 2 && teile[i].length === teile[i - 1].length) out.add("parallelismus");
+  // ein Wort zweimal (ohne Artikel und „und“): Wiederholung
+  const inhalt = w.filter((x) => !FUELLWOERTER.has(x));
+  if (new Set(inhalt).size < inhalt.length) out.add("wiederholung");
+  // zwei Kommas oder Komma und „und“: Aufzählung
+  if ((satz.match(/,/g) ?? []).length >= 2 || (satz.includes(",") && w.includes("und"))) out.add("aufzaehlung");
+  // ein Nebensatz: Hypotaxe; sonst mehrere Satzteile mit mindestens zwei Wörtern: Parataxe
+  if (w.some((x) => UNTERORDNEND.has(x)) || /,\s*(der|die|das|den|dem|dessen|deren|welche[rsmn]?|um|ohne|statt)\b/i.test(satz)) out.add("hypotaxe");
+  else if (teile.filter((t) => t.length >= 2).length >= 2) out.add("parataxe");
+  if (w.some((x) => SYMBOLE.has(x))) out.add("symbol");
   return out;
 }
 
