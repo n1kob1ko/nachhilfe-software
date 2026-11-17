@@ -66,7 +66,7 @@ export function quizKarten(e: QuizEintrag | string, seed = ""): { karte: EigeneK
         const f = karte.frage.toLowerCase();
         if (gesehen.has(f)) continue;
         gesehen.add(f);
-        out.push({ karte, stufe: (out.length % 2 ? 2 : 1) as Stufe });
+        out.push({ karte: gleich(karte), stufe: (out.length % 2 ? 2 : 1) as Stufe });
       }
     }
   }
