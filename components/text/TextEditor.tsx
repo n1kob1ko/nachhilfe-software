@@ -33,6 +33,7 @@ import { planFor, SORTEN, type AuftragView } from "@/lib/schreibauftrag";
 import { beilageKey } from "@/lib/text-ansicht";
 import { ErwartungPanel, ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
+import { AbgabeCheckliste, ProbeUhr } from "./interpretation/ProbeUhr";
 import { readDom } from "./read-dom";
 import { StoryColumn, StoryStrip, type StoryPictures } from "./story/StoryPictures";
 import { saveTextFile } from "./save-file";
@@ -990,6 +991,9 @@ export function TextEditor({
 
   // Schreibauftrag: the parts of the Schreibplan with their word budget
   const plan = auftrag ? planFor(auftrag) : [];
+  // Probe-Schularbeit on the student's device: the clock instead of Schreibplan, Hinweise and example until handed in
+  const probe = auftrag?.probeMin && handIn ? auftrag.probeMin : null;
+  const interpretation = auftrag?.sorte === "textinterpretation";
 
   return (
     <div
@@ -1047,22 +1051,27 @@ export function TextEditor({
                 <p className="mt-2 text-[15px] whitespace-pre-line">{prompt}</p>
               </details>
             )}
-            <details className="ti-box ti-planbox" open={!focus}>
-              <summary className="ti-summary">
-                Schreibplan: {plan.length} Teile, ca. {auftrag.target.toLocaleString("de-AT")} Wörter
-              </summary>
-              <SchreibplanList plan={plan} className="mt-2" />
-              <MerkmaleList merkmale={SORTEN[auftrag.sorte].merkmale} className="mt-3" />
-            </details>
+            {probe ? (
+              <ProbeUhr minuten={probe} storageKey={`${store}-probe`} words={counts.words} />
+            ) : (
+              <details className="ti-box ti-planbox" open={!focus}>
+                <summary className="ti-summary">
+                  Schreibplan: {plan.length} Teile, ca. {auftrag.target.toLocaleString("de-AT")} Wörter
+                </summary>
+                <SchreibplanList plan={plan} className="mt-2" />
+                <MerkmaleList merkmale={SORTEN[auftrag.sorte].merkmale} className="mt-3" />
+              </details>
+            )}
             <div className="tx-sticky">
               {toolbar}
               <WordProgress words={counts.words} target={auftrag.target} />
             </div>
             {main}
             <div className="mt-4 grid gap-3">
-              {erwartung && erwartung.length > 0 && <ErwartungPanel erwartung={erwartung} />}
-              <HintsPanel doc={latest.current} auftrag={auftrag} />
-              <ExamplePanel sorte={auftrag.sorte} />
+              {!probe && erwartung && erwartung.length > 0 && <ErwartungPanel erwartung={erwartung} />}
+              {!probe && <HintsPanel doc={latest.current} auftrag={auftrag} />}
+              {interpretation && <AbgabeCheckliste aufbau={auftrag.aufbau ?? "teile"} />}
+              {!probe && <ExamplePanel sorte={auftrag.sorte} />}
             </div>
           </div>
         </div>

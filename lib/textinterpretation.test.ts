@@ -193,7 +193,7 @@ test("hints: the model interpretation gets no tip at all", async () => {
   const b = await ex();
   const hs = hinweise(await docOf(b.beispielInterpretation()), await info());
   assert.deepEqual(tips(hs), []);
-  assert.deepEqual(hs.map((h) => h.key), ["umfang", "einleitung", "zitate", "absaetze"]);
+  assert.deepEqual(hs.map((h) => h.key), ["umfang", "einleitung", "zitate", "wirkung", "ton", "absaetze"]);
   assert.ok(hs.every((h) => h.tone === "gut"));
 });
 

@@ -48,6 +48,8 @@ import {
   umfangHinweis,
   wordRange,
   zitatHinweise,
+  cleanAufbau,
+  type Aufbau,
   type Hinweis,
   type HinweisTone,
   type StoryKind,
@@ -447,7 +449,28 @@ export const cleanSituation = (v: unknown) => String(v ?? "").replace(/\s+/g, " 
 // ---------- a Schreibauftrag: what the writing view, the print and the hints need ----------
 
 /** A Schreibauftrag as the writing view, the print and the hints need it (lib/schreibauftrag-store.ts). */
-export type AuftragView = { sorte: SorteKey; title: string; author: string; year: string; medium: string; kind: string; text: string; countBlank: boolean; target: number; situation: string };
+export type AuftragView = {
+  sorte: SorteKey;
+  title: string;
+  author: string;
+  year: string;
+  medium: string;
+  kind: string;
+  text: string;
+  countBlank: boolean;
+  target: number;
+  situation: string;
+  /** Textinterpretation: seven parts (default) or Einleitung and four Operatoren */
+  aufbau?: Aufbau;
+  /** Probe-Schularbeit: minutes for the writing, without Schreibplan, Hinweise and example until it is handed in; null = none */
+  probeMin?: number | null;
+};
+
+/** Minutes of a Probe-Schularbeit: whole minutes from 10 to 300, anything else none. */
+export function cleanProbeMin(v: unknown): number | null {
+  const n = Math.round(Number(String(v ?? "").trim()));
+  return Number.isFinite(n) && n >= 10 ? Math.min(300, n) : null;
+}
 
 /** One part of the Schreibplan with its word budget. */
 export type PlanTeil = { key: string; title: string; hint: string; words: number };
@@ -455,21 +478,21 @@ export type PlanTeil = { key: string; title: string; hint: string; words: number
 const storyKind = (k: string): StoryKind => (isStoryKind(k) ? k : "Kurzgeschichte");
 
 /** The parts of the Schreibplan with a rough word budget each (rounded to 5). */
-export function planFor(v: Pick<AuftragView, "sorte" | "target" | "kind">): PlanTeil[] {
-  if (v.sorte === "textinterpretation") return schreibplan(v.target, storyKind(v.kind));
+export function planFor(v: Pick<AuftragView, "sorte" | "target" | "kind" | "aufbau">): PlanTeil[] {
+  if (v.sorte === "textinterpretation") return schreibplan(v.target, storyKind(v.kind), cleanAufbau(v.aufbau));
   const s = SORTEN[v.sorte];
   const t = cleanTarget(v.target, s.target);
   return s.parts.map((p) => ({ key: p.key, title: p.title, hint: p.hint, words: round5(t * p.share) }));
 }
 
-export type AuftragInfo = Pick<AuftragView, "sorte" | "title" | "author" | "year" | "medium" | "kind" | "target" | "situation">;
+export type AuftragInfo = Pick<AuftragView, "sorte" | "title" | "author" | "year" | "medium" | "kind" | "target" | "situation" | "aufbau">;
 
 /**
  * The Arbeitsauftrag in the style of the SRDP: the Textsorte, the Textbeilage, the Schreibsituation, three
  * Arbeitsaufträge and the word range. The teacher can change it before and after the text is created.
  */
 export function arbeitsauftrag(a: AuftragInfo): string {
-  if (a.sorte === "textinterpretation") return defaultArbeitsauftrag({ title: a.title, author: a.author, year: a.year, kind: storyKind(a.kind), target: a.target });
+  if (a.sorte === "textinterpretation") return defaultArbeitsauftrag({ title: a.title, author: a.author, year: a.year, kind: storyKind(a.kind), target: a.target, aufbau: cleanAufbau(a.aufbau) });
   const s = SORTEN[a.sorte];
   const k = isBeilageKind(a.kind) ? BEILAGE_KINDS[a.kind] : BEILAGE_KINDS[s.defaultKind as BeilageKind];
   const { min, max } = wordRange(cleanTarget(a.target, s.target));
@@ -643,7 +666,7 @@ const CHECKS: Record<Exclude<Check, "zitate">, (c: Ctx) => SchreibHinweis | null
  */
 export function hinweiseFor(doc: TextDoc, v: AuftragView): SchreibHinweis[] {
   const lines = numberedLines(v.text, v.countBlank);
-  if (v.sorte === "textinterpretation") return hinweise(doc, { title: v.title, author: v.author, target: v.target, lines });
+  if (v.sorte === "textinterpretation") return hinweise(doc, { title: v.title, author: v.author, target: v.target, lines, aufbau: cleanAufbau(v.aufbau) });
   const s = SORTEN[v.sorte];
   const target = cleanTarget(v.target, s.target);
   const words = countWords(doc);

@@ -13,6 +13,7 @@ import {
   arbeitsauftrag,
   auftragTitle,
   beispielQuelle,
+  cleanProbeMin,
   cleanSituation,
   isKindOf,
   isSorte,
@@ -23,7 +24,7 @@ import {
 } from "./schreibauftrag";
 import { cleanBeilageZiel, MIN_BEILAGE } from "./schreibauftrag-umfang";
 import { countWords } from "./text-doc";
-import { cleanStory, cleanTarget, lastLine, MAX_STORY_CHARS, MAX_STORY_LINES, MIN_STORY_LINES, numberedLines } from "./textinterpretation";
+import { AUFBAU_TARGET, cleanAufbau, cleanStory, cleanTarget, lastLine, MAX_STORY_CHARS, MAX_STORY_LINES, MIN_STORY_LINES, numberedLines, type Aufbau } from "./textinterpretation";
 
 export type AuftragRow = {
   text_id: number;
@@ -42,6 +43,10 @@ export type AuftragRow = {
   beilage_ziel: number | null;
   /** die Prüfung des Schülers, zu der der Auftrag gehört */
   test_id: number | null;
+  /** Textinterpretation: 'operatoren' = Einleitung und 4 Operatoren, sonst die sieben Teile */
+  aufbau: string;
+  /** Probe-Schularbeit: Minuten, ohne Hilfen bis zur Abgabe; null = keine */
+  probe_min: number | null;
   created_at: string;
   updated_at: string;
 };
@@ -64,6 +69,10 @@ export type AuftragSettings = {
   beilageZiel?: number | null;
   /** die Prüfung des Schülers (tests.id), zu der der Auftrag gehört; null = keine, fehlt = bleibt */
   testId?: number | null;
+  /** Textinterpretation: sieben Teile oder Einleitung und 4 Operatoren; fehlt = sieben Teile */
+  aufbau?: Aufbau;
+  /** Probe-Schularbeit in Minuten; null = keine */
+  probeMin?: number | null;
 };
 
 const iso = () => new Date().toISOString();
@@ -91,10 +100,11 @@ export function cleanAuftragSettings(sorte: SorteKey, raw: Partial<Record<keyof 
   const year = line(raw.year, 40);
   const medium = sorte === "textinterpretation" ? "" : line(raw.medium, 120);
   const situation = s.situation ? cleanSituation(raw.situation) : "";
-  const target = cleanTarget(raw.target, s.target);
-  const prompt = String(raw.prompt ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 4000) || arbeitsauftrag({ sorte, title, author, year, medium, kind, target, situation });
+  const aufbau: Aufbau = sorte === "textinterpretation" ? cleanAufbau(raw.aufbau) : "teile";
+  const target = cleanTarget(raw.target, sorte === "textinterpretation" ? AUFBAU_TARGET[aufbau] : s.target);
+  const prompt = String(raw.prompt ?? "").replace(/\r\n?/g, "\n").trim().slice(0, 4000) || arbeitsauftrag({ sorte, title, author, year, medium, kind, target, situation, aufbau });
   const testId = Number(raw.testId) > 0 ? Math.round(Number(raw.testId)) : null;
-  return { settings: { sorte, title, author, year, medium, kind, story, countBlank, target, situation, prompt, sourceNote: line(raw.sourceNote, 400), beilageZiel: cleanBeilageZiel(raw.beilageZiel), testId } };
+  return { settings: { sorte, title, author, year, medium, kind, story, countBlank, target, situation, prompt, sourceNote: line(raw.sourceNote, 400), beilageZiel: cleanBeilageZiel(raw.beilageZiel), testId, aufbau, probeMin: cleanProbeMin(raw.probeMin) } };
 }
 
 export function getAuftrag(textId: number): AuftragRow | null {
@@ -116,6 +126,8 @@ export const auftragView = (r: AuftragRow): AuftragView => {
     countBlank: r.count_blank === 1,
     target: cleanTarget(r.target_words, SORTEN[sorte].target),
     situation: r.situation,
+    aufbau: sorte === "textinterpretation" ? cleanAufbau(r.aufbau) : "teile",
+    probeMin: cleanProbeMin(r.probe_min),
   };
 };
 
@@ -148,6 +160,7 @@ export function createAuftrag(n: NewAuftrag): TextView {
       )
       .run(text.id, s.sorte, s.title, s.author, s.year, s.medium, s.kind, s.story, s.countBlank ? 1 : 0, s.target, s.situation, s.sourceNote, now, now);
     if (s.beilageZiel !== undefined || s.testId !== undefined) conn.prepare("UPDATE text_interpretations SET beilage_ziel = ?, test_id = ? WHERE text_id = ?").run(s.beilageZiel ?? null, s.testId ?? null, text.id);
+    conn.prepare("UPDATE text_interpretations SET aufbau = ?, probe_min = ? WHERE text_id = ?").run(s.aufbau === "operatoren" ? "operatoren" : "", cleanProbeMin(s.probeMin), text.id);
     return text;
   })();
 }
@@ -167,6 +180,8 @@ export function updateAuftrag(textId: number, s: AuftragSettings): void {
       .run(s.title, s.author, s.year, s.medium, s.kind, s.story, s.countBlank ? 1 : 0, s.target, s.situation, s.sourceNote, now, textId);
     if (s.beilageZiel !== undefined) conn.prepare("UPDATE text_interpretations SET beilage_ziel = ? WHERE text_id = ?").run(s.beilageZiel, textId);
     if (s.testId !== undefined) conn.prepare("UPDATE text_interpretations SET test_id = ? WHERE text_id = ?").run(s.testId, textId);
+    if (s.aufbau !== undefined) conn.prepare("UPDATE text_interpretations SET aufbau = ? WHERE text_id = ?").run(s.aufbau === "operatoren" ? "operatoren" : "", textId);
+    if (s.probeMin !== undefined) conn.prepare("UPDATE text_interpretations SET probe_min = ? WHERE text_id = ?").run(cleanProbeMin(s.probeMin), textId);
   })();
 }
 
@@ -176,7 +191,7 @@ export function auftragSettingsOf(textId: number): (AuftragSettings & { textId: 
   const text = getText(textId);
   if (!r || !text) return null;
   const v = auftragView(r);
-  return { textId, studentId: text.student_id, sorte: v.sorte, title: v.title, author: v.author, year: v.year, medium: v.medium, kind: v.kind, story: v.text, countBlank: v.countBlank, target: v.target, situation: v.situation, prompt: text.prompt, sourceNote: r.source_note, beilageZiel: r.beilage_ziel ?? null, testId: r.test_id ?? null };
+  return { textId, studentId: text.student_id, sorte: v.sorte, title: v.title, author: v.author, year: v.year, medium: v.medium, kind: v.kind, story: v.text, countBlank: v.countBlank, target: v.target, situation: v.situation, prompt: text.prompt, sourceNote: r.source_note, beilageZiel: r.beilage_ziel ?? null, testId: r.test_id ?? null, aufbau: v.aufbau ?? "teile", probeMin: v.probeMin ?? null };
 }
 
 /** Die Schreibaufträge, die zu einer Prüfung gehören (für die Seite der Prüfung). */

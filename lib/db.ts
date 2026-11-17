@@ -1733,6 +1733,10 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // (null = keine Vorgabe), und die Prüfung des Schülers, zu der der Auftrag gehört
   ["text_interpretations", "beilage_ziel", "INTEGER"],
   ["text_interpretations", "test_id", "INTEGER REFERENCES tests(id) ON DELETE SET NULL"],
+  // Textinterpretation nach Operatoren (lib/textinterpretation.ts, 2026-11-17): 'operatoren' = Einleitung und OP1–OP4,
+  // '' = die sieben Teile; probe_min = Probe-Schularbeit mit Zeit, ohne Hilfen bis zur Abgabe (null = keine)
+  ["text_interpretations", "aufbau", "TEXT NOT NULL DEFAULT ''"],
+  ["text_interpretations", "probe_min", "INTEGER"],
   // Referenzsammlung (lib/referenz.ts, 2026-10-23): die Quellenangabe einer übernommenen Aufgabe („aufgabenpool.at, 1_234“),
   // geht mit jeder Kopie mit und steht auf dem Blatt und beim Schüler als „Quelle: …“; null = keine
   ["tasks", "quelle", "TEXT"],
