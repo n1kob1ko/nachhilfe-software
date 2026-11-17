@@ -3,7 +3,7 @@
 import { Check, Lightbulb } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { SpielKarte } from "@/lib/lernspiele-typen";
-import { KartenInhalt, type Stand } from "./KartenInhalt";
+import { gesetzt, KartenInhalt, type Stand } from "./KartenInhalt";
 import { Funken, vibriere } from "./SpielTeile";
 
 /**
@@ -166,7 +166,7 @@ export function KachelFeld({
                 aria-keyshortcuts={String(i + 1)}
                 data-testid={`kachel-${i}`}
               >
-                <span>{o}</span>
+                <span>{gesetzt(karte, o)}</span>
               </button>
             );
           })}
@@ -183,9 +183,9 @@ export function KachelFeld({
           ) : hatFehler ? (
             <div className="ls-bescheid" data-art="falsch" role="status" data-testid="kachel-bescheid">
               <p className="ls-bescheid-kopf">
-                <Lightbulb size={18} aria-hidden /> Fast! Richtig ist <b data-testid="kachel-richtig">{loesung}</b>
+                <Lightbulb size={18} aria-hidden /> Fast! Richtig ist <b data-testid="kachel-richtig">{gesetzt(karte, loesung)}</b>
               </p>
-              <p className="ls-bescheid-text">{karte.regel}</p>
+              <p className="ls-bescheid-text">{gesetzt(karte, karte.regel)}</p>
             </div>
           ) : null}
         </div>

@@ -22,6 +22,7 @@ import { db, json } from "./db";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
+import { istQuiz } from "./lernspiele-quiz";
 import { SPIEL_THEMEN, spielbareThemen, THEMA_KARTEN_MIN, themaPasst, themenFuerStufe, themenKandidaten } from "./lernspiele-themen";
 import { WORTFELDER, wortfeldArtikel, wortfeldPraeteritum, type Wortfeld } from "./lernspiele-wortfelder";
 import { istSpielArt, SPIEL_FACH, SPIEL_FORM, sterneFuer, type BestenZeile, type Bestenliste, type SpielAntwort, type SpielArt, type SpielForm, type SpielKarte, type SpielThema, type SpielVorschlag } from "./lernspiele-typen";
@@ -69,9 +70,13 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   glas: "spiel.glasklar",
   // Wortschloss: ebenso am Thema der Runde (wortThemen)
   wort: "spiel.wortschloss",
+  // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
+  quizmathe: "spiel.quiz.mathe",
+  quizdeutsch: "spiel.quiz.deutsch",
+  quizenglisch: "spiel.quiz.englisch",
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -93,8 +98,12 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   // Englisch: die unregelmäßigen Verben
   [IRREGULAR_SKILL]: ["irregular"],
   "englisch.tenses.pastsimple.irregular": ["irregular"],
-  // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“ und „Zahlenstrahl“
-  ...Object.fromEntries((Object.entries(SPIEL_THEMEN) as [SpielArt, SpielThema[]][]).flatMap(([art, themen]) => themen.flatMap((t) => [t.skill, ...(t.auch ?? [])]).map((id) => [id, [art]]))),
+  // die Themenspiele: jede Zeit, jedes Grammatik-Thema, jedes Thema von „Kopfrechnen“, „Zahlenstrahl“ und vom Quiz;
+  // führt eine Fähigkeit zu mehreren, stehen alle da
+  ...(Object.entries(SPIEL_THEMEN) as [SpielArt, SpielThema[]][]).reduce<Record<string, SpielArt[]>>((acc, [art, themen]) => {
+    for (const id of themen.flatMap((t) => [t.skill, ...(t.auch ?? [])])) acc[id] = [...new Set([...(acc[id] ?? []), art])];
+    return acc;
+  }, {}),
   // Schreib-Themen (Gruselgeschichte, Märchen …): „Wortschatz“ mit dem Wortfeld, dazu „der, die, das“ und „Präteritum“
   // mit seinen Nomen und Verben (wortfeldAusStoff)
   ...Object.fromEntries(
@@ -120,7 +129,8 @@ const UNSICHER = 0.6;
 export function spielVorschlaege(student: repo.Student, o: { heute: string; lernstand?: Map<string, number | null> }): SpielVorschlag[] {
   const out: SpielVorschlag[] = [];
   const add = (arten: SpielArt[], grund: string, quelle: SpielVorschlag["quelle"]) => {
-    for (const art of arten) if (!out.some((v) => v.art === art)) out.push({ art, grund, quelle });
+    // ein Quiz ohne spielbare Themen gibt es nicht (noch keine Fragen in diesem Fach)
+    for (const art of arten) if (!out.some((v) => v.art === art) && (!istQuiz(art) || spielbareThemen(art).length)) out.push({ art, grund, quelle });
   };
 
   // eigene Spielkarten (lib/spielkarten.ts): die Lehrkraft hat sie für genau diesen Stoff geschrieben, darum zuerst
@@ -132,7 +142,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort") continue;
+    if (art === "glas" || art === "wort" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -140,19 +150,24 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
     const reihe: SpielArt[] = student.grade <= 4 ? ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "perfekt", "praeteritum", "wortschatz", "artikel"];
+    // ab der Oberstufe ist die Grammatik der Unterstufe kein Stoff mehr: das Quiz mit den Themen der Schulstufe zuerst
+    if (student.grade >= 9) add(["quizdeutsch"], "Zum Üben", "fach");
     add(
       reihe.filter((art) => student.grade >= SPIEL_AB[art]),
       "Zum Üben",
       "fach",
     );
+    add(["quizdeutsch"], "Zum Üben", "fach");
   }
-  if (student.subjects.includes("Englisch"))
+  if (student.subjects.includes("Englisch")) {
+    if (student.grade >= 9) add(["quizenglisch"], "Zum Üben", "fach");
     add(
-      (["vokabeln", "irregular", "zeiten", "grammatik"] as SpielArt[]).filter((art) => student.grade >= SPIEL_AB[art]),
+      (["vokabeln", "irregular", "zeiten", "grammatik", "quizenglisch"] as SpielArt[]).filter((art) => student.grade >= SPIEL_AB[art]),
       "Zum Üben",
       "fach",
     );
-  if (student.subjects.includes("Mathematik")) add(["rechnen", "strahl"], "Zum Üben", "fach");
+  }
+  if (student.subjects.includes("Mathematik")) add(student.grade >= 9 ? ["quizmathe", "rechnen", "strahl"] : ["rechnen", "quizmathe", "strahl"], "Zum Üben", "fach");
   // ältere Spielkarten bleiben zum Wiederholen
   if (satz && !frisch) add(["stoff"], "Zum Wiederholen", "fach");
   return out;
@@ -270,8 +285,9 @@ export function themenPlan(student: repo.Student, art: SpielArt, heute: string):
     .flatMap((q) => q.ids)
     .map((id) => themen.find((t) => themaPasst(t, id)))
     .find((t): t is SpielThema => Boolean(t));
-  const reihe = themenFuerStufe(art, student.grade);
-  const thema = ausStoff ?? reihe.find((t) => t.skill === naechstesOffene(student.id, art, reihe.map((t) => t.skill))) ?? reihe[0];
+  const reihe = themenFuerStufe(art, student.grade, student.school_type);
+  const thema = ausStoff ?? (reihe.length ? (reihe.find((t) => t.skill === naechstesOffene(student.id, art, reihe.map((t) => t.skill))) ?? reihe[0]) : undefined);
+  if (!thema) return null;
   return { skillId: thema.skill, titel: `Thema: ${thema.name}` };
 }
 

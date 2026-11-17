@@ -33,11 +33,15 @@
  * Lehrkraft für diesen Schüler geschrieben oder aus „Stoff vorbereiten“ übernommen hat, in jedem Fach
  * (lib/spielkarten.ts). Jede Karte bringt ihre Form mit: Wischen, Kacheln oder eine Reihenfolge.
  *
+ * Das Quiz je Fach (niko 2026-11-17: „spiele sind da was fehlt ist stoff“): „Mathe-Quiz“, „Deutsch-Quiz“ und
+ * „Englisch-Quiz“ sind Themenspiele mit großen Fragensammlungen ohne KI, je Thema des Lehrplans eigene Karten
+ * (lib/lernspiele-quiz.ts, Fragen in lib/quiz/). Gewischt oder mit Kacheln beantwortet.
+ *
  * „Glasklar“ (niko 2026-11-16, ein Sortier-Puzzle): Begriffe in Gläsern sortieren, je Runde eine Stufe eines Themas
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -65,6 +69,9 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   stoff: "Dein Stoff",
   glas: "Glasklar",
   wort: "Wortschloss",
+  quizmathe: "Mathe-Quiz",
+  quizdeutsch: "Deutsch-Quiz",
+  quizenglisch: "Englisch-Quiz",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -90,6 +97,9 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   glas: "Dein Stoff",
   // Wortschloss ebenso (lib/wortschloss-themen.ts)
   wort: "Dein Stoff",
+  quizmathe: "Mathematik",
+  quizdeutsch: "Deutsch",
+  quizenglisch: "Englisch",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -113,6 +123,9 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   stoff: "Die Karten, die deine Lehrkraft für dich geschrieben hat",
   glas: "Sortier die Begriffe, bis jedes Glas nur eine Sorte hat",
   wort: "Errate das Wort zum Hinweis in sechs Versuchen",
+  quizmathe: "Fragen zu deinem Thema, vom Einmaleins bis zur Ableitung",
+  quizdeutsch: "Fragen zu deinem Thema, von Wortarten bis Erörterung",
+  quizenglisch: "Fragen zu deinem Thema, von Grammatik bis Writing",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -136,6 +149,9 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   stoff: ["?", "✓", "→"],
   glas: ["der", "Verb", "Dativ"],
   wort: ["trank", "went", "Gläser"],
+  quizmathe: ["a² + b²", "π", "f′"],
+  quizdeutsch: ["Metapher", "Verb", "Reim"],
+  quizenglisch: ["since", "although", "would"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -159,6 +175,9 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   stoff: "Welche Antwort stimmt?",
   glas: "Sortier die Begriffe in die Gläser.",
   wort: "Tipp das Wort zum Hinweis.",
+  quizmathe: "Welche Antwort stimmt?",
+  quizdeutsch: "Welche Antwort stimmt?",
+  quizenglisch: "Welche Antwort stimmt?",
 };
 
 /**
@@ -249,7 +268,16 @@ export type SpielKarte = {
  * Ein Thema eines Themenspiels („English Tenses“, „Kopfrechnen“): die Fähigkeit, ein kurzer Name für den Schüler und
  * die Schulstufen, in denen es dran ist (`bis` fehlt: bis zum Schluss).
  */
-export type SpielThema = { skill: string; name: string; ab: number; bis?: number; /** andere Fähigkeiten im Stoff, die zu diesem Thema führen */ auch?: string[] };
+export type SpielThema = {
+  skill: string;
+  name: string;
+  ab: number;
+  bis?: number;
+  /** andere Fähigkeiten im Stoff, die zu diesem Thema führen */
+  auch?: string[];
+  /** nur in diesen Schularten ein Thema zum Weiterüben (lib/school.ts; aus dem Stoff kommt es trotzdem) */
+  schularten?: string[];
+};
 
 /** Fester Zufall: dieselben Karten nach jedem Neustart, damit Fehler aus früheren Runden wiederkommen können. */
 export function festerZufall(seed: number): () => number {
