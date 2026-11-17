@@ -8,6 +8,7 @@ import { arbeitsauftrag, beispielFor, hasLongLines, kindsOf, planFor, SORTEN, wr
 import { AUFBAU_NAMEN, AUFBAU_TARGET, cleanTarget, lastLine, MAX_TARGET, MIN_STORY_LINES, MIN_TARGET, numberedLines, wordRange, type Aufbau } from "@/lib/textinterpretation";
 import { beilageLaenge, MAX_BEILAGE, MIN_BEILAGE, umfangVorgabe } from "@/lib/schreibauftrag-umfang";
 import { countWords } from "@/lib/text-doc";
+import { FRAGE_KEYS, geschichteMitText, KURZGESCHICHTEN } from "@/lib/kurzgeschichten";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./NumberedStory";
 import { PdfLesen } from "./PdfLesen";
 import { TextFotoLesen } from "./TextFotoLesen";
@@ -76,6 +77,8 @@ type Props = {
   pruefung?: number | null;
   /** a new Auftrag: the Textbeilage found in the Prüfung's material (lib/schreibauftrag-store.ts beilageZurPruefung) */
   vorlage?: BeilageVorlage | null;
+  /** Textinterpretation: the stories of the collection the student already had (lib/kurzgeschichten.ts) */
+  gelesen?: string[];
 };
 
 /**
@@ -84,7 +87,7 @@ type Props = {
  * with a whole paragraph in one line, can be broken into lines. The Arbeitsauftrag follows the entries until the
  * teacher writes their own.
  */
-export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId, stufe, pruefungen = [], pruefung, vorlage }: Props) {
+export function SchreibauftragForm({ sorte, action, defaults: saved, device, name, submitLabel, note, kiLiest, studentId, stufe, pruefungen = [], pruefung, vorlage, gelesen }: Props) {
   const s = SORTEN[sorte];
   const neu = vorlage && !saved ? { title: vorlage.title, author: vorlage.author, year: vorlage.year, medium: vorlage.medium, kind: vorlage.kind, story: vorlage.story } : {};
   const defaults = saved ?? { ...emptyDefaults(sorte, stufe), testId: pruefung ?? null, ...neu };
@@ -132,6 +135,20 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
     if (s.situation) setSituation(b.situation);
     setOwn("");
   };
+
+  // a story of the collection (lib/kurzgeschichten.ts): title, author, year and text; the questions come with it
+  const ausSammlung = (id: string) => {
+    const g = KURZGESCHICHTEN.find((x) => x.id === id);
+    if (!g) return;
+    setTitle(g.titel);
+    setAuthor(g.autor);
+    setYear(g.jahr);
+    setKind("Kurzgeschichte");
+    setText(g.text);
+    setCountBlank(false);
+    setOwn("");
+  };
+  const ausDerSammlung = sorte === "textinterpretation" ? geschichteMitText(text) : undefined;
 
   // a page read from a photo goes under what is there already, so a text over two pages is read page by page
   const fromPhoto = (v: { titel: string; text: string }) => {
@@ -207,10 +224,28 @@ export function SchreibauftragForm({ sorte, action, defaults: saved, device, nam
           <label htmlFor="ti-story" className="label">
             Text {was}
           </label>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={example} data-testid="beispiel-einfuegen">
-            <BookOpenText size={15} aria-hidden /> {story ? "Beispielgeschichte einfügen" : "Beispiel einfügen"}
-          </button>
+          {sorte === "textinterpretation" ? (
+            <select className="input !w-auto max-w-full" value={ausDerSammlung?.id ?? ""} onChange={(e) => ausSammlung(e.target.value)} aria-label="Geschichte aus der Sammlung" data-testid="sammlung">
+              <option value="" disabled>
+                Geschichte aus der Sammlung …
+              </option>
+              {KURZGESCHICHTEN.map((g) => (
+                <option key={g.id} value={g.id}>
+                  {g.titel} ({g.autor}){gelesen?.includes(g.id) ? " · schon gehabt" : ""}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button type="button" className="btn btn-ghost btn-sm" onClick={example} data-testid="beispiel-einfuegen">
+              <BookOpenText size={15} aria-hidden /> {story ? "Beispielgeschichte einfügen" : "Beispiel einfügen"}
+            </button>
+          )}
         </div>
+        {ausDerSammlung && (
+          <p className="text-[13px] font-medium text-accent" data-testid="sammlung-info">
+            Aus der Sammlung: {ausDerSammlung.kurz} Beim Lesen gibt es die Lesemethode und {FRAGE_KEYS.length} Verständnisfragen, für dich mit Musterantworten.
+          </p>
+        )}
         <p className="text-[13px] text-ink-2">Ein eigener Text oder einer vom Blatt: Füge ihn so ein, wie er auf dem Blatt steht, oder übernimm ihn aus einem PDF. Jede Zeile bleibt eine Zeile und bekommt ihre Nummer.</p>
         {vorlage && !saved && (
           <p className="text-[13px] font-medium text-accent" data-testid="beilage-vorlage">

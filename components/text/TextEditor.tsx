@@ -30,6 +30,7 @@ import {
   type TextDoc,
 } from "@/lib/text-doc";
 import { planFor, SORTEN, type AuftragView } from "@/lib/schreibauftrag";
+import { Verstaendnis } from "./interpretation/Verstaendnis";
 import { beilageKey } from "@/lib/text-ansicht";
 import { ErwartungPanel, ExamplePanel, HintsPanel, WordProgress } from "./interpretation/InterpretationParts";
 import { MerkmaleList, NumberedStory, SchreibplanList } from "./interpretation/NumberedStory";
@@ -1039,6 +1040,7 @@ export function TextEditor({
           </div>
           <aside ref={storyCol} id={`beilage-${textId}`} className="ti-story-col" aria-label={SORTEN[auftrag.sorte].beilage === "Geschichte" ? "Text zur Interpretation" : "Textbeilage"}>
             <NumberedStory text={auftrag.text} countBlank={auftrag.countBlank} title={auftrag.title} author={auftrag.author} year={auftrag.year} medium={auftrag.medium} kind={auftrag.kind} />
+            {!probe && auftrag.fragen && auftrag.fragen.length > 0 && <Verstaendnis fragen={auftrag.fragen} />}
             <button type="button" className="btn btn-secondary ti-to-write" onClick={() => setPane("schreiben")}>
               Zum Schreiben
             </button>

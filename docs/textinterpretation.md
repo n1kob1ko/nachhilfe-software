@@ -111,6 +111,14 @@ Ist die KI eingerichtet und kann sie Bilder lesen, gibt es beim Anlegen „Vom F
 
 Ins Repository, in Tests und Doku kommen nur erfundene Texte und Namen. Geschichten aus Schulbüchern oder Schularbeiten fügt die Lehrkraft in der App ein; sie liegen nur in der Datenbank.
 
+## Kurzgeschichten-Sammlung und Verständnisfragen
+
+`lib/kurzgeschichten.ts` hat sieben eigens geschriebene Kurzgeschichten (alle Autoren und Jahre erfunden, je 46 bis 68 Zeilen): „Sieben Uhr zwölf“ (das Beispiel oben) und sechs weitere mit allen Erzählformen (Ich, Er/Sie personal, Wir, auktorial). Im Schreibauftrag steht statt „Beispiel“ eine Auswahl „Geschichte aus der Sammlung …“; sie füllt Titel, Autor, Jahr und Text. Geschichten, die die Schülerin oder der Schüler schon in einem Schreibauftrag hatte, stehen mit „· schon gehabt“ da.
+
+Ist der Text eine Geschichte aus der Sammlung, steht beim Schreiben unter dem Text „Erst verstehen“: die Lesemethode in vier Schritten und zehn Verständnisfragen (Wer, Ende, Thema, Titel, Figur, Wendepunkt, Symbol, Sprache, Erzähler, offene Frage). Die Lehrkraft sieht dazu Musterantworten mit Zeilen-Belegen; am Laptop und Gerät der Schülerin bzw. des Schülers kommen die Antworten nicht mit (`fuerSchueler`). In der Probe (Zeitlimit) ist die Box aus.
+
+Ein Test prüft Länge und Zeilen jeder Geschichte, jedes Zitat der Musterantworten gegen die angegebene Zeile, mindestens fünf Belege je Geschichte und dass die Schüleransicht keine Antworten enthält.
+
 ## Code
 
 - `lib/textinterpretation.ts`: Zeilennummern, Schreibplan, Arbeitsauftrag, Zitate finden, Hinweise, Teilübungen (rein, ohne Datenbank)
@@ -119,4 +127,5 @@ Ins Repository, in Tests und Doku kommen nur erfundene Texte und Namen. Geschich
 - `app/schreibauftrag-actions.ts`: Server-Aktionen
 - `components/text/interpretation/`: Formular (`SchreibauftragForm`), nummerierte Geschichte, Hinweise, Wortzähler, Foto
 - `components/text/TextEditor.tsx`: Ansicht beim Schreiben (`auftrag`)
-- Tests: `lib/textinterpretation.test.ts`, `lib/textinterpretation-foto.test.ts`
+- `lib/kurzgeschichten.ts`, `components/text/interpretation/Verstaendnis.tsx`: Sammlung, Lesemethode, Verständnisfragen
+- Tests: `lib/textinterpretation.test.ts`, `lib/textinterpretation-foto.test.ts`, `lib/kurzgeschichten.test.ts`

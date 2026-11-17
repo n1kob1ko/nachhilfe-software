@@ -21,7 +21,7 @@ import { triesFor } from "@/lib/service";
 import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
 import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
-import { auftragFor } from "@/lib/schreibauftrag-store";
+import { auftragFor, fuerSchueler } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 
 const first = (n: string) => n.split(" ")[0];
@@ -128,7 +128,9 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   let content: React.ReactNode;
   if (text) {
     const story = storyForEditor(text.id, "/mitmachen/bild");
-    const auftrag = auftragFor(text.id);
+    const roh = auftragFor(text.id);
+    // the student sees the Verständnisfragen without the model answers
+    const auftrag = roh ? fuerSchueler(roh) : null;
     content = (
       <>
         {/* a Schreibauftrag needs the whole width for the Textbeilage and the text: the list waits behind this link */}

@@ -7,7 +7,7 @@ import { requireTeacher } from "@/lib/auth";
 import { studentDevice } from "@/lib/live";
 import { getStudent } from "@/lib/repo";
 import { isSorte, SORTEN } from "@/lib/schreibauftrag";
-import { beilageZurPruefung, pruefungenFuerAuftrag } from "@/lib/schreibauftrag-store";
+import { beilageZurPruefung, gelesenVon, pruefungenFuerAuftrag } from "@/lib/schreibauftrag-store";
 import { schulstufe } from "@/lib/school";
 import { textFotoLesbar } from "@/lib/textinterpretation-foto";
 import { canManageUnit, runningUnitForStudent } from "@/lib/units";
@@ -53,6 +53,7 @@ export default async function NewAuftragPage({ params, searchParams }: { params:
         pruefungen={pruefungen}
         pruefung={pruefungId}
         vorlage={pruefungId ? beilageZurPruefung(pruefungId, sorte) : null}
+        gelesen={sorte === "textinterpretation" ? gelesenVon(student.id) : undefined}
         submitLabel="Schreibauftrag erstellen"
         note={unit ? undefined : `Gerade läuft keine Einheit mit ${name}. Der Schreibauftrag wartet im Lernverlauf und lässt sich in der nächsten Einheit am Tablet öffnen.`}
       />

@@ -27,7 +27,7 @@ import { TextEditor } from "@/components/text/TextEditor";
 import { StudentCorrection } from "@/components/text/correction/StudentCorrection";
 import { storyForEditor } from "@/lib/picture-story";
 import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
-import { auftragFor } from "@/lib/schreibauftrag-store";
+import { auftragFor, fuerSchueler } from "@/lib/schreibauftrag-store";
 import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
@@ -121,7 +121,9 @@ export default async function DevicePage() {
     );
   } else if (text) {
     const story = storyForEditor(text.id, "/geraet/bild");
-    const auftrag = auftragFor(text.id);
+    const roh = auftragFor(text.id);
+    // the student sees the Verständnisfragen without the model answers
+    const auftrag = roh ? fuerSchueler(roh) : null;
     content = (
       <>
         <a href="/geraet/ansicht?zu=start" className="mb-3 inline-flex min-h-[44px] items-center text-[15px] font-medium text-ink-2">

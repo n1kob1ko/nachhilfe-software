@@ -464,6 +464,8 @@ export type AuftragView = {
   aufbau?: Aufbau;
   /** Probe-Schularbeit: minutes for the writing, without Schreibplan, Hinweise and example until it is handed in; null = none */
   probeMin?: number | null;
+  /** a story of the collection (lib/kurzgeschichten.ts): the Verständnisfragen, for the teacher with model answers */
+  fragen?: { frage: string; antwort?: string }[];
 };
 
 /** Minutes of a Probe-Schularbeit: whole minutes from 10 to 300, anything else none. */
