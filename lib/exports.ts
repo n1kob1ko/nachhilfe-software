@@ -51,7 +51,7 @@ export const DATASETS: Dataset[] = [
         "ID", "Name", "Schultyp", "Klasse", "Schulstufe", "Schule", "Fächer", "Aktuelle Themen", "Stärken", "Schwächen", "Ziele", "Notizen", "KI-Hinweise",
         "Lehrer", "Einheiten pro Woche", "Geplante Dauer", "Modus", "Angelegt",
       ],
-      rows: q(`SELECT s.*, t.name AS teacher_name, t.username AS teacher_username FROM students s LEFT JOIN teachers t ON t.id = s.teacher_id ORDER BY s.name COLLATE NOCASE`).map((r) => [
+      rows: q(`SELECT s.*, t.name AS teacher_name, t.username AS teacher_username FROM students s LEFT JOIN teachers t ON t.id = s.teacher_id WHERE s.spiele_test IS NULL ORDER BY s.name COLLATE NOCASE`).map((r) => [
         n(r.id), s(r.name), s(r.school_type), n(r.klasse), n(r.grade), s(r.school), list(r.subjects), s(r.current_topics),
         s(r.strengths_note), s(r.weaknesses_note), s(r.goals), s(r.notes), s(r.ki_hinweise), s(r.teacher_username),
         n(r.einheiten_pro_woche), n(r.geplante_dauer), MODUS_LABEL[s(r.modus_wunsch)] ?? s(r.modus_wunsch), localTime(s(r.created_at)),

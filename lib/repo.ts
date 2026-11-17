@@ -31,6 +31,8 @@ export type Student = {
   created_at: string;
   /** 'unklar' when school type, class and Schulstufe do not fit together; curriculum content is then not narrowed down. */
   stufe_status?: "eindeutig" | "unklar";
+  /** Spiele testen (lib/spiele-testen.ts): der Test-Schüler dieser Lehrkraft (ihre ID); er steht in keiner Liste. */
+  spiele_test?: number | null;
 };
 
 export type Skill = {
@@ -299,7 +301,7 @@ export function getTeacher(id: number | null): Teacher | null {
 
 // ---------- students ----------
 export function listStudents(): Student[] {
-  return db().prepare("SELECT * FROM students ORDER BY name COLLATE NOCASE").all().map((r) => toStudent(r as Row));
+  return db().prepare("SELECT * FROM students WHERE spiele_test IS NULL ORDER BY name COLLATE NOCASE").all().map((r) => toStudent(r as Row));
 }
 export function getStudent(id: number): Student | null {
   const r = db().prepare("SELECT * FROM students WHERE id = ?").get(id) as Row | undefined;

@@ -816,7 +816,7 @@ export function wochenEingaben(weekStart: string): WochenEingaben {
 
   const schueler = (
     db()
-      .prepare("SELECT id, name, availability, einheiten_pro_woche, geplante_dauer, modus_wunsch, erlaubte_lehrer, teacher_id FROM students ORDER BY id")
+      .prepare("SELECT id, name, availability, einheiten_pro_woche, geplante_dauer, modus_wunsch, erlaubte_lehrer, teacher_id FROM students WHERE spiele_test IS NULL ORDER BY id")
       .all() as {
       id: number;
       name: string;
