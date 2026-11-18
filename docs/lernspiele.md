@@ -422,6 +422,22 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen
   Zeile, dann die knappe Bestenliste.
 
+- **Bilder und Musik** (niko 2026-11-18: „schau mal was du mit higgsfield für blockwerk machen kannst … nicht zu viel
+  credits“; mit Higgsfield gemacht, zusammen etwa 35 Credits): alles in `public/spiele/blockwerk/` (der Pfad `spiele/`
+  ist für Schüler ohne Anmeldung offen, proxy.ts und `OFFENE_PFADE`).
+  - **Hintergrund**: Himmel in DreamStudy-Blau mit Wolken und offenem Buch, hochkant fürs Handy (die schwebenden
+    Steine oben sind herausgerechnet, sie lagen hinter Serie und Blitz), quer ab Seitenverhältnis 4:5; im dunklen
+    Modus abgedunkelt (components/lernen/blockwerk-bild.css, nur solange das Brett offen ist: `.ls:has(> .bw)`).
+  - **Maskottchen** unter dem Brett, neben dem Hinweis (components/lernen/BlockMaskottchen.tsx): ein blauer Block mit
+    Blitz-Abzeichen in sechs Posen; welche, sagt `stimmung` in lib/blockwerk-stimmung.ts: traurig, wenn das Spiel aus
+    ist; Blitz beim Blitz und beim Zielen; staunt bei „Alles frei“, Fieber und Lob; jubelt bei Punkten und Kombo;
+    nervös bei Schutt, wenn nichts passt oder ab 60 % belegten Feldern; im Fieber jubelt er, sonst ist er ruhig.
+    Hüpfen, Zittern und Atmen nur mit transform; bei „weniger Bewegung“ wechselt nur das Bild.
+  - **Musik**: zwei ruhige Stücke zu je einer Minute, die sich abwechseln, leise unter den Tönen
+    (components/lernen/musik.ts). Noten-Knopf im Kopf neben dem Lautsprecher, das Gerät merkt sich die Wahl
+    (`ls-musik`); sind die Töne aus, schweigt auch die Musik. Startet der Browser sie nicht gleich, kommt sie mit dem
+    nächsten Tippen; ist die Seite verdeckt, pausiert sie.
+
 ## Funkelfeld
 
 niko 2026-11-16: „mach weitere spiele“ (nach Blockwerk und Glasklar; vorgeschlagen war zuerst ein Drei-in-einer-Reihe-
