@@ -26,6 +26,7 @@ test("Maskottchen: nervös, wenn das Brett voll wird oder nichts passt", () => {
   assert.equal(stimmung({ ...ruhig, fuellung: 0.6 }), "nervoes");
   assert.equal(stimmung({ ...ruhig, fuellung: 0.59 }), "ruhig");
   assert.equal(stimmung({ ...ruhig, lage: "eng" }), "nervoes");
+  assert.equal(stimmung({ ...ruhig, ansage: "schutt" }), "nervoes");
   assert.equal(stimmung({ ...ruhig, fuellung: 0.7, fieber: true }), "nervoes");
 });
 

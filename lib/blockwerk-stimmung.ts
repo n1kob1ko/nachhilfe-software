@@ -1,7 +1,8 @@
 /**
  * Das Maskottchen in Blockwerk (niko 2026-11-18, Bilder mit Higgsfield gemacht, public/spiele/blockwerk/): ein blauer
  * Block mit Blitz-Abzeichen unter dem Brett. Er zeigt, wie es gerade läuft: ruhig, freut sich über Punkte, staunt bei
- * großen Momenten, hält beim Blitz den Blitz hoch, schwitzt, wenn das Brett voll wird, und ist traurig, wenn das Spiel aus ist.
+ * großen Momenten, hält beim Blitz den Blitz hoch, schwitzt, wenn das Brett voll wird oder Schutt fällt (falsche Antwort),
+ * und ist traurig, wenn das Spiel aus ist.
  */
 
 export const STIMMUNGEN = ["ruhig", "jubel", "staunt", "blitz", "nervoes", "traurig"] as const;
@@ -11,7 +12,7 @@ export type Stimmung = (typeof STIMMUNGEN)[number];
 export const NERVOES_AB = 0.6;
 
 /** Die große Ansage auf dem Brett, wie in components/lernen/BlockFeld.tsx */
-export type AnsageArt = "punkte" | "kombo" | "blitz" | "frei" | "lob" | "fieber";
+export type AnsageArt = "punkte" | "kombo" | "blitz" | "frei" | "lob" | "fieber" | "schutt";
 
 export function stimmung(o: {
   lage: "spiel" | "eng" | "frage" | "aus";
@@ -28,7 +29,8 @@ export function stimmung(o: {
   if (o.ansage === "blitz" || o.zielen) return "blitz";
   if (o.ansage === "frei" || o.ansage === "fieber" || o.ansage === "lob") return "staunt";
   if (o.ansage === "punkte" || o.ansage === "kombo") return "jubel";
-  if (o.lage === "eng" || o.fuellung >= NERVOES_AB) return "nervoes";
+  // falsche Antwort: Schutt fällt aufs Brett
+  if (o.ansage === "schutt" || o.lage === "eng" || o.fuellung >= NERVOES_AB) return "nervoes";
   if (o.fieber) return "jubel";
   return "ruhig";
 }

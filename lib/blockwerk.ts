@@ -5,7 +5,7 @@
  * (components/lernen/BlockFeld.tsx, docs/lernspiele.md „Blockwerk“). Hier steht nur die Spiellogik, ohne React,
  * damit sie sich prüfen lässt (lib/blockwerk.test.ts).
  *
- * Das Brett ist eine Liste mit 64 Feldern, Zeile für Zeile: null = frei, sonst die Farbe (0 bis 4).
+ * Das Brett ist eine Liste mit 64 Feldern, Zeile für Zeile: null = frei, sonst die Farbe (0 bis 4, 5 = Schutt).
  */
 
 export const SEITE = 8;
@@ -18,6 +18,12 @@ export const FARBEN = 5;
 export const BLITZE_MAX = 1;
 /** Mit so vielen Blitzen beginnt ein Spiel: man sieht gleich, wofür sie gut sind. */
 export const BLITZE_START = 1;
+/**
+ * Schutt (niko 2026-11-18: „mehr punishing“, Idee 1): eine falsche Antwort wirft so viele graue Steine aufs Brett. Sie
+ * gehen nur weg, wenn ihre Reihe oder Spalte voll ist (oder mit dem Blitz).
+ */
+export const SCHUTT = 5;
+export const SCHUTT_STEINE = 3;
 
 export type Brett = (number | null)[];
 /** Ein Teil: die Felder als [Zeile, Spalte] ab der linken oberen Ecke, dazu Breite, Höhe und Farbe. */
@@ -183,6 +189,29 @@ export const KOMBO_PAUSE = 3;
 export function naechsteKombo(kombo: number, ohne: number, linien: number): { kombo: number; ohne: number } {
   if (linien > 0) return { kombo: kombo + 1, ohne: 0 };
   return ohne + 1 >= KOMBO_PAUSE ? { kombo: 0, ohne: 0 } : { kombo, ohne: ohne + 1 };
+}
+
+/**
+ * Wirft `n` Schutt-Steine auf freie Felder. Ein Stein macht nie eine Reihe oder Spalte voll (sonst wäre er gleich
+ * weg, und es gäbe sogar Punkte). `felder`: wo die Steine liegen (für die Bewegung).
+ */
+export function schutt(brett: Brett, n = SCHUTT_STEINE, rng: () => number = Math.random): { brett: Brett; felder: number[] } {
+  const neu = [...brett];
+  const felder: number[] = [];
+  for (let k = 0; k < n; k++) {
+    const frei = neu.flatMap((x, i) => (x === null ? [i] : [])).filter((i) => {
+      const r = Math.floor(i / SEITE);
+      const s = i % SEITE;
+      const reiheFast = Array.from({ length: SEITE }, (_, ss) => neu[r * SEITE + ss]).filter((x) => x === null).length === 1;
+      const spalteFast = Array.from({ length: SEITE }, (_, rr) => neu[rr * SEITE + s]).filter((x) => x === null).length === 1;
+      return !reiheFast && !spalteFast;
+    });
+    if (!frei.length) break;
+    const i = frei[Math.floor(rng() * frei.length) % frei.length];
+    neu[i] = SCHUTT;
+    felder.push(i);
+  }
+  return { brett: neu, felder };
 }
 
 /** Wie voll das Brett ist (0 bis 1). */
