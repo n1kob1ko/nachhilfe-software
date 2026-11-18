@@ -30,6 +30,12 @@
   --b-unten: #7d5cf0;
   --b-kante: #5537b8;
 }
+/* Schutt nach einer falschen Antwort (lib/blockwerk.ts SCHUTT): grauer Stein */
+[data-f="5"] {
+  --b-oben: #b4bccb;
+  --b-unten: #7c869a;
+  --b-kante: #545d70;
+}
 
 .bw {
   display: flex;
@@ -252,6 +258,16 @@
 .bw-feld[data-neu="1"] {
   animation: bw-landen-b 220ms var(--ls-ease-out);
 }
+/* Schutt fällt von oben aufs Brett */
+.bw-feld[data-stein] {
+  animation: bw-stein 380ms cubic-bezier(0.34, 1.4, 0.64, 1) both;
+}
+@keyframes bw-stein {
+  from {
+    transform: translateY(-140%) scale(1.25);
+    opacity: 0;
+  }
+}
 @keyframes bw-landen-a {
   from {
     transform: scale(0.86);
@@ -334,6 +350,12 @@
 .bw-ansage[data-art="blitz"] {
   top: 62%;
   color: var(--ls-gold);
+}
+.bw-ansage[data-art="schutt"] {
+  top: 56%;
+  color: #ffb3a8;
+  font-size: 30px;
+  rotate: 3deg;
 }
 
 .bw-hinweis {
@@ -544,6 +566,7 @@
   .bw,
   .bw-punkte b[data-neu],
   .bw-feld[data-neu],
+  .bw-feld[data-stein],
   .bw-slot .bw-teil,
   .bw-zieh .bw-teil,
   .bw-frage-kopf,
@@ -924,9 +947,21 @@
   animation: bwf-zeit var(--ms) linear forwards;
 }
 @keyframes bwf-zeit {
+  /* erste Hälfte gold (blitzschnell), dann rot: gleich ist die Zeit um */
+  50% {
+    background: linear-gradient(90deg, #ffb21f, #ffe27a);
+  }
+  51% {
+    background: linear-gradient(90deg, #ff5d50, #ff9b8f);
+  }
   to {
     transform: scaleX(0);
+    background: linear-gradient(90deg, #ff5d50, #ff9b8f);
   }
+}
+.bwf-zeit[data-um] {
+  color: #ff8b7a;
+  opacity: 1;
 }
 .bwf-zeit[data-aus] {
   opacity: 0.25;

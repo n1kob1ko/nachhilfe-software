@@ -4,7 +4,7 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { blitz, FELDER, FORM_NAMEN, gueltigePunkte, leeresBrett, naechsteKombo, neueTeile, passt, passtIrgendwo, punkteFuer, SEITE, setze, steckt, teilAus, wuerdeRaeumen, type Brett } from "./blockwerk";
+import { blitz, FELDER, SCHUTT, schutt, FORM_NAMEN, gueltigePunkte, leeresBrett, naechsteKombo, neueTeile, passt, passtIrgendwo, punkteFuer, SEITE, setze, steckt, teilAus, wuerdeRaeumen, type Brett } from "./blockwerk";
 
 /** Ein Brett aus acht Zeilen mit „#“ (belegt) und „.“ (frei). */
 function brettAus(zeilen: string[]): Brett {
@@ -145,4 +145,29 @@ test("Punkte vom Gerät werden begrenzt", () => {
   assert.equal(gueltigePunkte("100"), 0);
   assert.equal(gueltigePunkte(Number.POSITIVE_INFINITY), 0);
   assert.equal(gueltigePunkte(5e9), 10_000_000);
+});
+
+test("Schutt: drei graue Steine auf freien Feldern, nie eine volle Linie", () => {
+  const rng = zufall(7);
+  const leer = schutt(leeresBrett(), 3, rng);
+  assert.equal(leer.felder.length, 3);
+  assert.equal(leer.brett.filter((x) => x === SCHUTT).length, 3);
+  // Reihe 0 hat nur noch ein freies Feld: dort darf kein Stein hin
+  const b = brettAus(["#######.", "........", "........", "........", "........", "........", "........", "........"]);
+  for (let i = 0; i < 30; i++) {
+    const z = schutt(b, 3, rng);
+    assert.equal(z.brett[7], null, "der Stein würde Reihe 0 voll machen");
+    assert.equal(z.brett.filter((x) => x === SCHUTT).length, 3);
+  }
+  // fast volles Brett: weniger Steine, wenn kein Platz ist
+  const fast = brettAus(["#######.", "#######.", "#######.", "#######.", "#######.", "#######.", "#######.", "........"]);
+  const f = schutt(fast, 3, rng);
+  assert.ok(f.felder.length <= 3);
+  for (const i of f.felder) assert.equal(fast[i], null);
+  // Schutt verschwindet mit einer vollen Linie wie jedes andere Feld
+  const r = brettAus(["######..", "........", "........", "........", "........", "........", "........", "........"]);
+  r[6] = SCHUTT;
+  const zug = setze(r, teilAus("1"), 0, 7);
+  assert.deepEqual(zug.reihen, [0]);
+  assert.equal(zug.brett[6], null);
 });

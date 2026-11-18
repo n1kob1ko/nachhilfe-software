@@ -368,12 +368,12 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   und das spielkonzept … komisch aufgebaut“; „blockwerk war bisher das beste die kinder lieben es“): seit 2026-11-17
   verschwindet das Brett nicht mehr. Die Frage schiebt sich dort hoch, wo sonst die Teile liegen
   (`components/lernen/BrettFrage.tsx`), das Brett wird so groß, wie noch Platz ist (Container-Abfrage in
-  blockwerk.css). Oben stehen die drei Teile, die es dafür gibt, darunter ein Zeitbalken (6 s), der Satz und
+  blockwerk.css). Oben stehen die drei Teile, die es dafür gibt, darunter ein Zeitbalken (8–14 s, seit 2026-11-18 eine Grenze), der Satz und
   höchstens vier große Kacheln (`brettOptionen`: die richtige und die ersten falschen der Karte). Ein Tipp zählt
   sofort. Falsch: durchgestrichen, die richtige leuchtet, die Regel steht darunter, weiter mit einem Tipp auf die
   richtige. Karten ohne Kacheln (Satzbau, Zahlenstrahl) kommen wie bisher auf eigenem Bildschirm. Auch die
   Rettungsfrage kommt unter dem Brett.
-- **Schnell und Fieber**: richtig innerhalb der 6 s ist „Blitzschnell!“ (+100). Drei Antworten beim ersten Versuch
+- **Schnell und Fieber**: richtig in der ersten Hälfte des Zeitbalkens ist „Blitzschnell!“ (+100). Drei Antworten beim ersten Versuch
   richtig am Stück sind **Fieber** (`fieberFaktor`): alle Punkte ×2, ab sechs ×3, bis eine Antwort falsch ist. Links
   oben zeigt die Flamme mit drei Punkten, wie weit es bis zum Fieber ist; im Fieber leuchtet ein Ring um das Brett.
 - **Effekte**: Töne aus dem Browser (`components/lernen/klang.ts`, Web Audio ohne Dateien: Tock beim Legen, eine
@@ -387,8 +387,16 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   richtige Antworten laden einen neuen (die drei Punkte am Knopf), **höchstens einer** (seit 2026-11-18, niko:
   „blockwerk ist zu leicht … max 1 blitz“; davor drei). Wer einen hat, spart nicht weiter an. Zuerst gab jede
   richtige Antwort einen Blitz; im Test endete dann kein Spiel mehr.
-- **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage**: richtig
-  gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
+- **Strafen** (niko 2026-11-18: „blockwerk ist zu leicht … mehr punishing“, gewählt Ideen 1, 3, 5):
+  - **Schutt**: eine falsche Antwort wirft 3 graue Steine auf freie Felder (`schutt`, `SCHUTT_STEINE`; nie so, dass
+    eine Linie voll wird). Sie gehen nur mit einer vollen Reihe/Spalte oder dem Blitz weg.
+  - **Zeit ist Pflicht**: der Balken über der Frage unter dem Brett läuft 8 s (lange Sätze bis 14 s, `zeitFuer`).
+    Erste Hälfte gold = „Blitzschnell“, dann rot; ist er leer, zählt die Frage als falsch („Zeit um!“, gespeichert
+    als Antwort ohne Wahl) und es geht weiter wie nach einem Fehler, also auch mit Schutt. Karten auf eigenem
+    Bildschirm (Satzbau, Zahlenstrahl) haben keine Zeit.
+  - **Rettungsfrage nur einmal je Spiel**: steckt man danach wieder ohne Blitz, ist das Spiel aus.
+- **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage** (einmal je
+  Spiel): richtig gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
   richtig waren, der Lernstand des Spiels und „Kommt nächstes Mal wieder“.
 - **Punkte** (`punkteFuer`, `PUNKTE_FAKTOR`: 2026-11-16 mal drei, niko „die punkte sind noch zu wenig“; seit
   2026-11-18 mal zehn, niko „punkte sollen mehr sein“): jedes gelegte Feld 10, jede Linie 100 mal die Zahl der

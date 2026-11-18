@@ -1697,7 +1697,7 @@ function Loesung({ karte, ohneMarke, knapp }: { karte: SpielKarte; art: SpielArt
 
 /** Name, Satz für den Anfang und Ende je Spielbrett; `kurz`: Anfang der Test-Kennungen. */
 const BRETT_INFO: Record<Brett, { titel: string; text: string; ende: string; kurz: string }> = {
-  bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine richtige Antwort, schnell ist mehr wert. Drei richtig hintereinander: Fieber, alles zählt doppelt!", ende: "Kein Platz mehr", kurz: "bw" },
+  bloecke: { titel: "Blockwerk", text: "Zieh die Teile aufs Feld. Volle Reihen und Spalten verschwinden. Neue Teile gibt es für eine Antwort, schnell ist mehr wert. Falsch oder zu langsam: graue Steine fallen aufs Feld! Drei richtig hintereinander: Fieber, alles zählt doppelt.", ende: "Kein Platz mehr", kurz: "bw" },
   funkel: { titel: "Funkelfeld", text: "Tausch zwei Steine, und drei gleiche in einer Linie verschwinden. Sind die Züge weg, bringt eine richtige Antwort neue.", ende: "Keine Herzen mehr", kurz: "ff" },
   tor: { titel: "Torlauf", text: "Wisch nach links und rechts, spring über Hürden und sammle Sterne. Oben steht eine Frage: lauf durch das Tor mit der richtigen Antwort. Drei richtig hintereinander: Fieber, und ein verlorenes Herz kommt zurück!", ende: "Keine Herzen mehr", kurz: "tl" },
 };
