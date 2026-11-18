@@ -4,7 +4,7 @@ import "./blockwerk.css";
 import { Flame, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, SCHNELL_PUNKTE, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
+import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, SCHNELL_PUNKTE, SCHUTT_STEINE, leeresBrett, schutt, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
 import { Funkenregen, type FunkenApi } from "./Funkenregen";
 import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
@@ -17,6 +17,10 @@ import { vibriere } from "./SpielTeile";
  * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Höchstens einer
  * (BLITZE_MAX, niko 2026-11-18 „zu leicht“). Passt kein Teil mehr und
  * ist kein Blitz da, kommt eine Rettungsfrage: richtig gibt einen Blitz, sonst ist das Spiel aus (`onEnde`).
+ *
+ * Strenger seit niko 2026-11-18 („zu leicht … mehr punishing“, Ideen 1, 3, 5): eine falsche Antwort (auch „Zeit um“,
+ * BrettFrage.tsx) wirft SCHUTT_STEINE graue Steine aufs Brett (lib/blockwerk.ts `schutt`), und die Rettungsfrage gibt es
+ * nur einmal je Spiel; steckt man danach wieder ohne Blitz, ist das Spiel aus.
  *
  * Damit es packt (niko 2026-11-16: „süchtig machen … zu wenig flashyness“): die Frage schiebt sich unter dem Brett hoch
  * (`frage`, components/lernen/BrettFrage.tsx), das Brett bleibt stehen. Drei Antworten beim ersten Versuch hintereinander
@@ -32,17 +36,17 @@ import { vibriere } from "./SpielTeile";
 export type BlockFrage = { grund: "teile" | "rettung"; vorschau: Teil[]; ladung: number };
 /** So viele richtige Antworten sind ein Blitz. */
 export const LADUNG = 3;
-/** `schnell`: richtig innerhalb der Zeit der Frage (BrettFrage SCHNELL_MS) */
+/** `schnell`: richtig innerhalb der Zeit der Frage (erste Hälfte des Zeitbalkens, BrettFrage.tsx) */
 export type BlockAntwort = { n: number; sauber: boolean; schnell?: boolean };
 /** So viele richtige Antworten am Stück sind Fieber (Punkte mal zwei), doppelt so viele mal drei. */
 export const FIEBER_AB = 3;
 export const fieberFaktor = (serie: number) => (serie >= FIEBER_AB * 2 ? 3 : serie >= FIEBER_AB ? 2 : 1);
 /** Die Farben der Teile für die Funken (wie --b-unten in blockwerk.css). */
-const FUNKEN_FARBEN = ["#3d86ff", "#ff5d50", "#22c283", "#ffb21f", "#8f6cff"];
+const FUNKEN_FARBEN = ["#3d86ff", "#ff5d50", "#22c283", "#ffb21f", "#8f6cff", "#9aa3b5"];
 /** Lob nach der Zahl der Linien auf einmal */
 const LOB = ["", "", "Super!", "Stark!", "Wahnsinn!"];
 
-type Ansage = { n: number; text: string; art: "punkte" | "kombo" | "blitz" | "frei" | "lob" | "fieber"; x?: number; y?: number };
+type Ansage = { n: number; text: string; art: "punkte" | "kombo" | "blitz" | "frei" | "lob" | "fieber" | "schutt"; x?: number; y?: number };
 type Vorschau = { r: number; s: number; ok: boolean; zellen: Set<number>; raeumt: Set<number>; farbe: number } | null;
 /** `zelle`: Kante eines Felds, `schritt`: Feld plus Lücke (so weit liegen zwei Felder auseinander) */
 type Zieh = { slot: number; teil: Teil; id: number; ox: number; oy: number; zelle: number; schritt: number; r: number; s: number; maus: boolean };
@@ -84,11 +88,15 @@ export function BlockFeld({
   const [zieht, setZieht] = useState<Zieh | null>(null);
   const [gelandet, setGelandet] = useState<{ zellen: Set<number>; n: number } | null>(null);
   const [blitzZiel, setBlitzZiel] = useState<number | null>(null);
+  // gerade gefallene Schutt-Steine (für die Bewegung)
+  const [steine, setSteine] = useState<{ zellen: Set<number>; n: number } | null>(null);
   // richtige Antworten beim ersten Versuch am Stück (ab FIEBER_AB: Fieber)
   const [serie, setSerie] = useState(0);
   const faktor = fieberFaktor(serie);
   const funkenRef = useRef<FunkenApi | null>(null);
   const rekordGeknackt = useRef(false);
+  // die Rettungsfrage gibt es nur einmal je Spiel
+  const gerettet = useRef(false);
 
   const brettRef = useRef<HTMLDivElement | null>(null);
   const ziehRef = useRef<HTMLDivElement | null>(null);
@@ -163,13 +171,21 @@ export function BlockFeld({
         setZielen(true);
         return;
       }
+      if (gerettet.current) {
+        // die Rettung war schon: aus
+        setLage("aus");
+        klang.aus();
+        setTimeout(onEnde, reduziert.current ? 300 : 1400);
+        return;
+      }
+      gerettet.current = true;
       const f: BlockFrage = { grund: "rettung", vorschau: [], ladung: 0 };
       klang.aus();
       wartend.current = f;
       setLage("frage");
       setTimeout(() => onFrage(f), reduziert.current ? 0 : 650);
     },
-    [onFrage],
+    [onFrage, onEnde],
   );
 
   // die Antwort auf eine Frage: neue Teile (und ein Blitz), oder nach der Rettungsfrage weiter oder aus
@@ -209,7 +225,21 @@ export function BlockFeld({
       }
       setTeile(f.vorschau);
       setTimeout(() => klang.teile(), 120);
-      pruefe(brett, f.vorschau, bl);
+      let b = brett;
+      if (!antwort.sauber) {
+        // falsch: Schutt fällt aufs Brett
+        const sch = schutt(brett);
+        b = sch.brett;
+        if (sch.felder.length) {
+          setBrett(b);
+          setSteine({ zellen: new Set(sch.felder), n: ++zaehler.current });
+          setTimeout(() => setSteine(null), 700);
+          vibriere([30, 40, 30]);
+          wackle(1);
+          setTimeout(() => sage(`+${sch.felder.length} Steine`, "schutt"), 200);
+        }
+      }
+      pruefe(b, f.vorschau, bl);
     } else if (antwort.sauber) {
       setLage("eng");
       setZielen(true);
@@ -218,7 +248,7 @@ export function BlockFeld({
       klang.aus();
       setTimeout(onEnde, reduziert.current ? 300 : 1400);
     }
-  }, [antwort, blitze, ladung, brett, pruefe, sage, onEnde, serie, faktor]);
+  }, [antwort, blitze, ladung, brett, pruefe, sage, onEnde, serie, faktor, wackle]);
 
   /** Ein Teil liegt: abräumen, zählen, und wenn alle drei liegen, nach neuen fragen. */
   const lege = useCallback(
@@ -469,6 +499,7 @@ export function BlockFeld({
                 data-raeumt={raeumt ? "" : undefined}
                 data-blitz={blitzFlaeche?.has(i) ? "" : undefined}
                 data-neu={gelandet?.zellen.has(i) && f !== null ? gelandet.n % 2 : undefined}
+                data-stein={steine?.zellen.has(i) && f !== null ? "" : undefined}
                 onPointerEnter={zielen ? () => setBlitzZiel(i) : undefined}
                 onClick={zielen ? () => blitzAuf(i) : undefined}
               >
@@ -587,7 +618,7 @@ export function FrageKopf({ frage }: { frage: BlockFrage }) {
           <span className="bw-frage-text">
             <b>Antworte für neue Teile</b>
             <small>
-              Richtig beim 1. Versuch: +{FRAGE_PUNKTE} und <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="der Blitz" /> lädt
+              Richtig beim 1. Versuch: +{FRAGE_PUNKTE} und <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="der Blitz" /> lädt. Falsch: {SCHUTT_STEINE} Steine
               <span className="bw-ladung" aria-label={`${frage.ladung} von ${LADUNG}`}>
                 {Array.from({ length: LADUNG }, (_, i) => (
                   <i key={i} data-an={i < frage.ladung ? "" : undefined} data-naechste={i === frage.ladung ? "" : undefined} />
@@ -600,7 +631,7 @@ export function FrageKopf({ frage }: { frage: BlockFrage }) {
         <span className="bw-frage-text">
           <b>Rettungsfrage</b>
           <small>
-            Richtig: +1 <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="Blitz" /> und weiter. Falsch: das Spiel ist aus.
+            Nur einmal pro Spiel. Richtig: +1 <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="Blitz" /> und weiter. Falsch: das Spiel ist aus.
           </small>
         </span>
       )}
@@ -615,7 +646,7 @@ export function FrageLeiste({ frage }: { frage: BlockFrage }) {
       <div className="bwf-leiste" data-grund="rettung">
         <b>Rettungsfrage!</b>
         <small>
-          Richtig: +1 <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="Blitz" /> und weiter
+          Nur einmal! Richtig: +1 <Zap size={13} strokeWidth={2.6} fill="currentColor" aria-label="Blitz" /> und weiter
         </small>
       </div>
     );
