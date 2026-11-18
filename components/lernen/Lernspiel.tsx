@@ -4,7 +4,7 @@ import "./lernspiel.css";
 import "./arena.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
+import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Music, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
 import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, torTauglich, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
@@ -21,6 +21,8 @@ import { Funken, vibriere } from "./SpielTeile";
 import { BlockFeld, FrageKopf, FrageLeiste, type BlockAntwort, type BlockFrage } from "./BlockFeld";
 import { BrettFrage, brettOptionen } from "./BrettFrage";
 import { aufTon, setzeTon, tonAn } from "./klang";
+import { aufMusik, musikAn, setzeMusik } from "./musik";
+import { BlockMusik } from "./BlockMaskottchen";
 import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
 import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
 import { TorLauf } from "./TorLauf";
@@ -217,6 +219,12 @@ export function Lernspiel({
   useEffect(() => {
     setTon(tonAn());
     return aufTon(setTon);
+  }, []);
+  // Blockwerk: Spielmusik an oder aus (musik.ts)
+  const [musik, setMusik] = useState(true);
+  useEffect(() => {
+    setMusik(musikAn());
+    return aufMusik(setMusik);
   }, []);
   // die nächste Runde wird gerade geholt
   const [laedt, setLaedt] = useState(false);
@@ -691,6 +699,12 @@ export function Lernspiel({
           {(brett === "bloecke" || brett === "tor") && (
             <button type="button" className="ls-zu treffer" onClick={() => setzeTon(!ton)} aria-pressed={!ton} aria-label={ton ? "Töne ausschalten" : "Töne einschalten"} data-testid="ls-ton">
               {ton ? <Volume2 size={22} aria-hidden /> : <VolumeX size={22} aria-hidden />}
+            </button>
+          )}
+          {/* Blockwerk: Spielmusik an oder aus (musik.ts); ohne Töne schweigt sie auch */}
+          {brett === "bloecke" && ton && (
+            <button type="button" className="ls-zu ls-musik treffer" onClick={() => setzeMusik(!musik)} aria-pressed={!musik} aria-label={musik ? "Musik ausschalten" : "Musik einschalten"} data-testid="ls-musik">
+              <Music size={21} aria-hidden />
             </button>
           )}
           {/* Blockwerk: über der Frage stehen die Punkte oben, auf dem Brett groß über dem Brett */}
@@ -1322,6 +1336,7 @@ export function Lernspiel({
       <Hintergrund woerter={deko} />
       {kopf}
       {duell?.leiste}
+      {brett === "bloecke" && <BlockMusik />}
       {brett === "bloecke" && <BlockFeld aktiv={!frage || imBrett} frage={brettFrage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
       {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
       {brett === "tor" && <TorLauf karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} />}

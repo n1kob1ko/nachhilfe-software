@@ -26,10 +26,10 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    // everything except the login page, the health check, the student areas (link, tablet and own laptop), material files and feedback (they
+    // everything except the login page, the health check, the student areas (link, tablet and own laptop), material files, game pictures and music (public/spiele/) and feedback (they
     // check the session themselves; uploads can be larger than the proxy's body limit) and static files (the same list as OFFENE_PFADE in
     // lib/praesentation-host.ts)
-    "/((?!login|health|lernen|geraet|mitmachen|material/|feedback/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)",
+    "/((?!login|health|lernen|geraet|mitmachen|material/|feedback/|spiele/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$).*)",
     // and every request without a teacher session, so the presentation address (where that cookie never is) answers nothing but deck files
     { source: "/(.*)", missing: [{ type: "cookie", key: "lernheft_session" }] },
     // and everything on the old Railway address, so it can send it on to PUBLIC_URL
