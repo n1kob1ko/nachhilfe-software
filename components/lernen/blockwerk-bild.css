@@ -1,0 +1,154 @@
+/*
+ * Blockwerk mit Bildern (niko 2026-11-18, mit Higgsfield gemacht, public/spiele/blockwerk/): ein Himmel mit Wolken und
+ * offenem Buch als Hintergrund, solange das Brett offen ist, und das Maskottchen unter dem Brett
+ * (components/lernen/BlockMaskottchen.tsx). Bewegung nach DESIGN.md: nur transform und opacity; bei „weniger
+ * Bewegung“ steht das Maskottchen still und wechselt nur das Bild.
+ */
+
+/* ---------- Hintergrund: Handy hochkant, Tablet und Laptop quer ---------- */
+.ls:has(> .bw) {
+  background:
+    url("/spiele/blockwerk/hintergrund-handy.webp") center bottom / cover no-repeat,
+    linear-gradient(180deg, #3f8ef5 0%, #2468dc 46%, #173f9a 100%);
+}
+@media (min-aspect-ratio: 4/5) {
+  .ls:has(> .bw) {
+    background:
+      url("/spiele/blockwerk/hintergrund-tablet.webp") center bottom / cover no-repeat,
+      linear-gradient(180deg, #3f8ef5 0%, #2468dc 46%, #173f9a 100%);
+  }
+}
+/* dunkel: derselbe Himmel, nur abends */
+:root[data-theme="dark"] .ls:has(> .bw) {
+  background:
+    linear-gradient(180deg, rgba(6, 16, 48, 0.42), rgba(6, 16, 48, 0.58)),
+    url("/spiele/blockwerk/hintergrund-handy.webp") center bottom / cover no-repeat,
+    #0d2357;
+}
+@media (min-aspect-ratio: 4/5) {
+  :root[data-theme="dark"] .ls:has(> .bw) {
+    background:
+      linear-gradient(180deg, rgba(6, 16, 48, 0.42), rgba(6, 16, 48, 0.58)),
+      url("/spiele/blockwerk/hintergrund-tablet.webp") center bottom / cover no-repeat,
+      #0d2357;
+  }
+}
+
+/* ---------- Unter dem Brett: Maskottchen und Hinweis ---------- */
+.bw-unten {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: min(100%, 460px);
+  margin-top: 6px;
+}
+.bw-unten .bw-hinweis {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  text-align: left;
+}
+.bw-maskottchen {
+  position: relative;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  pointer-events: none;
+  filter: drop-shadow(0 6px 10px rgba(5, 20, 70, 0.35));
+  animation: bw-m-atmen 2.8s var(--ls-ease-in-out) infinite alternate;
+  transform-origin: 50% 100%;
+}
+.bw-maskottchen img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transform: scale(0.86) translateY(6px);
+  transition:
+    opacity 140ms ease,
+    transform 260ms var(--ls-ease-out);
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.bw-maskottchen img[data-an] {
+  opacity: 1;
+  transform: none;
+}
+@keyframes bw-m-atmen {
+  to {
+    transform: translateY(-2px) scaleY(1.025);
+  }
+}
+/* große Momente: hüpfen */
+.bw-maskottchen:is([data-stimmung="jubel"], [data-stimmung="staunt"], [data-stimmung="blitz"]) {
+  animation: bw-m-hopp 520ms var(--ls-ease-out) infinite alternate;
+}
+@keyframes bw-m-hopp {
+  from {
+    transform: translateY(0) scale(1, 1);
+  }
+  to {
+    transform: translateY(-7px) scale(0.97, 1.04);
+  }
+}
+/* nervös: zittern */
+.bw-maskottchen[data-stimmung="nervoes"] {
+  animation: bw-m-zittern 260ms linear infinite;
+}
+@keyframes bw-m-zittern {
+  25% {
+    transform: translateX(-1.5px);
+  }
+  75% {
+    transform: translateX(1.5px);
+  }
+}
+.bw-maskottchen[data-stimmung="traurig"] {
+  animation: none;
+}
+
+/* Tablet und Laptop: mehr Platz, größeres Maskottchen */
+@media (min-width: 700px) and (min-height: 760px) {
+  .bw-maskottchen {
+    width: 84px;
+    height: 84px;
+  }
+  .bw-unten .bw-hinweis {
+    font-size: 16px;
+  }
+}
+/* niedrige Bildschirme: kleiner, damit das Brett nicht schrumpft */
+@media (max-height: 640px) {
+  .bw-maskottchen {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bw-maskottchen,
+  .bw-maskottchen[data-stimmung] {
+    animation: none;
+  }
+  .bw-maskottchen img {
+    transform: none;
+    transition: opacity 140ms ease;
+  }
+}
+
+/* ---------- Musik-Knopf: durchgestrichen, wenn aus ---------- */
+.ls-musik {
+  position: relative;
+}
+.ls-musik[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 26px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: currentColor;
+  transform: translate(-50%, -50%) rotate(-45deg);
+}

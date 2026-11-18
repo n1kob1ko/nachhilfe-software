@@ -5,6 +5,7 @@ import { Flame, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, SCHNELL_PUNKTE, SCHUTT_STEINE, leeresBrett, schutt, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
+import { BlockMaskottchen } from "./BlockMaskottchen";
 import { Funkenregen, type FunkenApi } from "./Funkenregen";
 import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
@@ -514,9 +515,12 @@ export function BlockFeld({
           ))}
         </div>
         {!frage && (
-          <p className="bw-hinweis" role="status">
-            {hinweis}
-          </p>
+          <div className="bw-unten">
+            <BlockMaskottchen lage={lage} ansage={ansage.at(-1)?.art} zielen={zielen} fieber={faktor > 1} fuellung={brett.filter((x) => x !== null).length / brett.length} />
+            <p className="bw-hinweis" role="status">
+              {hinweis}
+            </p>
+          </div>
         )}
       </div>
 
