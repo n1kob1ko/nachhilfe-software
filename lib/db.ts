@@ -2056,6 +2056,12 @@ function migrate(conn: Database.Database) {
       conn.exec("UPDATE spielrunden SET bloecke = bloecke * 3 WHERE bloecke IS NOT NULL AND bloecke > 0");
       conn.prepare("INSERT INTO app_settings (key, value) VALUES (?, '1')").run(mal3);
     }
+    // seit 2026-11-18 mal zehn statt mal drei (niko „punkte sollen mehr sein“): die Stände von davor einmal mal 10/3
+    const mal10 = "blockwerk_punkte_mal10";
+    if (!conn.prepare("SELECT 1 FROM app_settings WHERE key = ?").get(mal10)) {
+      conn.exec("UPDATE spielrunden SET bloecke = CAST(ROUND(bloecke * 10.0 / 3) AS INTEGER) WHERE bloecke IS NOT NULL AND bloecke > 0");
+      conn.prepare("INSERT INTO app_settings (key, value) VALUES (?, '1')").run(mal10);
+    }
     // every task is linked to its main skill in task_skills as well
     conn.exec("INSERT OR IGNORE INTO task_skills (task_id, skill_id) SELECT id, skill_id FROM tasks WHERE skill_id IS NOT NULL");
     // Präsentation im Unterricht (2026-10-27): ein Vorschlag darf ohne Lernpaket sein. SQLite nimmt NOT NULL nur weg, indem die
