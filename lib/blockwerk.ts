@@ -11,8 +11,11 @@
 export const SEITE = 8;
 export const FELDER = SEITE * SEITE;
 export const FARBEN = 5;
-/** So viele Blitze hat man höchstens (ein Blitz räumt 3 × 3 Felder frei). */
-export const BLITZE_MAX = 3;
+/**
+ * So viele Blitze hat man höchstens (ein Blitz räumt 3 × 3 Felder frei). Erst drei; niko 2026-11-18: „blockwerk ist zu
+ * leicht … mehr punishing … max 1 blitz“. Wer einen hat, spart keine weiteren an: erst einsetzen, dann lädt der nächste.
+ */
+export const BLITZE_MAX = 1;
 /** Mit so vielen Blitzen beginnt ein Spiel: man sieht gleich, wofür sie gut sind. */
 export const BLITZE_START = 1;
 
@@ -152,16 +155,20 @@ export function blitzFelder(r: number, s: number): number[] {
 }
 
 /**
- * Alle Punkte mal drei (niko 2026-11-16: „die punkte sind noch zu wenig … einfach 3 mal so viele punkte alles geben“).
- * Gespeicherte Stände von davor hat die Datenbank einmal mit drei malgenommen (lib/db.ts, `blockwerk_punkte_mal3`).
+ * Alle Punkte mal zehn: erst mal drei (niko 2026-11-16: „die punkte sind noch zu wenig … einfach 3 mal so viele punkte
+ * alles geben“), seit 2026-11-18 mal zehn (niko: „punkte sollen mehr sein“). Gespeicherte Stände von davor hat die
+ * Datenbank umgerechnet (lib/db.ts, `blockwerk_punkte_mal3` und `blockwerk_punkte_mal10`), die Bestenliste bleibt fair.
  */
-export const PUNKTE_FAKTOR = 3;
-/** Eine Frage beim ersten Versuch richtig (20 mal drei). */
+export const PUNKTE_FAKTOR = 10;
+/** Eine Frage beim ersten Versuch richtig (20 mal zehn). */
 export const FRAGE_PUNKTE = 20 * PUNKTE_FAKTOR;
 
+/** Eine schnelle richtige Antwort (10 mal zehn, dazu mal dem Fieber). */
+export const SCHNELL_PUNKTE = 10 * PUNKTE_FAKTOR;
+
 /**
- * Punkte für einen Zug: jedes gelegte Feld 3, jede abgeräumte Linie 30 mal die Zahl der Linien (eine 30, zwei 120,
- * drei 270), das Ganze mal der Kombo. Ein ganz leeres Brett bringt 900 dazu.
+ * Punkte für einen Zug: jedes gelegte Feld 10, jede abgeräumte Linie 100 mal die Zahl der Linien (eine 100, zwei 400,
+ * drei 900), das Ganze mal der Kombo. Ein ganz leeres Brett bringt 3000 dazu.
  */
 export function punkteFuer(zug: Zug, felder: number, kombo: number): number {
   const linien = zug.reihen.length + zug.spalten.length;
@@ -222,5 +229,5 @@ export function steckt(brett: Brett, teile: (Teil | null)[]): boolean {
 }
 
 /** Der Punktestand, den der Server glaubt: höchstens so viel, wie ein ehrliches langes Spiel bringen kann. */
-export const PUNKTE_MAX = 3_000_000;
+export const PUNKTE_MAX = 10_000_000;
 export const gueltigePunkte = (p: unknown) => (typeof p === "number" && Number.isFinite(p) ? Math.min(PUNKTE_MAX, Math.max(0, Math.round(p))) : 0);

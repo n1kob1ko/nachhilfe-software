@@ -363,7 +363,7 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
 - **Fragen**: die ersten drei Teile gibt es so. Sind sie gelegt, kommt die nächste Karte des Spiels als Frage, mit
   derselben Antwortart wie im Spiel (Kisten, Kacheln, Ziffernblock …). Oben steht „Antworte für neue Teile“ mit den
   drei Teilen, die danach kommen. Neue Teile gibt es immer, auch nach einem Fehler (dann erst mit der richtigen
-  Antwort, wie im Spiel). Beim ersten Versuch richtig: +60 Punkte, und der Blitz lädt.
+  Antwort, wie im Spiel). Beim ersten Versuch richtig: +200 Punkte, und der Blitz lädt.
 - **Frage unter dem Brett** (niko 2026-11-16: „die spiele sollen die schüler süchtig machen … zu wenig flashyness
   und das spielkonzept … komisch aufgebaut“; „blockwerk war bisher das beste die kinder lieben es“): seit 2026-11-17
   verschwindet das Brett nicht mehr. Die Frage schiebt sich dort hoch, wo sonst die Teile liegen
@@ -373,7 +373,7 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   sofort. Falsch: durchgestrichen, die richtige leuchtet, die Regel steht darunter, weiter mit einem Tipp auf die
   richtige. Karten ohne Kacheln (Satzbau, Zahlenstrahl) kommen wie bisher auf eigenem Bildschirm. Auch die
   Rettungsfrage kommt unter dem Brett.
-- **Schnell und Fieber**: richtig innerhalb der 6 s ist „Blitzschnell!“ (+30). Drei Antworten beim ersten Versuch
+- **Schnell und Fieber**: richtig innerhalb der 6 s ist „Blitzschnell!“ (+100). Drei Antworten beim ersten Versuch
   richtig am Stück sind **Fieber** (`fieberFaktor`): alle Punkte ×2, ab sechs ×3, bis eine Antwort falsch ist. Links
   oben zeigt die Flamme mit drei Punkten, wie weit es bis zum Fieber ist; im Fieber leuchtet ein Ring um das Brett.
 - **Effekte**: Töne aus dem Browser (`components/lernen/klang.ts`, Web Audio ohne Dateien: Tock beim Legen, eine
@@ -384,14 +384,16 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   Wörter („Super!“, „Stark!“, „Wahnsinn!“), die Punkte erscheinen dort, wo das Teil lag, und zählen oben hoch. Bei
   „weniger Bewegung“ fliegt und wackelt nichts.
 - **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
-  richtige Antworten laden einen neuen (die drei Punkte am Knopf), höchstens drei. Zuerst gab jede richtige Antwort
-  einen Blitz; im Test endete dann kein Spiel mehr.
+  richtige Antworten laden einen neuen (die drei Punkte am Knopf), **höchstens einer** (seit 2026-11-18, niko:
+  „blockwerk ist zu leicht … max 1 blitz“; davor drei). Wer einen hat, spart nicht weiter an. Zuerst gab jede
+  richtige Antwort einen Blitz; im Test endete dann kein Spiel mehr.
 - **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage**: richtig
   gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
   richtig waren, der Lernstand des Spiels und „Kommt nächstes Mal wieder“.
-- **Punkte** (`punkteFuer`, seit 2026-11-16 alles mal drei: niko „die punkte sind noch zu wenig“): jedes gelegte
-  Feld 3, jede Linie 30 mal die Zahl der Linien (1 → 30, 2 → 120, 3 → 270), das Ganze mal der Kombo; ein ganz leeres
-  Brett +900. Ältere Stände hat die Datenbank einmal mal drei genommen (`blockwerk_punkte_mal3`). Die Kombo steigt mit jedem Zug, der abräumt, und endet nach
+- **Punkte** (`punkteFuer`, `PUNKTE_FAKTOR`: 2026-11-16 mal drei, niko „die punkte sind noch zu wenig“; seit
+  2026-11-18 mal zehn, niko „punkte sollen mehr sein“): jedes gelegte Feld 10, jede Linie 100 mal die Zahl der
+  Linien (1 → 100, 2 → 400, 3 → 900), das Ganze mal der Kombo; ein ganz leeres Brett +3000. Ältere Stände hat die
+  Datenbank umgerechnet (`blockwerk_punkte_mal3`, dann `blockwerk_punkte_mal10` mal 10/3). Die Kombo steigt mit jedem Zug, der abräumt, und endet nach
   drei Zügen ohne Linie.
 - **Gezählt** wird wie im Endlos-Modus: die Karten kommen in gewöhnlichen Runden, die aneinanderhängen
   (`spielrunden.endlos`), der Lernstand zählt jede Runde einmal, die letzte nur mit den beantworteten Karten. Die

@@ -4,7 +4,7 @@ import "./blockwerk.css";
 import { Flame, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
+import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, SCHNELL_PUNKTE, leeresBrett, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
 import { Funkenregen, type FunkenApi } from "./Funkenregen";
 import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
@@ -13,8 +13,9 @@ import { vibriere } from "./SpielTeile";
  * Blockwerk (lib/blockwerk.ts, docs/lernspiele.md „Blockwerk“): das Brett mit 8 × 8 Feldern und drei Teilen darunter.
  * Ein Teil wird aufs Brett gezogen; volle Reihen und Spalten verschwinden. Sind alle drei gelegt, fragt das Feld nach
  * neuen Teilen (`onFrage`): Lernspiel.tsx zeigt dann eine Karte aus dem Stoff, und mit `antwort` kommen die Teile.
- * Beim ersten Versuch richtig gibt es 60 Punkte dazu (FRAGE_PUNKTE), und der Blitz lädt: drei richtige Antworten sind ein Blitz, der
- * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Passt kein Teil mehr und
+ * Beim ersten Versuch richtig gibt es 200 Punkte dazu (FRAGE_PUNKTE), und der Blitz lädt: drei richtige Antworten sind ein Blitz, der
+ * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Höchstens einer
+ * (BLITZE_MAX, niko 2026-11-18 „zu leicht“). Passt kein Teil mehr und
  * ist kein Blitz da, kommt eine Rettungsfrage: richtig gibt einen Blitz, sonst ist das Spiel aus (`onEnde`).
  *
  * Damit es packt (niko 2026-11-16: „süchtig machen … zu wenig flashyness“): die Frage schiebt sich unter dem Brett hoch
@@ -36,8 +37,6 @@ export type BlockAntwort = { n: number; sauber: boolean; schnell?: boolean };
 /** So viele richtige Antworten am Stück sind Fieber (Punkte mal zwei), doppelt so viele mal drei. */
 export const FIEBER_AB = 3;
 export const fieberFaktor = (serie: number) => (serie >= FIEBER_AB * 2 ? 3 : serie >= FIEBER_AB ? 2 : 1);
-/** Bonus für eine schnelle richtige Antwort (mal dem Fieber). */
-export const SCHNELL_PUNKTE = 30;
 /** Die Farben der Teile für die Funken (wie --b-unten in blockwerk.css). */
 const FUNKEN_FARBEN = ["#3d86ff", "#ff5d50", "#22c283", "#ffb21f", "#8f6cff"];
 /** Lob nach der Zahl der Linien auf einmal */
