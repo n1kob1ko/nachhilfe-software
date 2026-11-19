@@ -292,8 +292,8 @@ button.pb-wahl-knopf:active {
 .pb-rahmen {
   position: relative;
   height: 100%;
-  max-height: 300px;
-  aspect-ratio: 200 / 240;
+  max-height: 330px;
+  aspect-ratio: 240 / 336;
   padding: 6px;
   border-radius: 14px;
   background: var(--surface);
@@ -318,6 +318,7 @@ button.pb-wahl-knopf:active {
 .pb-rahmen-klein {
   width: 84px;
   height: auto;
+  aspect-ratio: 200 / 240;
   flex-shrink: 0;
   padding: 4px;
 }

@@ -572,6 +572,10 @@ Glasklar. Regeln in `lib/phantombild.ts`, der Lückentext in `lib/phantom-vorlag
   braun/blond/rot/grau, Kleidung T-Shirt/Hemd/Pullover/Kapuzenpullover/Jacke in rot/blau/grün/gelb/schwarz. Dazu Bart,
   Brille, Schmuck und besondere Merkmale (Sommersprossen, Narbe, Muttermal). Keine Augenbrauen. Text, Kacheln und
   Vorlage nehmen genau diese Wörter (`MERKMALE`).
+- **Körperbau sichtbar** (niko 2026-11-19: „man erkennt oft nicht genau ob es zb muskulös oder schlank ist“): das
+  Bild zeigt den Oberkörper bis zur Hüfte mit Armen (`KOERPER` in PhantomGesicht.tsx): zierlich schmal mit dünnen
+  Armen, schlank gerade, kräftig breit mit Bauch, muskulös V-Form mit dicken Oberarmen. Kleine Bilder (Person,
+  Text lernen, Kachel) nehmen den Ausschnitt `kopf`.
 - **Fall lösen**: oben die Zeugenaussage (Präsens, Aufbau des Arbeitsblatts: Einleitung, oben → unten, Schluss), darunter
   das Phantombild. Gefragt wird in der Reihenfolge des Aufbaus, je Merkmal eine Reihe Kacheln mit dem Bild des Teils.
   Jeder Tipp zählt sofort. Richtig: das Teil springt ins Bild. Falsch: ein Herz weg, das richtige Teil wird gezeichnet,

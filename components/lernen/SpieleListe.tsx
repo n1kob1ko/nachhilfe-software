@@ -66,7 +66,7 @@ export function SpieleListe({
   const phantomKachel = phantom && (
     <Link href={phantom.href} className="sp-block panel mt-3" data-testid="spiele-phantombild">
       <span className="sp-phantom-bild" aria-hidden>
-        <PhantomGesicht bau={KACHEL_GESICHT} />
+        <PhantomGesicht bau={KACHEL_GESICHT} ausschnitt="kopf" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
