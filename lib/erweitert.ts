@@ -67,6 +67,7 @@ function eintraege(admin: boolean, z: ErweitertZahlen): Record<string, Erweitert
       icon: "MessageSquarePlus",
     },
     export: { href: "/export", label: "Datenexport", hint: "Sicherung und Tabellen herunterladen", icon: "Download" },
+    phantomVorlage: { href: "/mehr/phantombild-vorlage", label: "Phantombild-Vorlage", hint: "Die Personenbeschreibung, die Schüler im Spiel auswendig lernen", icon: "ScrollText" },
     spieleTesten: { href: "/mehr/spiele-testen", label: "Spiele testen", hint: "Alle Lernspiele selbst spielen, in jeder Klasse; zählt bei keinem Schüler", icon: "Gamepad2" },
     import: { href: "/mehr/import", label: "Import", hint: "Schüler und Lehrer aus einer CSV-Datei übernehmen, mit Vorschau vor dem Schreiben", icon: "FileUp" },
   };
@@ -79,13 +80,13 @@ export function erweitertGruppen(teacher: { is_admin: number | boolean }, z: Erw
   const nimm = (...keys: string[]) => keys.map((k) => e[k]);
   if (admin)
     return [
-      { title: "Arbeit", items: nimm("schueler", "uebungen", "planung", "abrechnung", "woche", "offen", "vorbereitung", "spieleTesten") },
+      { title: "Arbeit", items: nimm("schueler", "uebungen", "planung", "abrechnung", "woche", "offen", "vorbereitung", "spieleTesten", "phantomVorlage") },
       { title: "Verwaltung", items: nimm("lehrer", "raeume", "faecher", "lehrplan", "statistik", "datenqualitaet", "kiKosten", "feedback", "export", "import") },
       { title: "Unterricht und Material", zu: true, items: nimm("blaetter", "einheiten", "diagnose", "bibliothek", "lernpakete", "praesentationen", "material", "referenzen", "geraete", "faehigkeiten") },
       { title: "Konto", items: nimm("passwort") },
     ];
   return [
-    { title: "Arbeit", items: nimm("schueler", "uebungen", "woche", "offen", "vorbereitung", "blaetter", "geraete", "lehrer", "spieleTesten") },
+    { title: "Arbeit", items: nimm("schueler", "uebungen", "woche", "offen", "vorbereitung", "blaetter", "geraete", "lehrer", "spieleTesten", "phantomVorlage") },
     { title: "Konto", items: nimm("passwort", "feedback") },
     {
       title: "Alles Weitere",

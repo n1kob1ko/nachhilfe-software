@@ -45,13 +45,21 @@
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
  */
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler"] as const;
+import type { PhantomDaten } from "./phantombild";
+import type { VorlageDaten } from "./phantom-vorlage";
+
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
+/**
+ * Spiele mit eigenem Spielfeld, die nicht bei den Fächern stehen: Glasklar, Wortschloss und Phantombild (mit „Text
+ * lernen“). Sie haben eine eigene Kachel im Tab „Spiele“, kein Duell und kein Blockwerk.
+ */
+export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
-export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "glas" && a !== "wort" && a !== "fehler");
-export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "glas" && x !== "wort" && x !== "fehler";
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "fehler" && !EIGENES_FELD.includes(a));
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "fehler" && !EIGENES_FELD.includes(x);
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -78,6 +86,8 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   quizenglisch: "Englisch-Quiz",
   stilmittel: "Stilmittel",
   fehler: "Meine Fehler",
+  phantom: "Phantombild",
+  vorlage: "Text lernen",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -109,6 +119,9 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   stilmittel: "Deutsch",
   // die eigenen Fehler (lib/fehlerprotokoll.ts) stehen neben den eigenen Karten
   fehler: "Dein Stoff",
+  // Phantombild hat eine eigene Kachel (lib/phantombild.ts)
+  phantom: "Dein Stoff",
+  vorlage: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -137,6 +150,8 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   quizenglisch: "Fragen zu deinem Thema, von Grammatik bis Writing",
   stilmittel: "Metapher, Vergleich oder Hyperbel? Erkenn das Stilmittel im Satz",
   fehler: "Deine Fehler aus deinen Texten, bis du sie zweimal richtig hast",
+  phantom: "Lies die Zeugenaussage und bau das Gesicht",
+  vorlage: "Lern deine Personenbeschreibung auswendig",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -165,6 +180,8 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   quizenglisch: ["since", "although", "would"],
   stilmittel: ["Metapher", "Anapher", "Ironie"],
   fehler: ["✗", "✓", "✓"],
+  phantom: ["blond", "oval", "Brille"],
+  vorlage: ["Er", "hat", "trägt"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -193,6 +210,8 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   quizenglisch: "Welche Antwort stimmt?",
   stilmittel: "Welches Stilmittel steckt im markierten Teil?",
   fehler: "Welche Form ist richtig?",
+  phantom: "Bau die Person aus der Zeugenaussage.",
+  vorlage: "Setz die fehlenden Wörter ein.",
 };
 
 /**
@@ -279,6 +298,10 @@ export type SpielKarte = {
   strahl?: { werte: string[]; beschriftet: number[]; beide?: true };
   /** Nur am Zahlenstrahl: ein Satz zu einer typischen falschen Stelle („Vorzeichen verwechselt“), nach der Nummer des Teilstrichs */
   tipps?: Record<string, string>;
+  /** Nur Phantombild (lib/phantombild.ts), an der ersten Karte eines Falls: der Fall und die Zeugenaussage */
+  phantom?: PhantomDaten;
+  /** Nur „Text lernen“ (lib/phantom-vorlage.ts), an der ersten Karte: Person, Text mit Lücken, Musterlösung */
+  vorlage?: VorlageDaten;
 };
 
 /**
@@ -323,7 +346,7 @@ export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: numbe
 /** Spiele mit Endlos-Modus: alle außer „Vokabel-Paare“ (dort liegen alle Karten einer Runde auf einmal am Brett). */
 export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
 /** Torlauf (lib/torlauf.ts) braucht Antworten zum Wählen: kein Satzbau, kein Zahlenstrahl, keine eigenen Spiele (Glasklar, Wortschloss). */
-export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau" && art !== "strahl" && art !== "glas" && art !== "wort";
+export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau" && art !== "strahl" && !EIGENES_FELD.includes(art);
 /** So viele Fehler verzeiht ein Endlos-Spiel. */
 export const ENDLOS_HERZEN = 3;
 
@@ -356,6 +379,8 @@ export type SpielErgebnis =
       glas?: { rekord: number; begriffe: number; bestenliste?: Bestenliste };
       /** Wortschloss: der beste Stand davor, wie viele Wörter in der ersten Reihe gelöst waren, die Bestenliste danach */
       wort?: { rekord: number; woerter: number; bestenliste?: Bestenliste };
+      /** Phantombild: der beste Stand davor, wie viele Merkmale beim ersten Versuch stimmten, die Bestenliste danach */
+      phantom?: { rekord: number; merkmale: number; bestenliste?: Bestenliste };
     }
   | { fehler: string };
 

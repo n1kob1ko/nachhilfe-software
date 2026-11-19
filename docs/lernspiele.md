@@ -559,6 +559,40 @@ Spielfeld (`components/lernen/WortSchloss.tsx`), Regeln in `lib/wortschloss.ts`,
 - **Tablet**: Ansicht `wort:<thema>` (leer = das passendste), wie Glasklar.
 - **Laptop**: Buchstaben tippen, die Rücktaste löscht.
 
+## Phantombild (Personenbeschreibung)
+
+niko 2026-11-19: drei Schüler lernen die Personenbeschreibung. Kein „Wer ist es?“ (Einzelunterricht), kein Sortieren,
+kein Satztuning. Zwei Teile in einem Spiel (`components/lernen/PhantomSpiel.tsx`), eigene Kachel im Tab „Spiele“ wie
+Glasklar. Regeln in `lib/phantombild.ts`, der Lückentext in `lib/phantom-vorlage.ts`, das Gesicht als SVG in
+`components/lernen/PhantomGesicht.tsx` (keine Bilder, keine Credits).
+
+- **Wörter**: je Bereich nur 4–5 (niko: „damit sie nicht überfordert sind“). Körperbau zierlich/schlank/kräftig/
+  muskulös, Haut blass/hell/gebräunt/dunkel, Gesicht rund/oval/eckig/schmal, Augen blau/grün/braun/grau, Nase klein/
+  groß/breit/spitz, Mund klein/breit/schmal/volle Lippen, Haare kurz/lang/glatt/lockig oder Glatze, Haarfarbe schwarz/
+  braun/blond/rot/grau, Kleidung T-Shirt/Hemd/Pullover/Kapuzenpullover/Jacke in rot/blau/grün/gelb/schwarz. Dazu Bart,
+  Brille, Schmuck und besondere Merkmale (Sommersprossen, Narbe, Muttermal). Keine Augenbrauen. Text, Kacheln und
+  Vorlage nehmen genau diese Wörter (`MERKMALE`).
+- **Fall lösen**: oben die Zeugenaussage (Präsens, Aufbau des Arbeitsblatts: Einleitung, oben → unten, Schluss), darunter
+  das Phantombild. Gefragt wird in der Reihenfolge des Aufbaus, je Merkmal eine Reihe Kacheln mit dem Bild des Teils.
+  Jeder Tipp zählt sofort. Richtig: das Teil springt ins Bild. Falsch: ein Herz weg, das richtige Teil wird gezeichnet,
+  ein Blatt zeigt den Satz aus der Aussage und die Regel. Ein Fall ist eine Runde am Server; der nächste kommt mit
+  Stufe + 1 (`ab` je Merkmal: Stufe 1 nur Person, Augen, Haare, Kleidung; ab 3 alle). Ab Stufe 3 zeigen die Kacheln
+  nur Bilder (`NUR_BILD_AB`), ab Stufe 4 verschwindet die Aussage nach „Gemerkt!“ (`MERKEN_AB`).
+- **Punkte**: 100 × Stufe je Merkmal, aus dem Kopf × 1,5 (nicht nach „Nochmal lesen“), fehlerfreier Fall + 300 × Stufe
+  und ein Herz zurück. Drei Herzen. Eigener Rekord und eigene Bestenliste (Spalte `spielrunden.phantom`,
+  `gueltigePhantomPunkte`). Falsche Werte kommen im nächsten Fall bevorzugt wieder (`phantomVorrang`).
+- **Text lernen** (`vorlage`): der Lückentext, den sie auswendig lernen und nur mehr einsetzen. Fünf Stufen: 0, 25, 50,
+  75, 100 % der Wörter fehlen (wer in Stufe 2 fehlt, fehlt auch in 3). Die Platzhalter ([Name], [Augenfarbe] …) füllt
+  immer die Person des Falls, die Kacheln bieten dieselbe Lücke für andere Personen an. Ab 80 % richtig ist die Stufe
+  geschafft und die nächste offen (`vorlageGeschafft`). Keine Herzen, ein falscher Tipp zeigt das Wort rot.
+- **Vorlage ändern**: Mehr › Phantombild-Vorlage. Der Text von Claude folgt dem Aufbau des Arbeitsblatts; Platzhalter in
+  eckigen Klammern, [Er]/[er]/[Sein]/[sein] werden zu sie/ihr. Fehlt der Person ein Merkmal (kein Bart), fällt der Satz
+  weg. Gespeichert in `app_settings` unter `phantom_vorlage`, „Vorlage von Claude nehmen“ setzt zurück.
+- **Wer es sieht** (`phantomWahl`): Deutsch in der 4. bis 8. Schulstufe, oder wenn `deutsch.beschreiben.person` im
+  Stoff ist (dann steht die Kachel gleich unter „Für dich“).
+- **Gezählt** für den Lernstand: die Fähigkeit `deutsch.beschreiben.person`, je Merkmal der erste Tipp.
+- **Tablet**: Ansichten `phantom:fall` und `phantom:text`; quer zwei Spalten (Aussage links, Bild rechts).
+
 ## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)
 
 niko 2026-11-17: „spiele sind da was fehlt ist stoff“. Vorher hatten die meisten Themen des Lehrplans kein Spiel

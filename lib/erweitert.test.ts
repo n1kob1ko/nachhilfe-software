@@ -4,7 +4,7 @@ import test from "node:test";
 process.env.DATABASE_PATH = ":memory:";
 
 /** Erweitert nach Rolle (Audit 2026-11-07): die Lehrkraft sieht oben nur ihre Arbeit, nichts fehlt, nichts doppelt. */
-test("Lehrkraft: 9 Kacheln Arbeit (mit Spiele testen), Verwaltungs-Dinge zugeklappt; Verwaltung: eigene Gruppe; jede Adresse genau einmal", async () => {
+test("Lehrkraft: 10 Kacheln Arbeit (mit Spiele testen und Phantombild-Vorlage), Verwaltungs-Dinge zugeklappt; Verwaltung: eigene Gruppe; jede Adresse genau einmal", async () => {
   const { erweitertGruppen } = await import("./erweitert");
   const z = { offen: 2, offenesFeedback: 1 };
   const lehrkraft = erweitertGruppen({ is_admin: 0 }, z);
@@ -13,7 +13,7 @@ test("Lehrkraft: 9 Kacheln Arbeit (mit Spiele testen), Verwaltungs-Dinge zugekla
   const offen = (g: ReturnType<typeof erweitertGruppen>) => g.filter((x) => !x.zu).flatMap((x) => x.items.map((i) => i.href));
 
   assert.deepEqual(lehrkraft.map((g) => g.title), ["Arbeit", "Konto", "Alles Weitere"]);
-  assert.equal(lehrkraft[0].items.length, 9);
+  assert.equal(lehrkraft[0].items.length, 10);
   assert.ok(offen(lehrkraft).includes("/mehr/spiele-testen") && offen(verwaltung).includes("/mehr/spiele-testen"), "Spiele testen steht bei beiden oben");
   assert.equal(lehrkraft[0].items.find((i) => i.href === "/lehrer")?.label, "Meine Verfügbarkeit");
   for (const href of ["/mehr/raeume", "/mehr/lehrplan", "/mehr/ki-kosten", "/mehr/statistik", "/planung", "/abrechnung"]) {
@@ -32,5 +32,5 @@ test("Lehrkraft: 9 Kacheln Arbeit (mit Spiele testen), Verwaltungs-Dinge zugekla
   const nurVerwaltung = hrefs(verwaltung).filter((h) => !hrefs(lehrkraft).includes(h)).sort();
   assert.deepEqual(nurVerwaltung, ["/export", "/mehr/import"]);
   assert.deepEqual(hrefs(lehrkraft).filter((h) => !hrefs(verwaltung).includes(h)), []);
-  assert.equal(hrefs(verwaltung).length, 29);
+  assert.equal(hrefs(verwaltung).length, 30);
 });
