@@ -7,7 +7,24 @@ import { istAlt, istKind, istWeiblich, type Bau, type Merkmal } from "@/lib/phan
  * Das Phantombild (lib/phantombild.ts): eine Person als Zeichnung, aus Teilen zusammengesetzt. Was noch nicht gewählt
  * ist, bleibt grau oder fehlt. Ohne Bilddateien (niko 2026-11-19: Higgsfield-Credits sparen): jede Kombination passt,
  * hell und dunkel gleich. `ausschnitt` zeigt nur den Teil, um den es geht (die kleinen Bilder auf den Antworten).
+ *
+ * Der Oberkörper reicht bis zur Hüfte, mit Armen (niko 2026-11-19: „man erkennt oft nicht genau ob es zb muskulös
+ * oder schlank ist“): zierlich schmal und dünne Arme, schlank gerade, kräftig breit mit Bauch, muskulös breite
+ * Schultern, schmale Taille (V-Form) und dicke Oberarme. `kopf` ist der alte Ausschnitt bis zu den Schultern.
  */
+
+/** Unterkante der Zeichnung. */
+const UNTEN = 336;
+/** Bund der Hose: darüber das Oberteil. */
+const BUND = 304;
+/** Halbe Breite an Schulter, Taille, Hüfte und die halbe Armdicke je Körperbau. */
+const KOERPER: Record<string, { s: number; t: number; h: number; a: number }> = {
+  zierlich: { s: 38, t: 27, h: 31, a: 5.5 },
+  schlank: { s: 54, t: 41, h: 43, a: 9 },
+  kraeftig: { s: 72, t: 72, h: 66, a: 13 },
+  muskuloes: { s: 82, t: 44, h: 48, a: 15 },
+  offen: { s: 58, t: 48, h: 48, a: 10.5 },
+};
 
 const HAUT: Record<string, { f: string; s: string; lippe: string; punkte: string }> = {
   blass: { f: "#fbe9e1", s: "#e9c6b8", lippe: "#d98a8e", punkte: "#c58c6a" },
@@ -36,9 +53,10 @@ export const KLEID: Record<string, { f: string; s: string }> = {
 };
 export const AUGE: Record<string, string> = { blau: "#3d8fd6", gruen: "#36a466", braun: "#7a4a26", grau: "#8996a3", offen: "#9d968e" };
 
-const AUSSCHNITT: Partial<Record<Merkmal, string>> & { ganz: string } = {
-  ganz: "0 0 200 240",
-  koerperbau: "0 96 200 144",
+const AUSSCHNITT: Partial<Record<Merkmal, string>> & { ganz: string; kopf: string } = {
+  ganz: "-20 0 240 336",
+  kopf: "0 0 200 240",
+  koerperbau: "-22 176 244 160",
   haut: "38 50 124 130",
   gesicht: "30 22 140 168",
   augen: "66 86 68 36",
@@ -47,8 +65,8 @@ const AUSSCHNITT: Partial<Record<Merkmal, string>> & { ganz: string } = {
   frisur: "14 8 172 200",
   haarfarbe: "14 8 172 200",
   bart: "44 100 112 100",
-  oberteil: "0 150 200 90",
-  farbe: "0 150 200 90",
+  oberteil: "-22 176 244 136",
+  farbe: "-22 176 244 136",
   brille: "50 78 100 56",
   schmuck: "20 64 160 168",
   besonderes: "46 76 108 84",
@@ -70,7 +88,7 @@ function kopfPfad(form: string | undefined, kind: boolean): string {
 }
 const halbeBreite = (form: string | undefined) => (form === "rund" ? 51 : form === "schmal" ? 40 : form === "eckig" ? 47 : 46);
 
-export function PhantomGesicht({ bau, ausschnitt, className, titel }: { bau: Bau; ausschnitt?: Merkmal | "ganz"; className?: string; titel?: string }) {
+export function PhantomGesicht({ bau, ausschnitt, className, titel }: { bau: Bau; ausschnitt?: Merkmal | "ganz" | "kopf"; className?: string; titel?: string }) {
   const id = useId().replace(/:/g, "");
   const person = bau.person;
   const offen = !person;
@@ -81,7 +99,7 @@ export function PhantomGesicht({ bau, ausschnitt, className, titel }: { bau: Bau
   const hw = halbeBreite(bau.gesicht);
   const kopf = kopfPfad(bau.gesicht, kind);
   const kb = bau.koerperbau;
-  const schulter = kb === "muskuloes" ? 92 : kb === "kraeftig" ? 82 : kb === "schlank" ? 66 : kb === "zierlich" ? 56 : 72;
+  const koerper = KOERPER[kb ?? "offen"] ?? KOERPER.offen;
   const hals = kb === "muskuloes" ? 22 : kb === "kraeftig" ? 20 : kb === "zierlich" ? 12 : 15;
   const kleid = KLEID[bau.farbe ?? "offen"] ?? KLEID.offen;
   const haarFarbe = bau.haarfarbe && bau.haarfarbe !== "keine" ? HAAR[bau.haarfarbe] : HAAR.offen;
@@ -97,24 +115,44 @@ export function PhantomGesicht({ bau, ausschnitt, className, titel }: { bau: Bau
           <path d={kopf} transform="translate(100 112) scale(1.06) translate(-100 -112)" />
         </clipPath>
         <clipPath id={`${id}b`}>
-          <rect x="0" y="0" width="200" height="240" />
+          <rect x="-30" y="0" width="260" height={UNTEN} />
+        </clipPath>
+        <clipPath id={`${id}o`}>
+          <rect x="-30" y="0" width="260" height={BUND} />
+        </clipPath>
+        {/* Kleidung nur am Körper, dazu der Kragen und die Kapuze um den Hals */}
+        <clipPath id={`${id}r`}>
+          <path d={rumpfPfad(koerper, hals)} />
+          <rect x={100 - hals - 26} y="160" width={2 * (hals + 26)} height="44" />
         </clipPath>
       </defs>
       <g clipPath={`url(#${id}b)`}>
         {/* Haare hinten (lang, Locken, Pferdeschwanz) */}
         {!offen && <HaareHinten frisur={bau.frisur} f={haarFarbe} />}
 
-        {/* Oberkörper und Kleidung */}
-        <path d={`M${100 - schulter},240 C${100 - schulter},${206} ${100 - schulter * 0.72},${192} ${100 - hals - 6},${188} L${100 + hals + 6},188 C${100 + schulter * 0.72},192 ${100 + schulter},206 ${100 + schulter},240 Z`} fill={kleid.f} stroke={kleid.s} strokeWidth={bau.farbe === "weiss" ? 1.5 : 0} />
-        {/* Hals */}
-        <path d={`M${100 - hals},140 L${100 - hals},192 Q100,${204} ${100 + hals},192 L${100 + hals},140 Z`} fill={haut.s} />
-        {kb === "muskuloes" && (
-          <g fill="none" stroke={kleid.s} strokeWidth="2.2" strokeLinecap="round" opacity="0.8">
-            <path d="M62,226 Q78,236 96,230 M138,226 Q122,236 104,230" />
-            <path d={`M${100 - hals - 6},189 Q${100 - hals - 22},192 ${100 - schulter + 10},210 M${100 + hals + 6},189 Q${100 + hals + 22},192 ${100 + schulter - 10},210`} />
+        {/* Oberkörper bis zur Hüfte: Hose unten, Oberteil darüber, dann die Arme */}
+        <path d={rumpfPfad(koerper, hals)} fill="#3d4a61" />
+        <path d={`M${100 - koerper.h + 3},${BUND + 2} L${100 + koerper.h - 3},${BUND + 2}`} stroke="#2b3547" strokeWidth="4" />
+        <path d={`M100,${BUND + 8} L100,${UNTEN}`} stroke="#2b3547" strokeWidth="1.6" />
+        <g clipPath={`url(#${id}o)`}>
+          <path d={rumpfPfad(koerper, hals)} fill={kleid.f} stroke={kleid.s} strokeWidth="1.6" />
+          {/* Hals */}
+          <path d={`M${100 - hals},140 L${100 - hals},192 Q100,${204} ${100 + hals},192 L${100 + hals},140 Z`} fill={haut.s} />
+          {kb === "muskuloes" && (
+            <g fill="none" stroke={kleid.s} strokeWidth="2.4" strokeLinecap="round" opacity="0.85">
+              <path d="M52,224 Q72,246 97,236 M148,224 Q128,246 103,236" />
+              <path d="M100,240 L100,262 M88,254 L112,254 M89,270 L111,270" opacity="0.6" />
+              <path d="M58,212 Q78,262 90,298 M142,212 Q122,262 110,298" opacity="0.5" />
+            </g>
+          )}
+          {kb === "kraeftig" && <path d="M54,278 Q100,312 146,278" fill="none" stroke={kleid.s} strokeWidth="2.2" strokeLinecap="round" opacity="0.6" />}
+          <g clipPath={`url(#${id}r)`}>
+            <Kleidung art={bau.oberteil} k={kleid} haut={haut.f} hals={hals} taille={koerper.t} />
           </g>
-        )}
-        <Kleidung art={bau.oberteil} k={kleid} haut={haut.f} hals={hals} schulter={schulter} />
+        </g>
+        {[-1, 1].map((seite) => (
+          <Arm key={seite} seite={seite} m={koerper} kurz={bau.oberteil === "tshirt"} k={kleid} haut={haut} muskel={kb === "muskuloes"} manschette={bau.oberteil === "pullover" || bau.oberteil === "kapuze"} />
+        ))}
         {bau.schmuck === "kette" && (
           <g>
             <path d={`M${100 - hals + 2},186 Q100,206 ${100 + hals - 2},186`} fill="none" stroke="#c3cad1" strokeWidth="2.4" />
@@ -315,7 +353,48 @@ function Bart({ art, f, clip }: { art?: string; f: { f: string; s: string }; cli
   return null;
 }
 
-function Kleidung({ art, k, haut, hals, schulter }: { art?: string; k: { f: string; s: string }; haut: string; hals: number; schulter: number }) {
+/** Der Oberkörper als Umriss: Schulter, Taille (bei kräftig der Bauch), Hüfte. */
+function rumpfPfad(m: { s: number; t: number; h: number }, hals: number): string {
+  const { s, t, h } = m;
+  const seite = (v: 1 | -1) => (x: number) => 100 + v * x;
+  const l = seite(-1);
+  const r = seite(1);
+  return [
+    `M${l(hals + 6)},188 C${l(s * 0.62)},189 ${l(s)},194 ${l(s)},214`,
+    `C${l(s)},238 ${l(t)},250 ${l(t)},276 C${l(t)},294 ${l(h)},300 ${l(h)},${UNTEN}`,
+    `L${r(h)},${UNTEN} C${r(h)},300 ${r(t)},294 ${r(t)},276 C${r(t)},250 ${r(s)},238 ${r(s)},214`,
+    `C${r(s)},194 ${r(s * 0.62)},189 ${r(hals + 6)},188 Z`,
+  ].join(" ");
+}
+
+/** Ein Arm, der seitlich herunterhängt: Ärmel (kurz beim T-Shirt), Hand, bei muskulös ein dicker Oberarm. */
+function Arm({ seite, m, kurz, k, haut, muskel, manschette }: { seite: number; m: { s: number; t: number; a: number }; kurz: boolean; k: { f: string; s: string }; haut: { f: string; s: string }; muskel: boolean; manschette: boolean }) {
+  const oben = 100 + seite * (m.s - m.a * 0.35);
+  const unten = 100 + seite * Math.max(m.s - m.a * 0.35, m.t + m.a + 3);
+  const y1 = 210;
+  const y2 = 314;
+  const bei = (y: number) => oben + ((unten - oben) * (y - y1)) / (y2 - y1);
+  const aermelEnde = kurz ? 238 : y2 - 4;
+  const linie = (von: number, bis: number, farbe: string, breite: number) => (
+    <path d={`M${bei(von)},${von} L${bei(bis)},${bis}`} stroke={farbe} strokeWidth={breite} strokeLinecap="round" />
+  );
+  return (
+    <g>
+      {/* Haut (Unterarm) und Hand */}
+      {linie(y1, y2, haut.s, m.a * 2 + 2.4)}
+      {linie(y1, y2, haut.f, m.a * 2 - 0.4)}
+      <circle cx={bei(y2) + seite * 0.5} cy={y2 + 6} r={m.a * 0.9 + 2.6} fill={haut.f} stroke={haut.s} strokeWidth="1.2" />
+      {muskel && <ellipse cx={bei(250) + seite * 2} cy={250} rx={m.a + 5} ry={19} fill={kurz ? haut.f : k.f} stroke={kurz ? haut.s : k.s} strokeWidth="1.4" />}
+      {/* Ärmel */}
+      {linie(y1, aermelEnde, k.s, m.a * 2 + (kurz ? 6 : 3))}
+      {linie(y1, aermelEnde, k.f, m.a * 2 + (kurz ? 3 : 0))}
+      {muskel && !kurz && <ellipse cx={bei(250) + seite * 2} cy={250} rx={m.a + 4} ry={18} fill={k.f} />}
+      {manschette && linie(aermelEnde - 7, aermelEnde, k.s, m.a * 2 + 1)}
+    </g>
+  );
+}
+
+function Kleidung({ art, k, haut, hals, taille }: { art?: string; k: { f: string; s: string }; haut: string; hals: number; taille: number }) {
   const links = 100 - hals;
   const rechts = 100 + hals;
   switch (art) {
@@ -326,8 +405,8 @@ function Kleidung({ art, k, haut, hals, schulter }: { art?: string; k: { f: stri
         <g>
           <path d={`M${links - 4},186 L100,210 L${rechts + 4},186`} fill={haut} opacity="0" />
           <path d={`M${links - 6},184 L96,206 L${links + 2},214 Z M${rechts + 6},184 L104,206 L${rechts - 2},214 Z`} fill={k.f} stroke={k.s} strokeWidth="1.6" strokeLinejoin="round" />
-          <path d="M100,206 L100,240" stroke={k.s} strokeWidth="1.6" />
-          {[218, 230].map((y) => (
+          <path d={`M100,206 L100,${BUND}`} stroke={k.s} strokeWidth="1.6" />
+          {[222, 246, 270, 294].map((y) => (
             <circle key={y} cx="100" cy={y} r="2" fill={k.s} />
           ))}
         </g>
@@ -336,7 +415,7 @@ function Kleidung({ art, k, haut, hals, schulter }: { art?: string; k: { f: stri
       return (
         <g>
           <path d={`M${links - 5},188 Q100,208 ${rechts + 5},188`} fill="none" stroke={k.s} strokeWidth="8" strokeLinecap="round" />
-          <path d={`M${100 - schulter + 14},236 L${100 - schulter + 14},240 M${100 + schulter - 14},236 L${100 + schulter - 14},240`} stroke={k.s} strokeWidth="2" />
+          <path d={`M${100 - taille - 20},${BUND - 4} L${100 + taille + 20},${BUND - 4}`} stroke={k.s} strokeWidth="7" />
           {[-12, -6, 0, 6, 12].map((x) => (
             <path key={x} d={`M${100 + x},${197 + Math.abs(x) * -0.25} l0,5`} stroke={k.f} strokeWidth="1.2" opacity="0.6" />
           ))}
@@ -349,15 +428,20 @@ function Kleidung({ art, k, haut, hals, schulter }: { art?: string; k: { f: stri
           <path d={`M94,206 L92,228 M106,206 L108,228`} stroke="#f3f3f0" strokeWidth="2" strokeLinecap="round" />
           <circle cx="92" cy="229" r="2" fill="#f3f3f0" />
           <circle cx="108" cy="229" r="2" fill="#f3f3f0" />
+          <path d={`M${100 - taille * 0.55},${BUND - 4} L${100 - taille * 0.42},268 L${100 + taille * 0.42},268 L${100 + taille * 0.55},${BUND - 4}`} fill="none" stroke={k.s} strokeWidth="2" strokeLinejoin="round" />
+          <path d={`M${100 - taille - 20},${BUND - 4} L${100 + taille + 20},${BUND - 4}`} stroke={k.s} strokeWidth="6" />
         </g>
       );
     case "jacke":
       return (
         <g>
-          <path d={`M${links - 2},188 L100,240 L${rechts + 2},188 Z`} fill="#eeeeea" />
+          <path d={`M${links - 2},188 L94,${BUND} L106,${BUND} L${rechts + 2},188 Z`} fill="#eeeeea" />
           <path d={`M${links - 2},188 Q100,204 ${rechts + 2},188`} fill="none" stroke="#c8c8c2" strokeWidth="3" />
-          <path d={`M${links - 8},186 L94,240 L${links - 22},240 Z M${rechts + 8},186 L106,240 L${rechts + 22},240 Z`} fill={k.s} opacity="0.55" />
-          <path d={`M${links - 8},186 L94,240 M${rechts + 8},186 L106,240`} stroke={k.s} strokeWidth="2" />
+          <path d={`M${links - 8},186 L94,232 L${links - 20},236 Z M${rechts + 8},186 L106,232 L${rechts + 20},236 Z`} fill={k.s} opacity="0.55" />
+          <path d={`M${links - 8},186 L94,${BUND} M${rechts + 8},186 L106,${BUND}`} stroke={k.s} strokeWidth="2" />
+          {[250, 280].map((y) => (
+            <circle key={y} cx={88} cy={y} r="2.2" fill={k.s} />
+          ))}
         </g>
       );
     default:

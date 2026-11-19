@@ -632,7 +632,7 @@ export function PhantomSpiel({
         <div className="pb-text">
           <div className="pb-text-kopf">
             <div className="pb-rahmen pb-rahmen-klein">
-              <PhantomGesicht bau={person} titel={`Phantombild von ${person.name}`} />
+              <PhantomGesicht bau={person} ausschnitt="kopf" titel={`Phantombild von ${person.name}`} />
             </div>
             <div className="min-w-0">
               <p className="ls-klein">Beschreib diese Person</p>
@@ -828,8 +828,8 @@ export function PhantomSpiel({
 }
 
 /** Welcher Ausschnitt auf den Antworten zu sehen ist. */
-const AUSSCHNITT_FUER: Record<Merkmal, Merkmal | "ganz"> = {
-  person: "ganz",
+const AUSSCHNITT_FUER: Record<Merkmal, Merkmal | "ganz" | "kopf"> = {
+  person: "kopf",
   koerperbau: "koerperbau",
   haut: "haut",
   gesicht: "gesicht",
