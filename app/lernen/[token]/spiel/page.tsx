@@ -2,7 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { WortSchloss } from "@/components/lernen/WortSchloss";
-import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
+import { bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -13,9 +14,9 @@ import { analyzeStudent } from "@/lib/service";
  * gespielt wird über der Seite (components/lernen/Lernspiel.tsx). Das Kreuz führt zum Tab „Spiele“, mit `?von=start`
  * (Karte auf dem Start) zurück zum Start.
  */
-export default async function SpielSeite({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ art?: string; von?: string; modus?: string; thema?: string }> }) {
+export default async function SpielSeite({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ art?: string; von?: string; modus?: string; thema?: string; teil?: string }> }) {
   const { token } = await params;
-  const { art: gewuenscht, von, modus, thema } = await searchParams;
+  const { art: gewuenscht, von, modus, thema, teil } = await searchParams;
   const student = repo.getStudentByToken(token);
   if (!student) notFound();
   const heute = wienerDatum();
@@ -58,6 +59,24 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
         bestenliste={punkteBestenliste(student, "wort")}
         zurueck={von === "start" ? `/lernen/${token}` : undefined}
         themaLink={`/lernen/${token}/spiel?modus=wort${von === "start" ? "&von=start" : ""}&thema=`}
+        arenaLink={`/lernen/${token}/arena`}
+      />
+    );
+  }
+  // Phantombild (lib/phantombild.ts): Fall lösen oder „Text lernen“ (teil=text)
+  if (modus === "phantom" || gewuenscht === "phantom" || gewuenscht === "vorlage") {
+    const wahl = phantomWahl(student, heute);
+    if (!wahl) redirect(`/lernen/${token}/spiele`);
+    return (
+      <PhantomSpiel
+        token={token}
+        teil={teil === "text" || gewuenscht === "vorlage" ? "text" : "fall"}
+        serie={serie(student.id, heute)}
+        rekord={punkteRekord(student.id, "phantom")}
+        bestenliste={punkteBestenliste(student, "phantom")}
+        geschafft={vorlageGeschafft(student.id)}
+        grund={wahl.grund}
+        zurueck={von === "start" ? `/lernen/${token}` : undefined}
         arenaLink={`/lernen/${token}/arena`}
       />
     );

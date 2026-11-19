@@ -44,7 +44,9 @@ export type View =
   // Glasklar (lib/glasklar.ts) mit einem Thema (lib/glasklar-themen.ts; „“ = das passendste)
   | { kind: "glas"; thema: string }
   // Wortschloss (lib/wortschloss.ts) mit einem Thema (lib/wortschloss-themen.ts; „“ = das passendste)
-  | { kind: "wort"; thema: string };
+  | { kind: "wort"; thema: string }
+  // Phantombild (lib/phantombild.ts): Fall lösen oder „Text lernen“
+  | { kind: "phantom"; teil: "fall" | "text" };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
@@ -55,6 +57,8 @@ export function parseView(raw: string): View {
   if (g) return { kind: "glas", thema: g[1] };
   const w = /^wort:([a-z0-9]*)$/.exec(raw);
   if (w) return { kind: "wort", thema: w[1] };
+  const ph = /^phantom:(fall|text)$/.exec(raw);
+  if (ph) return { kind: "phantom", teil: ph[1] as "fall" | "text" };
   const b = /^bloecke:([a-z]+)$/.exec(raw);
   if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const f = /^funkel:([a-z]+)$/.exec(raw);
@@ -69,7 +73,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : v.kind === "phantom" ? `phantom:${v.teil}` : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -362,7 +366,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     current,
     text: textNow,
     praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
-    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : null,
+    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : view.kind === "phantom" ? { titel: view.teil === "text" ? "Phantombild: Text lernen" : SPIEL_TITEL.phantom } : null,
     answers,
     ai: aiLiveState(unit.id),
   };

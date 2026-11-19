@@ -6,7 +6,7 @@ import { BestenlisteTafel } from "@/components/lernen/BestenlisteTafel";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { meineDuelle } from "@/lib/duelle";
-import { glasThemen, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
+import { glasThemen, phantomWahl, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, torTauglich } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -67,13 +67,17 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   const wortThema = wortThemen(student, heute)[0];
   const wortListe = wortThema ? punkteBestenliste(student, "wort") : null;
   const wortLink = `${base}/spiel?modus=wort`;
+  // Phantombild: für Deutsch in der Unterstufe, oder wenn die Personenbeschreibung Stoff ist
+  const phantom = phantomWahl(student, heute);
+  const phantomListe = phantom ? punkteBestenliste(student, "phantom") : null;
+  const phantomLink = `${base}/spiel?modus=phantom`;
 
   return (
     <>
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} phantom={phantom ? { href: phantomLink, grund: phantom.grund, platz: phantomListe?.ich ?? null } : undefined} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">
@@ -123,6 +127,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
       {funkelListe && blockArt && <BestenlisteTafel liste={funkelListe} spielen={funkelLink(blockArt)} arena={`${base}/arena`} spiel="Funkelfeld" />}
       {glasListe && <BestenlisteTafel liste={glasListe} spielen={glasLink} arena={`${base}/arena`} spiel="Glasklar" />}
       {wortListe && <BestenlisteTafel liste={wortListe} spielen={wortLink} arena={`${base}/arena`} spiel="Wortschloss" />}
+      {phantomListe && <BestenlisteTafel liste={phantomListe} spielen={phantomLink} arena={`${base}/arena`} spiel="Phantombild" />}
     </>
   );
 }

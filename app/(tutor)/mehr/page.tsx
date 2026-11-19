@@ -18,6 +18,7 @@ import {
   FileUp,
   FolderUp,
   Gamepad2,
+  ScrollText,
   GitBranch,
   KeyRound,
   Landmark,
@@ -50,7 +51,7 @@ export const metadata = { title: "Erweitert" };
 
 const ICONS: Record<string, LucideIcon> = {
   BarChart3, BookMarked, BookOpen, BookOpenCheck, CalendarClock, CalendarDays, CalendarRange, ClipboardList, Clock3, Coins, DoorOpen, Download,
-  FileText, FileUp, FolderUp, Gamepad2, GitBranch, KeyRound, Landmark, Library, ListChecks, ListTodo, MessageSquarePlus, MonitorPlay, Package, ReceiptText,
+  FileText, FileUp, FolderUp, Gamepad2, GitBranch, KeyRound, Landmark, Library, ListChecks, ListTodo, MessageSquarePlus, MonitorPlay, Package, ReceiptText, ScrollText,
   ShieldCheck, TabletSmartphone, Users,
 };
 

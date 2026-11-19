@@ -7,6 +7,7 @@ import { DeviceLive } from "@/components/device/DeviceLive";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { WortSchloss } from "@/components/lernen/WortSchloss";
+import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
 import { SpieleListe } from "@/components/lernen/SpieleListe";
 import { PairForm } from "@/components/device/PairForm";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
@@ -32,7 +33,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { bloeckeRekord, endlosRekord, glasThemen, punkteBestenliste, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -109,7 +110,7 @@ export default async function DevicePage() {
   // a Textarbeit of this student: written here, saved continuously
   const text = view.kind === "text" && !onLaptop ? unitText(unit, view.textId) : null;
 
-  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas" && view.kind !== "wort";
+  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas" && view.kind !== "wort" && view.kind !== "phantom";
   let content: React.ReactNode;
   if (onLaptop) {
     content = (
@@ -190,6 +191,26 @@ export default async function DevicePage() {
     ) : (
       <p className="panel px-5 py-5 text-[16px] text-ink-2">Für Wortschloss gibt es gerade keine Wörter.</p>
     );
+  } else if (view.kind === "phantom") {
+    // Phantombild am Tablet: gezählt für den Schüler der Einheit
+    const heute = wienerDatum();
+    const wahl = phantomWahl(student, heute);
+    content = wahl ? (
+      <PhantomSpiel
+        key={view.teil}
+        token=""
+        amTablet
+        teil={view.teil}
+        serie={serie(student.id, heute)}
+        rekord={punkteRekord(student.id, "phantom")}
+        bestenliste={punkteBestenliste(student, "phantom")}
+        geschafft={vorlageGeschafft(student.id)}
+        grund={wahl.grund}
+        zurueck="/geraet/ansicht?zu=spiele"
+      />
+    ) : (
+      <p className="panel px-5 py-5 text-[16px] text-ink-2">Phantombild gibt es für diesen Schüler gerade nicht.</p>
+    );
   } else if (view.kind === "spiele" || view.kind === "spiel") {
     // Lernspiele in der Einheit (niko 2026-11-12: „was wenn der schüler in der einheit spielen will“): dieselben Spiele
     // wie in der Schüler-App, gezählt für den Schüler der Einheit; der geheime Link kommt nie aufs Tablet
@@ -230,6 +251,9 @@ export default async function DevicePage() {
             })()} wort={(() => {
               const t = wortThemen(student, heute)[0];
               return t ? { href: "/geraet/ansicht?zu=wort:", thema: t.name } : undefined;
+            })()} phantom={(() => {
+              const w = phantomWahl(student, heute);
+              return w ? { href: "/geraet/ansicht?zu=phantom:fall", grund: w.grund } : undefined;
             })()}
           />
         </div>
@@ -350,8 +374,8 @@ export default async function DevicePage() {
             {!onLaptop && (
               <a
                 href="/geraet/ansicht?zu=spiele"
-                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" ? "page" : undefined}
-                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" ? "page" : undefined}
+                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
                 data-testid="geraet-spiele"
               >
                 <Gamepad2 size={18} aria-hidden /> Spiele

@@ -1860,6 +1860,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["spielrunden", "glas", "INTEGER"],
   // Wortschloss (lib/wortschloss.ts, niko 2026-11-16 „mach weitere spiele“): die Punkte eines Spiels an seiner ersten Runde
   ["spielrunden", "wort", "INTEGER"],
+  // Phantombild (lib/phantombild.ts, niko 2026-11-19): die Punkte eines Spiels an seiner ersten Runde
+  ["spielrunden", "phantom", "INTEGER"],
   // Funkelfeld (lib/funkelfeld.ts, niko 2026-11-16 „mach weitere spiele“): wie `bloecke`, die Punkte an der ersten Runde
   ["spielrunden", "funkel", "INTEGER"],
   // Torlauf (lib/torlauf.ts, niko 2026-11-17 „Läufer mit Antwort-Toren“): wie `bloecke`, die Punkte an der ersten Runde

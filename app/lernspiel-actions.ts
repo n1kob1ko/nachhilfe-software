@@ -2,13 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, endlosRekord, endlosStand, glasThemen, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, endlosRekord, endlosStand, glasThemen, phantomWahl, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
 import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
 import { gueltigeTorPunkte } from "@/lib/torlauf";
 import { gueltigeWortPunkte } from "@/lib/wortschloss";
+import { gueltigePhantomPunkte } from "@/lib/phantombild";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -48,6 +49,16 @@ export async function wortStartenAction(token: string, thema: string | undefined
   return wortStarten(student, thema, lauf);
 }
 
+/**
+ * Phantombild (lib/phantombild.ts): `teil` „fall“ (Zeugenaussage lesen, Gesicht bauen) oder „text“ (die Vorlage
+ * lernen, lib/phantom-vorlage.ts). `lauf` fehlt beim Start, sonst die nächste Stufe; `stufe`: bei „text“ die gewünschte.
+ */
+export async function phantomStartenAction(token: string, teil: "fall" | "text", lauf?: number, stufe?: number): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return phantomStarten(student, teil, lauf, stufe);
+}
+
 /** `o.teil`: das Ende eines Endlos- oder Blockwerk-Spiels; es zählen nur die beantworteten Karten. `o.punkte`: die Punkte im Blockwerk. */
 export async function spielBeendenAction(token: string, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = repo.getStudentByToken(token);
@@ -85,6 +96,12 @@ export async function tabletWortStartenAction(thema: string | undefined, lauf?: 
   return wortStarten(student, thema, lauf);
 }
 
+export async function tabletPhantomStartenAction(teil: "fall" | "text", lauf?: number, stufe?: number): Promise<SpielStart> {
+  const student = await tabletSchueler();
+  if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
+  return phantomStarten(student, teil, lauf, stufe);
+}
+
 export async function tabletSpielBeendenAction(rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
@@ -99,6 +116,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   // Glasklar startet nur über glasStarten (Thema und Stufe)
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   if (art === "wort") return wortStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
+  if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
   const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
@@ -133,6 +151,16 @@ function wortStarten(student: repo.Student, thema: string | undefined, lauf?: nu
   return runde;
 }
 
+function phantomStarten(student: repo.Student, teil: "fall" | "text", lauf?: number, stufe?: number): SpielStart {
+  const heute = wienerDatum();
+  if (!phantomWahl(student, heute)) return { fehler: "Phantombild gibt es für dich gerade nicht." };
+  const weiter = Number.isInteger(lauf) && Number(lauf) > 0 ? Number(lauf) : undefined;
+  const art = teil === "text" ? "vorlage" : "phantom";
+  const runde = starteRunde(student, art, { heute, endlos: weiter ?? "neu", vorlageStufe: Number.isFinite(stufe) ? Number(stufe) : undefined });
+  if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
+  return runde;
+}
+
 function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number }): SpielErgebnis {
   const zeile = rundenSkill(student.id, Number(rundeId));
   // Blockwerk, Funkelfeld, Glasklar und Wortschloss: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
@@ -140,7 +168,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
   const spiel: PunkteSpiel | null = lauf ? (PUNKTE_SPIELE.find((s) => laufIst(student.id, lauf, s)) ?? null) : null;
   // Blockwerk und Funkelfeld: ein Brett zwischen den Karten (gleiches Ergebnis)
   const block = spiel === "bloecke" || spiel === "funkel" || spiel === "tor" ? spiel : null;
-  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : spiel === "tor" ? gueltigeTorPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
+  if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : spiel === "tor" ? gueltigeTorPunkte(o.punkte) : spiel === "phantom" ? gueltigePhantomPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
   const vorher = zeile ? lernstandVon(student.id, zeile.skillId) : null;
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : [], { teil: o?.teil === true });
   if (!e) return { fehler: "Diese Runde gibt es nicht mehr." };
@@ -160,6 +188,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     endlos: zeile?.endlos && !spiel ? { stand: endlosStand(student.id, zeile.endlos), rekord: endlosRekord(student.id, zeile.art, zeile.endlos) } : undefined,
     bloecke: zeile?.endlos && block ? { rekord: punkteRekord(student.id, block, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, block) : undefined } : undefined,
     wort: zeile?.endlos && spiel === "wort" ? { rekord: punkteRekord(student.id, "wort", zeile.endlos), woerter: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "wort") : undefined } : undefined,
+    phantom: zeile?.endlos && spiel === "phantom" ? { rekord: punkteRekord(student.id, "phantom", zeile.endlos), merkmale: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "phantom") : undefined } : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
 }

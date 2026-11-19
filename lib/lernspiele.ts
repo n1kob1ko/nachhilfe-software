@@ -42,6 +42,8 @@ import { leseKarten } from "./spielkarten-text";
 import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
+import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
+import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_STUFEN, vorlageRunde } from "./phantom-vorlage";
 import { STIL_GRUPPEN, STIL_OBERSTUFE_AB, STIL_SKILLS, STIL_UNTERSTUFE, STILMITTEL, stilmittelBis, stilmittelKandidaten, stilmittelVonKarte, type StilGruppe, type StilmittelId } from "./stilmittel";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
@@ -72,6 +74,9 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   glas: "spiel.glasklar",
   // Wortschloss: ebenso am Thema der Runde (wortThemen)
   wort: "spiel.wortschloss",
+  // Phantombild und „Text lernen“ (lib/phantombild.ts): die Personenbeschreibung
+  phantom: PHANTOM_SKILL,
+  vorlage: PHANTOM_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -82,7 +87,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -152,7 +157,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -522,6 +527,58 @@ function wortLaufThema(studentId: number, lauf: number): string | null {
   return z ? wortThemaVonKey(json<SpielKarte[]>(z.karten, [])[0]?.key ?? "") : null;
 }
 
+// ---------- Phantombild (lib/phantombild.ts) und „Text lernen“ (lib/phantom-vorlage.ts) ----------
+
+/** In diesen Schulstufen gibt es Phantombild für jeden mit Deutsch; sonst nur, wenn die Personenbeschreibung Stoff ist. */
+export const PHANTOM_STUFEN = { ab: 4, bis: 8 } as const;
+
+/**
+ * Gibt es Phantombild für diesen Schüler, und warum gerade? null: nicht. `grund` steht auf der Kachel, wenn die
+ * Personenbeschreibung gerade Stoff ist (Schularbeit, aktueller Stoff, letzte Einheit).
+ */
+export function phantomWahl(student: repo.Student, heute: string): { grund?: string } | null {
+  for (const q of stoffQuellen(student, heute)) if (q.ids.some((id) => id === PHANTOM_SKILL || id.startsWith(`${PHANTOM_SKILL}.`))) return { grund: q.grund };
+  const deutsch = student.subjects.includes("Deutsch");
+  return deutsch && student.grade >= PHANTOM_STUFEN.ab && student.grade <= PHANTOM_STUFEN.bis ? {} : null;
+}
+
+const VORLAGE_SCHLUESSEL = "phantom_vorlage";
+/** Die Vorlage zum Auswendiglernen: die der Lehrkraft, sonst die von Claude (lib/phantom-vorlage.ts). */
+export function phantomVorlage(): { text: string; eigene: boolean } {
+  const z = db().prepare("SELECT value FROM app_settings WHERE key = ?").get(VORLAGE_SCHLUESSEL) as { value: string } | undefined;
+  return z?.value?.trim() ? { text: z.value, eigene: true } : { text: STANDARD_VORLAGE, eigene: false };
+}
+/** Speichert die Vorlage der Lehrkraft; leer: wieder die von Claude. Unbekannte Platzhalter werden nicht gespeichert. */
+export function speichereVorlage(text: string): { ok: true } | { fehler: string } {
+  const t = text.replace(/\r/g, "").trim();
+  if (t.length > VORLAGE_MAX) return { fehler: `Die Vorlage ist zu lang (höchstens ${VORLAGE_MAX} Zeichen).` };
+  const falsch = unbekannte(t);
+  if (falsch.length) return { fehler: `Diese Platzhalter gibt es nicht: ${falsch.map((f) => `[${f}]`).join(", ")}.` };
+  if (!t) db().prepare("DELETE FROM app_settings WHERE key = ?").run(VORLAGE_SCHLUESSEL);
+  else db().prepare("INSERT INTO app_settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").run(VORLAGE_SCHLUESSEL, t);
+  return { ok: true };
+}
+
+/** Die höchste Stufe von „Text lernen“, die der Schüler geschafft hat (80 % beim ersten Versuch); 0: noch keine. */
+export function vorlageGeschafft(studentId: number): number {
+  const rows = db().prepare("SELECT karten, richtig, anzahl FROM spielrunden WHERE student_id = ? AND art = 'vorlage' AND beendet_at IS NOT NULL AND anzahl > 0").all(studentId) as { karten: string; richtig: number; anzahl: number }[];
+  let best = 0;
+  for (const r of rows) {
+    if (r.richtig / r.anzahl < VORLAGE_GESCHAFFT) continue;
+    const stufe = json<SpielKarte[]>(r.karten, [])[0]?.vorlage?.stufe ?? 0;
+    if (stufe > best) best = stufe;
+  }
+  return Math.min(VORLAGE_STUFEN, best);
+}
+
+/** Merkmale, die in den letzten Fällen falsch waren („haarfarbe:rot“), damit sie wieder drankommen. */
+function phantomVorrang(studentId: number): string[] {
+  return offeneFehler(studentId, "phantom")
+    .map((k) => /^phantom:([a-z]+):([a-z_]+)$/.exec(k))
+    .filter((m): m is RegExpExecArray => !!m && MERKMALE.some((x) => x.id === m[1]))
+    .map((m) => `${m[1]}:${m[2]}`);
+}
+
 // ---------- Runden ----------
 
 type Zeile = {
@@ -591,6 +648,8 @@ export function starteRunde(
     glasThema?: string;
     /** Wortschloss: ebenso */
     wortThema?: string;
+    /** „Text lernen“: die gewünschte Stufe (1 bis 5; beim Fortsetzen die nächste) */
+    vorlageStufe?: number;
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
@@ -631,6 +690,22 @@ export function starteRunde(
     const thema = (weiter && gewuenscht) || wortThemen(student, heute).find((t) => t.id === gewuenscht)?.id || wortThemen(student, heute)[0]?.id;
     stufe = weiter ? (db().prepare("SELECT COUNT(*) AS n FROM spielrunden WHERE student_id = ? AND endlos = ?").get(student.id, weiter) as { n: number }).n + 1 : 1;
     karten = thema ? waehleWortKarten(wortPool(student, thema, heute), { stufe, wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng }) : [];
+  } else if (art === "phantom") {
+    // Phantombild: ein Fall je Stufe, die Stufen eines Spiels zählen weiter
+    const weiter = typeof o.endlos === "number" ? endlosLauf(student.id, art, o.endlos) : null;
+    stufe = weiter ? (db().prepare("SELECT COUNT(*) AS n FROM spielrunden WHERE student_id = ? AND endlos = ?").get(student.id, weiter) as { n: number }).n + 1 : 1;
+    const rng = o.rng ?? Math.random;
+    karten = fallKarten(neuerFall(rng, phantomVorrang(student.id)), stufe, rng);
+  } else if (art === "vorlage") {
+    // Text lernen: die Stufe wählt der Schüler (bis eine über der geschafften), beim Fortsetzen die nächste
+    const weiter = typeof o.endlos === "number" ? endlosLauf(student.id, art, o.endlos) : null;
+    const offen = Math.min(VORLAGE_STUFEN, vorlageGeschafft(student.id) + 1);
+    if (weiter) {
+      const letzte = db().prepare("SELECT karten FROM spielrunden WHERE student_id = ? AND endlos = ? ORDER BY id DESC LIMIT 1").get(student.id, weiter) as { karten: string } | undefined;
+      stufe = Math.min(VORLAGE_STUFEN, (json<SpielKarte[]>(letzte?.karten ?? "[]", [])[0]?.vorlage?.stufe ?? 0) + 1);
+    } else stufe = Math.min(offen, Math.max(1, Math.round(o.vorlageStufe ?? offen)));
+    const rng = o.rng ?? Math.random;
+    karten = vorlageRunde(phantomVorlage().text, neuerFall(rng), stufe, rng);
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
@@ -684,6 +759,7 @@ export function starteRunde(
   if (lauf === rundeId && o.tor && !o.bloecke && !o.funkel) db().prepare("UPDATE spielrunden SET tor = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && art === "glas") db().prepare("UPDATE spielrunden SET glas = 0 WHERE id = ?").run(rundeId);
   if (lauf === rundeId && art === "wort") db().prepare("UPDATE spielrunden SET wort = 0 WHERE id = ?").run(rundeId);
+  if (lauf === rundeId && art === "phantom") db().prepare("UPDATE spielrunden SET phantom = 0 WHERE id = ?").run(rundeId);
   return { rundeId, karten, endlos: lauf, stufe };
 }
 
@@ -720,10 +796,10 @@ export function endlosRekord(studentId: number, art: SpielArt, ohne?: number): n
  * (lib/wortschloss.ts) zählen ihre Punkte auf dem Gerät und melden sie am Ende; der Server merkt sie sich an der ersten
  * Runde (Spalte `bloecke`, `funkel`, `glas` oder `wort`). Eine Fortsetzung oder ein zweites Ende kann sie nicht kleiner machen.
  */
-export type PunkteSpiel = "bloecke" | "funkel" | "glas" | "wort" | "tor";
-export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas", "wort", "tor"];
+export type PunkteSpiel = "bloecke" | "funkel" | "glas" | "wort" | "tor" | "phantom";
+export const PUNKTE_SPIELE: PunkteSpiel[] = ["bloecke", "funkel", "glas", "wort", "tor", "phantom"];
 /** Die Spalte ist nie eine Eingabe: nur diese Namen kommen in die Abfragen. */
-const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : spiel === "wort" ? "wort" : spiel === "tor" ? "tor" : "bloecke");
+const spalte = (spiel: PunkteSpiel) => (spiel === "glas" ? "glas" : spiel === "funkel" ? "funkel" : spiel === "wort" ? "wort" : spiel === "tor" ? "tor" : spiel === "phantom" ? "phantom" : "bloecke");
 
 export function laufPunkte(studentId: number, lauf: number, punkte: number, spiel: PunkteSpiel) {
   const c = spalte(spiel);
