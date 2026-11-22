@@ -54,8 +54,11 @@ export function SpiegelAufnahme({ an, neu, aus, postUrl = "/geraet/spiegel" }: {
           queue.push(e);
           planen();
         },
-        // the tablet's own pictures (/geraet/bild/…) need its cookie: they go along as data
-        inlineImages: true,
+        // Pictures go as their address, not as data: inlining drew every <img> at full size into a canvas and
+        // sent it as PNG (a page of Blätter bestimmen ≈ 9 MB per full picture, seconds of a frozen tablet,
+        // niko 2026-11-22 „laggt sehr und manchmal hängt es“). The teacher's copy loads them itself
+        // (same origin; /geraet/bild/… lets the teacher in, app/geraet/bild/[id]/route.ts).
+        inlineImages: false,
         inlineStylesheet: false,
         recordCanvas: false,
         collectFonts: false,
