@@ -18,6 +18,7 @@ import { db, json } from "./db";
 import { beendeRunde, duellThema, duellVokabeln, starteRundeMitKarten } from "./lernspiele";
 import { SPIEL_THEMEN } from "./lernspiele-themen";
 import { stufenFuer, waehleKarten } from "./lernspiele-karten";
+import { europaDuellKarten } from "./europa";
 import { istDuellArt, istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
 import { aktivesProfil, BILDER, profilVon } from "./spielprofil";
@@ -73,6 +74,8 @@ export const normCode = (s: string) => s.toUpperCase().replace(/[^A-Z0-9]/g, "")
 
 function karten(art: SpielArt, a: repo.Student, b: repo.Student, rng?: () => number): SpielKarte[] {
   const stufe = Math.min(a.grade, b.grade);
+  // Europa: eigene Karten fürs Kachelfeld (Hauptstadt, Flagge, Nachbarn), für alle Stufen gleich
+  if (art === "europa") return europaDuellKarten(rng ?? Math.random);
   // Vokabel-Paare: eine Themenliste, für beide dieselbe (eigene Listen hat nur einer von beiden)
   if (art === "vokabeln") return duellVokabeln(stufe, stufe <= 4, rng);
   // Themenspiele: ein Thema, das der Jüngere schon hatte

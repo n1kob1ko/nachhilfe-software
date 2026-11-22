@@ -10,6 +10,7 @@ import test from "node:test";
 import {
   abstandHalten,
   erobert,
+  europaDuellKarten,
   europaKarte,
   europaRunde,
   europaStand,
@@ -34,6 +35,7 @@ import {
   woLiegt,
 } from "./europa";
 import { KARTE } from "./europa-karte";
+import { DUELL_ARTEN, istDuellArt } from "./lernspiele-typen";
 import { zufall } from "./phantombild";
 
 process.env.DATABASE_PATH = ":memory:";
@@ -260,4 +262,33 @@ test("Server: für alle, Test in Geografie als Grund; Runden, Stand, Verwechsler
   assert.deepEqual(sp.europaRekorde(student.id), { lage: 0, hauptstadt: 10, flagge: 0 });
   assert.equal(sp.europaRekorde(student.id, r.rundeId).hauptstadt, 0, "ohne dieses Rennen");
   assert.equal(sp.europaRennenThema(student.id, a.rundeId), null);
+});
+
+test("Duell: 12 Karten im Kachelfeld, eindeutig, Flaggen mit Bild", () => {
+  assert.ok(istDuellArt("europa") && DUELL_ARTEN.includes("europa"));
+  assert.ok(!istDuellArt("blatt"), "andere eigene Felder bleiben ohne Duell");
+  for (let s = 1; s <= 40; s++) {
+    const k = europaDuellKarten(zufall(s));
+    assert.equal(k.length, 12);
+    assert.equal(new Set(k.map((x) => x.key)).size, 12);
+    assert.equal(new Set(k.map((x) => x.europa!.land)).size, 12, "jedes Land nur einmal");
+    for (const x of k) {
+      assert.equal(x.form, "kacheln");
+      assert.equal(x.faecher.length, 4);
+      assert.ok(x.faecher.includes(x.richtig));
+      assert.equal(new Set(x.faecher).size, 4);
+      if (x.europa!.teil === "flagge") assert.equal(x.bild?.src, flagge(x.europa!.land));
+      else assert.ok(!x.bild && x.vor.length > 0);
+      if (x.europa!.teil === "lage") {
+        // keine falsche Antwort grenzt auch an alle genannten Nachbarn
+        const genannt = LAENDER.filter((l) => x.vor.includes(l.name)).map((l) => l.code);
+        for (const f of x.faecher.filter((f) => f !== x.richtig)) {
+          const andere = LAENDER.find((l) => l.name === f)!;
+          assert.ok(!genannt.every((c) => andere.nachbarn.includes(c)), `${x.vor}${f}`);
+        }
+      }
+    }
+  }
+  const eine = europaDuellKarten(zufall(7)).find((x) => x.europa!.teil === "hauptstadt")!;
+  assert.match(eine.vor, /^Die Hauptstadt (von|der|des) /);
 });

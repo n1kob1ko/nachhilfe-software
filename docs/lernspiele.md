@@ -665,6 +665,10 @@ sein und vielleicht auch eine option mit flaggen“, dann „ja mach alles aber 
 - **Fehler**: Hilfe mit Lösung auf der Karte bzw. beiden Flaggen nebeneinander; die Karte kommt drei Karten später noch
   einmal (nicht im Großen Test und Rennen). Gezählt wird der erste Versuch.
 - **Wer es sieht** (`europaWahl`): alle. Bei einem Geografie-/GW-Test in den nächsten 60 Tagen steht die Kachel oben.
+- **Duell** (per Code und live, `europaDuellKarten`): 12 Länder, beide dieselben Karten im normalen Kachelfeld (ohne
+  Karte zum Antippen): Hauptstadt („Die Hauptstadt von Belgien ist …“), Flagge (Bild über dem Satz, `SpielKarte.bild`)
+  und Nachbarn („An Spanien und Andorra grenzt …“; nur wenn keine falsche Antwort auch an alle genannten grenzt).
+  Europa ist das einzige Spiel mit eigenem Feld, das als Duell geht (`DUELL_ARTEN`).
 - **Gezählt**: `geo.europa`. **Tablet**: Ansicht `europa`; quer Karte links, Frage rechts.
 
 ## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)

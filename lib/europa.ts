@@ -618,3 +618,64 @@ export function geschriebenAls(eingabe: string, was: "land" | "stadt"): string {
   }
   return eingabe.trim().slice(0, 40);
 }
+
+// ---------- Duell ----------
+
+/** So viele Karten hat ein Europa-Duell (wie die anderen Duelle). */
+export const DUELL_KARTEN = 12;
+
+const undListe = (namen: string[]) => (namen.length < 2 ? namen.join("") : `${namen.slice(0, -1).join(", ")} und ${namen[namen.length - 1]}`);
+
+/**
+ * Karten für ein Duell (lib/duelle.ts): beide spielen dieselben Karten im normalen Kachelfeld, also ohne Karte zum
+ * Antippen. Je Land eine Karte, abwechselnd Hauptstadt („Die Hauptstadt von Frankreich ist …“), Flagge (Bild, welches
+ * Land?) und Nachbarn („An Spanien und Andorra grenzt …“). Nachbarn nur, wenn keine der falschen Antworten auch an
+ * alle genannten grenzt; sonst wird es eine Hauptstadt-Karte.
+ */
+export function europaDuellKarten(rng: Rng, anzahl = DUELL_KARTEN): SpielKarte[] {
+  const laender = mische(LAENDER, rng).slice(0, anzahl);
+  const arten: Teil[] = mische(["hauptstadt", "flagge", "lage"] as Teil[], rng);
+  return laender.map((l, i) => {
+    let teil = arten[i % arten.length];
+    let vor = "";
+    let nach = "";
+    let auftrag: string | undefined;
+    let faecher: string[] = [];
+    if (teil === "lage") {
+      const genannt = mische(l.nachbarn, rng).slice(0, 3);
+      faecher = wahlFuer(l, "welches", rng);
+      const zweideutig = !genannt.length || faecher.some((f) => f !== l.name && genannt.every((c) => LAENDER.find((x) => x.name === f)?.nachbarn.includes(c)));
+      if (zweideutig) teil = "hauptstadt";
+      else {
+        vor = `An ${undListe(genannt.map((c) => land(c)!.name))} grenzt `;
+        nach = ".";
+        auftrag = "Welches Land ist es?";
+      }
+    }
+    if (teil === "hauptstadt") {
+      faecher = wahlFuer(l, "stadt", rng);
+      vor = `Die Hauptstadt ${l.von} ist `;
+      nach = ".";
+      auftrag = "Welche Stadt ist es?";
+    }
+    if (teil === "flagge") {
+      faecher = wahlFuer(l, "flaggeLand", rng);
+      auftrag = "Zu welchem Land gehört diese Flagge?";
+    }
+    const richtig = teil === "hauptstadt" ? l.hauptstadt : l.name;
+    return {
+      key: europaKey(l.code, teil),
+      form: "kacheln" as const,
+      skill: EUROPA_SKILL,
+      vor,
+      nach,
+      faecher,
+      richtig,
+      loesung: teil === "hauptstadt" ? `${l.name}: ${l.hauptstadt}` : l.name,
+      regel: teil === "hauptstadt" ? `Die Hauptstadt ${l.von} ist ${l.hauptstadt}.` : lageText(l),
+      auftrag,
+      bild: teil === "flagge" ? { src: flagge(l.code), alt: "Flagge" } : undefined,
+      europa: { land: l.code, teil, frage: teil === "hauptstadt" ? "stadt" : teil === "flagge" ? "flaggeLand" : "welches", antwort: "kacheln", modus: "duell" },
+    };
+  });
+}

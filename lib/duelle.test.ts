@@ -258,3 +258,31 @@ test("Live-Duell: Lehrer startet, beide bereit, Countdown, 2 Minuten, Lehrer sie
   assert.equal(duelle.duellSicht(b.id, d.id)!.ausgang, "gewonnen");
   assert.equal(duelle.wartendesLiveDuell(a.id), null);
 });
+
+test("Duell Europa: Kachel-Karten (Hauptstadt, Flagge, Nachbarn), dieselben für beide, Sieger", async () => {
+  const { duelle, neu, mitProfil } = await setup();
+  const p = await import("./spielprofil");
+  const a = neu("Eva Europa", 6);
+  const b = neu("Finn Europa", 8);
+  p.setzeWettspiel(a.id, "ja");
+  mitProfil(a, "Blitz", "fuchs");
+  mitProfil(b, "Sturm", "krake");
+  const d = duelle.erstelleDuell(a, "europa");
+  assert.ok(d.ok);
+  if (!d.ok) return;
+  assert.ok(duelle.nimmAn(b, d.code).ok);
+  const ra = duelle.duellRunde(a, d.id);
+  const rb = duelle.duellRunde(b, d.id);
+  assert.ok(ra.ok && rb.ok);
+  if (!ra.ok || !rb.ok) return;
+  assert.equal(ra.karten.length, 12);
+  assert.deepEqual(ra.karten.map((k) => k.key), rb.karten.map((k) => k.key));
+  assert.ok(ra.karten.every((k) => k.form === "kacheln" && k.key.startsWith("europa:")));
+  ra.karten.forEach((k) => duelle.duellZug(a.id, d.id, k.key, k.richtig));
+  duelle.beendeDuellRunde(a, d.id, []);
+  rb.karten.forEach((k, i) => duelle.duellZug(b.id, d.id, k.key, i < 6 ? k.richtig : k.faecher.find((f) => f !== k.richtig)!));
+  duelle.beendeDuellRunde(b, d.id, []);
+  const s = duelle.duellSicht(a.id, d.id)!;
+  assert.equal(s.status, "fertig");
+  assert.equal(s.ausgang, "gewonnen");
+});
