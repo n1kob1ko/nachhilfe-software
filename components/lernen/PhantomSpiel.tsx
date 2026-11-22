@@ -15,7 +15,8 @@ import { anteilFuer, VORLAGE_GESCHAFFT, VORLAGE_STUFEN, type VorlageDaten } from
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
 import { PhantomGesicht } from "./PhantomGesicht";
-import { vibriere } from "./SpielTeile";
+import { Abriss, vibriere } from "./SpielTeile";
+import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
  * Phantombild (lib/phantombild.ts, docs/lernspiele.md „Phantombild“), zwei Teile:
@@ -68,8 +69,8 @@ export function PhantomSpiel({
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (teil: TeilArt, lauf?: number, stufe?: number) => (amTablet ? tabletPhantomStartenAction(teil, lauf, stufe) : phantomStartenAction(token, teil, lauf, stufe)),
-      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      starten: (teil: TeilArt, lauf?: number, stufe?: number, pausen?: number[]): Promise<SpielStart> => sicher(() => (amTablet ? tabletPhantomStartenAction(teil, lauf, stufe) : phantomStartenAction(token, teil, lauf, stufe)), pausen),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }): Promise<SpielErgebnis> => sicher(() => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o))),
     }),
     [amTablet, token],
   );
@@ -79,6 +80,8 @@ export function PhantomSpiel({
   const [teil, setTeil] = useState<TeilArt>(teilAnfang ?? "fall");
   const [phase, setPhase] = useState<Phase>("start");
   const [fehler, setFehler] = useState<string | null>(null);
+  // die nächste Stufe kam auch nach mehreren Versuchen nicht (Deploy, kein Netz): anhalten, „Neu laden“ (lib/verbindung.ts)
+  const [abgerissen, setAbgerissen] = useState(false);
   const [ton, setTon] = useState(true);
   const [geschafft, setGeschafft] = useState(geschafftAnfang);
   const [textStufe, setTextStufe] = useState(Math.min(VORLAGE_STUFEN, geschafftAnfang + 1));
@@ -234,9 +237,15 @@ export function PhantomSpiel({
     void fertig.then((e) => {
       if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
     });
-    const r = await (vorrat.current ?? server.starten("fall", lauf.current ?? undefined));
+    let r = await (vorrat.current ?? server.starten("fall", lauf.current ?? undefined));
+    // im Voraus geholt, während der Server neu startete: jetzt noch einmal
+    if (vorrat.current && verbindungWeg(r)) r = await server.starten("fall", lauf.current ?? undefined, undefined, [800]);
     vorrat.current = null;
     beschaeftigt.current = false;
+    if (verbindungWeg(r)) {
+      setAbgerissen(true);
+      return;
+    }
     if ("fehler" in r || !richteFallEin(r)) {
       setPhase("ende");
       await fertig;
@@ -376,6 +385,7 @@ export function PhantomSpiel({
 
   const kopf = (
     <div className="ls-kopf">
+      {abgerissen && <Abriss />}
       <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </ZuLink>

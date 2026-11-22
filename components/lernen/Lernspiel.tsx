@@ -18,7 +18,7 @@ import { StrahlFeld } from "./StrahlFeld";
 import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
 import { MathText } from "@/components/MathText";
-import { Funken, vibriere } from "./SpielTeile";
+import { Abriss, Funken, vibriere } from "./SpielTeile";
 import { BlockFeld, FrageKopf, FrageLeiste, type BlockAntwort, type BlockFrage } from "./BlockFeld";
 import { BrettFrage, brettOptionen } from "./BrettFrage";
 import { aufTon, setzeTon, tonAn } from "./klang";
@@ -27,6 +27,7 @@ import { BlockMusik } from "./BlockMaskottchen";
 import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
 import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
 import { TorLauf } from "./TorLauf";
+import { sicher, VERBINDUNG_WEG, verbindungWeg } from "@/lib/verbindung";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
@@ -155,8 +156,12 @@ export function Lernspiel({
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (endlos?: "neu" | number, brett?: Brett) => (amTablet ? tabletSpielStartenAction(art, endlos, brett) : spielStartenAction(token, art, endlos, brett)),
-      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      // nie eine Ausnahme: nach ein paar Versuchen `{ fehler: VERBINDUNG_WEG }` (lib/verbindung.ts; sonst blieb ein
+      // Endlos- oder Blockwerk-Spiel nach einem Deploy auf der letzten Karte stehen und stellte sie immer wieder)
+      starten: (endlos?: "neu" | number, brett?: Brett, pausen?: number[]): Promise<SpielStart> =>
+        sicher(() => (amTablet ? tabletSpielStartenAction(art, endlos, brett) : spielStartenAction(token, art, endlos, brett)), pausen),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }): Promise<SpielErgebnis> =>
+        sicher(() => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o))),
       // Blockwerk weiterspielen: nur in der Schüler-App (am Tablet gehört das Gerät der Lehrkraft)
       merken: (stand: BlockwerkStand) => (amTablet ? Promise.resolve(false) : blockwerkMerkenAction(token, stand)),
       weiter: () => blockwerkWeiterAction(token),
@@ -241,6 +246,14 @@ export function Lernspiel({
   }, []);
   // die nächste Runde wird gerade geholt
   const [laedt, setLaedt] = useState(false);
+  // die nächste Runde kam auch nach mehreren Versuchen nicht (Deploy, kein Netz): das Spiel wartet auf „Neu laden“
+  const [abgerissen, setAbgerissen] = useState(false);
+  // Blockwerk geht nach dem Neuladen gleich weiter (`?weiter=1`, der gemerkte Stand), die anderen beginnen am Start
+  const neuLaden = useCallback(() => {
+    const ziel = new URL(window.location.href);
+    if (brett === "bloecke" && !amTablet) ziel.searchParams.set("weiter", "1");
+    window.location.replace(ziel.toString());
+  }, [brett, amTablet]);
   const karteRef = useRef<HTMLDivElement | null>(null);
   const fachRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const zug = useRef<{ id: number; x0: number; y0: number; x: number; y: number; t: number; vx: number; vy: number; cx: number } | null>(null);
@@ -270,6 +283,7 @@ export function Lernspiel({
   const starten = useCallback(async (mitEndlos = false, mitBrett: Brett | null = null) => {
     setPhase("laden");
     setFehler(null);
+    setAbgerissen(false);
     const r = await (duellRef.current ? duellRef.current.starten() : server.starten(mitEndlos || mitBrett ? "neu" : undefined, mitBrett ?? undefined));
     if ("fehler" in r) {
       setFehler(r.fehler);
@@ -383,9 +397,16 @@ export function Lernspiel({
         if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
       });
       beschaeftigt.current = true;
-      const r = await (vorrat.current ?? server.starten(lauf.current ?? "neu"));
+      let r = await (vorrat.current ?? server.starten(lauf.current ?? "neu"));
+      // im Voraus geholt, während der Server neu startete: jetzt noch einmal
+      if (vorrat.current && verbindungWeg(r)) r = await server.starten(lauf.current ?? "neu", undefined, [800]);
       vorrat.current = null;
       beschaeftigt.current = false;
+      if (verbindungWeg(r)) {
+        // nicht die letzte Karte noch einmal stellen: anhalten, bis neu geladen ist (Blockwerk ist gemerkt und geht weiter)
+        setAbgerissen(true);
+        return;
+      }
       if ("fehler" in r) {
         // keine Karten mehr: das Endlos-Spiel endet hier (die Runde ist schon gezählt)
         setPhase("ende");
@@ -901,7 +922,7 @@ export function Lernspiel({
         <div className="ls-mitte text-center">
           {fehler ? (
             <p className="ls-fehler mt-10" role="alert">
-              {fehler}
+              <FehlerText text={fehler} onNeuLaden={neuLaden} />
             </p>
           ) : (
             <p className="ls-text mt-10">Karten werden gemischt …</p>
@@ -972,7 +993,7 @@ export function Lernspiel({
           {bestenlisteAnfang && <BestenListe liste={bestenlisteAnfang} arenaLink={arenaLink} n={5} />}
           {fehler && (
             <p className="ls-fehler mt-6" role="alert">
-              {fehler}
+              <FehlerText text={fehler} onNeuLaden={neuLaden} />
             </p>
           )}
         </div>
@@ -1118,7 +1139,7 @@ export function Lernspiel({
 
           {fehler && (
             <p className="ls-fehler mt-6" role="alert">
-              {fehler}
+              <FehlerText text={fehler} onNeuLaden={neuLaden} />
             </p>
           )}
         </div>
@@ -1200,7 +1221,7 @@ export function Lernspiel({
           </p>
           {ergebnis && "fehler" in ergebnis && (
             <p className="ls-fehler mt-4" role="alert">
-              {ergebnis.fehler}
+              <FehlerText text={ergebnis.fehler} onNeuLaden={neuLaden} />
             </p>
           )}
 
@@ -1286,7 +1307,7 @@ export function Lernspiel({
           </p>
           {ergebnis && "fehler" in ergebnis && (
             <p className="ls-fehler mt-4" role="alert">
-              {ergebnis.fehler}
+              <FehlerText text={ergebnis.fehler} onNeuLaden={neuLaden} />
             </p>
           )}
 
@@ -1386,7 +1407,7 @@ export function Lernspiel({
 
           {ergebnis && "fehler" in ergebnis && (
             <p className="ls-fehler mt-4" role="alert">
-              {ergebnis.fehler}
+              <FehlerText text={ergebnis.fehler} onNeuLaden={neuLaden} />
             </p>
           )}
 
@@ -1490,6 +1511,7 @@ export function Lernspiel({
         />
       )
     ) : null;
+  const abriss = abgerissen ? <Abriss onNeuLaden={neuLaden} /> : null;
   const schale = (inhalt: ReactNode) => (
     <div className="ls" role="dialog" aria-modal="true" aria-label={brett ? `Lernspiel ${BRETT_INFO[brett].titel}` : `Lernspiel ${SPIEL_TITEL[art]}`}>
       <Hintergrund woerter={deko} />
@@ -1513,6 +1535,7 @@ export function Lernspiel({
       {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
       {brett === "tor" && <TorLauf karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} />}
       {(!bloecke || (frage && !imBrett)) && inhalt}
+      {abriss}
     </div>
   );
   if (bloecke && frage && (laedt || !aktuell))
@@ -1935,5 +1958,18 @@ function Bausteine() {
       <rect x="12" y="11" width="8" height="8" rx="2" fill="currentColor" opacity="0.75" />
       <rect x="12" y="1.5" width="8" height="8" rx="2" fill="currentColor" opacity="0.5" />
     </svg>
+  );
+}
+
+/** Ein Fehler im Spiel; ist die Verbindung weg (lib/verbindung.ts), mit „Neu laden“ darunter. */
+function FehlerText({ text, onNeuLaden }: { text: string; onNeuLaden: () => void }) {
+  if (text !== VERBINDUNG_WEG) return <>{text}</>;
+  return (
+    <>
+      {text}
+      <button type="button" className="ls-knopf ls-los mt-3 w-full" onClick={onNeuLaden}>
+        Neu laden
+      </button>
+    </>
   );
 }

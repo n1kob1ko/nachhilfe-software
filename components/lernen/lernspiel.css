@@ -879,6 +879,33 @@
   color: #ffd0c8;
   font-size: 15px;
 }
+/* die Verbindung ist weg (lib/verbindung.ts): das Spiel hält an, bis neu geladen ist */
+.ls .ls-abriss,
+.ls-abriss {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(8, 18, 40, 0.62);
+  animation: ls-abriss-ein 180ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.ls-abriss-karte {
+  width: min(100%, 380px);
+  padding: 20px;
+  text-align: center;
+}
+@keyframes ls-abriss-ein {
+  from {
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-abriss {
+    animation: none;
+  }
+}
 .ls-grund {
   display: inline-flex;
   width: fit-content;

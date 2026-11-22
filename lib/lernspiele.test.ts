@@ -226,6 +226,11 @@ test("Runde zählt nur die erste Wahl, nur einmal, und geht schwach in den Lerns
   assert.deepEqual(new Set(sp.offeneFehler(student.id, "artikel")), new Set(falsch));
   const zweite = sp.starteRunde(student, "artikel", { rng: rng(12) });
   for (const f of falsch) assert.ok(zweite.karten.some((k) => k.key === f));
+  // solange die zweite Runde läuft, liegen sie dort: eine schon vorab geholte dritte (Endlos) wiederholt sie nicht noch einmal
+  assert.deepEqual(sp.offeneFehler(student.id, "artikel"), []);
+  const dritte = sp.starteRunde(student, "artikel", { rng: rng(13) });
+  for (const f of falsch) assert.ok(!dritte.karten.some((k) => k.key === f));
+  db().prepare("DELETE FROM spielrunden WHERE id = ?").run(dritte.rundeId);
 
   // eine nicht beendete Runde zählt nicht
   assert.equal(sp.spielBelege(student.id).length, 1);
