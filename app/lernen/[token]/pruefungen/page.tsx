@@ -3,6 +3,7 @@ import { Frisch } from "@/components/Frisch";
 import { CalendarPlus } from "lucide-react";
 import { notFound } from "next/navigation";
 import { Pill, formatDate } from "@/components/ui";
+import { EigeneTestsTeaser } from "@/components/lernen/EigeneTestsTeaser";
 import { KommendePruefungen } from "@/components/lernen/KommendePruefungen";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { Unterlagen } from "@/components/lernen/Unterlagen";
@@ -26,6 +27,9 @@ export default async function PruefungenPage({ params }: { params: Promise<{ tok
       <SeitenKopf titel="Prüfungen" text="Was ansteht, was du eingetragen hast und deine Unterlagen zum Lernen." />
 
       <KommendePruefungen studentId={student.id} />
+
+      {/* Tests zum Üben, von der Lehrkraft freigeschaltet (lib/eigene-tests.ts) */}
+      <EigeneTestsTeaser student={student} token={token} von="pruefungen" />
 
       <section id="pruefungen" className="mt-8 scroll-mt-6" aria-label="Von dir eingetragen" data-testid="pruefung-eintraege">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">

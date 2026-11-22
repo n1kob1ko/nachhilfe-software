@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { EigeneTestsProfil } from "@/components/EigeneTestsProfil";
 import { WegForm } from "@/components/Meldung";
 import { LernspieleProfil } from "@/components/LernspieleProfil";
 import { WettspielProfil } from "@/components/WettspielProfil";
@@ -158,6 +159,10 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <section aria-labelledby="uebungen-titel">
             <h2 id="uebungen-titel" className="gruppe-titel mb-4">Übungen</h2>
             <Exercises student={student} />
+          </section>
+          <section aria-labelledby="eigene-tests-titel">
+            <h2 id="eigene-tests-titel" className="gruppe-titel mb-4">Tests in der App</h2>
+            <EigeneTestsProfil student={student} />
           </section>
           <ArchivSection student={student} open={sp.ansicht === "archiv"} />
         </div>

@@ -1524,6 +1524,27 @@ CREATE TABLE IF NOT EXISTS fehlerprotokolle (
   text TEXT NOT NULL DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- Eigene Tests (lib/eigene-tests.ts): ein fertiger Test aus lib/eigene-tests/, je Schüler von der Lehrkraft freigeschaltet.
+-- Eine Abgabe hält die Antworten (JSON); die Punkte rechnet die App daraus. selbst / lehrer: Punkte der offenen Fragen
+-- {Frage: Punkte}, die der Lehrkraft gelten vor denen des Schülers.
+CREATE TABLE IF NOT EXISTS eigene_test_freigaben (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  test TEXT NOT NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (student_id, test)
+);
+CREATE TABLE IF NOT EXISTS eigene_test_abgaben (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  test TEXT NOT NULL,
+  antworten TEXT NOT NULL DEFAULT '{}',
+  selbst TEXT NOT NULL DEFAULT '{}',
+  lehrer TEXT NOT NULL DEFAULT '{}',
+  sekunden INTEGER,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_eigene_test_abgaben ON eigene_test_abgaben(student_id, test);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

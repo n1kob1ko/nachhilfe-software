@@ -104,6 +104,13 @@ Ein gesendetes Blatt so, wie der Schüler es am Gerät ausgefüllt hat, als A4 z
 nur für ein Blatt.
 _Avoid_: ausgefülltes PDF
 
+**Eigener Test**:
+Ein fertiger Test, den die Lehrkraft außerhalb der App gebaut hat (z. B. ein claude.ai-Artifact), wörtlich als Seite der
+**Schüler-App** (`lib/eigene-tests.ts`, ein Test je Datei in `lib/eigene-tests/`). Die Lehrkraft schaltet ihn je Schüler frei
+(Profil › Lernverlauf › „Tests in der App“); der Schüler gibt ab und sieht Punkte, Lösungen und eine Note zur Orientierung,
+offene Fragen bewertet er selbst, die Lehrkraft kann die Punkte ändern ([docs/eigene-tests.md](docs/eigene-tests.md)).
+_Avoid_: Quiz, Artifact-Test. Nicht verwechseln mit der **Probeschularbeit** (aus der App erzeugt, als **Übung** gesendet)
+
 **Lernzettel**:
 Die Infos zum Stoff aus **Stoff vorbereiten**: Abschnitte mit Erklärung, Merke und Beispielen, dazu typische
 Fehler. Als A4-Blatt druckbar und nach dem Übernehmen in der Schüler-App unter „Deine Unterlagen“.
