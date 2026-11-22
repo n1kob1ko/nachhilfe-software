@@ -474,7 +474,13 @@ export function BlattSpiel({
 
   if (!karte || !daten) return null;
   const p = pflanze(daten.nr)!;
-  const schild = etikett[daten.nr] ?? {};
+  // Auf dem Etikett steht nur, was schon beantwortet ist: bei der Frage nach der Familie der Name (er steht ja in
+  // der Frage), die gefragte Zeile erst nach der Antwort. Auch wenn ein Blatt nach einem Fehler wiederkommt.
+  const gemerkt = etikett[daten.nr] ?? {};
+  const schild = {
+    name: daten.teil === "familie" ? p.name : wahl ? gemerkt.name : undefined,
+    familie: daten.teil === "familie" && wahl ? gemerkt.familie : undefined,
+  };
   const frage = daten.teil === "name" ? "Welche Pflanze ist das?" : `Zu welcher Familie gehört ${mitArtikel(p.name)}?`;
   return (
     <div className="ls pb bl" role="dialog" aria-modal="true" aria-label="Blätter bestimmen" data-modus={daten.modus}>
