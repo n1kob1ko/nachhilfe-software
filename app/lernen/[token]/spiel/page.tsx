@@ -3,7 +3,8 @@ import { GlasSpiel } from "@/components/lernen/GlasSpiel";
 import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { WortSchloss } from "@/components/lernen/WortSchloss";
 import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
-import { bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { BlattSpiel } from "@/components/lernen/BlattSpiel";
+import { blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -60,6 +61,21 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
         zurueck={von === "start" ? `/lernen/${token}` : undefined}
         themaLink={`/lernen/${token}/spiel?modus=wort${von === "start" ? "&von=start" : ""}&thema=`}
         arenaLink={`/lernen/${token}/arena`}
+      />
+    );
+  }
+  // Blätter bestimmen (lib/blaetter.ts)
+  if (modus === "blatt" || gewuenscht === "blatt") {
+    const wahl = blaetterWahl(student, heute);
+    if (!wahl) redirect(`/lernen/${token}/spiele`);
+    return (
+      <BlattSpiel
+        token={token}
+        serie={serie(student.id, heute)}
+        sicher={sichereBlaetter(student.id)}
+        gesehen={geseheneBlaetter(student.id)}
+        grund={wahl.grund}
+        zurueck={von === "start" ? `/lernen/${token}` : undefined}
       />
     );
   }

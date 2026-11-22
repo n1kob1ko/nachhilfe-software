@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, endlosRekord, endlosStand, glasThemen, phantomWahl, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
@@ -59,6 +59,13 @@ export async function phantomStartenAction(token: string, teil: "fall" | "text",
   return phantomStarten(student, teil, lauf, stufe);
 }
 
+/** Blätter bestimmen (lib/blaetter.ts): `modus` Kacheln oder schreiben wie im Test, `alle`: alle 26 Blätter. */
+export async function blattStartenAction(token: string, modus: "kacheln" | "schreiben", alle?: boolean): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return blattStarten(student, modus, alle);
+}
+
 /** `o.teil`: das Ende eines Endlos- oder Blockwerk-Spiels; es zählen nur die beantworteten Karten. `o.punkte`: die Punkte im Blockwerk. */
 export async function spielBeendenAction(token: string, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = repo.getStudentByToken(token);
@@ -102,6 +109,12 @@ export async function tabletPhantomStartenAction(teil: "fall" | "text", lauf?: n
   return phantomStarten(student, teil, lauf, stufe);
 }
 
+export async function tabletBlattStartenAction(modus: "kacheln" | "schreiben", alle?: boolean): Promise<SpielStart> {
+  const student = await tabletSchueler();
+  if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
+  return blattStarten(student, modus, alle);
+}
+
 export async function tabletSpielBeendenAction(rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
@@ -116,6 +129,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   // Glasklar startet nur über glasStarten (Thema und Stufe)
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   if (art === "wort") return wortStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
+  if (art === "blatt") return blattStarten(student, "kacheln");
   if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
@@ -161,6 +175,13 @@ function phantomStarten(student: repo.Student, teil: "fall" | "text", lauf?: num
   return runde;
 }
 
+function blattStarten(student: repo.Student, modus: "kacheln" | "schreiben", alle?: boolean): SpielStart {
+  if (!blaetterWahl(student, wienerDatum())) return { fehler: "Blätter bestimmen gibt es für dich gerade nicht." };
+  const runde = starteRunde(student, "blatt", { blatt: { modus: modus === "schreiben" ? "schreiben" : "kacheln", alle: alle === true } });
+  if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
+  return runde;
+}
+
 function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number }): SpielErgebnis {
   const zeile = rundenSkill(student.id, Number(rundeId));
   // Blockwerk, Funkelfeld, Glasklar und Wortschloss: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
@@ -189,6 +210,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     bloecke: zeile?.endlos && block ? { rekord: punkteRekord(student.id, block, zeile.endlos), fragen: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, block) : undefined } : undefined,
     wort: zeile?.endlos && spiel === "wort" ? { rekord: punkteRekord(student.id, "wort", zeile.endlos), woerter: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "wort") : undefined } : undefined,
     phantom: zeile?.endlos && spiel === "phantom" ? { rekord: punkteRekord(student.id, "phantom", zeile.endlos), merkmale: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "phantom") : undefined } : undefined,
+    blatt: zeile?.art === "blatt" ? { sicher: sichereBlaetter(student.id) } : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
 }

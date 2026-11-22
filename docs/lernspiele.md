@@ -597,6 +597,41 @@ Glasklar. Regeln in `lib/phantombild.ts`, der Lückentext in `lib/phantom-vorlag
 - **Gezählt** für den Lernstand: die Fähigkeit `deutsch.beschreiben.person`, je Merkmal der erste Tipp.
 - **Tablet**: Ansichten `phantom:fall` und `phantom:text`; quer zwei Spalten (Aussage links, Bild rechts).
 
+## Blätter bestimmen (Biologie)
+
+niko 2026-11-22 mit 28 Fotos aus der Mappe einer Schülerin (Liste „Blättersammlung 2.D“ und ein Herbarbogen je
+Pflanze): „Die Schülerin bekommt als Biologie test diese Blätter als Bild und sie muss dann sagen können welche Familie
+und welches Blatt. Mach daraus ein Spiel“, dazu: „die Infos sind egal“, „also nur deutschen namen und deutschen
+familiennamen“. Spiel `blatt` (`lib/blaetter.ts`, `components/lernen/BlattSpiel.tsx`, `blaetter.css`), ohne KI:
+
+- **Pflanzen**: die 26 der gedruckten Liste mit deutschem Namen und deutschem Familiennamen (19 Familien). Die Liste
+  gilt, nicht die Handschrift auf den Bögen; „Bittereschengewäsche“ ist als „Bittereschengewächse“ übernommen. Kein Latein.
+- **Bilder**: die gepressten Blätter der Schülerin, aus den Fotos freigestellt (ohne Namen und Infos, ohne Zeichnungen
+  von Frucht und Blüte), `public/spiele/blaetter/blatt-NN.webp` mit NN = Nummer der Liste. Ein neues Blatt braucht
+  ein Bild dort und eine Zeile in `PFLANZEN`.
+- **Spielen**: ein Herbarbogen mit dem Blatt und einem Etikett (Pflanze, Familie). Je Blatt zwei Karten: erst „Welche
+  Pflanze ist das?“, dann „Zu welcher Familie gehört der Efeu?“. Die Antwort steht danach auf dem Etikett.
+  - **Üben**: vier Kacheln, ein Tipp zählt sofort. Die falschen Antworten kommen möglichst von Blättern, die ähnlich
+    aussehen (`form`: gelappt, gefiedert, gesägt, glatt); bei der Familie nie eine zweite richtige.
+  - **Wie im Test**: Name und Familie selbst schreiben, „Fertig“ oder Eingabetaste; „Weiß ich nicht“ zeigt die Lösung.
+    Groß/klein, Leerzeichen, Bindestrich und ß/ss sind egal („Rotbuche“ = „Rot-Buche“). Ein Buchstabe daneben (bei
+    langen Wörtern zwei, nicht bei Wörtern unter fünf Buchstaben) zählt als gewusst, aber ein Blatt zeigt „Fast! Achte
+    auf die Schreibung“. Eine andere Pflanze oder Familie der Liste ist nie „fast“ (`pruefeGeschrieben`).
+  - **Großer Test**: alle 26 Blätter schreiben. Sonst hat eine Runde 8 Blätter (16 Karten).
+  - **Alle Blätter ansehen**: nach Familien geordnet, „Namen abdecken“ zum Selbsttest (antippen deckt auf). Zählt nicht.
+- **Fehler**: ein Blatt von unten mit der richtigen Antwort und dem Merkmal des Blatts („Fünf Lappen mit langen,
+  spitzen Zipfeln …“), bei der Familie die anderen Pflanzen derselben Familie. Die Karte kommt drei Karten später
+  noch einmal (höchstens zweimal); gezählt wird der erste Versuch.
+- **Sammlung**: ein Blatt ist **sicher**, wenn Name und Familie zweimal hintereinander beim ersten Versuch stimmten
+  (`blattStand`). Anfang und Ende zeigen alle 26 klein (sicher mit goldenem Rand, nie gesehen nur als Umriss).
+  Eine Runde nimmt zuerst die zuletzt falschen Blätter, dann die nicht sicheren (am längsten nicht gesehen zuerst),
+  dann die sicheren.
+- **Wer es sieht** (`blaetterWahl`): Biologie im Profil, ein geplanter Biologie-Test in den nächsten 60 Tagen (dann
+  steht die Kachel ganz oben mit dem Test als Grund), eine Biologie-Einheit in den letzten 60 Tagen, und der
+  Test-Schüler von „Spiele testen“. Eigene Kachel im Tab „Spiele“, kein Duell, kein Blockwerk.
+- **Gezählt**: `bio.blaetter` (keine Fähigkeit aus dem Lehrplan); die Runden stehen wie alle in `spielrunden`.
+- **Tablet**: Ansicht `blatt`; quer Bogen links, Frage rechts.
+
 ## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)
 
 niko 2026-11-17: „spiele sind da was fehlt ist stoff“. Vorher hatten die meisten Themen des Lehrplans kein Spiel
