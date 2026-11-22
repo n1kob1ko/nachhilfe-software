@@ -2655,6 +2655,16 @@
 .ls-kachel-satz {
   display: contents;
 }
+/* ein Bild über dem Satz (Europa-Duell: die Flagge, 4:3) */
+.ls-kachel-bild {
+  width: auto;
+  height: clamp(64px, 16vh, 120px);
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12), 0 8px 18px -10px rgba(0, 0, 0, 0.5);
+  margin-bottom: 10px;
+}
 /* das gewählte Wort steht schon in der Lücke (noch nicht geprüft); antippen holt es zurück */
 .ls-luecke[data-probe] {
   color: var(--ink);

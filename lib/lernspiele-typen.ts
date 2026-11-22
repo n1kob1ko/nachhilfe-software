@@ -60,8 +60,10 @@ export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" 
  */
 export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
-export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "fehler" && !EIGENES_FELD.includes(a));
-export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "fehler" && !EIGENES_FELD.includes(x);
+/** Spiele mit eigenem Feld gehen nicht als Duell, außer Europa: dafür gibt es eigene Duell-Karten im Kachelfeld (lib/europa.ts). */
+const duellTauglich = (a: SpielArt) => a !== "stoff" && a !== "fehler" && (!EIGENES_FELD.includes(a) || a === "europa");
+export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter(duellTauglich);
+export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && duellTauglich(x);
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
@@ -316,6 +318,8 @@ export type SpielKarte = {
   phantom?: PhantomDaten;
   /** Nur „Text lernen“ (lib/phantom-vorlage.ts), an der ersten Karte: Person, Text mit Lücken, Musterlösung */
   vorlage?: VorlageDaten;
+  /** Ein Bild über dem Satz im Kachelfeld (Europa-Duell: die Flagge) */
+  bild?: { src: string; alt: string };
   /** Nur „Blätter bestimmen“ (lib/blaetter.ts): welches Blatt, ob Name oder Familie gefragt ist, das Bild */
   blatt?: BlattDaten;
   /** Nur „Europa“ (lib/europa.ts): welches Land, welcher Teil, wie gefragt und geantwortet wird */

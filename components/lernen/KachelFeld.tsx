@@ -139,6 +139,10 @@ export function KachelFeld({
       <p className="ls-auftrag">{hatFehler && stand !== "richtig" ? "Tipp jetzt die richtige Antwort an." : auftrag}</p>
       <div className="ls-reihe ls-kachelfeld">
         <div ref={blatt} className="ls-satzblatt ls-kachelblatt" data-stand={stand ?? undefined} data-knapp={hatFehler ? "" : undefined} data-testid="kachel-blatt">
+          {karte.bild && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img className="ls-kachel-bild" src={karte.bild.src} alt={karte.bild.alt} draggable={false} />
+          )}
           <div className="ls-kachel-satz">
             <KartenInhalt karte={karte} stand={kartenStand} probe={bei >= 0 ? optionen[bei] : undefined} />
           </div>
