@@ -26,13 +26,13 @@ const PDF = Buffer.concat([Buffer.from("%PDF-1.4\n"), Buffer.from("erfundene Sei
 const GELESEN: VokabelFotoGelesen = {
   titel: "  Unit 3 · At the zoo ",
   paare: [
-    { en: "zoo keeper", de: "der Tierpfleger;die Tierpflegerin", satz: "My aunt is a *zoo keeper*." },
-    { en: "to feed", de: "füttern", satz: "" },
-    { en: "cage", de: "der Käfig", satz: "The lion = in its | cage." },
-    { en: "Zoo  keeper", de: "der Tierpfleger; die Tierpflegerin", satz: "" },
-    { en: "enclosure", de: "", satz: "" },
-    { en: "to [ ? ] after sb.", de: "auf jdn. aufpassen", satz: "" },
-    { en: " ", de: " ", satz: "" },
+    { en: "zoo keeper", de: "der Tierpfleger;die Tierpflegerin", satz: "My aunt is a *zoo keeper*.", ergaenzt: false },
+    { en: "to feed", de: "füttern", satz: "", ergaenzt: false },
+    { en: "cage", de: "der Käfig", satz: "The lion = in its | cage.", ergaenzt: false },
+    { en: "Zoo  keeper", de: "der Tierpfleger; die Tierpflegerin", satz: "", ergaenzt: false },
+    { en: "enclosure", de: "", satz: "", ergaenzt: false },
+    { en: "to [ ? ] after sb.", de: "auf jdn. aufpassen", satz: "", ergaenzt: false },
+    { en: " ", de: " ", satz: "", ergaenzt: false },
   ],
   unsicher: ["enclosure: keine deutsche Bedeutung", "to [?] after: Wort verwischt"],
 };
@@ -60,8 +60,15 @@ async function mitKi(gelesen: VokabelFotoGelesen | null = GELESEN) {
 test("the instructions: English to en, copy what is there, never translate, base form only, [?] for what is unreadable", async () => {
   const { VOKABELFOTO_SYSTEM } = await import("./ai");
   assert.match(VOKABELFOTO_SYSTEM, /Steht Deutsch links und Englisch rechts, gehört trotzdem das Englische nach en/);
-  assert.match(VOKABELFOTO_SYSTEM, /übersetze nie selbst/);
-  assert.match(VOKABELFOTO_SYSTEM, /lass das Wort weg und nenn es unter unsicher/);
+  assert.match(VOKABELFOTO_SYSTEM, /übernimmst du genau diese und keine andere/);
+  // niko 2026-11-22: yellow phrases without German above the table are words too; the KI translates them and says so
+  assert.match(VOKABELFOTO_SYSTEM, /ohne deutsche Bedeutung .*lass es nicht weg: übersetz es selbst/);
+  assert.match(VOKABELFOTO_SYSTEM, /Dann ist ergaenzt true/);
+  // niko's own list 2026-11-22: articles, both forms, no „hier:“, jdn. written out, spelling variants
+  assert.match(VOKABELFOTO_SYSTEM, /deutsche Nomen bekommen immer ihren Artikel/);
+  assert.match(VOKABELFOTO_SYSTEM, /der Einwanderer; die Einwanderin/);
+  assert.match(VOKABELFOTO_SYSTEM, /„hier:“ fallen weg/);
+  assert.match(VOKABELFOTO_SYSTEM, /takeoff; take-off/);
   assert.match(VOKABELFOTO_SYSTEM, /nur die Grundform/);
   assert.match(VOKABELFOTO_SYSTEM, /Lautschrift/);
   assert.match(VOKABELFOTO_SYSTEM, /\[\?\]/);
@@ -75,7 +82,7 @@ test("the lines for the editor: one word per line, the same word once, nothing w
   const v = textAusVokabelFoto(GELESEN);
   assert.equal(
     v.text,
-    ["zoo keeper = der Tierpfleger; die Tierpflegerin | My aunt is a *zoo keeper*.", "to feed = füttern", "cage = der Käfig | The lion in its cage.", "to [?] after sb. = auf jdn. aufpassen"].join("\n"),
+    ["zoo keeper = der Tierpfleger; die Tierpflegerin | My aunt is a *zoo keeper*.", "to feed = füttern", "cage = der Käfig | The lion in its cage.", "to [?] after sb. = auf jemanden aufpassen"].join("\n"),
   );
   assert.equal(v.titel, "Unit 3 · At the zoo");
   assert.equal(v.woerter, 4);
@@ -94,6 +101,57 @@ test("the lines for the editor: one word per line, the same word once, nothing w
   assert.equal(leer.text, "");
   assert.match(leer.hinweise[0], /keine Vokabeln/);
   for (const h of [...v.hinweise, ...leer.hinweise]) assert.doesNotMatch(h, /—| – /, "no em dash, no spaced en dash");
+});
+
+test("words without German on the photo: translated by the KI, under a comment, with a hint to check them", async () => {
+  const { textAusVokabelFoto, mitGelesen, KI_ERGAENZT, AUS_DEM_BUCH } = await import("./vokabel-foto-regeln");
+  const { leseListe } = await import("./vokabeln");
+  // like niko's Word File page: highlighted phrases above, the table with German below
+  const v = textAusVokabelFoto({
+    titel: "Word File · Danger",
+    paare: [
+      { en: "to be in trouble", de: "in Schwierigkeiten sein", satz: "We are *in trouble*.", ergaenzt: true },
+      { en: "to rescue", de: "retten", satz: "They *rescued* the cat.", ergaenzt: true },
+      { en: "arrival", de: "Ankunft", satz: "It all started with the *arrival* of the Dutch.", ergaenzt: false },
+      { en: "to blow up", de: "explodieren; in die Luft jagen", satz: "", ergaenzt: true },
+    ],
+    unsicher: [],
+  });
+  assert.equal(
+    v.text,
+    [
+      KI_ERGAENZT,
+      "to be in trouble = in Schwierigkeiten sein | We are *in trouble*.",
+      "to rescue = retten | They *rescued* the cat.",
+      AUS_DEM_BUCH,
+      "arrival = Ankunft | It all started with the *arrival* of the Dutch.",
+      KI_ERGAENZT,
+      "to blow up = explodieren; in die Luft jagen",
+    ].join("\n"),
+  );
+  assert.equal(v.woerter, 4, "comment lines are not words");
+  assert.equal(leseListe(v.text).fehler.length, 0);
+  assert.match(v.hinweise[0], /^3 Wörter standen ohne Deutsch da\. Die KI hat sie übersetzt .*Bitte prüfen\.$/);
+  // nothing translated: no comment, no hint
+  const nur = textAusVokabelFoto({ titel: "", paare: [{ en: "dog", de: "Hund", satz: "", ergaenzt: false }], unsicher: [] });
+  assert.equal(nur.text, "dog = Hund");
+  assert.deepEqual(nur.hinweise, []);
+  // reading the page again: the words that are there already stay out, and so do comments with nothing below them
+  assert.deepEqual(mitGelesen(v.text, v.text), { text: v.text, dazu: 0 });
+  const zweit = mitGelesen("to be in trouble = in Schwierigkeiten sein\nto rescue = retten", v.text);
+  assert.equal(zweit.dazu, 2);
+  assert.equal(zweit.text, ["to be in trouble = in Schwierigkeiten sein", "to rescue = retten", "arrival = Ankunft | It all started with the *arrival* of the Dutch.", KI_ERGAENZT, "to blow up = explodieren; in die Luft jagen"].join("\n"));
+});
+
+test("the German side as a student learns it: no „hier:“, jdn./etw. written out, two forms as two answers", async () => {
+  const { deutschSauber } = await import("./vokabel-foto-regeln");
+  assert.equal(deutschSauber("hier: summieren"), "summieren");
+  assert.equal(deutschSauber("sich summieren; hier: addieren"), "sich summieren; addieren");
+  assert.equal(deutschSauber("jdn. belohnen; prämieren"), "jemanden belohnen; prämieren");
+  assert.equal(deutschSauber("auf jdn./etw. aufpassen"), "auf jemanden/etwas aufpassen", "a slash inside a phrase stays");
+  assert.equal(deutschSauber("Einwanderer/Einwanderin"), "Einwanderer; Einwanderin");
+  assert.equal(deutschSauber("der Reiseleiter / die Reiseleiterin"), "der Reiseleiter; die Reiseleiterin");
+  assert.equal(deutschSauber("die Ankunft"), "die Ankunft");
 });
 
 test("read lines go after the lines already in the editor, without a word that is there", async () => {
