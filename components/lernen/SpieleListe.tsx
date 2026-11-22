@@ -31,6 +31,7 @@ export function SpieleListe({
   glas,
   wort,
   phantom,
+  blatt,
 }: {
   student: repo.Student;
   heute: string;
@@ -53,6 +54,8 @@ export function SpieleListe({
   wort?: { href: string; thema: string; platz?: BestenZeile | null };
   /** Phantombild (lib/phantombild.ts): wohin die Kachel führt, warum gerade (dann steht sie ganz oben) und der eigene Platz */
   phantom?: { href: string; grund?: string; platz?: BestenZeile | null };
+  /** Blätter bestimmen (lib/blaetter.ts): wohin die Kachel führt und warum gerade (dann steht sie ganz oben) */
+  blatt?: { href: string; grund?: string };
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
@@ -84,6 +87,23 @@ export function SpieleListe({
       <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
     </Link>
   );
+  const blattKachel = blatt && (
+    <Link href={blatt.href} className="sp-block panel mt-3" data-testid="spiele-blaetter">
+      <span className="sp-blatt-bild" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/spiele/blaetter/blatt-22.webp" alt="" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="sp-titel">Blätter bestimmen</span>
+          <span className="sp-schild">{blatt.grund ? "Test" : "Biologie"}</span>
+        </span>
+        <span className="sp-kurz">Schau das Blatt an: welche Pflanze, welche Familie? Mit allen 26 Blättern deiner Sammlung.</span>
+        {blatt.grund && <span className="mt-1 block text-[13px] font-semibold text-ink-2">{blatt.grund}</span>}
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+    </Link>
+  );
   return (
     <>
       {/* das Spiel, das gerade am besten passt */}
@@ -110,6 +130,7 @@ export function SpieleListe({
         <Kaertchen art={erstes.art} gross />
       </section>
 
+      {blatt?.grund && blattKachel}
       {phantom?.grund && phantomKachel}
 
       {bloecke && blockArt && (
@@ -243,6 +264,7 @@ export function SpieleListe({
       )}
 
       {phantom && !phantom.grund && phantomKachel}
+      {blatt && !blatt.grund && blattKachel}
 
       {faecher.map(({ fach, spiele }) => (
         <section key={fach} className="mt-9" aria-labelledby={`spiele-${fach}`}>

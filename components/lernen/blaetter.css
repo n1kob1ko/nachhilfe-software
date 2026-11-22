@@ -1,0 +1,521 @@
+/*
+ * Blätter bestimmen (components/lernen/BlattSpiel.tsx): grüne Bühne statt blauer, ein cremefarbener Herbarbogen mit
+ * dem Blatt und einem Etikett (Pflanze, Familie), darunter die Frage. Kacheln und Knöpfe von Phantombild
+ * (phantombild.css), damit alle Spiele gleich zu bedienen sind.
+ */
+
+.ls.bl {
+  --bl-papier: #fbf6e8;
+  --bl-papier-linie: #e6dcc0;
+  --bl-tinte: #2c3a22;
+  --bl-gruen: #17955a;
+  --bl-rot: #d8344a;
+  background:
+    radial-gradient(110% 60% at 88% -4%, rgba(176, 236, 160, 0.55), rgba(176, 236, 160, 0) 60%),
+    radial-gradient(70% 45% at -10% 62%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #3d9e5c 0%, #237a48 48%, #134a2f 100%);
+}
+:root[data-theme="dark"] .ls.bl {
+  --bl-papier: #f1ead6;
+  background:
+    radial-gradient(110% 60% at 88% -4%, rgba(120, 200, 120, 0.3), rgba(120, 200, 120, 0) 60%),
+    linear-gradient(180deg, #23663d 0%, #164a2c 48%, #0b2a19 100%);
+}
+
+/* ---------- Start ---------- */
+
+/* die Seite rollt: nichts darf schrumpfen (sonst liegt der Fächer über der Sammlung) */
+.bl .ls-mitte > * {
+  flex-shrink: 0;
+}
+
+.bl-faecher {
+  position: relative;
+  height: 132px;
+  margin: 10px auto 4px;
+  width: 220px;
+}
+.bl-faecher-bogen {
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 92px;
+  height: 118px;
+  margin-left: -46px;
+  padding: 8px;
+  border-radius: 10px;
+  background: var(--bl-papier);
+  box-shadow: 0 14px 28px -14px rgba(5, 30, 15, 0.7);
+}
+.bl-faecher-bogen[data-i="0"] {
+  transform: translateX(-62px) rotate(-12deg);
+}
+.bl-faecher-bogen[data-i="2"] {
+  transform: translateX(62px) rotate(11deg);
+}
+.bl-faecher-bogen[data-i="1"] {
+  z-index: 1;
+  transform: translateY(-6px);
+}
+.bl-faecher-bogen img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.bl .pb-wahl-knopf > svg {
+  color: var(--bl-gruen);
+}
+
+/* die Sammlung: 26 kleine Blätter */
+.bl-mini {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  gap: 5px;
+}
+.bl-mini span {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 3px;
+}
+.bl-mini img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bl-mini span[data-stand="neu"] img {
+  filter: brightness(0) invert(1);
+  opacity: 0.28;
+}
+.bl-mini span[data-stand="sicher"] {
+  background: var(--bl-papier);
+  box-shadow: 0 0 0 2px #ffd34d;
+}
+.bl-mini span[data-stand="gesehen"] {
+  background: rgba(251, 246, 232, 0.55);
+}
+
+/* ---------- Ansehen ---------- */
+
+.bl-ansehen {
+  max-width: 760px;
+  overflow-y: auto;
+}
+.bl-abdecken {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 6px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
+  color: var(--ls-on);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.bl-abdecken[aria-pressed="true"] {
+  background: #fff;
+  color: #1c6b3f;
+}
+.bl-familie-titel {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+}
+.bl-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  margin-top: 8px;
+}
+.bl-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 8px 10px;
+  border-radius: 16px;
+  background: var(--bl-papier);
+  color: var(--bl-tinte);
+  text-align: center;
+  box-shadow: 0 12px 24px -14px rgba(5, 30, 15, 0.8);
+  transition: transform 160ms var(--ls-ease-out);
+}
+.bl-karte:active {
+  transform: scale(0.97);
+}
+.bl-karte-bild {
+  position: relative;
+  display: block;
+  height: 120px;
+}
+.bl-karte-bild img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.bl-karte-name {
+  font-weight: 800;
+  font-size: 16px;
+  line-height: 1.2;
+}
+.bl-karte-familie {
+  font-size: 13px;
+  line-height: 1.2;
+  opacity: 0.8;
+}
+.bl-sicher-haken {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: inline-flex;
+  height: 22px;
+  width: 22px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--bl-gruen);
+  color: #fff;
+}
+
+/* ---------- Spiel ---------- */
+
+.bl-spiel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 6px 16px 16px;
+}
+.bl-folge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* der Herbarbogen */
+.bl-bogen {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  margin: 0;
+  border-radius: 18px;
+  background: var(--bl-papier);
+  color: var(--bl-tinte);
+  box-shadow: 0 20px 40px -18px rgba(5, 30, 15, 0.85);
+  animation: bl-bogen-rein 420ms var(--ls-ease-out) both;
+  overflow: hidden;
+}
+@keyframes bl-bogen-rein {
+  from {
+    opacity: 0;
+    transform: translateX(36px) rotate(2deg);
+  }
+}
+.bl-bild {
+  position: relative;
+  flex: 1;
+  min-height: 120px;
+  padding: 14px 14px 6px;
+}
+.bl-bild img {
+  position: absolute;
+  inset: 14px 14px 6px;
+  width: calc(100% - 28px);
+  height: calc(100% - 20px);
+  object-fit: contain;
+  filter: drop-shadow(0 3px 4px rgba(40, 30, 10, 0.25));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+/* das Etikett unten rechts wie auf einem echten Herbarbogen */
+.bl-etikett {
+  display: grid;
+  gap: 2px;
+  margin: 0 12px 12px auto;
+  width: min(100%, 300px);
+  padding: 8px 12px;
+  border: 1.5px solid var(--bl-papier-linie);
+  border-radius: 8px;
+  background: #fffdf6;
+}
+.bl-zeile {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-height: 26px;
+}
+.bl-zeile i {
+  width: 58px;
+  flex-shrink: 0;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.bl-zeile b {
+  min-width: 0;
+  flex: 1;
+  border-bottom: 1.5px dashed var(--bl-papier-linie);
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: rgba(44, 58, 34, 0.35);
+  overflow-wrap: anywhere;
+}
+.bl-zeile b[data-voll] {
+  border-bottom-color: transparent;
+  color: var(--bl-tinte);
+  animation: bl-schreiben 420ms var(--ls-ease-out) both;
+}
+.bl-zeile[data-jetzt] b:not([data-voll]) {
+  border-bottom-color: var(--bl-gruen);
+  color: var(--bl-gruen);
+}
+@keyframes bl-schreiben {
+  from {
+    opacity: 0;
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    opacity: 1;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.bl-unten {
+  flex-shrink: 0;
+}
+.bl-frage {
+  margin-bottom: 10px;
+  font-size: 19px;
+}
+.bl-antwort {
+  min-height: 60px;
+  padding: 8px 10px;
+}
+.bl-antwort-wort {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.bl-antwort-wort[data-lang] {
+  font-size: 15px;
+}
+.bl .pb-antwort[data-richtig] {
+  outline-color: #7ef0a8;
+}
+
+/* Schreiben wie im Test */
+.bl-schreiben {
+  display: grid;
+  gap: 10px;
+}
+.bl-feld {
+  width: 100%;
+  min-height: 56px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 16px;
+  background: #fff;
+  color: #1d2a16;
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  outline: 3px solid transparent;
+  box-shadow: 0 10px 22px -14px rgba(5, 30, 15, 0.9);
+}
+.bl-feld:focus {
+  outline-color: #ffd34d;
+}
+.bl-feld[data-ok=""] {
+  outline-color: #7ef0a8;
+}
+.bl-feld[data-ok="nein"] {
+  outline-color: #ff8a7a;
+}
+.bl-feld::placeholder {
+  color: #8c977f;
+  font-weight: 600;
+}
+.bl-schreiben-knoepfe {
+  display: grid;
+  grid-template-columns: 1fr 1.4fr;
+  gap: 10px;
+}
+.bl-schreiben-knoepfe .ls-knopf {
+  min-height: 52px;
+  font-size: 17px;
+}
+.bl-weiss-nicht {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+.bl-pruefen {
+  color: #1c6b3f;
+}
+.bl .ls-knopf {
+  color: #1c6b3f;
+  box-shadow: 0 6px 0 #a9d8b9;
+}
+.bl .ls-knopf[data-zweit] {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+.bl .ls-knopf:disabled {
+  opacity: 0.55;
+}
+
+/* nach einem Fehler: ein Blatt von unten */
+.ls > div.bl-hilfe {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(5, 30, 15, 0.45), rgba(5, 30, 15, 0));
+}
+.bl-hilfe-blatt {
+  width: 100%;
+  max-width: 560px;
+  padding: 18px;
+  border-top: 6px solid var(--bl-rot);
+  animation: bl-hoch 300ms var(--ls-ease-out) both;
+}
+.bl-hilfe[data-art="fast"] .bl-hilfe-blatt {
+  border-top-color: #f3b51c;
+}
+@keyframes bl-hoch {
+  from {
+    transform: translateY(100%);
+  }
+}
+.bl-hilfe-titel {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+.bl-hilfe-text {
+  margin-top: 6px;
+  font-size: 17px;
+  line-height: 1.5;
+}
+.bl-hilfe-text s {
+  opacity: 0.7;
+}
+.bl-hilfe-klein {
+  font-size: 15px;
+  opacity: 0.75;
+}
+.bl-merkmal {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 4px solid var(--bl-gruen);
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.bl-merkmal svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: var(--bl-gruen);
+}
+
+/* Ende: die verpassten Blätter */
+.bl-daneben {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+.bl-daneben li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.bl-daneben img {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 10px;
+  background: var(--bl-papier);
+  object-fit: contain;
+}
+.bl-daneben span {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.bl-daneben b {
+  font-size: 16px;
+}
+.bl-daneben small {
+  font-size: 13px;
+  opacity: 0.75;
+  overflow-wrap: break-word;
+}
+
+/* Tablet und Laptop quer: Bogen links, Frage rechts */
+@media (min-width: 760px) and (min-aspect-ratio: 1/1) {
+  .bl-spiel {
+    max-width: 1040px;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+  }
+  .bl-bogen {
+    flex: 1.2;
+  }
+  .bl-unten {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .bl-antworten {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* niedrige Schirme (Handy mit Tastatur): Etikett kleiner */
+@media (max-height: 560px) {
+  .bl-etikett {
+    padding: 4px 10px;
+  }
+  .bl-zeile b {
+    font-size: 16px;
+  }
+  .bl-bild {
+    min-height: 90px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bl-bogen,
+  .bl-hilfe-blatt,
+  .bl-zeile b[data-voll] {
+    animation: none;
+  }
+  .bl-karte {
+    transition: none;
+  }
+}

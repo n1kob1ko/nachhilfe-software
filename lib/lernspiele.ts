@@ -43,6 +43,7 @@ import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
+import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
 import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_STUFEN, vorlageRunde } from "./phantom-vorlage";
 import { STIL_GRUPPEN, STIL_OBERSTUFE_AB, STIL_SKILLS, STIL_UNTERSTUFE, STILMITTEL, stilmittelBis, stilmittelKandidaten, stilmittelVonKarte, type StilGruppe, type StilmittelId } from "./stilmittel";
 
@@ -77,6 +78,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   // Phantombild und „Text lernen“ (lib/phantombild.ts): die Personenbeschreibung
   phantom: PHANTOM_SKILL,
   vorlage: PHANTOM_SKILL,
+  // Blätter bestimmen (lib/blaetter.ts): Biologie, keine Fähigkeit aus dem Lehrplan
+  blatt: BLATT_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -87,7 +90,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -157,7 +160,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -579,6 +582,43 @@ function phantomVorrang(studentId: number): string[] {
     .map((m) => `${m[1]}:${m[2]}`);
 }
 
+// ---------- Blätter bestimmen (lib/blaetter.ts) ----------
+
+/** So weit voraus zählt ein Biologie-Test, so weit zurück eine Biologie-Einheit. */
+const BIO_TAGE = 60;
+const istBio = (fach: string | null | undefined) => (fach ?? "").trim().toLocaleLowerCase("de-AT").startsWith("bio");
+
+/**
+ * Gibt es „Blätter bestimmen“ für diesen Schüler, und warum gerade? Für alle mit Biologie: im Profil, als geplanter Test
+ * in den nächsten 60 Tagen (dann steht die Kachel oben, mit dem Test als Grund) oder als Einheit in den letzten 60
+ * Tagen. Der Test-Schüler von „Spiele testen“ hat es immer. null: nicht.
+ */
+export function blaetterWahl(student: repo.Student, heute: string): { grund?: string } | null {
+  const bis = tagAddieren(heute, BIO_TAGE);
+  const test = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && istBio(t.subject) && t.date >= heute && t.date <= bis)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (test) {
+    const tage = Math.round((Date.parse(test.date) - Date.parse(heute)) / 86_400_000);
+    const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+    return { grund: `${test.title || test.kind || "Biologie-Test"} ${wann}` };
+  }
+  if (student.spiele_test || student.subjects.some(istBio)) return {};
+  const seit = tagAddieren(heute, -BIO_TAGE);
+  return repo.listLessons(student.id).some((l) => istBio(l.subject) && l.starts_at.slice(0, 10) >= seit) ? {} : null;
+}
+
+/** Der Stand je Blatt aus allen beendeten Runden „Blätter bestimmen“ (lib/blaetter.ts blattStand). */
+export function blaetterStand(studentId: number): Map<number, BlattStand> {
+  const rows = db().prepare("SELECT antworten FROM spielrunden WHERE student_id = ? AND art = 'blatt' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as { antworten: string }[];
+  return blattStand(rows.map((r) => ({ antworten: json<GespeicherteAntwort[]>(r.antworten, []) })));
+}
+/** Die Nummern der Blätter, die sicher sitzen. */
+export const sichereBlaetter = (studentId: number): number[] => [...blaetterStand(studentId)].filter(([, s]) => s.sicher).map(([nr]) => nr).sort((a, b) => a - b);
+/** Die Nummern der Blätter, die schon einmal dran waren. */
+export const geseheneBlaetter = (studentId: number): number[] => [...blaetterStand(studentId).keys()].sort((a, b) => a - b);
+
 // ---------- Runden ----------
 
 type Zeile = {
@@ -650,6 +690,8 @@ export function starteRunde(
     wortThema?: string;
     /** „Text lernen“: die gewünschte Stufe (1 bis 5; beim Fortsetzen die nächste) */
     vorlageStufe?: number;
+    /** Blätter bestimmen: mit Kacheln oder geschrieben wie im Test, und ob alle Blätter (sonst `BLAETTER_JE_RUNDE`) */
+    blatt?: { modus: BlattModus; alle?: boolean };
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
@@ -706,6 +748,14 @@ export function starteRunde(
     } else stufe = Math.min(offen, Math.max(1, Math.round(o.vorlageStufe ?? offen)));
     const rng = o.rng ?? Math.random;
     karten = vorlageRunde(phantomVorlage().text, neuerFall(rng), stufe, rng);
+  } else if (art === "blatt") {
+    // Blätter bestimmen: zuerst die zuletzt falschen, dann die noch nicht sicheren
+    const rng = o.rng ?? Math.random;
+    const wiederholen = offeneFehler(student.id, art, 3)
+      .map((k) => vonKey(k)?.nr)
+      .filter((nr): nr is number => nr !== undefined);
+    const nrs = waehleBlaetter(blaetterStand(student.id), { anzahl: o.blatt?.alle ? PFLANZEN.length : BLAETTER_JE_RUNDE, wiederholen, rng });
+    karten = blattKarten(nrs, o.blatt?.modus ?? "kacheln", rng);
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
