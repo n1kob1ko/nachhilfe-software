@@ -383,8 +383,9 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   solange etwas fliegt), Regen bei Fieber, leerem Brett und Rekord. Das Brett wackelt bei zwei und mehr Linien, große
   Wörter („Super!“, „Stark!“, „Wahnsinn!“), die Punkte erscheinen dort, wo das Teil lag, und zählen oben hoch. Bei
   „weniger Bewegung“ fliegt und wackelt nichts.
-- **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
-  richtige Antworten laden einen neuen (die drei Punkte am Knopf), **höchstens einer** (seit 2026-11-18, niko:
+- **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; **fünf**
+  richtige Antworten laden einen neuen (die fünf Punkte am Knopf; bis 2026-11-22 drei, niko: „noch zu leicht … erst
+  blitze bei 5“), **höchstens einer** (seit 2026-11-18, niko:
   „blockwerk ist zu leicht … max 1 blitz“; davor drei). Wer einen hat, spart nicht weiter an. Zuerst gab jede
   richtige Antwort einen Blitz; im Test endete dann kein Spiel mehr.
 - **Strafen** (niko 2026-11-18: „blockwerk ist zu leicht … mehr punishing“, gewählt Ideen 1, 3, 5):

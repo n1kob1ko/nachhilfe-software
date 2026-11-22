@@ -14,7 +14,7 @@ import { vibriere } from "./SpielTeile";
  * Blockwerk (lib/blockwerk.ts, docs/lernspiele.md „Blockwerk“): das Brett mit 8 × 8 Feldern und drei Teilen darunter.
  * Ein Teil wird aufs Brett gezogen; volle Reihen und Spalten verschwinden. Sind alle drei gelegt, fragt das Feld nach
  * neuen Teilen (`onFrage`): Lernspiel.tsx zeigt dann eine Karte aus dem Stoff, und mit `antwort` kommen die Teile.
- * Beim ersten Versuch richtig gibt es 200 Punkte dazu (FRAGE_PUNKTE), und der Blitz lädt: drei richtige Antworten sind ein Blitz, der
+ * Beim ersten Versuch richtig gibt es 200 Punkte dazu (FRAGE_PUNKTE), und der Blitz lädt: fünf richtige Antworten sind ein Blitz (bis 2026-11-22 drei), der
  * 3 × 3 Felder frei räumt (erst bekam jede richtige Antwort einen; dann endete ein Spiel kaum). Höchstens einer
  * (BLITZE_MAX, niko 2026-11-18 „zu leicht“). Passt kein Teil mehr und
  * ist kein Blitz da, kommt eine Rettungsfrage: richtig gibt einen Blitz, sonst ist das Spiel aus (`onEnde`).
@@ -33,10 +33,10 @@ import { vibriere } from "./SpielTeile";
  * Teil über ein anderes Feld rückt. Am Finger schwebt das Teil über dem Finger, damit man sieht, wo es landet.
  */
 
-/** `ladung`: wie viele richtige Antworten der Blitz schon geladen hat (0 bis 2, bei drei gibt es einen) */
+/** `ladung`: wie viele richtige Antworten der Blitz schon geladen hat (0 bis 4, bei fünf gibt es einen) */
 export type BlockFrage = { grund: "teile" | "rettung"; vorschau: Teil[]; ladung: number };
-/** So viele richtige Antworten sind ein Blitz. */
-export const LADUNG = 3;
+/** So viele richtige Antworten sind ein Blitz (erst drei; niko 2026-11-22: „noch zu leicht … erst blitze bei 5“). */
+export const LADUNG = 5;
 /** `schnell`: richtig innerhalb der Zeit der Frage (erste Hälfte des Zeitbalkens, BrettFrage.tsx) */
 export type BlockAntwort = { n: number; sauber: boolean; schnell?: boolean };
 /** So viele richtige Antworten am Stück sind Fieber (Punkte mal zwei), doppelt so viele mal drei. */
@@ -210,7 +210,7 @@ export function BlockFeld({
       klang.fieberAus();
       setTimeout(() => sage("Fieber vorbei", "kombo"), 200);
     }
-    // neue Teile: drei richtige Antworten laden einen Blitz; die Rettungsfrage gibt gleich einen
+    // neue Teile: LADUNG (5) richtige Antworten laden einen Blitz; die Rettungsfrage gibt gleich einen
     const voll = f.grund === "rettung" || ladung + 1 >= LADUNG;
     const bl = antwort.sauber && voll ? Math.min(BLITZE_MAX, blitze + 1) : blitze;
     if (antwort.sauber) {
