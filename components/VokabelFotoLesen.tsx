@@ -291,7 +291,7 @@ export function VokabelFotoLesen({
             ) : kiGrund ? (
               "Die Fotos helfen dir beim Eintippen und werden nicht gespeichert."
             ) : (
-              "Die KI sieht nur die Fotos, keinen Namen aus der App. Sie übersetzt nichts selbst. Die Fotos werden nicht gespeichert."
+              "Die KI sieht nur die Fotos, keinen Namen aus der App. Steht ein Wort ohne Deutsch da, übersetzt sie es und markiert es zum Prüfen. Die Fotos werden nicht gespeichert."
             )}
           </p>
         </div>

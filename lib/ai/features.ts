@@ -1151,20 +1151,23 @@ const VokabelFotoSchema = z.object({
       z.object({
         en: z.string().describe("Das englische Wort oder die Wendung, wie gedruckt bzw. geschrieben (to look after sb.); mehrere englische Wörter für dasselbe mit „; “ getrennt"),
         de: z.string().describe("Die deutsche Bedeutung, wie sie dasteht (der Hund); mehrere Bedeutungen mit „; “ getrennt"),
-        satz: z.string().describe("Der englische Beispielsatz zum Wort, wenn einer dasteht, mit dem Wort in *Sternchen*; sonst leer"),
+        satz: z.string().describe("Der englische Beispielsatz zum Wort, wenn einer dasteht, mit dem Wort in *Sternchen*; bei ergaenzt ein kurzer eigener Satz; sonst leer"),
+        ergaenzt: z.boolean().describe("true, wenn die deutsche Bedeutung nicht auf dem Foto steht und du sie selbst übersetzt hast (etwa gelb markierte Wendungen ohne Übersetzung); sonst false"),
       }),
     )
     .describe("Die Vokabeln in der Reihenfolge der Seiten; jede einmal"),
-  unsicher: z.array(z.string()).describe("Wörter oder Stellen, die nicht sicher lesbar sind oder bei denen die deutsche Bedeutung fehlt, kurz mit dem Wort; leer, wenn alles klar ist"),
+  unsicher: z.array(z.string()).describe("Wörter oder Stellen, die nicht sicher lesbar sind, kurz mit dem Wort; leer, wenn alles klar ist"),
 });
 export type VokabelFotoGelesen = z.infer<typeof VokabelFotoSchema>;
 
 export const VOKABELFOTO_SYSTEM = [
   "Du liest Englisch-Vokabeln von Fotos ab: eine Wortliste aus einem Schulbuch, von einem Arbeitsblatt oder aus einem Vokabelheft, gedruckt oder mit der Hand geschrieben (eine oder mehrere Seiten, in der Reihenfolge der Seiten). Ein Schüler übt danach genau diese Wörter.",
   "Jede Vokabel ist ein Eintrag: en ist das englische Wort oder die Wendung, de die deutsche Bedeutung. Steht Deutsch links und Englisch rechts, gehört trotzdem das Englische nach en.",
-  "Schreib ab, was dasteht, und übersetze nie selbst: keine Bedeutung, die nicht auf dem Foto steht, kein Artikel, kein „to“ und kein Beispielsatz, die nicht dastehen. „to“ vor Verben, den Artikel vor deutschen Nomen und Abkürzungen wie sb., sth., jdn., etw. übernimmst du, wie sie dastehen.",
-  "Fehlt zu einem englischen Wort die deutsche Bedeutung (nur eine englische Erklärung, ein Bild oder nichts), lass das Wort weg und nenn es unter unsicher.",
+  "Schreib ab, was dasteht: steht eine deutsche Bedeutung da, übernimmst du genau diese und keine andere, ohne Artikel, „to“ oder Beispielsatz dazuzuerfinden. „to“ vor Verben, den Artikel vor deutschen Nomen und Abkürzungen wie sb., sth., jdn., etw. übernimmst du, wie sie dastehen. Dann ist ergaenzt false.",
+  "Steht ein englisches Wort oder eine Wendung als Vokabel da, aber ohne deutsche Bedeutung (etwa farbig markierte Wendungen in einem Kasten über der Tabelle, ein Wortfeld, nur eine englische Erklärung), lass es nicht weg: übersetz es selbst mit der üblichsten deutschen Bedeutung, die zum Thema der Seite passt, und schreib einen kurzen, einfachen Beispielsatz mit dem Wort in *Sternchen* dazu. Dann ist ergaenzt true, damit die Lehrkraft es prüft. Überschriften, Arbeitsanweisungen und Wörter in Übungen sind keine Vokabeln.",
   "Mehrere Bedeutungen, die mit Beistrich, Schrägstrich oder „oder“ getrennt dastehen, trennst du mit „; “. Ein Beistrich, der zur Wendung gehört (to look after sb., sth.), bleibt.",
+  "So schreibst du das Deutsche, damit der Schüler es lernen kann (das zählt nicht als eigene Übersetzung): deutsche Nomen bekommen immer ihren Artikel, auch wenn das Buch keinen druckt (Ankunft → die Ankunft, Zinsen → die Zinsen); männliche und weibliche Form getrennt mit Artikel (Einwanderer/Einwanderin → der Einwanderer; die Einwanderin); Zusätze wie „hier:“ fallen weg, und braucht das deutsche Verb in dieser Bedeutung „sich“, steht es dabei (to add up = sich summieren); jdn., jdm., etw. schreibst du aus (jemanden, jemandem, etwas). Englisches sb. und sth. bleibt.",
+  "Gibt es für das englische Wort eine zweite übliche Schreibweise, setz sie mit „; “ dazu (takeoff; take-off, crowd-funding; crowdfunding). Höchstens eine sehr gängige zweite deutsche Bedeutung, die ein Schüler wahrscheinlich als Antwort schreibt, darfst du hinten anhängen (der Preis; die Kosten); die gedruckten Bedeutungen bleiben vorne.",
   "Bei unregelmäßigen Verben nur die Grundform (to go, nicht went, gone). Bei Nomen mit besonderer Mehrzahl nur die Einzahl.",
   "Weg lässt du: Lautschrift, Wortart-Kürzel (n, v, adj), Seitenzahlen, Nummern, Überschriften einzelner Abschnitte, Übungen, Grammatikkästen, Bilder und Notizen einer Lehrkraft, Häkchen und Noten.",
   "Steht neben dem Wort ein englischer Beispielsatz, kommt er nach satz; das Wort im Satz (in der Form, in der es dort steht) setzt du in *Sternchen*: I *went* home.",
