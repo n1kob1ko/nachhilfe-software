@@ -5,12 +5,13 @@ import { deviceContext } from "@/lib/device-context";
 import { beendeRunde, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
+import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
 import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
 import { gueltigeTorPunkte } from "@/lib/torlauf";
 import { gueltigeWortPunkte } from "@/lib/wortschloss";
 import { gueltigePhantomPunkte } from "@/lib/phantombild";
-import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielStart } from "@/lib/lernspiele-typen";
+import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielKarte, type SpielStart } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -75,6 +76,25 @@ export async function spielBeendenAction(token: string, rundeId: number, antwort
   return e;
 }
 
+/**
+ * Blockwerk: den Stand nach einem Zug merken (lib/blockwerk-stand.ts), damit man später weiterspielen kann. Still: ein
+ * Fehler hier stört das Spiel nicht.
+ */
+export async function blockwerkMerkenAction(token: string, stand: BlockwerkStand): Promise<boolean> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return false;
+  return merkeStand(student.id, stand);
+}
+
+/** Blockwerk: das angefangene Spiel holen, mit den Karten seiner laufenden Runde. */
+export async function blockwerkWeiterAction(token: string): Promise<{ lauf: number; art: string; karten: SpielKarte[]; stand: BlockwerkStand } | { fehler: string }> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  const offen = offenesBlockwerk(student.id);
+  if (!offen) return { fehler: "Das angefangene Spiel gibt es nicht mehr." };
+  return { lauf: offen.lauf, art: offen.art, karten: offen.karten, stand: offen.stand };
+}
+
 // ---------- am Schüler-Tablet in der Einheit (app/geraet/page.tsx) ----------
 // Das Tablet gehört dem Lehrer; es erreicht nur den Schüler der laufenden Einheit, die es zeigt (lib/device-context.ts).
 // Der geheime Link des Schülers kommt nie aufs Tablet.
@@ -136,6 +156,14 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   const grund = spielVorschlaege(student, { heute }).find((v) => v.art === art)?.quelle;
   const lauf = !hatEndlos(art) ? undefined : endlos === "neu" ? "neu" : Number.isInteger(endlos) && Number(endlos) > 0 ? Number(endlos) : undefined;
   const brett = bloecke === true || bloecke === "bloecke" ? "bloecke" : bloecke === "funkel" ? "funkel" : bloecke === "tor" ? "tor" : null;
+  // ein neues Blockwerk-Spiel beendet ein angefangenes: seine Punkte zählen (lib/blockwerk-stand.ts)
+  if (brett === "bloecke" && lauf === "neu") {
+    const alt = offenesBlockwerk(student.id);
+    if (alt) {
+      beenden(student, alt.stand.rundeId, alt.stand.antworten, { teil: true, punkte: alt.punkte });
+      vergissStand(student.id, alt.lauf);
+    }
+  }
   const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu" });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
@@ -189,6 +217,8 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
   const spiel: PunkteSpiel | null = lauf ? (PUNKTE_SPIELE.find((s) => laufIst(student.id, lauf, s)) ?? null) : null;
   // Blockwerk und Funkelfeld: ein Brett zwischen den Karten (gleiches Ergebnis)
   const block = spiel === "bloecke" || spiel === "funkel" || spiel === "tor" ? spiel : null;
+  // das Ende eines Blockwerk-Spiels: nichts mehr zum Weiterspielen
+  if (spiel === "bloecke" && lauf && o?.punkte !== undefined) vergissStand(student.id, lauf);
   if (spiel && lauf && o?.punkte !== undefined) laufPunkte(student.id, lauf, spiel === "glas" ? gueltigeGlasPunkte(o.punkte) : spiel === "wort" ? gueltigeWortPunkte(o.punkte) : spiel === "funkel" ? gueltigeFunkelPunkte(o.punkte) : spiel === "tor" ? gueltigeTorPunkte(o.punkte) : spiel === "phantom" ? gueltigePhantomPunkte(o.punkte) : gueltigePunkte(o.punkte), spiel);
   const vorher = zeile ? lernstandVon(student.id, zeile.skillId) : null;
   const e = beendeRunde(student.id, Number(rundeId), Array.isArray(antworten) ? antworten.slice(0, 100) : [], { teil: o?.teil === true });

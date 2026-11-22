@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, 
 import { createPortal } from "react-dom";
 import { blitz, blitzFelder, BLITZE_MAX, FRAGE_PUNKTE, BLITZE_START, SCHNELL_PUNKTE, SCHUTT_STEINE, leeresBrett, schutt, naechsteKombo, neueTeile, passt, punkteFuer, SEITE, setze, steckt, wuerdeRaeumen, type Brett, type Teil, type Zug } from "@/lib/blockwerk";
 import { BlockMaskottchen } from "./BlockMaskottchen";
+import type { FeldStand } from "@/lib/blockwerk-stand";
 import { Funkenregen, type FunkenApi } from "./Funkenregen";
 import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
@@ -63,6 +64,8 @@ export function BlockFeld({
   onPunkte,
   onEnde,
   rekord,
+  anfang,
+  onStand,
 }: {
   /** false, solange die Frage über dem Brett liegt (ohne `frage`: auf eigenem Bildschirm) */
   aktiv: boolean;
@@ -74,13 +77,19 @@ export function BlockFeld({
   onEnde: () => void;
   /** der beste Stand bisher (0: noch keiner) */
   rekord: number;
+  /** ein angefangenes Spiel, das weitergeht (lib/blockwerk-stand.ts) */
+  anfang?: FeldStand;
+  /** der Stand nach jedem Zug und jeder Antwort, zum Merken; null, wenn das Spiel aus ist */
+  onStand?: (s: FeldStand | null) => void;
 }) {
-  const [brett, setBrett] = useState<Brett>(leeresBrett);
-  const [teile, setTeile] = useState<(Teil | null)[]>(() => neueTeile(leeresBrett()));
-  const [punkte, setPunkte] = useState(0);
-  const [kombo, setKombo] = useState({ kombo: 0, ohne: 0 });
-  const [blitze, setBlitze] = useState(BLITZE_START);
-  const [ladung, setLadung] = useState(0);
+  // ein gemerkter Stand bekommt neue Teil-Nummern (sonst stoßen sie mit den neuen Teilen zusammen)
+  const [start] = useState(() => (anfang ? neuNummeriert(anfang) : null));
+  const [brett, setBrett] = useState<Brett>(() => start?.brett ?? leeresBrett());
+  const [teile, setTeile] = useState<(Teil | null)[]>(() => start?.teile ?? neueTeile(leeresBrett()));
+  const [punkte, setPunkte] = useState(start?.punkte ?? 0);
+  const [kombo, setKombo] = useState(start?.kombo ?? { kombo: 0, ohne: 0 });
+  const [blitze, setBlitze] = useState(start ? Math.min(BLITZE_MAX, start.blitze) : BLITZE_START);
+  const [ladung, setLadung] = useState(start ? Math.min(LADUNG - 1, start.ladung) : 0);
   const [zielen, setZielen] = useState(false);
   const [lage, setLage] = useState<"spiel" | "eng" | "frage" | "aus">("spiel");
   const [weg, setWeg] = useState<{ i: number; farbe: number; v: number; n: number }[]>([]);
@@ -92,18 +101,18 @@ export function BlockFeld({
   // gerade gefallene Schutt-Steine (für die Bewegung)
   const [steine, setSteine] = useState<{ zellen: Set<number>; n: number } | null>(null);
   // richtige Antworten beim ersten Versuch am Stück (ab FIEBER_AB: Fieber)
-  const [serie, setSerie] = useState(0);
+  const [serie, setSerie] = useState(start?.serie ?? 0);
   const faktor = fieberFaktor(serie);
   const funkenRef = useRef<FunkenApi | null>(null);
-  const rekordGeknackt = useRef(false);
+  const rekordGeknackt = useRef(!!start && rekord > 0 && start.punkte > rekord);
   // die Rettungsfrage gibt es nur einmal je Spiel
-  const gerettet = useRef(false);
+  const gerettet = useRef(start?.gerettet ?? false);
 
   const brettRef = useRef<HTMLDivElement | null>(null);
   const ziehRef = useRef<HTMLDivElement | null>(null);
   const slotRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const zug = useRef<Zieh | null>(null);
-  const wartend = useRef<BlockFrage | null>(null);
+  const wartend = useRef<BlockFrage | null>(start?.wartend ?? null);
   const zaehler = useRef(0);
   const reduziert = useRef(false);
   const antwortN = useRef(0);
@@ -331,6 +340,27 @@ export function BlockFeld({
     },
     [blitze, brett, teile, zeigeWeg, pruefe],
   );
+
+  // ein angefangenes Spiel: die offene Frage kommt wieder; sonst wird geprüft, ob noch ein Teil passt
+  const weiter = useRef(!!start);
+  useEffect(() => {
+    if (!weiter.current) return;
+    weiter.current = false;
+    const f = wartend.current;
+    if (f) {
+      setLage("frage");
+      setTimeout(() => onFrage(f), reduziert.current ? 0 : 400);
+    } else pruefe(brett, teile, blitze);
+    // nur einmal, beim Weiterspielen
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // der Stand zum Merken (lib/blockwerk-stand.ts): nach jedem Zug, jeder Antwort und jeder neuen Frage
+  useEffect(() => {
+    if (!onStand) return;
+    if (lage === "aus") return onStand(null);
+    onStand({ brett, teile, punkte, kombo, blitze, ladung, serie, gerettet: gerettet.current, wartend: wartend.current });
+  }, [brett, teile, punkte, kombo, blitze, ladung, serie, lage, onStand]);
 
   // ---------- Ziehen ----------
 
@@ -563,6 +593,13 @@ export function BlockFeld({
         )}
     </div>
   );
+}
+
+let eigeneId = -1;
+/** Ein gemerkter Stand mit neuen Teil-Nummern (negativ: die neuen Teile aus lib/blockwerk.ts zählen ab 1). */
+function neuNummeriert(s: FeldStand): FeldStand {
+  const nr = <T extends { id: number }>(t: T): T => ({ ...t, id: eigeneId-- });
+  return { ...s, teile: s.teile.map((t) => (t ? nr(t) : null)), wartend: s.wartend ? { ...s.wartend, vorschau: s.wartend.vorschau.map(nr) } : null };
 }
 
 /** Punkte, die hochzählen statt zu springen (bei „weniger Bewegung“ sofort). */
