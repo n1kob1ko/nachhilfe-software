@@ -19,6 +19,7 @@
 import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
+import { BEHALTEN_SQL } from "./blockwerk-stand";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { KARTEN_JE_RUNDE, stufenFuer, waehleKarten } from "./lernspiele-karten";
@@ -694,8 +695,9 @@ export function starteRunde(
     blatt?: { modus: BlattModus; alle?: boolean };
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
-  // nicht beendete Runden von gestern und früher räumen sich selbst weg
-  db().prepare("DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day')").run(student.id);
+  // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
+  // (lib/blockwerk-stand.ts: es bleibt zum Weiterspielen)
+  db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL})`).run(student.id);
   let karten: SpielKarte[];
   // Glasklar und Wortschloss: die wievielte Stufe (eine Runde je Stufe)
   let stufe: number | undefined;
