@@ -32,6 +32,7 @@ export function SpieleListe({
   wort,
   phantom,
   blatt,
+  europa,
 }: {
   student: repo.Student;
   heute: string;
@@ -56,6 +57,8 @@ export function SpieleListe({
   phantom?: { href: string; grund?: string; platz?: BestenZeile | null };
   /** Blätter bestimmen (lib/blaetter.ts): wohin die Kachel führt und warum gerade (dann steht sie ganz oben) */
   blatt?: { href: string; grund?: string };
+  /** Europa (lib/europa.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Länder erobert sind */
+  europa?: { href: string; grund?: string; erobert: number };
 }) {
   const erstes = vorschlaege[0];
   const tage = serie(student.id, heute);
@@ -104,6 +107,22 @@ export function SpieleListe({
       <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
     </Link>
   );
+  const europaKachel = europa && (
+    <Link href={europa.href} className="sp-block panel mt-3" data-testid="spiele-europa">
+      <EuropaKachelBild />
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="sp-titel">Europa</span>
+          <span className="sp-schild">{europa.grund ? "Test" : "Geografie"}</span>
+        </span>
+        <span className="sp-kurz">Länder, Hauptstädte und Flaggen auf der Karte. Erobere ganz Europa.</span>
+        <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-europa-stand">
+          {europa.grund ?? (europa.erobert > 0 ? `${europa.erobert} von 47 Ländern erobert` : "Neu")}
+        </span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+    </Link>
+  );
   return (
     <>
       {/* das Spiel, das gerade am besten passt */}
@@ -131,6 +150,7 @@ export function SpieleListe({
       </section>
 
       {blatt?.grund && blattKachel}
+      {europa?.grund && europaKachel}
       {phantom?.grund && phantomKachel}
 
       {bloecke && blockArt && (
@@ -265,6 +285,7 @@ export function SpieleListe({
 
       {phantom && !phantom.grund && phantomKachel}
       {blatt && !blatt.grund && blattKachel}
+      {europa && !europa.grund && europaKachel}
 
       {faecher.map(({ fach, spiele }) => (
         <section key={fach} className="mt-9" aria-labelledby={`spiele-${fach}`}>
@@ -323,3 +344,15 @@ function Kaertchen({ art, gross }: { art: SpielArt; gross?: boolean }) {
 
 /** Das Gesicht auf der Kachel von Phantombild. */
 const KACHEL_GESICHT = { person: "frau", koerperbau: "schlank", haut: "gebraeunt", gesicht: "oval", augen: "braun", nase: "klein", mund: "voll", frisur: "langlocken", haarfarbe: "schwarz", bart: "kein", oberteil: "jacke", farbe: "rot", brille: "eckig", schmuck: "ohrringe", besonderes: "nichts" } as const;
+
+/** Drei kleine Flaggen übereinander als Bild der Kachel „Europa“. */
+export function EuropaKachelBild() {
+  return (
+    <span className="sp-europa-bild" aria-hidden>
+      {["at", "fr", "it"].map((c, i) => (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img key={c} src={`/spiele/europa/flaggen/${c}.svg`} alt="" data-i={i} />
+      ))}
+    </span>
+  );
+}

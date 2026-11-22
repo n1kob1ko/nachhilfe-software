@@ -4,9 +4,9 @@ import { ChevronRight, Swords, Trophy } from "lucide-react";
 import { notFound } from "next/navigation";
 import { BestenlisteTafel } from "@/components/lernen/BestenlisteTafel";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
-import { SpieleListe } from "@/components/lernen/SpieleListe";
+import { EuropaKachelBild, SpieleListe } from "@/components/lernen/SpieleListe";
 import { meineDuelle } from "@/lib/duelle";
-import { blaetterWahl, glasThemen, phantomWahl, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
+import { europaSitzt, europaWahl, blaetterWahl, glasThemen, phantomWahl, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, torTauglich } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -32,10 +32,19 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   if (!vorschlaege.length) {
     // nur Biologie: dann gibt es „Blätter bestimmen“ allein
     const nurBlatt = blaetterWahl(student, heute);
+    const eu = europaWahl(student, heute);
     return (
       <>
         <Frisch />
         <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
+        <Link href={`${base}/spiel?modus=europa`} className="sp-block panel mt-6" data-testid="spiele-europa">
+          <EuropaKachelBild />
+          <span className="min-w-0 flex-1">
+            <span className="sp-titel">Europa</span>
+            <span className="sp-kurz">Länder, Hauptstädte und Flaggen auf der Karte.</span>
+            {eu.grund && <span className="mt-1 block text-[13px] font-semibold text-ink-2">{eu.grund}</span>}
+          </span>
+        </Link>
         {nurBlatt ? (
           <Link href={`${base}/spiel?modus=blatt`} className="sp-block panel mt-6" data-testid="spiele-blaetter">
             <span className="sp-blatt-bild" aria-hidden>
@@ -49,8 +58,8 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
             </span>
           </Link>
         ) : (
-          <p className="panel mt-6 px-5 py-5 text-[16px] text-ink-2" data-testid="spiele-leer">
-            Für deine Fächer gibt es noch kein Spiel. Sobald eines dazukommt, steht es hier.
+          <p className="panel mt-3 px-5 py-5 text-[16px] text-ink-2" data-testid="spiele-leer">
+            Für deine Fächer gibt es sonst noch kein Spiel. Sobald eines dazukommt, steht es hier.
           </p>
         )}
       </>
@@ -89,13 +98,16 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   const phantomLink = `${base}/spiel?modus=phantom`;
   // Blätter bestimmen: für Biologie (Profil, Test, Einheit)
   const blatt = blaetterWahl(student, heute);
+  // Europa: für alle (lib/europa.ts)
+  const eu = europaWahl(student, heute);
+  const euSitzt = europaSitzt(student.id);
 
   return (
     <>
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} phantom={phantom ? { href: phantomLink, grund: phantom.grund, platz: phantomListe?.ich ?? null } : undefined} blatt={blatt ? { href: `${base}/spiel?modus=blatt`, grund: blatt.grund } : undefined} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} phantom={phantom ? { href: phantomLink, grund: phantom.grund, platz: phantomListe?.ich ?? null } : undefined} blatt={blatt ? { href: `${base}/spiel?modus=blatt`, grund: blatt.grund } : undefined} europa={{ href: `${base}/spiel?modus=europa`, grund: eu.grund, erobert: Object.values(euSitzt).filter((t) => t.length === 3).length }} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">

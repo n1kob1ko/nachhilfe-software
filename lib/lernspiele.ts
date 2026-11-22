@@ -43,6 +43,7 @@ import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
+import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
 import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
 import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_STUFEN, vorlageRunde } from "./phantom-vorlage";
 import { STIL_GRUPPEN, STIL_OBERSTUFE_AB, STIL_SKILLS, STIL_UNTERSTUFE, STILMITTEL, stilmittelBis, stilmittelKandidaten, stilmittelVonKarte, type StilGruppe, type StilmittelId } from "./stilmittel";
@@ -80,6 +81,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   vorlage: PHANTOM_SKILL,
   // Blätter bestimmen (lib/blaetter.ts): Biologie, keine Fähigkeit aus dem Lehrplan
   blatt: BLATT_SKILL,
+  // Europa (lib/europa.ts): Geografie, keine Fähigkeit aus dem Lehrplan
+  europa: EUROPA_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -90,7 +93,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -160,7 +163,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -619,6 +622,90 @@ export const sichereBlaetter = (studentId: number): number[] => [...blaetterStan
 /** Die Nummern der Blätter, die schon einmal dran waren. */
 export const geseheneBlaetter = (studentId: number): number[] => [...blaetterStand(studentId).keys()].sort((a, b) => a - b);
 
+// ---------- Europa (lib/europa.ts) ----------
+
+const istGeo = (fach: string | null | undefined) => /^(geo|gw\b|erdkunde)/i.test((fach ?? "").trim());
+
+/**
+ * „Europa“ gibt es für alle (Länder, Hauptstädte und Flaggen braucht jeder). Steht ein Geografie-Test in den nächsten
+ * 60 Tagen an, kommt die Kachel ganz nach oben, mit dem Test als Grund.
+ */
+export function europaWahl(student: repo.Student, heute: string): { grund?: string } {
+  const bis = tagAddieren(heute, BIO_TAGE);
+  const test = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && istGeo(t.subject) && t.date >= heute && t.date <= bis)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!test) return {};
+  const tage = Math.round((Date.parse(test.date) - Date.parse(heute)) / 86_400_000);
+  const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+  return { grund: `${test.title || test.kind || "Geografie-Test"} ${wann}` };
+}
+
+type EuropaZeile = { karten: string; antworten: string };
+const europaRunden = (studentId: number) =>
+  db().prepare("SELECT karten, antworten FROM spielrunden WHERE student_id = ? AND art = 'europa' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as EuropaZeile[];
+
+/** Der Stand je Teil eines Landes aus allen beendeten Runden „Europa“ (auch Rennen und Duelle). */
+export function europaStandVon(studentId: number): Map<string, TeilStand> {
+  return europaStandAus(europaRunden(studentId).map((r) => ({ antworten: json<GespeicherteAntwort[]>(r.antworten, []) })));
+}
+/** Je Land die Teile, die sicher sitzen (alle drei: erobert). */
+export const europaSitzt = (studentId: number): LandStand => sitzt(europaStandVon(studentId));
+/** Die Länder, die schon einmal dran waren. */
+export const europaGesehen = (studentId: number): string[] => [...new Set([...europaStandVon(studentId).keys()].map((k) => europaVonKey(k)?.code).filter((c): c is string => !!c))];
+
+/** Was der Schüler verwechselt (die letzten 30 Runden), die häufigsten zuerst. */
+export function europaVerwechsler(studentId: number): Paar[] {
+  const rows = europaRunden(studentId).slice(-30);
+  return verwechslungen(
+    rows.map((r) => ({ karten: json<SpielKarte[]>(r.karten, []), antworten: json<GespeicherteAntwort[]>(r.antworten, []) })),
+    europaStandVon(studentId),
+  );
+}
+
+/** Die Rennen eines Schülers: bester Stand je Thema (richtige Antworten in 60 Sekunden). */
+export function europaRekorde(studentId: number, ohne?: number): Record<Teil, number> {
+  const rows = db()
+    .prepare("SELECT id, karten, richtig FROM spielrunden WHERE student_id = ? AND art = 'europa' AND endlos = id AND beendet_at IS NOT NULL")
+    .all(studentId) as { id: number; karten: string; richtig: number }[];
+  const out: Record<Teil, number> = { lage: 0, hauptstadt: 0, flagge: 0 };
+  for (const r of rows) {
+    if (r.id === ohne) continue;
+    const e = json<SpielKarte[]>(r.karten, [])[0]?.europa;
+    if (e?.modus === "rennen" && e.thema && e.thema !== "alles") out[e.thema] = Math.max(out[e.thema], r.richtig);
+  }
+  return out;
+}
+
+/** Das Thema eines Rennens (null: die Runde ist kein Rennen). */
+export function europaRennenThema(studentId: number, rundeId: number): Teil | null {
+  const z = db().prepare("SELECT karten FROM spielrunden WHERE id = ? AND student_id = ? AND art = 'europa'").get(rundeId, studentId) as { karten: string } | undefined;
+  const e = json<SpielKarte[]>(z?.karten ?? "[]", [])[0]?.europa;
+  return e?.modus === "rennen" && e.thema && e.thema !== "alles" ? e.thema : null;
+}
+
+/** Was eine Runde „Europa“ braucht: Modus, beim Test und Rennen das Thema, und die Region (sonst ganz Europa). */
+export type EuropaWunsch = { modus: "ueben" | "test" | "gross" | "rennen" | "verwechsler"; thema?: EuropaThema; region?: Region };
+
+function europaKarten(student: repo.Student, w: EuropaWunsch, rng: () => number): SpielKarte[] {
+  const codes = LAENDER.filter((l) => !w.region || l.region === w.region).map((l) => l.code);
+  const stand = europaStandVon(student.id);
+  if (w.modus === "gross") return grosserTest(codes, w.thema ?? "alles", rng);
+  if (w.modus === "rennen") return rennenKarten(w.thema && w.thema !== "alles" ? w.thema : "lage", rng, codes);
+  if (w.modus === "verwechsler") {
+    const eigene = europaVerwechsler(student.id);
+    // ohne eigene Verwechslungen (oder zu wenige): die typischen dazu
+    const paare = [...eigene, ...TYPISCHE_PAARE.filter((p) => !eigene.some((e) => e.teil === p.teil && [e.a, e.b].sort().join() === [p.a, p.b].sort().join())).map((p) => ({ ...p, mal: 0 }))];
+    return verwechslerKarten(paare, rng);
+  }
+  const wiederholen = offeneFehler(student.id, "europa", 3)
+    .map((k) => europaVonKey(k.replace(/~\d+$/, ""))?.code)
+    .filter((c): c is string => !!c);
+  const laender = waehleLaender(stand, { anzahl: LAENDER_JE_RUNDE, wiederholen, codes, rng });
+  return europaRunde(laender, w.modus, rng, verwechseltMit(europaVerwechsler(student.id)));
+}
+
 // ---------- Runden ----------
 
 type Zeile = {
@@ -692,6 +779,8 @@ export function starteRunde(
     vorlageStufe?: number;
     /** Blätter bestimmen: mit Kacheln oder geschrieben wie im Test, und ob alle Blätter (sonst `BLAETTER_JE_RUNDE`) */
     blatt?: { modus: BlattModus; alle?: boolean };
+    /** Europa: Modus, Thema und Region (lib/europa.ts) */
+    europa?: EuropaWunsch;
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg
@@ -756,6 +845,8 @@ export function starteRunde(
       .filter((nr): nr is number => nr !== undefined);
     const nrs = waehleBlaetter(blaetterStand(student.id), { anzahl: o.blatt?.alle ? PFLANZEN.length : BLAETTER_JE_RUNDE, wiederholen, rng });
     karten = blattKarten(nrs, o.blatt?.modus ?? "kacheln", rng);
+  } else if (art === "europa") {
+    karten = europaKarten(student, o.europa ?? { modus: "ueben" }, o.rng ?? Math.random);
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {

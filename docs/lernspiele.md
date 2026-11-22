@@ -632,6 +632,32 @@ familiennamen“. Spiel `blatt` (`lib/blaetter.ts`, `components/lernen/BlattSpie
 - **Gezählt**: `bio.blaetter` (keine Fähigkeit aus dem Lehrplan); die Runden stehen wie alle in `spielrunden`.
 - **Tablet**: Ansicht `blatt`; quer Bogen links, Frage rechts.
 
+## Europa (Länder, Hauptstädte, Flaggen)
+
+niko 2026-11-22: „erstell ein geograpie spiel man soll länder und hauptstäde in europa lernen“, „es soll ganz europa
+sein und vielleicht auch eine option mit flaggen“, dann „ja mach alles aber lass den Reise Modus weg“. Spiel `europa`
+(`lib/europa.ts`, `components/lernen/EuropaSpiel.tsx`, `EuropaKarte.tsx`, `europa.css`), ohne KI:
+
+- **Länder**: 47 (`LAENDER`, deutsche Namen, Hauptstadt, Lage als lon/lat, Region, Nachbarn, „auch“-Schreibweisen).
+  Kosovo ist dabei, Nordzypern gehört zu Zypern, die Krim zur Ukraine. Regionen (Nord, West, Mitte, Süd, Südost, Ost)
+  sind nur ein Filter.
+- **Karte**: `lib/europa-karte.ts` ist erzeugt (`scripts/europa-karte.mjs`, Natural Earth 50m über world-atlas,
+  konforme Kegelprojektion), nicht von Hand ändern. Ein SVG; Ziehen, zwei Finger und Mausrad zoomen, + / − / ganz.
+  Kleine Länder (Andorra, Liechtenstein, Luxemburg, Malta, Monaco, San Marino, Vatikan) haben Tippkreise. Nach einem
+  Fehler zoomt die Karte von selbst hin und bei der nächsten Frage wieder zurück, außer das Kind hat selbst gezoomt.
+- **Flaggen**: `public/spiele/europa/flaggen/` aus flag-icons (MIT, `LIZENZ.txt`); mit Wappen als webp, sonst SVG.
+- **Drei Teile je Land**: Lage, Hauptstadt, Flagge. Ein Land ist **erobert**, wenn alle drei sitzen (zweimal
+  hintereinander beim ersten Versuch richtig, `europaStand`). Die Sammlungskarte färbt sich.
+- **Fragen**: auf der Karte antippen, vier Kacheln, Flaggen wählen oder schreiben (ein Buchstabe daneben, bei langen
+  Namen zwei, zählt mit „Fast!“; ein anderes Land oder eine andere Hauptstadt nie).
+- **Arten**: Üben (8 Länder, Kacheln und Karte), Wie im Test (schreiben), Rennen (60 Sekunden, Länder / Hauptstädte /
+  Flaggen, eigener Rekord), Verwechsler (die eigenen verwechselten Paare, sonst typische wie Slowakei/Slowenien, mit
+  Merksatz), Großer Test (alle 47, mit Note: 90/80/65/50 %), Karte erkunden (zählt nicht).
+- **Fehler**: Hilfe mit Lösung auf der Karte bzw. beiden Flaggen nebeneinander; die Karte kommt drei Karten später noch
+  einmal (nicht im Großen Test und Rennen). Gezählt wird der erste Versuch.
+- **Wer es sieht** (`europaWahl`): alle. Bei einem Geografie-/GW-Test in den nächsten 60 Tagen steht die Kachel oben.
+- **Gezählt**: `geo.europa`. **Tablet**: Ansicht `europa`; quer Karte links, Frage rechts.
+
 ## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)
 
 niko 2026-11-17: „spiele sind da was fehlt ist stoff“. Vorher hatten die meisten Themen des Lehrplans kein Spiel

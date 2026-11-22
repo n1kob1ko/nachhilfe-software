@@ -4,7 +4,8 @@ import { Lernspiel } from "@/components/lernen/Lernspiel";
 import { WortSchloss } from "@/components/lernen/WortSchloss";
 import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
 import { BlattSpiel } from "@/components/lernen/BlattSpiel";
-import { blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { EuropaSpiel } from "@/components/lernen/EuropaSpiel";
+import { europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -61,6 +62,20 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
         zurueck={von === "start" ? `/lernen/${token}` : undefined}
         themaLink={`/lernen/${token}/spiel?modus=wort${von === "start" ? "&von=start" : ""}&thema=`}
         arenaLink={`/lernen/${token}/arena`}
+      />
+    );
+  }
+  // Europa (lib/europa.ts): für alle
+  if (modus === "europa" || gewuenscht === "europa") {
+    return (
+      <EuropaSpiel
+        token={token}
+        serie={serie(student.id, heute)}
+        sitzt={europaSitzt(student.id)}
+        rekorde={europaRekorde(student.id)}
+        eigeneVerwechsler={europaVerwechsler(student.id).length}
+        grund={europaWahl(student, heute).grund}
+        zurueck={von === "start" ? `/lernen/${token}` : undefined}
       />
     );
   }
