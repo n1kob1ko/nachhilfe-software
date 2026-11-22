@@ -4,6 +4,7 @@ import { ChevronRight, Presentation } from "lucide-react";
 import { notFound } from "next/navigation";
 import { SubjectArt } from "@/components/Art";
 import { AppHinweis } from "@/components/AppHinweis";
+import { EigeneTestsTeaser } from "@/components/lernen/EigeneTestsTeaser";
 import { Hausuebungen } from "@/components/lernen/Hausuebungen";
 import { ArenaTeaser } from "@/components/lernen/ArenaTeaser";
 import { LernspielTeaser } from "@/components/lernen/LernspielTeaser";
@@ -101,6 +102,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
       )}
 
       <Hausuebungen studentId={student.id} token={token} />
+
+      {/* Tests, die die Lehrkraft freigeschaltet hat (lib/eigene-tests.ts) */}
+      <EigeneTestsTeaser student={student} token={token} />
 
       {/* Lernspiel zum aktuellen Stoff (lib/lernspiele.ts): nach dem, was offen ist */}
       {/* alle Spiele und die Duelle stehen im Tab „Spiele“; hier nur das passende Spiel und ein Duell, das wartet */}
