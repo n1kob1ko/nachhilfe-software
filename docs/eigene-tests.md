@@ -14,13 +14,13 @@ geprüft am Server, das Ergebnis bei der Lehrkraft statt in Discord.
 | Aktionen | `app/eigene-test-actions.ts` |
 | Schüler-App: Test | `app/lernen/[token]/test/[key]/page.tsx`, `components/lernen/EigenerTest.tsx` |
 | Schüler-App: Karte auf Start und unter Prüfungen | `components/lernen/EigeneTestsTeaser.tsx` |
-| Lehrkraft: Profil › Lernverlauf › „Tests in der App“ | `components/EigeneTestsProfil.tsx` |
+| Lehrkraft: Profil › „Übungen & Verlauf“ › „Tests in der App“ (ganz oben) | `components/EigeneTestsProfil.tsx` |
 | Lehrkraft: eine Abgabe | `app/(tutor)/schueler/[id]/test/[abgabeId]/page.tsx`, `components/TestLehrerPunkte.tsx` |
 | Tests | `lib/eigene-tests.test.ts` |
 
 ## Ablauf
 
-1. Schülerprofil › **Lernverlauf** › „Tests in der App“ › **Für Max freischalten**. „Zurücknehmen“ nimmt ihn aus der
+1. Schülerprofil › **Übungen & Verlauf** › „Tests in der App“ (ganz oben) › **Für Max freischalten**. „Zurücknehmen“ nimmt ihn aus der
    App; Abgaben bleiben. Der Testschüler unter Mehr › Spiele testen sieht alle Tests, zum Ausprobieren.
 2. Der Schüler sieht den Test auf **Start** und unter **Prüfungen** („etwa 40 Minuten · noch nicht gemacht“). Alle Fragen
    stehen untereinander; die Antworten bleiben bis zum Abgeben auf dem Gerät (localStorage), ein Neuladen verliert nichts.
