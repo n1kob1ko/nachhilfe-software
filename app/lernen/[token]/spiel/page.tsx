@@ -6,6 +6,7 @@ import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
 import { BlattSpiel } from "@/components/lernen/BlattSpiel";
 import { EuropaSpiel } from "@/components/lernen/EuropaSpiel";
 import { europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { offenesBlockwerk } from "@/lib/blockwerk-stand";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -16,9 +17,9 @@ import { analyzeStudent } from "@/lib/service";
  * gespielt wird über der Seite (components/lernen/Lernspiel.tsx). Das Kreuz führt zum Tab „Spiele“, mit `?von=start`
  * (Karte auf dem Start) zurück zum Start.
  */
-export default async function SpielSeite({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ art?: string; von?: string; modus?: string; thema?: string; teil?: string }> }) {
+export default async function SpielSeite({ params, searchParams }: { params: Promise<{ token: string }>; searchParams: Promise<{ art?: string; von?: string; modus?: string; thema?: string; teil?: string; weiter?: string }> }) {
   const { token } = await params;
-  const { art: gewuenscht, von, modus, thema, teil } = await searchParams;
+  const { art: gewuenscht, von, modus, thema, teil, weiter } = await searchParams;
   const student = repo.getStudentByToken(token);
   if (!student) notFound();
   const heute = wienerDatum();
@@ -119,6 +120,8 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
   const brett = modus === "bloecke" || modus === "funkel" || modus === "tor" ? modus : undefined;
   const passt = (a: SpielArt) => (brett === "tor" ? torTauglich(a) : hatEndlos(a));
   const art = istSpielArt(gewuenscht) && (!brett || passt(gewuenscht)) ? gewuenscht : brett ? (vorschlaege.find((v) => passt(v.art))?.art ?? vorschlaege[0].art) : vorschlaege[0].art;
+  // Blockwerk: ein angefangenes Spiel zum Weiterspielen (lib/blockwerk-stand.ts)
+  const offen = brett === "bloecke" ? offenesBlockwerk(student.id) : null;
   return (
     <Lernspiel
       key={`${art}-${modus ?? ""}`}
@@ -141,6 +144,8 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       bloeckeLink={`/lernen/${token}/spiel?modus=bloecke${von === "start" ? "&von=start" : ""}&art=`}
       funkelLink={`/lernen/${token}/spiel?modus=funkel${von === "start" ? "&von=start" : ""}&art=`}
       torLink={`/lernen/${token}/spiel?modus=tor${von === "start" ? "&von=start" : ""}&art=`}
+      blockOffen={offen ? { art: offen.art, punkte: offen.punkte } : null}
+      weiter={weiter === "1"}
     />
   );
 }

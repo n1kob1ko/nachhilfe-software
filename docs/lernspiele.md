@@ -383,8 +383,9 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   solange etwas fliegt), Regen bei Fieber, leerem Brett und Rekord. Das Brett wackelt bei zwei und mehr Linien, große
   Wörter („Super!“, „Stark!“, „Wahnsinn!“), die Punkte erscheinen dort, wo das Teil lag, und zählen oben hoch. Bei
   „weniger Bewegung“ fliegt und wackelt nichts.
-- **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; drei
-  richtige Antworten laden einen neuen (die drei Punkte am Knopf), **höchstens einer** (seit 2026-11-18, niko:
+- **Blitz**: räumt 3 × 3 Felder frei (Knopf oben rechts, dann aufs Feld tippen). Man beginnt mit einem; **fünf**
+  richtige Antworten laden einen neuen (die fünf Punkte am Knopf; bis 2026-11-22 drei, niko: „noch zu leicht … erst
+  blitze bei 5“), **höchstens einer** (seit 2026-11-18, niko:
   „blockwerk ist zu leicht … max 1 blitz“; davor drei). Wer einen hat, spart nicht weiter an. Zuerst gab jede
   richtige Antwort einen Blitz; im Test endete dann kein Spiel mehr.
 - **Strafen** (niko 2026-11-18: „blockwerk ist zu leicht … mehr punishing“, gewählt Ideen 1, 3, 5):
@@ -395,6 +396,14 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
     als Antwort ohne Wahl) und es geht weiter wie nach einem Fehler, also auch mit Schutt. Karten auf eigenem
     Bildschirm (Satzbau, Zahlenstrahl) haben keine Zeit.
   - **Rettungsfrage nur einmal je Spiel**: steckt man danach wieder ohne Blitz, ist das Spiel aus.
+- **Weiterspielen** (niko 2026-11-22: „was wenn ein schüler die runde nicht beendet aber gehen muss“,
+  `lib/blockwerk-stand.ts`): nach jedem Zug und jeder Antwort geht der Stand (Brett, Teile, Punkte, Blitz, Fieber, die
+  offene Frage und die laufende Runde mit ihren Antworten) kurz danach an den Server, sofort, wenn die App in den
+  Hintergrund geht oder das Kreuz gedrückt wird. Er liegt an der ersten Runde des Spiels (`spielrunden.brett_stand`).
+  Beim nächsten Öffnen zeigt Blockwerk „Weiterspielen · 1 720 Punkte“ und „Neues Spiel“; kommen die Fragen aus einem
+  anderen Spiel, führt der Knopf dorthin (`&weiter=1`). „Neues Spiel“ beendet das angefangene mit seinen Punkten
+  (Rekord und Bestenliste zählen sie). Angefangene Spiele bleiben 14 Tage (andere offene Runden nur bis morgen). Eine
+  schon falsch beantwortete offene Frage bleibt falsch. Nur in der Schüler-App, nicht am Tablet in der Einheit.
 - **Ende**: passt kein Teil mehr, wird der Blitz scharf gestellt. Ohne Blitz kommt eine **Rettungsfrage** (einmal je
   Spiel): richtig gibt einen Blitz, falsch beendet das Spiel. Am Ende: Punkte gegen Rekord, wie viele Fragen beim ersten Versuch
   richtig waren, der Lernstand des Spiels und „Kommt nächstes Mal wieder“.

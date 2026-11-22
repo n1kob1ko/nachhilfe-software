@@ -4,9 +4,10 @@ import "./lernspiel.css";
 import "./arena.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Music, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
+import { BookOpen, CalendarDays, Check, Play, ChevronLeft, ChevronRight, Flame, Heart, Infinity as Endlos, Lightbulb, Star, Music, Trophy, TrendingUp, Volume2, VolumeX, X } from "lucide-react";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type ReactNode } from "react";
-import { spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
+import { blockwerkMerkenAction, blockwerkWeiterAction, spielBeendenAction, spielStartenAction, tabletSpielBeendenAction, tabletSpielStartenAction } from "@/app/lernspiel-actions";
+import type { BlockwerkStand, FeldStand } from "@/lib/blockwerk-stand";
 import { ENDLOS_HERZEN, hatEndlos, REIHE_TRENNER, torTauglich, SPIEL_AUFGABE, SPIEL_DEKO, SPIEL_FACH, SPIEL_FORM, SPIEL_TITEL, sterneFuer, type Bestenliste, type SpielArt, type SpielErgebnis, type SpielForm, type SpielKarte, type SpielStart, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import { eingesetzt, gesetzt, haengt, hinterLuecke, KartenInhalt, ohneStrich, type Stand } from "./KartenInhalt";
 import { LegeFeld } from "./LegeFeld";
@@ -106,6 +107,8 @@ export function Lernspiel({
   torLink,
   bestenliste: bestenlisteAnfang,
   arenaLink,
+  blockOffen,
+  weiter: weiterGleich = false,
 }: {
   /** der geheime Link des Schülers; leer am Tablet */
   token: string;
@@ -144,12 +147,19 @@ export function Lernspiel({
   bestenliste?: Bestenliste;
   /** Liga und Duelle: dort legt der Schüler sein Spielprofil an (fehlt am Tablet) */
   arenaLink?: string;
+  /** Blockwerk: ein angefangenes Spiel zum Weiterspielen (lib/blockwerk-stand.ts), mit dem Spiel, aus dem die Fragen kommen */
+  blockOffen?: { art: SpielArt; punkte: number } | null;
+  /** Blockwerk: das angefangene Spiel gleich weiterspielen (`?weiter=1`) */
+  weiter?: boolean;
 }) {
   const router = useRouter();
   const server = useMemo(
     () => ({
       starten: (endlos?: "neu" | number, brett?: Brett) => (amTablet ? tabletSpielStartenAction(art, endlos, brett) : spielStartenAction(token, art, endlos, brett)),
       beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      // Blockwerk weiterspielen: nur in der Schüler-App (am Tablet gehört das Gerät der Lehrkraft)
+      merken: (stand: BlockwerkStand) => (amTablet ? Promise.resolve(false) : blockwerkMerkenAction(token, stand)),
+      weiter: () => blockwerkWeiterAction(token),
     }),
     [amTablet, token, art],
   );
@@ -212,6 +222,9 @@ export function Lernspiel({
   const blockPunkte = useRef(0);
   // die Frage war schon einmal falsch (dann gibt es keinen Blitz)
   const frageFalsch = useRef(false);
+  // Blockwerk weiterspielen (lib/blockwerk-stand.ts): der gemerkte Stand des Bretts, und ob die offene Frage schon falsch war
+  const [blockAnfang, setBlockAnfang] = useState<{ feld?: FeldStand; n: number }>({ n: 0 });
+  const weiterFalsch = useRef(false);
   // Blockwerk: richtig innerhalb der Zeit der Frage (Bonus am Brett)
   const frageSchnell = useRef(false);
   // Töne an oder aus (klang.ts; das Gerät merkt es sich)
@@ -265,6 +278,7 @@ export function Lernspiel({
     }
     setEndlos(mitEndlos && !mitBrett && !!r.endlos);
     setBrett(mitBrett && r.endlos ? mitBrett : null);
+    setBlockAnfang((a) => ({ n: a.n + 1 }));
     setFrage(null);
     setBlockAntwort(null);
     setBlockStand(0);
@@ -422,7 +436,9 @@ export function Lernspiel({
 
   // Blockwerk: das Brett will eine Frage, zählt Punkte, oder es passt nichts mehr
   const blockFrage = useCallback((f: BlockFrage | FunkelFrage) => {
-    frageFalsch.current = false;
+    // weitergespielt: war die offene Frage schon falsch beantwortet, bleibt sie falsch
+    frageFalsch.current = weiterFalsch.current;
+    weiterFalsch.current = false;
     frageSchnell.current = false;
     setStand(null);
     setFalschGewaehlt([]);
@@ -433,6 +449,125 @@ export function Lernspiel({
     setBlockStand(p);
   }, []);
   const blockEnde = useCallback(() => void endlosEnde(rundeId), [endlosEnde, rundeId]);
+
+  // ---------- Blockwerk merken und weiterspielen (lib/blockwerk-stand.ts) ----------
+  // Nach jedem Zug meldet das Brett seinen Stand; kurz danach (und sofort, wenn die App in den Hintergrund geht oder das
+  // Spiel geschlossen wird) geht er mit der laufenden Runde an den Server.
+  const merkZeile = useRef({ rundeId, reihe, pos });
+  merkZeile.current = { rundeId, reihe, pos };
+  const feldStand = useRef<FeldStand | null>(null);
+  const merkUhr = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const merkeJetzt = useCallback(() => {
+    if (merkUhr.current) clearTimeout(merkUhr.current);
+    merkUhr.current = null;
+    const feld = feldStand.current;
+    const { rundeId: id, reihe: r, pos: p } = merkZeile.current;
+    if (!feld || !id || !r.length) return;
+    const stand: BlockwerkStand = {
+      rundeId: id,
+      reihe: r.map((e) => ({ key: e.karte.key, wiederholung: e.wiederholung })),
+      pos: Math.min(p, r.length - 1),
+      antworten: [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl })),
+      feld,
+    };
+    void server.merken(stand).catch(() => false);
+  }, [server]);
+  const merkeBald = useCallback(() => {
+    if (merkUhr.current) clearTimeout(merkUhr.current);
+    merkUhr.current = setTimeout(merkeJetzt, 700);
+  }, [merkeJetzt]);
+  const blockStandNeu = useCallback(
+    (s: FeldStand | null) => {
+      feldStand.current = s;
+      if (s) merkeBald();
+      else if (merkUhr.current) {
+        // das Spiel ist aus: nichts mehr merken (das Ende löscht den Stand am Server)
+        clearTimeout(merkUhr.current);
+        merkUhr.current = null;
+      }
+    },
+    [merkeBald],
+  );
+  // eine neue Runde (nachgeladen) oder die nächste Karte: auch merken
+  useEffect(() => {
+    if (brett === "bloecke" && phase === "spiel" && feldStand.current) merkeBald();
+  }, [brett, phase, rundeId, pos, merkeBald]);
+  useEffect(() => {
+    if (brett !== "bloecke" || phase !== "spiel") return;
+    const weg = () => {
+      if (document.visibilityState === "hidden" && merkUhr.current) merkeJetzt();
+    };
+    document.addEventListener("visibilitychange", weg);
+    return () => {
+      document.removeEventListener("visibilitychange", weg);
+      // geschlossen (Kreuz): was noch wartet, geht jetzt
+      if (merkUhr.current) merkeJetzt();
+    };
+  }, [brett, phase, merkeJetzt]);
+
+  const weiterspielen = useCallback(async () => {
+    setPhase("laden");
+    setFehler(null);
+    const r = await server.weiter().catch(() => ({ fehler: "Das hat nicht geklappt. Versuch es noch einmal." }));
+    if ("fehler" in r) {
+      setFehler(r.fehler);
+      setPhase("start");
+      return;
+    }
+    const nachKey = new Map(r.karten.map((k) => [k.key, k]));
+    const neueReihe = r.stand.reihe.flatMap((e) => {
+      const karte = nachKey.get(e.key);
+      return karte ? [{ karte, wiederholung: !!e.wiederholung }] : [];
+    });
+    const p = Math.max(0, Math.min(Math.round(r.stand.pos), neueReihe.length - 1));
+    erste.current = new Map(r.stand.antworten.filter((a) => typeof a?.key === "string" && typeof a?.wahl === "string").map((a) => [a.key, a.wahl]));
+    const offen = neueReihe[p]?.karte;
+    const schon = offen ? erste.current.get(offen.key) : undefined;
+    weiterFalsch.current = !!offen && schon !== undefined && schon !== offen.richtig;
+    feldStand.current = r.stand.feld;
+    setEndlos(false);
+    setBrett("bloecke");
+    setBlockAnfang((a) => ({ feld: r.stand.feld, n: a.n + 1 }));
+    setFrage(null);
+    setBlockAntwort(null);
+    setBlockStand(r.stand.feld.punkte);
+    setLaedt(false);
+    blockPunkte.current = r.stand.feld.punkte;
+    frageFalsch.current = false;
+    lauf.current = r.lauf;
+    herzenRef.current = ENDLOS_HERZEN;
+    setHerzen(ENDLOS_HERZEN);
+    setPunkte(0);
+    setDaneben([]);
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
+    comboRef.current = 0;
+    paarGeloest.current = new Set();
+    beschaeftigt.current = false;
+    setRundeId(r.stand.rundeId);
+    setAnzahl(neueReihe.length);
+    setReihe(neueReihe);
+    setPos(p);
+    setStand(null);
+    setFalschGewaehlt([]);
+    setCombo(0);
+    setGeloest(new Set());
+    setZuletzt(null);
+    setErgebnis(null);
+    setVerlauf([]);
+    setInKiste({});
+    setJubel(null);
+    setTreffer(null);
+    setPhase("spiel");
+  }, [server]);
+  // `?weiter=1`: gleich weiterspielen (vom Knopf auf einem anderen Spiel als Fragenquelle)
+  const weiterGestartet = useRef(false);
+  useEffect(() => {
+    if (!weiterGleich || weiterGestartet.current || !blockOffen || blockOffen.art !== art) return;
+    weiterGestartet.current = true;
+    void weiterspielen();
+  }, [weiterGleich, blockOffen, art, weiterspielen]);
 
   // Duell: gleich losspielen; ist die Zeit um, endet die Runde von selbst
   const sofort = !!duell?.sofort;
@@ -843,9 +978,33 @@ export function Lernspiel({
         </div>
         <div className="ls-fuss ls-staffel">
           <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
-            <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, modus)} disabled={phase === "laden"} autoFocus data-testid={`${info.kurz}-start`}>
-              {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
-            </button>
+            {/* Blockwerk: ein angefangenes Spiel geht weiter (lib/blockwerk-stand.ts); ein neues beendet es mit seinen Punkten */}
+            {modus === "bloecke" && blockOffen && !amTablet ? (
+              <>
+                {blockOffen.art === art ? (
+                  <button type="button" className="ls-knopf ls-los ls-weiter" onClick={() => void weiterspielen()} disabled={phase === "laden"} autoFocus data-testid="bw-weiter">
+                    <Play size={20} fill="currentColor" aria-hidden />
+                    <span>{phase === "laden" ? "Brett wird geholt …" : "Weiterspielen"}</span>
+                    <small>{blockOffen.punkte.toLocaleString("de-AT")} Punkte</small>
+                  </button>
+                ) : (
+                  <ZuLink href={`${bloeckeLink}${blockOffen.art}&weiter=1`} className="ls-knopf ls-los ls-weiter" data-testid="bw-weiter">
+                    <Play size={20} fill="currentColor" aria-hidden />
+                    <span>Weiterspielen</span>
+                    <small>
+                      {blockOffen.punkte.toLocaleString("de-AT")} Punkte · {SPIEL_TITEL[blockOffen.art]}
+                    </small>
+                  </ZuLink>
+                )}
+                <button type="button" className="ls-knopf ls-los" data-zweit="" onClick={() => void starten(false, modus)} disabled={phase === "laden"} data-testid={`${info.kurz}-start`}>
+                  Neues Spiel
+                </button>
+              </>
+            ) : (
+              <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, modus)} disabled={phase === "laden"} autoFocus data-testid={`${info.kurz}-start`}>
+                {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -1337,7 +1496,20 @@ export function Lernspiel({
       {kopf}
       {duell?.leiste}
       {brett === "bloecke" && <BlockMusik />}
-      {brett === "bloecke" && <BlockFeld aktiv={!frage || imBrett} frage={brettFrage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={bloeckeRekord} />}
+      {brett === "bloecke" && (
+        <BlockFeld
+          key={blockAnfang.n}
+          aktiv={!frage || imBrett}
+          frage={brettFrage}
+          antwort={blockAntwort}
+          onFrage={blockFrage}
+          onPunkte={blockPunkteNeu}
+          onEnde={blockEnde}
+          rekord={bloeckeRekord}
+          anfang={blockAnfang.feld}
+          onStand={amTablet ? undefined : blockStandNeu}
+        />
+      )}
       {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
       {brett === "tor" && <TorLauf karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} />}
       {(!bloecke || (frage && !imBrett)) && inhalt}
