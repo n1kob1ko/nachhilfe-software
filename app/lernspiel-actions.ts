@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
@@ -65,6 +65,13 @@ export async function blattStartenAction(token: string, modus: "kacheln" | "schr
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   return blattStarten(student, modus, alle);
+}
+
+/** Europa (lib/europa.ts): Üben, wie im Test, großer Test, Rennen oder Verwechsler; dazu Thema und Region. */
+export async function europaStartenAction(token: string, wunsch: EuropaWunsch): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return europaStarten(student, wunsch);
 }
 
 /** `o.teil`: das Ende eines Endlos- oder Blockwerk-Spiels; es zählen nur die beantworteten Karten. `o.punkte`: die Punkte im Blockwerk. */
@@ -135,6 +142,12 @@ export async function tabletBlattStartenAction(modus: "kacheln" | "schreiben", a
   return blattStarten(student, modus, alle);
 }
 
+export async function tabletEuropaStartenAction(wunsch: EuropaWunsch): Promise<SpielStart> {
+  const student = await tabletSchueler();
+  if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
+  return europaStarten(student, wunsch);
+}
+
 export async function tabletSpielBeendenAction(rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number } = {}): Promise<SpielErgebnis> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
@@ -150,6 +163,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   if (art === "wort") return wortStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   if (art === "blatt") return blattStarten(student, "kacheln");
+  if (art === "europa") return europaStarten(student, { modus: "ueben" });
   if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
@@ -210,6 +224,26 @@ function blattStarten(student: repo.Student, modus: "kacheln" | "schreiben", all
   return runde;
 }
 
+/** Europa: was jetzt sitzt; nach einem Rennen der beste Stand davor (ohne dieses Rennen). */
+function europaErgebnis(studentId: number, rundeId: number, lauf: number | null) {
+  const rennen = lauf === rundeId ? europaRennenThema(studentId, rundeId) : null;
+  return { sitzt: europaSitzt(studentId), rekord: rennen ? { thema: rennen, vorher: europaRekorde(studentId, rundeId)[rennen] } : undefined };
+}
+
+const EUROPA_MODI = ["ueben", "test", "gross", "rennen", "verwechsler"] as const;
+const EUROPA_THEMEN = ["lage", "hauptstadt", "flagge", "alles"] as const;
+const EUROPA_REGIONEN = ["nord", "west", "mitte", "sued", "suedost", "ost"] as const;
+
+function europaStarten(student: repo.Student, w: EuropaWunsch): SpielStart {
+  // nur bekannte Werte (die Aktion ist öffentlich)
+  const modus = EUROPA_MODI.find((m) => m === w?.modus) ?? "ueben";
+  const thema = EUROPA_THEMEN.find((t) => t === w?.thema);
+  const region = EUROPA_REGIONEN.find((r) => r === w?.region);
+  const runde = starteRunde(student, "europa", { europa: { modus, thema, region }, endlos: modus === "rennen" ? "neu" : undefined });
+  if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
+  return runde;
+}
+
 function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort[], o: { teil?: boolean; punkte?: number }): SpielErgebnis {
   const zeile = rundenSkill(student.id, Number(rundeId));
   // Blockwerk, Funkelfeld, Glasklar und Wortschloss: die Punkte kommen mit dem Ende des Spiels (und nur dann zählt ein Rekord)
@@ -241,6 +275,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     wort: zeile?.endlos && spiel === "wort" ? { rekord: punkteRekord(student.id, "wort", zeile.endlos), woerter: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "wort") : undefined } : undefined,
     phantom: zeile?.endlos && spiel === "phantom" ? { rekord: punkteRekord(student.id, "phantom", zeile.endlos), merkmale: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "phantom") : undefined } : undefined,
     blatt: zeile?.art === "blatt" ? { sicher: sichereBlaetter(student.id) } : undefined,
+    europa: zeile?.art === "europa" ? europaErgebnis(student.id, Number(rundeId), zeile.endlos) : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
 }

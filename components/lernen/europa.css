@@ -1,0 +1,727 @@
+/*
+ * Europa (components/lernen/EuropaSpiel.tsx, EuropaKarte.tsx): Bühne in Meeresblau-Türkis statt Blau, die Karte als
+ * helles Blatt wie ein Schulatlas (auch im dunklen Modus hell, damit die Farben der Länder gleich bleiben). Kacheln,
+ * Knöpfe und Hilfe-Blatt von Phantombild und Blätter bestimmen, damit alle Spiele gleich zu bedienen sind.
+ */
+
+.ls.eu {
+  --eu-meer: #bfe1f4;
+  --eu-land: #fbf7ec;
+  --eu-grenze: #a89c80;
+  --eu-umland: #e2ddd0;
+  --eu-markiert: #ffb21f;
+  --eu-richtig: #28b86a;
+  --eu-falsch: #ec4a3e;
+  --eu-erobert: #2fae6c;
+  --eu-teil: #bfe6cb;
+  --eu-gewaehlt: #ffc93c;
+  background:
+    radial-gradient(110% 60% at 88% -4%, rgba(150, 240, 230, 0.55), rgba(150, 240, 230, 0) 60%),
+    radial-gradient(70% 45% at -10% 62%, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0) 70%),
+    linear-gradient(180deg, #23a2bd 0%, #167a98 48%, #0d4a66 100%);
+}
+:root[data-theme="dark"] .ls.eu {
+  background:
+    radial-gradient(110% 60% at 88% -4%, rgba(90, 200, 200, 0.3), rgba(90, 200, 200, 0) 60%),
+    linear-gradient(180deg, #17708a 0%, #0f4e66 48%, #082c3d 100%);
+}
+.eu .ls-mitte > * {
+  flex-shrink: 0;
+}
+.eu .pb-wahl-knopf > svg {
+  color: #167a98;
+}
+.eu .ls-knopf {
+  color: #136a85;
+  box-shadow: 0 6px 0 #a9d6e3;
+}
+.eu .ls-knopf[data-zweit] {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+.eu .ls-knopf:disabled {
+  opacity: 0.55;
+}
+
+/* ---------- Karte ---------- */
+
+.eu-karte {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1000 / 820;
+  flex: 0 1 auto;
+  min-height: 170px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: var(--eu-meer);
+  box-shadow: 0 20px 40px -18px rgba(4, 30, 45, 0.85);
+}
+.eu-karte svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.eu-karte[data-klein] {
+  border-radius: 12px;
+  box-shadow: none;
+  min-height: 0;
+}
+.eu-karte[data-klein] svg {
+  touch-action: auto;
+  pointer-events: none;
+}
+.eu-meer {
+  fill: var(--eu-meer);
+}
+.eu-umland {
+  fill: var(--eu-umland);
+  stroke: #f4f1e8;
+  stroke-width: 0.6px;
+}
+.eu-laender path {
+  fill: var(--eu-land);
+  stroke: var(--eu-grenze);
+  stroke-width: 0.7px;
+  stroke-linejoin: round;
+  transition: fill 220ms ease;
+}
+.eu-karte[data-klickbar] .eu-laender path {
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  .eu-karte[data-klickbar] .eu-laender path:not([data-zustand]):hover {
+    fill: #fff0c4;
+  }
+}
+.eu-laender path[data-zustand="teil"] {
+  fill: var(--eu-teil);
+}
+.eu-laender path[data-zustand="erobert"] {
+  fill: var(--eu-erobert);
+}
+.eu-laender path[data-zustand="markiert"],
+.eu-laender path[data-zustand="gewaehlt"] {
+  fill: var(--eu-markiert);
+  stroke: #8a5600;
+  stroke-width: 1.4px;
+  animation: eu-leuchten 1.4s ease-in-out infinite;
+}
+.eu-laender path[data-zustand="gewaehlt"] {
+  fill: var(--eu-gewaehlt);
+  animation: none;
+}
+.eu-laender path[data-zustand="richtig"] {
+  fill: var(--eu-richtig);
+  stroke: #0f6a3a;
+  stroke-width: 1.4px;
+}
+.eu-laender path[data-zustand="falsch"] {
+  fill: var(--eu-falsch);
+  stroke: #8a1d16;
+  stroke-width: 1.4px;
+}
+.eu-laender path[data-zustand="loesung"] {
+  fill: var(--eu-richtig);
+  stroke: #0f6a3a;
+  stroke-width: 1.6px;
+  animation: eu-blinken 0.9s ease-in-out 3;
+}
+@keyframes eu-leuchten {
+  50% {
+    fill: #ffd36b;
+  }
+}
+@keyframes eu-blinken {
+  50% {
+    fill: #9be6b9;
+  }
+}
+
+/* sehr kleine Länder: ein Kreis, der beim Zoomen gleich groß bleibt */
+.eu-kreis circle:first-child {
+  fill: rgba(251, 247, 236, 0.75);
+  stroke: #7a6e52;
+  stroke-width: 1.5px;
+}
+.eu-kreis[data-zustand="teil"] circle:first-child {
+  fill: var(--eu-teil);
+}
+.eu-kreis[data-zustand="erobert"] circle:first-child {
+  fill: var(--eu-erobert);
+}
+.eu-kreis[data-zustand="markiert"] circle:first-child,
+.eu-kreis[data-zustand="gewaehlt"] circle:first-child {
+  fill: var(--eu-markiert);
+  stroke: #8a5600;
+  stroke-width: 2.5px;
+}
+.eu-kreis[data-zustand="richtig"] circle:first-child,
+.eu-kreis[data-zustand="loesung"] circle:first-child {
+  fill: var(--eu-richtig);
+  stroke: #0f6a3a;
+  stroke-width: 2.5px;
+}
+.eu-kreis[data-zustand="falsch"] circle:first-child {
+  fill: var(--eu-falsch);
+  stroke: #8a1d16;
+  stroke-width: 2.5px;
+}
+.eu-kreis-treffer {
+  fill: transparent;
+  cursor: pointer;
+}
+.eu-name {
+  font-family: var(--font-display);
+  font-weight: 800;
+  fill: #2a3326;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 3px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.eu-stadt circle {
+  fill: #fff;
+  stroke: #1b2a22;
+  stroke-width: 2px;
+}
+.eu-stadt text {
+  font-family: var(--font-display);
+  font-weight: 800;
+  fill: #1b2a22;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 4px;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+.eu-stadt {
+  animation: eu-stadt-rein 320ms var(--ls-ease-out) both;
+}
+@keyframes eu-stadt-rein {
+  from {
+    opacity: 0;
+  }
+}
+
+.eu-zoom {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+  display: grid;
+  gap: 6px;
+}
+.eu-zoom-knopf {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #134a5e;
+  box-shadow: 0 4px 10px -4px rgba(4, 30, 45, 0.6);
+  transition: transform 140ms var(--ls-ease-out);
+}
+.eu-zoom-knopf:active:not(:disabled) {
+  transform: scale(0.94);
+}
+.eu-zoom-knopf:disabled {
+  opacity: 0.45;
+}
+
+/* ---------- Start ---------- */
+
+.eu-sammlung {
+  display: block;
+  width: 100%;
+  transition: transform 160ms var(--ls-ease-out);
+}
+button.eu-sammlung:active {
+  transform: scale(0.98);
+}
+.eu-sammlung-zahlen {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--ls-on-2);
+}
+.eu-sammlung-zahlen b {
+  color: var(--ls-on);
+  font-size: 15px;
+}
+
+.eu-regionen {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  margin-inline: -20px;
+  padding: 2px 20px 6px;
+  scrollbar-width: none;
+}
+.eu-regionen::-webkit-scrollbar {
+  display: none;
+}
+.eu-region {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  border: 1px solid var(--ls-glas-linie);
+  color: var(--ls-on);
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.eu-region[aria-checked="true"] {
+  background: #fff;
+  color: #136a85;
+  border-color: #fff;
+}
+
+.eu-unterwahl {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 10px;
+}
+.eu-unterwahl[data-vier] {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.eu-unterknopf {
+  display: flex;
+  min-height: 48px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  border-radius: 12px;
+  border: 2px solid var(--line);
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.15;
+  transition: transform 140ms var(--ls-ease-out);
+}
+.eu-unterknopf:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.eu-unterknopf small {
+  margin-top: 1px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+/* ---------- Spiel ---------- */
+
+/* im Spiel füllt die Karte den freien Platz (hochkant: Rand zeigt echtes Land) */
+.eu-spiel > .eu-karte {
+  flex: 1 1 auto;
+  aspect-ratio: auto;
+  min-height: 220px;
+}
+
+.eu-spiel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto;
+  padding: 4px 14px 14px;
+}
+.eu-unten {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 10px;
+  animation: ls-hoch 260ms var(--ls-ease-out) both;
+}
+.eu-frage-zeile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.eu-frage {
+  font-size: 20px;
+  line-height: 1.25;
+}
+.eu-auftrag {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-body, inherit);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+.eu-flagge-gross {
+  flex-shrink: 0;
+  height: clamp(64px, 12dvh, 120px);
+  aspect-ratio: 4 / 3;
+  border-radius: 8px;
+  object-fit: cover;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.12),
+    0 12px 24px -12px rgba(4, 30, 45, 0.9);
+  animation: eu-flagge-rein 360ms var(--ls-ease-out) both;
+}
+.eu-frage-zeile:has(.eu-flagge-gross) .eu-frage {
+  text-align: left;
+  font-size: 18px;
+}
+@keyframes eu-flagge-rein {
+  from {
+    opacity: 0;
+    transform: translateY(8px) rotate(-4deg) scale(0.9);
+  }
+}
+.eu-antwort {
+  min-height: 58px;
+  padding: 8px 10px;
+}
+.eu-antwort-wort {
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.eu-antwort-wort[data-lang] {
+  font-size: 15px;
+}
+.eu .pb-antwort[data-richtig] {
+  outline-color: #7ef0a8;
+}
+.eu-flaggen-knopf {
+  position: relative;
+  padding: 6px;
+  min-height: 0;
+}
+.eu-flaggen-knopf img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 14dvh;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.eu-flaggen-name {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  translate: -50% 0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+  box-shadow: 0 4px 10px -4px rgba(0, 0, 0, 0.5);
+}
+.eu-schreiben .bl-pruefen {
+  color: #136a85;
+}
+.eu-gut {
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  color: #b9ffd4;
+  animation: ls-hoch 220ms var(--ls-ease-out) both;
+}
+.eu-gut[data-falsch] {
+  color: #ffd0c8;
+}
+
+/* Rennen */
+.eu-uhr i {
+  transition: width 200ms linear;
+}
+.eu-uhr[data-knapp] i {
+  background: #ff8a7a;
+}
+.eu-countdown {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: grid;
+  place-items: center;
+  background: rgba(4, 30, 45, 0.45);
+  pointer-events: none;
+}
+.eu-countdown b {
+  font-family: var(--font-display);
+  font-size: 120px;
+  font-weight: 800;
+  color: #fff;
+  animation: eu-zahl 900ms var(--ls-ease-out) both;
+}
+@keyframes eu-zahl {
+  from {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.eu-rennen-ende {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin-top: 16px;
+}
+.eu-rennen-zahl {
+  font-family: var(--font-display);
+  font-size: 96px;
+  font-weight: 800;
+  line-height: 1;
+  color: #fff;
+}
+.eu-rekord {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  font-size: 15px;
+  font-weight: 700;
+}
+.eu-rekord[data-neu] {
+  background: rgba(255, 211, 77, 0.22);
+  color: #ffe38a;
+}
+
+/* Note beim großen Test */
+.eu-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px auto 0;
+  padding: 6px 18px 6px 8px;
+  border-radius: 999px;
+  background: #fff;
+  color: #136a85;
+}
+.eu-note b {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background: #28b86a;
+  color: #fff;
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 800;
+}
+.eu-note[data-note="3"] b,
+.eu-note[data-note="4"] b {
+  background: #f3b51c;
+}
+.eu-note[data-note="5"] b {
+  background: #ec4a3e;
+}
+.eu-note span {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.eu-erobert-neu {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-inline: auto;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(126, 240, 168, 0.2);
+  color: #c8ffdc;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* Hilfe nach einem Fehler: die Karte bleibt oben sichtbar */
+.ls > div.eu-hilfe {
+  background: linear-gradient(to top, rgba(4, 30, 45, 0.5), rgba(4, 30, 45, 0));
+}
+.eu-hilfe .bl-merkmal {
+  border-left-color: #167a98;
+}
+.eu-flaggen-vergleich {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.eu-flaggen-vergleich figure {
+  margin: 0;
+  text-align: center;
+}
+.eu-flaggen-vergleich img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  outline: 3px solid var(--eu-richtig);
+}
+.eu-flaggen-vergleich figure[data-falsch] img {
+  outline-color: var(--eu-falsch);
+  opacity: 0.85;
+}
+.eu-flaggen-vergleich figcaption {
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+/* Ende: was daneben ging */
+.eu-daneben {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 10px;
+}
+.eu-daneben li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.eu-daneben img {
+  width: 48px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.eu-daneben span {
+  display: grid;
+  min-width: 0;
+  line-height: 1.25;
+}
+.eu-daneben b {
+  font-size: 15px;
+}
+.eu-daneben small {
+  font-size: 13px;
+  opacity: 0.8;
+  overflow-wrap: break-word;
+}
+
+/* Erkunden */
+.eu-steckbrief {
+  display: flex;
+  gap: 14px;
+  padding: 14px;
+  animation: ls-hoch 220ms var(--ls-ease-out) both;
+}
+.eu-flagge-klein {
+  width: 72px;
+  height: 54px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  object-fit: cover;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.12);
+}
+.eu-steckbrief-name {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.15;
+}
+.eu-steckbrief-stadt {
+  font-size: 16px;
+  font-weight: 700;
+}
+.ls-klein-dunkel {
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+.eu-punkte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.eu-punkte span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1.5px solid var(--line);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.eu-punkte span[data-an] {
+  border-color: var(--eu-richtig);
+  background: var(--eu-richtig);
+  color: #fff;
+}
+.eu-hinweis {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+.eu-knopf-klein {
+  min-height: 50px;
+  font-size: 16px;
+}
+
+/* Tablet und Laptop quer: Karte links, Frage rechts */
+@media (min-width: 760px) and (min-aspect-ratio: 1/1) {
+  .eu-spiel {
+    max-width: 1180px;
+    flex-direction: row;
+    align-items: stretch;
+    gap: 24px;
+  }
+  .eu-spiel > .eu-karte {
+    flex: 1.7;
+    aspect-ratio: auto;
+    height: auto;
+  }
+  .eu-unten {
+    flex: 1;
+    justify-content: center;
+    max-width: 420px;
+  }
+  .eu-antworten:not(.eu-flaggen) {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* niedrige Schirme (Handy quer, Tastatur offen): kleinere Flagge */
+@media (max-height: 560px) {
+  .eu-flagge-gross {
+    height: 56px;
+  }
+  .eu-frage {
+    font-size: 17px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .eu-laender path,
+  .eu-laender path[data-zustand="markiert"],
+  .eu-laender path[data-zustand="loesung"],
+  .eu-flagge-gross,
+  .eu-unten,
+  .eu-stadt,
+  .eu-countdown b,
+  .eu-steckbrief {
+    animation: none;
+    transition: none;
+  }
+}

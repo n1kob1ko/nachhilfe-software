@@ -48,7 +48,9 @@ export type View =
   // Phantombild (lib/phantombild.ts): Fall lösen oder „Text lernen“
   | { kind: "phantom"; teil: "fall" | "text" }
   // Blätter bestimmen (lib/blaetter.ts)
-  | { kind: "blatt" };
+  | { kind: "blatt" }
+  // Europa (lib/europa.ts)
+  | { kind: "europa" };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
@@ -62,6 +64,7 @@ export function parseView(raw: string): View {
   const ph = /^phantom:(fall|text)$/.exec(raw);
   if (ph) return { kind: "phantom", teil: ph[1] as "fall" | "text" };
   if (raw === "blatt") return { kind: "blatt" };
+  if (raw === "europa") return { kind: "europa" };
   const b = /^bloecke:([a-z]+)$/.exec(raw);
   if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const f = /^funkel:([a-z]+)$/.exec(raw);
@@ -76,7 +79,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : v.kind === "phantom" ? `phantom:${v.teil}` : v.kind === "blatt" ? "blatt" : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : v.kind === "phantom" ? `phantom:${v.teil}` : v.kind === "blatt" ? "blatt" : v.kind === "europa" ? "europa" : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -369,7 +372,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     current,
     text: textNow,
     praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
-    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : view.kind === "phantom" ? { titel: view.teil === "text" ? "Phantombild: Text lernen" : SPIEL_TITEL.phantom } : view.kind === "blatt" ? { titel: SPIEL_TITEL.blatt } : null,
+    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : view.kind === "phantom" ? { titel: view.teil === "text" ? "Phantombild: Text lernen" : SPIEL_TITEL.phantom } : view.kind === "blatt" ? { titel: SPIEL_TITEL.blatt } : view.kind === "europa" ? { titel: SPIEL_TITEL.europa } : null,
     answers,
     ai: aiLiveState(unit.id),
   };

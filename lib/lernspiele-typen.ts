@@ -48,8 +48,9 @@
 import type { PhantomDaten } from "./phantombild";
 import type { VorlageDaten } from "./phantom-vorlage";
 import type { BlattDaten } from "./blaetter";
+import type { EuropaDaten, LandStand, Teil } from "./europa";
 
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -57,7 +58,7 @@ export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" 
  * Spiele mit eigenem Spielfeld, die nicht bei den Fächern stehen: Glasklar, Wortschloss und Phantombild (mit „Text
  * lernen“). Sie haben eine eigene Kachel im Tab „Spiele“, kein Duell und kein Blockwerk.
  */
-export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt"];
+export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
 export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter((a) => a !== "stoff" && a !== "fehler" && !EIGENES_FELD.includes(a));
 export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && x !== "stoff" && x !== "fehler" && !EIGENES_FELD.includes(x);
@@ -90,6 +91,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   phantom: "Phantombild",
   vorlage: "Text lernen",
   blatt: "Blätter bestimmen",
+  europa: "Europa",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -126,6 +128,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   vorlage: "Dein Stoff",
   // Blätter bestimmen (lib/blaetter.ts) hat eine eigene Kachel
   blatt: "Dein Stoff",
+  // Europa (lib/europa.ts) hat eine eigene Kachel
+  europa: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -157,6 +161,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   phantom: "Lies die Zeugenaussage und bau das Gesicht",
   vorlage: "Lern deine Personenbeschreibung auswendig",
   blatt: "Welche Pflanze, welche Familie?",
+  europa: "Länder, Hauptstädte und Flaggen",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -188,6 +193,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   phantom: ["blond", "oval", "Brille"],
   vorlage: ["Er", "hat", "trägt"],
   blatt: ["Ahorn", "Linde", "Eiche"],
+  europa: ["Wien", "Paris", "Rom"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -219,6 +225,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   phantom: "Bau die Person aus der Zeugenaussage.",
   vorlage: "Setz die fehlenden Wörter ein.",
   blatt: "Welche Pflanze ist das, und zu welcher Familie gehört sie?",
+  europa: "Wo liegt das Land, wie heißt die Hauptstadt, welche Flagge hat es?",
 };
 
 /**
@@ -311,6 +318,8 @@ export type SpielKarte = {
   vorlage?: VorlageDaten;
   /** Nur „Blätter bestimmen“ (lib/blaetter.ts): welches Blatt, ob Name oder Familie gefragt ist, das Bild */
   blatt?: BlattDaten;
+  /** Nur „Europa“ (lib/europa.ts): welches Land, welcher Teil, wie gefragt und geantwortet wird */
+  europa?: EuropaDaten;
 };
 
 /**
@@ -392,6 +401,8 @@ export type SpielErgebnis =
       phantom?: { rekord: number; merkmale: number; bestenliste?: Bestenliste };
       /** Blätter bestimmen: die Nummern der Blätter, die jetzt sicher sind (lib/blaetter.ts blattStand) */
       blatt?: { sicher: number[] };
+      /** Europa: je Land die Teile, die jetzt sitzen; beim Rennen der beste Stand davor */
+      europa?: { sitzt: LandStand; rekord?: { thema: Teil; vorher: number } };
     }
   | { fehler: string };
 
