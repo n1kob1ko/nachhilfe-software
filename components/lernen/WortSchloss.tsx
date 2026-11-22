@@ -13,7 +13,8 @@ import { spielBeendenAction, tabletSpielBeendenAction, tabletWortStartenAction, 
 import type { Bestenliste, SpielErgebnis, SpielKarte, SpielStart } from "@/lib/lernspiele-typen";
 import { bewerte, ersteWahl, gross, tastatur, tastenFarben, WORT_HERZEN, WORT_PUNKTE, WORT_VERSUCHE, wortPunkte, type Farbe } from "@/lib/wortschloss";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
-import { vibriere } from "./SpielTeile";
+import { Abriss, vibriere } from "./SpielTeile";
+import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
  * Wortschloss (lib/wortschloss.ts, docs/lernspiele.md „Wortschloss“): oben der Hinweis, darunter das Schloss mit sechs
@@ -64,8 +65,8 @@ export function WortSchloss({
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (lauf?: number) => (amTablet ? tabletWortStartenAction(thema, lauf) : wortStartenAction(token, thema, lauf)),
-      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      starten: (lauf?: number, pausen?: number[]): Promise<SpielStart> => sicher(() => (amTablet ? tabletWortStartenAction(thema, lauf) : wortStartenAction(token, thema, lauf)), pausen),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }): Promise<SpielErgebnis> => sicher(() => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o))),
     }),
     [amTablet, token, thema],
   );
@@ -75,6 +76,8 @@ export function WortSchloss({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [fehler, setFehler] = useState<string | null>(null);
+  // die nächste Stufe kam auch nach mehreren Versuchen nicht (Deploy, kein Netz): anhalten, „Neu laden“ (lib/verbindung.ts)
+  const [abgerissen, setAbgerissen] = useState(false);
   const [stufe, setStufe] = useState<Stufe | null>(null);
   // das wievielte Wort der Stufe, die fertigen Reihen und was gerade getippt wird
   const [pos, setPos] = useState(0);
@@ -187,9 +190,15 @@ export function WortSchloss({
       if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
       if (!("fehler" in e)) setRichtigGesamt((n) => n + e.richtig);
     });
-    const r = await (vorrat.current ?? server.starten(lauf.current ?? undefined));
+    let r = await (vorrat.current ?? server.starten(lauf.current ?? undefined));
+    // im Voraus geholt, während der Server neu startete: jetzt noch einmal
+    if (vorrat.current && verbindungWeg(r)) r = await server.starten(lauf.current ?? undefined, [800]);
     vorrat.current = null;
     beschaeftigt.current = false;
+    if (verbindungWeg(r)) {
+      setAbgerissen(true);
+      return;
+    }
     if ("fehler" in r) {
       setPhase("ende");
       await fertig;
@@ -321,6 +330,7 @@ export function WortSchloss({
 
   const kopf = (
     <div className="ls-kopf">
+      {abgerissen && <Abriss />}
       <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </ZuLink>

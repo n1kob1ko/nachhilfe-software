@@ -740,7 +740,13 @@ export function offeneFehler(studentId: number, art: SpielArt, runden = 5): stri
       else if (!erledigt.has(a.key) && !offen.includes(a.key)) offen.push(a.key);
     }
   }
-  return offen;
+  // was in einer gerade laufenden Runde liegt (Endlos und die Bretter holen die nächste Runde, bevor die laufende fertig
+  // ist), kommt dort ohnehin dran: nicht gleich in der nächsten noch einmal (niko 2026-11-22: „dieselbe Frage kommt wieder“)
+  const laufend = db()
+    .prepare("SELECT karten FROM spielrunden WHERE student_id = ? AND art = ? AND beendet_at IS NULL AND created_at >= datetime('now', '-2 hours')")
+    .all(studentId, art) as { karten: string }[];
+  const drin = new Set(laufend.flatMap((r) => json<SpielKarte[]>(r.karten, []).map((k) => k.key)));
+  return offen.filter((key) => !drin.has(key));
 }
 
 /** So viele Runden zurück merkt sich ein Spiel, welche Karten dran waren (Blockwerk und Endlos hängen viele Runden aneinander). */

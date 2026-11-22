@@ -13,7 +13,8 @@ import { allesSortiert, GLAS_HERZEN, GLAS_PUNKTE, glasZufall, hatZug, istZu, leg
 import type { Bestenliste, SpielErgebnis, SpielKarte, SpielStart } from "@/lib/lernspiele-typen";
 import { MathText } from "@/components/MathText";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
-import { vibriere } from "./SpielTeile";
+import { Abriss, vibriere } from "./SpielTeile";
+import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
  * Glasklar (lib/glasklar.ts, docs/lernspiele.md „Glasklar“): Begriffe liegen gemischt in Gläsern; ein Glas antippen hebt
@@ -69,8 +70,8 @@ export function GlasSpiel({
   const router = useRouter();
   const server = useMemo(
     () => ({
-      starten: (lauf?: number) => (amTablet ? tabletGlasStartenAction(thema, lauf) : glasStartenAction(token, thema, lauf)),
-      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }) => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o)),
+      starten: (lauf?: number, pausen?: number[]): Promise<SpielStart> => sicher(() => (amTablet ? tabletGlasStartenAction(thema, lauf) : glasStartenAction(token, thema, lauf)), pausen),
+      beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }): Promise<SpielErgebnis> => sicher(() => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o))),
     }),
     [amTablet, token, thema],
   );
@@ -80,6 +81,8 @@ export function GlasSpiel({
 
   const [phase, setPhase] = useState<Phase>("start");
   const [fehler, setFehler] = useState<string | null>(null);
+  // die nächste Stufe kam auch nach mehreren Versuchen nicht (Deploy, kein Netz): anhalten, „Neu laden“ (lib/verbindung.ts)
+  const [abgerissen, setAbgerissen] = useState(false);
   const [stufe, setStufe] = useState<Stufe | null>(null);
   const [glaeser, setGlaeser] = useState<Glas[]>([]);
   const [gehoben, setGehoben] = useState<number | null>(null);
@@ -239,9 +242,15 @@ export function GlasSpiel({
       if (laufVorher.current === undefined && !("fehler" in e)) laufVorher.current = e.lernstandVorher;
       if (!("fehler" in e)) setRichtigGesamt((n) => n + e.richtig);
     });
-    const r = await (vorrat.current ?? server.starten(lauf.current ?? undefined));
+    let r = await (vorrat.current ?? server.starten(lauf.current ?? undefined));
+    // im Voraus geholt, während der Server neu startete: jetzt noch einmal
+    if (vorrat.current && verbindungWeg(r)) r = await server.starten(lauf.current ?? undefined, [800]);
     vorrat.current = null;
     beschaeftigt.current = false;
+    if (verbindungWeg(r)) {
+      setAbgerissen(true);
+      return;
+    }
     if ("fehler" in r) {
       // keine Begriffe mehr: das Spiel endet hier (die Stufe ist schon gezählt)
       setPhase("ende");
@@ -416,6 +425,7 @@ export function GlasSpiel({
 
   const kopf = (
     <div className="ls-kopf">
+      {abgerissen && <Abriss />}
       <ZuLink href={zurueck} className="ls-zu treffer" aria-label="Spiel schließen">
         <X size={24} aria-hidden />
       </ZuLink>
