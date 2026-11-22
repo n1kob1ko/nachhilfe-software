@@ -7,7 +7,7 @@ import { formatDate } from "@/components/ui";
 import type { Student } from "@/lib/repo";
 
 /**
- * Im Schülerprofil (Lernverlauf): die eigenen Tests der App (lib/eigene-tests.ts). Je Test „Freischalten“ — dann steht er
+ * Im Schülerprofil (Tab „Übungen & Verlauf“, ganz oben): die eigenen Tests der App (lib/eigene-tests.ts). Je Test „Freischalten“ — dann steht er
  * in der Schüler-App auf Start und unter Prüfungen — und die Abgaben mit Punkten, Note und offenen Fragen.
  */
 export function EigeneTestsProfil({ student }: { student: Pick<Student, "id" | "name"> }) {

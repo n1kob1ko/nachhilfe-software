@@ -107,7 +107,7 @@ _Avoid_: ausgefülltes PDF
 **Eigener Test**:
 Ein fertiger Test, den die Lehrkraft außerhalb der App gebaut hat (z. B. ein claude.ai-Artifact), wörtlich als Seite der
 **Schüler-App** (`lib/eigene-tests.ts`, ein Test je Datei in `lib/eigene-tests/`). Die Lehrkraft schaltet ihn je Schüler frei
-(Profil › Lernverlauf › „Tests in der App“); der Schüler gibt ab und sieht Punkte, Lösungen und eine Note zur Orientierung,
+(Profil › „Übungen & Verlauf“ › „Tests in der App“ (ganz oben)); der Schüler gibt ab und sieht Punkte, Lösungen und eine Note zur Orientierung,
 offene Fragen bewertet er selbst, die Lehrkraft kann die Punkte ändern ([docs/eigene-tests.md](docs/eigene-tests.md)).
 _Avoid_: Quiz, Artifact-Test. Nicht verwechseln mit der **Probeschularbeit** (aus der App erzeugt, als **Übung** gesendet)
 

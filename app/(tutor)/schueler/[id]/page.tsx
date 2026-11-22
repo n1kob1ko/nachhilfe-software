@@ -152,6 +152,11 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
       {tab === "lernverlauf" && (
         <div className="space-y-14">
           <ArchivMeldung archiv={sp.archiv} fehler={sp.fehler} archiviert="Archiviert. Unten unter „Archiv“ kannst du es wiederherstellen." />
+          {/* eigene Tests (lib/eigene-tests.ts) zuerst: „Freischalten“ soll man nicht unter dem ganzen Verlauf suchen (niko 2026-11-22) */}
+          <section aria-labelledby="eigene-tests-titel">
+            <h2 id="eigene-tests-titel" className="gruppe-titel mb-4">Tests in der App</h2>
+            <EigeneTestsProfil student={student} />
+          </section>
           <section aria-labelledby="lernverlauf-titel">
             <h2 id="lernverlauf-titel" className="gruppe-titel mb-4">Lernverlauf</h2>
             <Lessons student={student} filter={sp.art} />
@@ -159,10 +164,6 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <section aria-labelledby="uebungen-titel">
             <h2 id="uebungen-titel" className="gruppe-titel mb-4">Übungen</h2>
             <Exercises student={student} />
-          </section>
-          <section aria-labelledby="eigene-tests-titel">
-            <h2 id="eigene-tests-titel" className="gruppe-titel mb-4">Tests in der App</h2>
-            <EigeneTestsProfil student={student} />
           </section>
           <ArchivSection student={student} open={sp.ansicht === "archiv"} />
         </div>
