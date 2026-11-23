@@ -420,3 +420,11 @@
   width: 42px;
   height: 46px;
 }
+
+/* Bio Test De La Salle (components/lernen/BioTest.tsx): ein Gehirn auf Blau */
+.sp-biotest-bild {
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(160deg, #3b82f6, #1d4ed8);
+}

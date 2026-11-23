@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, bioSicher, bioWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, bioSicher, bioWahl, biotestStand, biotestWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
@@ -13,6 +13,7 @@ import { gueltigeWortPunkte } from "@/lib/wortschloss";
 import { gueltigePhantomPunkte } from "@/lib/phantombild";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielKarte, type SpielStart } from "@/lib/lernspiele-typen";
 import { BIO_THEMEN, type BioAuswahl, type BioModus } from "@/lib/biolabor";
+import { uebung as biotestUebung } from "@/lib/biotest";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -73,6 +74,13 @@ export async function bioStartenAction(token: string, auswahl: BioAuswahl, modus
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   return bioStarten(student, auswahl, modus, gross);
+}
+
+/** Bio Test De La Salle (lib/biotest.ts): eine Übung, ganz oder nur ihre Fehler (`nur`: Stellen der Übung). */
+export async function biotestStartenAction(token: string, uebungId: string, nur?: string[]): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return biotestStarten(student, uebungId, nur);
 }
 
 /** Europa (lib/europa.ts): Üben, wie im Test, großer Test, Rennen oder Verwechsler; dazu Thema und Region. */
@@ -156,6 +164,12 @@ export async function tabletBioStartenAction(auswahl: BioAuswahl, modus: BioModu
   return bioStarten(student, auswahl, modus, gross);
 }
 
+export async function tabletBiotestStartenAction(uebungId: string, nur?: string[]): Promise<SpielStart> {
+  const student = await tabletSchueler();
+  if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
+  return biotestStarten(student, uebungId, nur);
+}
+
 export async function tabletEuropaStartenAction(wunsch: EuropaWunsch): Promise<SpielStart> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
@@ -179,6 +193,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   if (art === "blatt") return blattStarten(student, "kacheln");
   if (art === "europa") return europaStarten(student, { modus: "ueben" });
   if (art === "bio") return bioStarten(student, "alle", "ueben");
+  if (art === "biotest") return biotestStarten(student, "primaten");
   if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
@@ -248,6 +263,17 @@ function bioStarten(student: repo.Student, auswahl: BioAuswahl, modus: BioModus,
   return runde;
 }
 
+function biotestStarten(student: repo.Student, uebungId: string, nur?: string[]): SpielStart {
+  if (!biotestWahl(student, wienerDatum())) return { fehler: "Dieses Spiel gibt es für dich gerade nicht." };
+  // nur bekannte Werte (die Aktion ist öffentlich)
+  const u = biotestUebung(String(uebungId));
+  if (!u) return { fehler: "Diese Übung gibt es nicht." };
+  const stellen = Array.isArray(nur) ? nur.filter((id) => typeof id === "string" && u.stellen.some((s) => s.id === id)) : [];
+  const runde = starteRunde(student, "biotest", { biotest: { uebung: u.id, nur: stellen.length ? stellen : undefined } });
+  if (!runde.karten.length) return { fehler: "Für diese Übung gibt es gerade keine Aufgaben." };
+  return runde;
+}
+
 /** Europa: was jetzt sitzt; nach einem Rennen der beste Stand davor (ohne dieses Rennen). */
 function europaErgebnis(studentId: number, rundeId: number, lauf: number | null) {
   const rennen = lauf === rundeId ? europaRennenThema(studentId, rundeId) : null;
@@ -300,6 +326,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     phantom: zeile?.endlos && spiel === "phantom" ? { rekord: punkteRekord(student.id, "phantom", zeile.endlos), merkmale: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "phantom") : undefined } : undefined,
     blatt: zeile?.art === "blatt" ? { sicher: sichereBlaetter(student.id) } : undefined,
     bio: zeile?.art === "bio" ? { sicher: bioSicher(student.id) } : undefined,
+    biotest: zeile?.art === "biotest" ? biotestStand(student.id) : undefined,
     europa: zeile?.art === "europa" ? europaErgebnis(student.id, Number(rundeId), zeile.endlos) : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
