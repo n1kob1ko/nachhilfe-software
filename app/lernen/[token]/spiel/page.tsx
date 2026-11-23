@@ -5,7 +5,8 @@ import { WortSchloss } from "@/components/lernen/WortSchloss";
 import { PhantomSpiel } from "@/components/lernen/PhantomSpiel";
 import { BlattSpiel } from "@/components/lernen/BlattSpiel";
 import { EuropaSpiel } from "@/components/lernen/EuropaSpiel";
-import { europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { BioLabor } from "@/components/lernen/BioLabor";
+import { bioSicher, bioThemenStand, bioWahl, europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { offenesBlockwerk } from "@/lib/blockwerk-stand";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -79,6 +80,12 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
         zurueck={von === "start" ? `/lernen/${token}` : undefined}
       />
     );
+  }
+  // Biolabor (lib/biolabor.ts): Genetik und Nervensystem
+  if (modus === "bio" || gewuenscht === "bio") {
+    const wahl = bioWahl(student, heute);
+    if (!wahl) redirect(`/lernen/${token}/spiele`);
+    return <BioLabor token={token} serie={serie(student.id, heute)} themen={bioThemenStand(student.id)} sicher={bioSicher(student.id)} grund={wahl.grund} zurueck={von === "start" ? `/lernen/${token}` : undefined} />;
   }
   // Blätter bestimmen (lib/blaetter.ts)
   if (modus === "blatt" || gewuenscht === "blatt") {

@@ -44,6 +44,7 @@ import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
+import { BIO_SKILL, bioRunde, bioStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
 import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
 import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
 import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_STUFEN, vorlageRunde } from "./phantom-vorlage";
@@ -84,6 +85,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   blatt: BLATT_SKILL,
   // Europa (lib/europa.ts): Geografie, keine Fähigkeit aus dem Lehrplan
   europa: EUROPA_SKILL,
+  // Biolabor (lib/biolabor.ts): Biologie, keine Fähigkeit aus dem Lehrplan
+  bio: BIO_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -94,7 +97,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -164,7 +167,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -623,6 +626,48 @@ export const sichereBlaetter = (studentId: number): number[] => [...blaetterStan
 /** Die Nummern der Blätter, die schon einmal dran waren. */
 export const geseheneBlaetter = (studentId: number): number[] => [...blaetterStand(studentId).keys()].sort((a, b) => a - b);
 
+// ---------- Biolabor (lib/biolabor.ts) ----------
+
+/** Wörter im Test oder im Stoff, die zum Biolabor passen (Genetik, Nervensystem, Hormone). */
+const BIO_STOFF = /genetik|vererb|mendel|dna|chromosom|gentechnik|blutgrupp|nerv|gehirn|hirn|sympathikus|hormon|reflex|der mensch/i;
+
+/**
+ * Gibt es das „Biolabor“ für diesen Schüler, und warum gerade? Es ist der Stoff der 4. Klasse (8. Schulstufe): für
+ * Schüler mit Biologie ab der 7. Schulstufe (Profil, Biologie-Einheit in den letzten 60 Tagen) und für jeden mit einem
+ * geplanten Biologie-Test in den nächsten 60 Tagen, der in diese Stufe fällt oder Genetik oder das Nervensystem als
+ * Stoff hat (dann steht die Kachel ganz oben, mit dem Test als Grund). Der Test-Schüler von „Spiele testen“ hat es
+ * immer. null: nicht.
+ */
+export function bioWahl(student: repo.Student, heute: string): { grund?: string } | null {
+  const stufe = student.grade || 8;
+  const bis = tagAddieren(heute, BIO_TAGE);
+  const test = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && istBio(t.subject) && t.date >= heute && t.date <= bis)
+    .filter((t) => stufe >= 7 || BIO_STOFF.test([t.title ?? "", t.topic, ...(t.topics ?? []), t.notes].join(" ")))
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (test) {
+    const tage = Math.round((Date.parse(test.date) - Date.parse(heute)) / 86_400_000);
+    const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+    return { grund: `${test.title || test.kind || "Biologie-Test"} ${wann}` };
+  }
+  if (student.spiele_test) return {};
+  if (stufe < 7) return null;
+  if (student.subjects.some(istBio)) return {};
+  const seit = tagAddieren(heute, -BIO_TAGE);
+  return repo.listLessons(student.id).some((l) => istBio(l.subject) && l.starts_at.slice(0, 10) >= seit) ? {} : null;
+}
+
+/** Der Stand je Eintrag aus allen beendeten Runden „Biolabor“. */
+export function bioStandVon(studentId: number) {
+  const rows = db().prepare("SELECT antworten FROM spielrunden WHERE student_id = ? AND art = 'bio' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as { antworten: string }[];
+  return bioStand(rows.map((r) => ({ antworten: json<GespeicherteAntwort[]>(r.antworten, []) })));
+}
+/** Die Einträge, die sicher sitzen. */
+export const bioSicher = (studentId: number): string[] => [...bioStandVon(studentId)].filter(([, s]) => s.sicher).map(([id]) => id);
+/** Je Thema: sicher, gesehen, alle. */
+export const bioThemenStand = (studentId: number) => themenStand(bioStandVon(studentId));
+
 // ---------- Europa (lib/europa.ts) ----------
 
 const istGeo = (fach: string | null | undefined) => /^(geo|gw\b|erdkunde)/i.test((fach ?? "").trim());
@@ -788,6 +833,8 @@ export function starteRunde(
     blatt?: { modus: BlattModus; alle?: boolean };
     /** Europa: Modus, Thema und Region (lib/europa.ts) */
     europa?: EuropaWunsch;
+    /** Biolabor: Themen, Üben oder wie im Test, großer Test (lib/biolabor.ts) */
+    bio?: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean };
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
@@ -855,6 +902,10 @@ export function starteRunde(
     karten = blattKarten(nrs, o.blatt?.modus ?? "kacheln", rng);
   } else if (art === "europa") {
     karten = europaKarten(student, o.europa ?? { modus: "ueben" }, o.rng ?? Math.random);
+  } else if (art === "bio") {
+    // Biolabor: zuerst die zuletzt falschen, dann die noch nicht sicheren
+    const wiederholen = [...new Set(offeneFehler(student.id, art, 3).map((k) => bioVonKey(k)).filter((id): id is string => !!id))];
+    karten = bioRunde(bioStandVon(student.id), { auswahl: o.bio?.auswahl ?? "alle", modus: o.bio?.modus ?? "ueben", gross: o.bio?.gross, wiederholen, rng: o.rng ?? Math.random });
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {

@@ -49,8 +49,9 @@ import type { PhantomDaten } from "./phantombild";
 import type { VorlageDaten } from "./phantom-vorlage";
 import type { BlattDaten } from "./blaetter";
 import type { EuropaDaten, LandStand, Teil } from "./europa";
+import type { BioDaten } from "./biolabor";
 
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -58,7 +59,7 @@ export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" 
  * Spiele mit eigenem Spielfeld, die nicht bei den Fächern stehen: Glasklar, Wortschloss und Phantombild (mit „Text
  * lernen“). Sie haben eine eigene Kachel im Tab „Spiele“, kein Duell und kein Blockwerk.
  */
-export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa"];
+export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa", "bio"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
 /** Spiele mit eigenem Feld gehen nicht als Duell, außer Europa: dafür gibt es eigene Duell-Karten im Kachelfeld (lib/europa.ts). */
 const duellTauglich = (a: SpielArt) => a !== "stoff" && a !== "fehler" && (!EIGENES_FELD.includes(a) || a === "europa");
@@ -94,6 +95,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   vorlage: "Text lernen",
   blatt: "Blätter bestimmen",
   europa: "Europa",
+  bio: "Biolabor",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -132,6 +134,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   blatt: "Dein Stoff",
   // Europa (lib/europa.ts) hat eine eigene Kachel
   europa: "Dein Stoff",
+  // Biolabor (lib/biolabor.ts) hat eine eigene Kachel
+  bio: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -164,6 +168,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   vorlage: "Lern deine Personenbeschreibung auswendig",
   blatt: "Welche Pflanze, welche Familie?",
   europa: "Länder, Hauptstädte und Flaggen",
+  bio: "Genetik, Nervensystem und Hormone",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -196,6 +201,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   vorlage: ["Er", "hat", "trägt"],
   blatt: ["Ahorn", "Linde", "Eiche"],
   europa: ["Wien", "Paris", "Rom"],
+  bio: ["DNA", "Gen", "Synapse"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -228,6 +234,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   vorlage: "Setz die fehlenden Wörter ein.",
   blatt: "Welche Pflanze ist das, und zu welcher Familie gehört sie?",
   europa: "Wo liegt das Land, wie heißt die Hauptstadt, welche Flagge hat es?",
+  bio: "Genetik und Nervensystem: üben wie für den Test.",
 };
 
 /**
@@ -324,6 +331,8 @@ export type SpielKarte = {
   blatt?: BlattDaten;
   /** Nur „Europa“ (lib/europa.ts): welches Land, welcher Teil, wie gefragt und geantwortet wird */
   europa?: EuropaDaten;
+  /** Nur „Biolabor“ (lib/biolabor.ts): Eintrag, Thema, wie geantwortet wird, beim Kreuzungsschema das Schema */
+  bio?: BioDaten;
 };
 
 /**
@@ -407,6 +416,8 @@ export type SpielErgebnis =
       blatt?: { sicher: number[] };
       /** Europa: je Land die Teile, die jetzt sitzen; beim Rennen der beste Stand davor */
       europa?: { sitzt: LandStand; rekord?: { thema: Teil; vorher: number } };
+      /** Biolabor: die Einträge, die jetzt sicher sitzen (lib/biolabor.ts bioStand) */
+      bio?: { sicher: string[] };
     }
   | { fehler: string };
 

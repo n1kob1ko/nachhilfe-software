@@ -393,3 +393,30 @@
   top: 20px;
   rotate: 10deg;
 }
+
+/* Biolabor (components/lernen/BioLabor.tsx): Erbsi vor der DNA */
+.sp-bio-bild {
+  position: relative;
+  flex-shrink: 0;
+  width: 58px;
+  height: 64px;
+  border-radius: 14px;
+  background: linear-gradient(160deg, #1bb5a5, #0d6f73);
+  overflow: hidden;
+}
+.sp-bio-bild img {
+  position: absolute;
+  object-fit: contain;
+}
+.sp-bio-dna {
+  inset: -4px -10px auto auto;
+  width: 44px;
+  height: 44px;
+  opacity: 0.85;
+}
+.sp-bio-erbsi {
+  left: 2px;
+  bottom: -2px;
+  width: 42px;
+  height: 46px;
+}

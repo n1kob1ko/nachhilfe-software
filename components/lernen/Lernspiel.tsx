@@ -1776,6 +1776,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   vorlage: ["Er", "hat"],
   blatt: ["Linde", "Eiche"],
   europa: ["Wien", "Prag"],
+  bio: ["Gen", "DNA"],
 };
 /** Für den kleinen Zettel, der aus der Kiste schaut: Hochzahlen hochgestellt, Brüche bleiben mit Schrägstrich. */
 const HOCH = "⁰¹²³⁴⁵⁶⁷⁸⁹";
