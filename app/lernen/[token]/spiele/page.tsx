@@ -4,9 +4,9 @@ import { ChevronRight, Swords, Trophy } from "lucide-react";
 import { notFound } from "next/navigation";
 import { BestenlisteTafel } from "@/components/lernen/BestenlisteTafel";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
-import { BioKachel, EuropaKachelBild, SpieleListe } from "@/components/lernen/SpieleListe";
+import { BioKachel, BioTestKachel, EuropaKachelBild, SpieleListe } from "@/components/lernen/SpieleListe";
 import { meineDuelle } from "@/lib/duelle";
-import { bioSicher, bioWahl, europaSitzt, europaWahl, blaetterWahl, glasThemen, phantomWahl, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
+import { bioSicher, bioWahl, biotestStand, biotestWahl, europaSitzt, europaWahl, blaetterWahl, glasThemen, phantomWahl, punkteBestenliste, spielVorschlaege, wortThemen } from "@/lib/lernspiele";
 import { hatEndlos, torTauglich } from "@/lib/lernspiele-typen";
 import { ligaTabelle } from "@/lib/liga";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -32,12 +32,14 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   if (!vorschlaege.length) {
     // nur Biologie: dann gibt es „Blätter bestimmen“ allein
     const nurBio = bioWahl(student, heute);
+    const nurBiotest = biotestWahl(student, heute);
     const nurBlatt = nurBio?.grund ? null : blaetterWahl(student, heute);
     const eu = europaWahl(student, heute);
     return (
       <>
         <Frisch />
         <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
+        {nurBiotest && <BioTestKachel href={`${base}/spiel?modus=biotest`} grund={nurBiotest.grund} sicher={biotestStand(student.id).sicher.length} className="mt-6" />}
         {nurBio && <BioKachel href={`${base}/spiel?modus=bio`} grund={nurBio.grund} sicher={bioSicher(student.id).length} className="mt-6" />}
         <Link href={`${base}/spiel?modus=europa`} className="sp-block panel mt-6" data-testid="spiele-europa">
           <EuropaKachelBild />
@@ -102,6 +104,8 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   const blatt = blaetterWahl(student, heute);
   // Biolabor: Genetik und Nervensystem (4. Klasse)
   const bio = bioWahl(student, heute);
+  // Bio Test De La Salle: die Übungen der Lehrkraft (lib/biotest.ts)
+  const biotest = biotestWahl(student, heute);
   // Europa: für alle (lib/europa.ts)
   const eu = europaWahl(student, heute);
   const euSitzt = europaSitzt(student.id);
@@ -111,7 +115,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
       <Frisch />
       <SeitenKopf titel="Spiele" text="Kurze Runden zu dem, was du gerade lernst." />
 
-      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} phantom={phantom ? { href: phantomLink, grund: phantom.grund, platz: phantomListe?.ich ?? null } : undefined} blatt={blatt ? { href: `${base}/spiel?modus=blatt`, grund: bio?.grund ? undefined : blatt.grund } : undefined} bio={bio ? { href: `${base}/spiel?modus=bio`, grund: bio.grund, sicher: bioSicher(student.id).length } : undefined} europa={{ href: `${base}/spiel?modus=europa`, grund: eu.grund, erobert: Object.values(euSitzt).filter((t) => t.length === 3).length }} />
+      <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(art) => `${base}/spiel?art=${art}`} bloecke={blockLink} blockPlatz={bestenliste?.ich ?? null} funkel={funkelLink} funkelPlatz={funkelListe?.ich ?? null} tor={torLink} torPlatz={torListe?.ich ?? null} glas={glasThema ? { href: glasLink, thema: glasThema.name, platz: glasListe?.ich ?? null } : undefined} wort={wortThema ? { href: wortLink, thema: wortThema.name, platz: wortListe?.ich ?? null } : undefined} phantom={phantom ? { href: phantomLink, grund: phantom.grund, platz: phantomListe?.ich ?? null } : undefined} blatt={blatt ? { href: `${base}/spiel?modus=blatt`, grund: bio?.grund ? undefined : blatt.grund } : undefined} bio={bio ? { href: `${base}/spiel?modus=bio`, grund: biotest?.grund ? undefined : bio.grund, sicher: bioSicher(student.id).length } : undefined} biotest={biotest ? { href: `${base}/spiel?modus=biotest`, grund: biotest.grund, sicher: biotestStand(student.id).sicher.length } : undefined} europa={{ href: `${base}/spiel?modus=europa`, grund: eu.grund, erobert: Object.values(euSitzt).filter((t) => t.length === 3).length }} />
 
       <section className="mt-9" aria-labelledby="spiele-gegeneinander" data-testid="spiele-gegeneinander">
         <h2 id="spiele-gegeneinander" className="mb-3 text-[18px] font-semibold">

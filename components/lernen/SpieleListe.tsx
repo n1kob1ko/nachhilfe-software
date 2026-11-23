@@ -1,7 +1,7 @@
 import "@/components/lernen/spiele.css";
 import "@/components/lernen/torlauf.css";
 import Link from "next/link";
-import { CalendarDays, ChevronRight, Flame } from "lucide-react";
+import { Brain, CalendarDays, ChevronRight, Flame } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
 import { hatEndlos, torTauglich, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
@@ -33,6 +33,7 @@ export function SpieleListe({
   phantom,
   blatt,
   bio,
+  biotest,
   europa,
 }: {
   student: repo.Student;
@@ -60,6 +61,8 @@ export function SpieleListe({
   blatt?: { href: string; grund?: string };
   /** Biolabor (lib/biolabor.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Aufgaben sicher sind */
   bio?: { href: string; grund?: string; sicher: number };
+  /** Bio Test 4.Klasse Vorbereitung De La Salle (lib/biotest.ts): wohin, warum gerade (dann ganz oben), wie viele Felder sicher sind */
+  biotest?: { href: string; grund?: string; sicher: number };
   /** Europa (lib/europa.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Länder erobert sind */
   europa?: { href: string; grund?: string; erobert: number };
 }) {
@@ -152,6 +155,7 @@ export function SpieleListe({
         <Kaertchen art={erstes.art} gross />
       </section>
 
+      {biotest?.grund && <BioTestKachel {...biotest} className="mt-3" />}
       {bio?.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt?.grund && blattKachel}
       {europa?.grund && europaKachel}
@@ -288,6 +292,7 @@ export function SpieleListe({
       )}
 
       {phantom && !phantom.grund && phantomKachel}
+      {biotest && !biotest.grund && <BioTestKachel {...biotest} className="mt-3" />}
       {bio && !bio.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt && !blatt.grund && blattKachel}
       {europa && !europa.grund && europaKachel}
@@ -380,6 +385,27 @@ export function BioKachel({ href, grund, sicher, className = "" }: { href: strin
         <span className="sp-kurz">Genetik, Kreuzungsschemata, Blutgruppen, Nervensystem und Hormone.</span>
         <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-bio-stand">
           {grund ?? (sicher > 0 ? `${sicher} Aufgaben sicher` : "Neu")}
+        </span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+    </Link>
+  );
+}
+
+/** Die Kachel „Bio Test 4.Klasse Vorbereitung De La Salle“ (lib/biotest.ts): die Übungen der Lehrkraft. */
+export function BioTestKachel({ href, grund, sicher, className = "" }: { href: string; grund?: string; sicher: number; className?: string }) {
+  return (
+    <Link href={href} className={`sp-block panel ${className}`} data-testid="spiele-biotest">
+      <span className="sp-bio-bild sp-biotest-bild" aria-hidden>
+        <Brain size={30} strokeWidth={2.2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="sp-titel">Bio Test 4.Klasse Vorbereitung De La Salle</span>
+        </span>
+        <span className="sp-kurz">Die Übungen deiner Lehrkraft: Evolution des Menschen und Nervensystem.</span>
+        <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-biotest-stand">
+          {grund ?? (sicher > 0 ? `${sicher} Felder sicher` : "Neu")}
         </span>
       </span>
       <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
