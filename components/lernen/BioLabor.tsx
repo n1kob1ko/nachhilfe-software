@@ -5,7 +5,7 @@ import "./phantombild.css";
 import "./biolabor.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Check, Eye, EyeOff, Flame, FlaskConical, Grid2x2, PenLine, Star, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { Blocks, BookOpen, Check, Eye, EyeOff, Flame, FlaskConical, Grid2x2, PenLine, Star, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { bioStartenAction, spielBeendenAction, tabletBioStartenAction, tabletSpielBeendenAction } from "@/app/lernspiel-actions";
 import { BIO_EINTRAEGE, BIO_THEMEN, felder, feldWahl, GROSSER_TEST, pruefeGeschrieben, pruefeSchema, thema as themaVon, type BioAuswahl, type BioDaten, type BioModus } from "@/lib/biolabor";
@@ -66,6 +66,10 @@ export function BioLabor({
   const [fehler, setFehler] = useState<string | null>(null);
   const [ton, setTon] = useState(true);
   const [auswahl, setAuswahl] = useState<BioAuswahl>("alle");
+  // „Mehr üben“: die Themen aus dem Buch, erst nach einem Tipp
+  const [mehr, setMehr] = useState(false);
+  // der Lernzettel: nur diese Themen (Lösungen der Lehrerin und Glossar), null = alle
+  const [zettel, setZettel] = useState<string[] | null>(null);
   const [sicher, setSicher] = useState<Set<string>>(new Set(sicherAnfang));
   const [gesehen, setGesehen] = useState<Set<string>>(new Set());
   const [runde, setRunde] = useState<Runde | null>(null);
@@ -110,6 +114,7 @@ export function BioLabor({
     [themenAnfang, sicher, gesehen],
   );
   const alleSicher = themen.reduce((n, t) => n + t.sicher, 0);
+  const lehrerin = themen.find((t) => t.id === "lehrerin");
   const alleAnzahl = themen.reduce((n, t) => n + t.alle, 0);
 
   const karte = reihe[pos] ?? null;
@@ -291,6 +296,46 @@ export function BioLabor({
             </span>
           )}
 
+          {/* niko 2026-11-23 „es sind zu viele Fragen“: oben nur der Fragenkatalog der Lehrerin, Blockwerk und das eigene Glossar */}
+          <div className="pb-wahl mt-4" style={{ "--n": 2 } as CSSProperties}>
+            <button type="button" className="pb-wahl-knopf bio-wichtig" onClick={() => void starten("lehrerin", "test")} disabled={phase === "laden"} data-testid="bio-start-lehrerin" autoFocus>
+              <Star size={26} aria-hidden />
+              <span>
+                <b>Fragen der Lehrerin</b>
+                <small>
+                  Die 26 Fragen vom Blatt für den Test, der Reihe nach. Du schreibst die Antworten selbst.{" "}
+                  {lehrerin ? `${lehrerin.sicher} von ${lehrerin.alle} sicher.` : ""}
+                </small>
+              </span>
+            </button>
+            <ZuLink href={amTablet ? "/geraet/ansicht?zu=bloecke:bio" : `/lernen/${token}/spiel?modus=bloecke&art=bio`} className="pb-wahl-knopf" data-testid="bio-start-blockwerk">
+              <Blocks size={26} aria-hidden />
+              <span>
+                <b>Blockwerk</b>
+                <small>Das Blockspiel mit den Fragen der Lehrerin und deinem Glossar. Jede Antwort schreibst du selbst.</small>
+              </span>
+            </ZuLink>
+            <button type="button" className="pb-wahl-knopf" onClick={() => void starten("heft", "test")} disabled={phase === "laden"} data-testid="bio-start-heft">
+              <PenLine size={26} aria-hidden />
+              <span>
+                <b>Dein Glossar</b>
+                <small>Die Begriffe aus deinem Heft, in deinen Worten.</small>
+              </span>
+            </button>
+            <button type="button" className="pb-wahl-knopf" onClick={() => { setZettel(["lehrerin", "heft"]); setPhase("lernzettel"); }} disabled={phase === "laden"} data-testid="bio-loesungen">
+              <BookOpen size={26} aria-hidden />
+              <span>
+                <b>Lösungen zum Nachlesen</b>
+                <small>Die Antwort zu jeder Frage der Lehrerin und dein Glossar.</small>
+              </span>
+            </button>
+          </div>
+
+          <button type="button" className="bio-mehr mt-5" aria-expanded={mehr} onClick={() => setMehr((m) => !m)} data-testid="bio-mehr">
+            {mehr ? "Weniger anzeigen" : "Mehr üben: alle Themen aus dem Buch"}
+          </button>
+          {mehr && (
+          <>
           <div className="bio-bereich mt-4" role="group" aria-label="Was üben?" style={{ "--n": 2 } as CSSProperties}>
             {(["alle", "genetik", "mensch"] as const).map((a) => (
               <button key={a} type="button" aria-pressed={auswahl === a} onClick={() => setAuswahl(a)} data-testid={`bio-auswahl-${a}`}>
@@ -305,7 +350,7 @@ export function BioLabor({
           )}
 
           <div className="pb-wahl mt-4" style={{ "--n": 3 } as CSSProperties}>
-            <button type="button" className="pb-wahl-knopf" onClick={() => void starten(auswahl, "ueben")} disabled={phase === "laden"} data-testid="bio-start-ueben" autoFocus>
+            <button type="button" className="pb-wahl-knopf" onClick={() => void starten(auswahl, "ueben")} disabled={phase === "laden"} data-testid="bio-start-ueben">
               <FlaskConical size={26} aria-hidden />
               <span>
                 <b>Üben</b>
@@ -333,7 +378,7 @@ export function BioLabor({
                 <small>{GROSSER_TEST} Aufgaben aus allen Themen, wie bei der echten Prüfung.</small>
               </span>
             </button>
-            <button type="button" className="pb-wahl-knopf" onClick={() => setPhase("lernzettel")} disabled={phase === "laden"} data-testid="bio-lernzettel">
+            <button type="button" className="pb-wahl-knopf" onClick={() => { setZettel(null); setPhase("lernzettel"); }} disabled={phase === "laden"} data-testid="bio-lernzettel">
               <BookOpen size={26} aria-hidden />
               <span>
                 <b>Lernzettel</b>
@@ -373,6 +418,8 @@ export function BioLabor({
             ))}
             <p className="ls-klein mt-3">Tipp ein Thema an, um nur das zu üben. Sicher heißt: zweimal hintereinander beim ersten Versuch richtig.</p>
           </div>
+          </>
+          )}
 
           <div className="ls-glas mt-4 flex items-center justify-between gap-4 p-4" style={{ "--n": 5 } as CSSProperties}>
             <p className="ls-klein">Serie</p>
@@ -394,7 +441,7 @@ export function BioLabor({
 
   // ---------- Lernzettel ----------
 
-  if (phase === "lernzettel") return <Lernzettel kopf={kopf} ueben={(t) => void starten(t, "ueben")} zurueck={() => setPhase("start")} />;
+  if (phase === "lernzettel") return <Lernzettel kopf={kopf} nur={zettel} ueben={(t) => void starten(t, t === "lehrerin" || t === "heft" ? "test" : "ueben")} zurueck={() => setPhase("start")} />;
 
   // ---------- Ende ----------
 
@@ -822,7 +869,7 @@ function Selbst({ daten, gesperrt, antworte, weiter }: { daten: BioDaten; gesper
 
 // ---------- Lernzettel ----------
 
-function Lernzettel({ kopf, ueben, zurueck }: { kopf: React.ReactNode; ueben: (thema: string) => void; zurueck: () => void }) {
+function Lernzettel({ kopf, nur, ueben, zurueck }: { kopf: React.ReactNode; nur?: string[] | null; ueben: (thema: string) => void; zurueck: () => void }) {
   const [abdecken, setAbdecken] = useState(false);
   const [offen, setOffen] = useState<Set<string>>(new Set());
   return (
@@ -830,17 +877,18 @@ function Lernzettel({ kopf, ueben, zurueck }: { kopf: React.ReactNode; ueben: (t
       {kopf}
       <div className="ls-mitte bio-zettel" data-testid="bio-zettel">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h1 className="ls-titel text-[28px]">Lernzettel</h1>
+          <h1 className="ls-titel text-[28px]">{nur ? "Lösungen" : "Lernzettel"}</h1>
           <button type="button" className="bio-abdecken" aria-pressed={abdecken} onClick={() => { setAbdecken((a) => !a); setOffen(new Set()); }} data-testid="bio-abdecken">
             {abdecken ? <Eye size={18} aria-hidden /> : <EyeOff size={18} aria-hidden />}
             {abdecken ? "Aufdecken" : "Abdecken"}
           </button>
         </div>
-        {(["genetik", "mensch"] as const).map((b) => (
+        {(nur ? (["alle"] as const) : (["genetik", "mensch"] as const)).map((b) => (
           <section key={b} className="mt-5">
-            <h2 className="bio-zettel-bereich">{b === "genetik" ? "1) Genetik" : "2) Der Mensch"}</h2>
-            {BIO_THEMEN.filter((t) => t.bereich === b).map((t) => {
-              const begriffe = BIO_EINTRAEGE.filter((e) => e.thema === t.id && e.art === "begriff");
+            {b !== "alle" && <h2 className="bio-zettel-bereich">{b === "genetik" ? "1) Genetik" : "2) Der Mensch"}</h2>}
+            {BIO_THEMEN.filter((t) => (nur ? nur.includes(t.id) : t.bereich === b)).map((t) => {
+              // die Fragen der Lehrerin: nur die Lösungen je Nummer, ohne Begriffsliste darunter
+              const begriffe = t.id === "lehrerin" ? [] : BIO_EINTRAEGE.filter((e) => e.thema === t.id && e.art === "begriff");
               return (
                 <article key={t.id} className="ls-blatt bio-zettel-blatt mt-3" data-testid={`bio-zettel-${t.id}`}>
                   <h3 className="bio-zettel-titel">{t.titel}</h3>
@@ -870,7 +918,7 @@ function Lernzettel({ kopf, ueben, zurueck }: { kopf: React.ReactNode; ueben: (t
                     </dl>
                   )}
                   <button type="button" className="bio-zettel-ueben" onClick={() => ueben(t.id)} data-testid={`bio-zettel-ueben-${t.id}`}>
-                    Dieses Thema üben
+                    {t.id === "lehrerin" ? "Diese Fragen üben" : "Dieses Thema üben"}
                   </button>
                 </article>
               );

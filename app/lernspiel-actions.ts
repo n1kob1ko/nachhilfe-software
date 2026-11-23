@@ -192,7 +192,10 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   if (art === "wort") return wortStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
   if (art === "blatt") return blattStarten(student, "kacheln");
   if (art === "europa") return europaStarten(student, { modus: "ueben" });
-  if (art === "bio") return bioStarten(student, "alle", "ueben");
+  // Biolabor: eigenes Spiel; im Blockwerk nur Fragen zum Selbstschreiben (unten)
+  const bioBlock = art === "bio" && (bloecke === true || bloecke === "bloecke");
+  if (art === "bio" && !bioBlock) return bioStarten(student, "alle", "ueben");
+  if (bioBlock && !bioWahl(student, wienerDatum())) return { fehler: "Das Biolabor gibt es für dich gerade nicht." };
   if (art === "biotest") return biotestStarten(student, "primaten");
   if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
@@ -208,7 +211,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
       vergissStand(student.id, alt.lauf);
     }
   }
-  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu" });
+  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu", bio: bioBlock ? { auswahl: "alle", modus: "test", schreiben: true } : undefined });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
 }

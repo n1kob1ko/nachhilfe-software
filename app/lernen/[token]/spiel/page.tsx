@@ -82,8 +82,8 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
       />
     );
   }
-  // Biolabor (lib/biolabor.ts): Genetik und Nervensystem
-  if (modus === "bio" || gewuenscht === "bio") {
+  // Biolabor (lib/biolabor.ts): Genetik und Nervensystem; im Blockwerk (modus=bloecke) kommen seine Fragen zum Schreiben
+  if (modus === "bio" || (gewuenscht === "bio" && modus !== "bloecke")) {
     const wahl = bioWahl(student, heute);
     if (!wahl) redirect(`/lernen/${token}/spiele`);
     return <BioLabor token={token} serie={serie(student.id, heute)} themen={bioThemenStand(student.id)} sicher={bioSicher(student.id)} grund={wahl.grund} zurueck={von === "start" ? `/lernen/${token}` : undefined} />;
