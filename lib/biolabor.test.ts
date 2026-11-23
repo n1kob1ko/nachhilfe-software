@@ -16,6 +16,7 @@ import {
   felder,
   feldWahl,
   genotyp,
+  merkeFuer,
   normal,
   pruefeGeschrieben,
   pruefeSchema,
@@ -230,17 +231,13 @@ test("Server: wer es sieht, Runden und Stand", async () => {
   assert.ok(!sp.spielVorschlaege(vierte, { heute }).some((v) => v.art === "bio"), "keine Kachel bei den Fächern");
 });
 
-test("Erklär-Animationen: jedes Thema hat eine, sie beginnt beim passenden Schritt", async () => {
-  const { FILM_ZU_THEMA, startSchritt, filmSchritte } = await import("../components/lernen/BioFilm");
-  for (const t of BIO_THEMEN) assert.ok(FILM_ZU_THEMA[t.id], t.id);
-  for (const f of new Set(Object.values(FILM_ZU_THEMA))) {
-    const n = filmSchritte(f).length;
-    assert.ok(n >= 4 && n <= 5, `${f}: ${n} Schritte`);
-  }
-  assert.equal(startSchritt("teilung", "Wie heißt die Zellteilung, bei der Keimzellen entstehen? Meiose"), 2);
-  assert.equal(startSchritt("teilung", "Eizelle und Spermium verschmelzen. Was entsteht? die Zygote"), 3);
-  assert.equal(startSchritt("gehirn", "Welcher Teil sorgt für das Gleichgewicht? Kleinhirn"), 1);
-  assert.equal(startSchritt("gegenspieler", "Die Pupillen werden enger. Parasympathikus"), 2);
-  assert.equal(startSchritt("mendel", "Welche Regel sagt: In der F2 tauchen beide Merkmale wieder auf? die 2. Regel (Spaltungsregel)"), 3);
-  assert.equal(startSchritt("hormon", "Welches Hormon senkt den Blutzucker? Insulin"), 3);
+test("Merksatz: jede Karte zeigt nach einem Fehler einen passenden Satz (statt Animationen)", () => {
+  for (const e of BIO_EINTRAEGE) assert.ok(merkeFuer(e).length > 10, e.id);
+  const satz = (id: string) => merkeFuer(BIO_EINTRAEGE.find((e) => e.id === id)!);
+  assert.match(satz("w-mitose"), /^Mitose/);
+  assert.match(satz("w-wo-meiose"), /^Meiose/);
+  assert.match(satz("b-gen"), /^Gen: /);
+  assert.match(satz("g-umwelt"), /Umwelt/);
+  const karten = eintragKarten(BIO_EINTRAEGE.find((e) => e.id === "w-meiose")!, "ueben", zufall(1));
+  assert.equal(karten[0].regel, satz("w-meiose"));
 });
