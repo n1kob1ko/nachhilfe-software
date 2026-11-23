@@ -17,14 +17,11 @@
 
 export type Bereich = "genetik" | "mensch";
 
-/** Wofür die kleine Animation über der Frage steht (components/lernen/BioSzene.tsx). */
-export type Szene = "erbse" | "dna" | "teilung" | "kreuzung" | "xy" | "gentechnik" | "neuron" | "gehirn" | "herz" | "hormon";
 
 export type BioThema = {
   id: string;
   bereich: Bereich;
   titel: string;
-  szene: Szene;
   /** Der Lernzettel: das Wichtigste in kurzen Sätzen */
   merke: string[];
 };
@@ -54,7 +51,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "grundlagen",
     bereich: "genetik",
     titel: "Grundlagen der Vererbung",
-    szene: "erbse",
     merke: [
       "Vererbung: Eltern geben Merkmale (z. B. Haarfarbe, Blutgruppe) über ihre Erbanlagen (Gene) an die Nachkommen weiter.",
       "Die Wissenschaft von der Vererbung heißt Genetik (Vererbungslehre).",
@@ -66,7 +62,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "glossar",
     bereich: "genetik",
     titel: "Glossar Genetik",
-    szene: "erbse",
     merke: [
       "Gen: Abschnitt der DNA mit der Information für ein Merkmal. Allel: eine Form (Variante) eines Gens.",
       "Genotyp: die Erbanlagen (z. B. Rr). Phänotyp: das Aussehen (z. B. rote Blüte).",
@@ -80,7 +75,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "weitergabe",
     bereich: "genetik",
     titel: "Weitergabe der Erbinformation",
-    szene: "teilung",
     merke: [
       "Mitose (normale Zellteilung): aus einer Körperzelle werden zwei gleiche Tochterzellen mit 46 Chromosomen. Für Wachstum und Erneuerung (Haut, Wundheilung).",
       "Vor jeder Teilung wird die DNA verdoppelt (kopiert). So bekommt jede Tochterzelle die ganze Erbinformation.",
@@ -93,7 +87,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "dna",
     bereich: "genetik",
     titel: "DNA und Chromosomen",
-    szene: "dna",
     merke: [
       "Die Erbinformation liegt im Zellkern, auf den Chromosomen. Chromosomen bestehen aus DNA (Desoxyribonukleinsäure).",
       "Die DNA ist gebaut wie eine verdrehte Strickleiter: die Doppelhelix (Watson und Crick, 1953).",
@@ -107,7 +100,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "mendel",
     bereich: "genetik",
     titel: "Mendel’sche Regeln",
-    szene: "erbse",
     merke: [
       "1. Regel, Uniformitätsregel: Kreuzt man zwei reinerbige Eltern, die sich in einem Merkmal unterscheiden, sind alle Nachkommen der F1 gleich (uniform). RR × rr → alle Rr.",
       "2. Regel, Spaltungsregel: Kreuzt man die mischerbigen F1 untereinander (Rr × Rr), spaltet sich die F2 wieder auf: dominant-rezessiv 3 : 1, intermediär 1 : 2 : 1.",
@@ -120,7 +112,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "schema",
     bereich: "genetik",
     titel: "Kreuzungsschemata",
-    szene: "kreuzung",
     merke: [
       "1. Die Genotypen der Eltern aufschreiben (z. B. Rr × Rr).",
       "2. Die Keimzellen (Gameten) jedes Elternteils: jede bekommt ein Allel (R oder r).",
@@ -132,7 +123,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "mensch",
     bereich: "genetik",
     titel: "Vererbung beim Menschen",
-    szene: "xy",
     merke: [
       "Geschlecht: Frauen haben XX, Männer XY. Jede Eizelle hat ein X, ein Spermium ein X oder ein Y.",
       "Das Spermium entscheidet: mit X wird es ein Mädchen, mit Y ein Bub. Die Chance ist 50 : 50.",
@@ -146,7 +136,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "gentechnik",
     bereich: "genetik",
     titel: "Gentechnik",
-    szene: "gentechnik",
     merke: [
       "Gentechnik: die Erbinformation wird gezielt verändert, oder Gene werden von einem Lebewesen in ein anderes übertragen.",
       "Rote Gentechnik (Medizin): Bakterien stellen Insulin und andere Medikamente her, Impfstoffe, Gentests, Gentherapie.",
@@ -159,7 +148,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "nerven",
     bereich: "mensch",
     titel: "Das Nervensystem (ZNS und PNS)",
-    szene: "neuron",
     merke: [
       "Das Nervensystem nimmt Reize auf, leitet sie weiter, verarbeitet sie und steuert den Körper.",
       "ZNS (zentrales Nervensystem) = Gehirn und Rückenmark. Schutz: Schädel und Wirbelsäule.",
@@ -174,7 +162,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "gehirn",
     bereich: "mensch",
     titel: "Das Gehirn",
-    szene: "gehirn",
     merke: [
       "Großhirn: der größte Teil, zwei Hälften, außen die gefurchte Großhirnrinde. Denken, Lernen, Gedächtnis, Sprache, Bewusstsein, Wahrnehmung, willkürliche Bewegungen.",
       "Die linke Gehirnhälfte steuert die rechte Körperseite, die rechte die linke.",
@@ -188,7 +175,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "vegetativ",
     bereich: "mensch",
     titel: "Das unwillkürliche Nervensystem",
-    szene: "herz",
     merke: [
       "Willkürliches Nervensystem: steuert, was wir bewusst tun, z. B. die Skelettmuskeln beim Gehen, Greifen und Sprechen.",
       "Unwillkürliches (vegetatives) Nervensystem: steuert die inneren Organe ohne unseren Willen: Herzschlag, Atmung, Verdauung, Schwitzen, Pupillen.",
@@ -199,7 +185,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "sympathikus",
     bereich: "mensch",
     titel: "Sympathikus und Parasympathikus",
-    szene: "herz",
     merke: [
       "Sympathikus: macht den Körper bereit für Leistung, Stress, Kampf oder Flucht. Herz schneller, Blutdruck höher, Atmung schneller, Bronchien und Pupillen weiter, Verdauung gebremst.",
       "Parasympathikus: sorgt für Ruhe und Erholung. Herz langsamer, Atmung ruhiger, Pupillen enger, Verdauung angeregt.",
@@ -210,7 +195,6 @@ export const BIO_THEMEN: BioThema[] = [
     id: "hormone",
     bereich: "mensch",
     titel: "Hormone",
-    szene: "hormon",
     merke: [
       "Hormone sind chemische Botenstoffe. Hormondrüsen geben sie direkt ins Blut ab; das Blut bringt sie zu den Zielorganen.",
       "Ein Hormon wirkt nur an Zellen mit dem passenden Empfänger (Rezeptor): Schlüssel-Schloss-Prinzip.",

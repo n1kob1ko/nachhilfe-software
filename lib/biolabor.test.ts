@@ -49,8 +49,8 @@ test("Der Stoff: jedes Thema des Teststoffs, eindeutige ids, jede Frage mit genu
   // jedes Thema hat genug zum Üben
   for (const t of BIO_THEMEN) assert.ok(BIO_EINTRAEGE.filter((e) => e.thema === t.id && e.art !== "erklaeren").length >= 4, t.id);
   assert.ok(BIO_EINTRAEGE.length >= 200, `nur ${BIO_EINTRAEGE.length} Einträge`);
-  // die Bilder der Szenen gibt es
-  for (const b of ["hintergrund", "erbse", "dna", "teilung", "neuron", "gehirn", "herz", "hormon", "maskottchen-ruhig", "maskottchen-jubel", "maskottchen-denkt"])
+  // die Bilder gibt es
+  for (const b of ["hintergrund", "dna", "maskottchen-ruhig", "maskottchen-jubel", "maskottchen-denkt"])
     assert.ok(existsSync(path.join(process.cwd(), "public/spiele/biolabor", `${b}.webp`)), b);
 });
 
@@ -228,4 +228,19 @@ test("Server: wer es sieht, Runden und Stand", async () => {
   assert.equal(themen.length, BIO_THEMEN.length);
   assert.ok(themen.find((t) => t.id === "schema")!.gesehen >= 5);
   assert.ok(!sp.spielVorschlaege(vierte, { heute }).some((v) => v.art === "bio"), "keine Kachel bei den Fächern");
+});
+
+test("Erklär-Animationen: jedes Thema hat eine, sie beginnt beim passenden Schritt", async () => {
+  const { FILM_ZU_THEMA, startSchritt, filmSchritte } = await import("../components/lernen/BioFilm");
+  for (const t of BIO_THEMEN) assert.ok(FILM_ZU_THEMA[t.id], t.id);
+  for (const f of new Set(Object.values(FILM_ZU_THEMA))) {
+    const n = filmSchritte(f).length;
+    assert.ok(n >= 4 && n <= 5, `${f}: ${n} Schritte`);
+  }
+  assert.equal(startSchritt("teilung", "Wie heißt die Zellteilung, bei der Keimzellen entstehen? Meiose"), 2);
+  assert.equal(startSchritt("teilung", "Eizelle und Spermium verschmelzen. Was entsteht? die Zygote"), 3);
+  assert.equal(startSchritt("gehirn", "Welcher Teil sorgt für das Gleichgewicht? Kleinhirn"), 1);
+  assert.equal(startSchritt("gegenspieler", "Die Pupillen werden enger. Parasympathikus"), 2);
+  assert.equal(startSchritt("mendel", "Welche Regel sagt: In der F2 tauchen beide Merkmale wieder auf? die 2. Regel (Spaltungsregel)"), 3);
+  assert.equal(startSchritt("hormon", "Welches Hormon senkt den Blutzucker? Insulin"), 3);
 });

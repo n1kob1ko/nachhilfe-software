@@ -666,11 +666,17 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
 - **Fehler**: ein Blatt von unten mit der richtigen Antwort und dem Merkzettel des Themas, die Karte kommt drei
   Karten später noch einmal (höchstens zweimal, nicht bei Erklärfragen). Zuletzt falsche kommen in der nächsten
   Runde zuerst. **Sicher** = zweimal hintereinander beim ersten Versuch richtig (`bioStand`).
-- **Bewegung**: je Thema eine kleine Szene über der Frage, nur CSS (`.bs-*`): DNA dreht sich, Erbse wiegt sich,
-  Zelle teilt sich, Funke läuft das Neuron entlang, Herz schlägt mit EKG (schnell bei Sympathikus, langsam bei
-  Parasympathikus), Hormone steigen auf, X und Y tanzen, Schere schneidet die DNA. Steht still bei „weniger
-  Bewegung“. Maskottchen Erbsi (ruhig, jubelt, denkt nach).
-- **Bilder**: Higgsfield (gpt_image_2_6, 11 Bilder, etwa 11 Credits), `public/spiele/biolabor/*.webp`.
+- **Erklär-Animationen** (`components/lernen/BioFilm.tsx`): niko 2026-11-23 „die Animationen helfen beim lernen
+  nicht wirklich“, darum statt Deko-Szenen 11 kurze Abläufe in 4–5 Schritten mit je einem Satz: Gen/Allel/Genotyp/
+  Phänotyp, Mitose/Meiose/Befruchtung, Zellkern → Chromosom → DNA → Basen, Mendel P → F1 → F2 (3 : 1), Kreuzungsschema
+  Schritt für Schritt, Geschlecht und Blutgruppen, Gentechnik (Insulin-Gen ins Bakterium, drei Zweige), Reflexbogen,
+  Teile des Gehirns, Sympathikus/Parasympathikus an Herz, Pupille, Atmung, Verdauung, Hormon im Blut
+  (Schlüssel-Schloss). Ein SVG je Film, Teile gleiten per CSS zwischen den Schritten. Zu sehen: nach einer falschen
+  Antwort (ab dem Schritt, dessen Stichwort `such` in Frage oder Antwort steht), nach „Hatte ich nicht“ und einem
+  falschen Kreuzungsschema, über „Erklärung ansehen“ bei jeder Frage und im Lernzettel. Läuft von selbst, nur
+  solange sichtbar; bei „weniger Bewegung“ nur mit den Pfeilen. Neues Thema → Eintrag in `FILM_ZU_THEMA`.
+  Maskottchen Erbsi (ruhig, jubelt, denkt nach).
+- **Bilder**: Higgsfield (gpt_image_2_6, etwa 11 Credits): Hintergrund, DNA (Kachel) und Erbsi, `public/spiele/biolabor/*.webp`.
 - **Wer es sieht** (`bioWahl`): ein geplanter Biologie-Test in den nächsten 60 Tagen ab der 3. Klasse (Schulstufe
   7) oder mit Genetik/Nerven/Hormonen im Stoff (dann ganz oben, mit dem Test als Grund; Blätter bestimmen rückt
   dann nach unten), Biologie im Profil oder eine Biologie-Einheit ab der 3. Klasse, und der Test-Schüler.
