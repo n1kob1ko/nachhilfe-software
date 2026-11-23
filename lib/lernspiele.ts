@@ -45,7 +45,7 @@ import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarte
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
 import { BIOTEST_SKILL, biotestKarten, biotestStand as biotestStandAus } from "./biotest";
-import { BIO_SKILL, bioRunde, bioStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
+import { BIO_SKILL, bioRunde, bioStand, levelStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
 import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
 import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
 import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_STUFEN, vorlageRunde } from "./phantom-vorlage";
@@ -670,6 +670,11 @@ export function bioStandVon(studentId: number) {
 export const bioSicher = (studentId: number): string[] => [...bioStandVon(studentId)].filter(([, s]) => s.sicher).map(([id]) => id);
 /** Je Thema: sicher, gesehen, alle. */
 export const bioThemenStand = (studentId: number) => themenStand(bioStandVon(studentId));
+/** Die Labor-Mission: die besten Sterne je Level (lib/biolabor.ts levelStand). */
+export function bioLevelStand(studentId: number): Record<number, number> {
+  const rows = db().prepare("SELECT antworten FROM spielrunden WHERE student_id = ? AND art = 'bio' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as { antworten: string }[];
+  return levelStand(rows.map((r) => ({ antworten: json<GespeicherteAntwort[]>(r.antworten, []) })));
+}
 
 // ---------- Bio Test 4.Klasse Vorbereitung De La Salle (lib/biotest.ts) ----------
 

@@ -648,9 +648,19 @@ niko 2026-11-23 mit Foto vom Buch (Expedition Biologie 4) und vom Teststoff eine
 Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `components/lernen/BioLabor.tsx`,
 `biolabor.css`), ohne KI:
 
-- **Start** (niko 2026-11-23 „es ist nicht übersichtlich … zu viele Fragen“): oben nur **Fragen der Lehrerin**,
-  **Blockwerk**, **Dein Glossar** und **Lösungen zum Nachlesen**. Alles aus dem Buch (Alles/Genetik/Der Mensch,
-  Üben, Wie im Test, Kreuzungsschemata, Großer Test, Lernzettel, „Dein Labor“) steht zugeklappt unter „Mehr üben“.
+- **Labor-Mission** (niko 2026-11-23 „kein richtiges spiel“, Wahl „Kampf gegen Keime“): das Biolabor öffnet mit einer
+  Karte. Jede Nummer vom Blatt der Lehrerin ist ein Level (25 Level, 18 gehört zu 19; `LEVELS`, `LEVEL_TITEL`,
+  `levelEintraege`: zuerst die kurzen Fragen, am Schluss die Frage der Lehrerin selbst), in zwei Welten (Genetik ab 1,
+  Nervensystem und Hormone ab 20; der Anfang jeder Welt ist immer offen, sonst öffnet ein Stern das nächste Level,
+  `levelOffen`). In jedem Level steht ein Keim (Higgsfield, `public/spiele/biolabor/keim-*.webp`; 19 und 26 der Boss)
+  mit Lebensbalken: jede richtige Antwort ist ein Treffer (beim ersten Versuch schnell oder in Serie: kritisch, mehr
+  Punkte), jede falsche beim ersten Versuch kostet ein Herz, die Karte kommt wie sonst später noch einmal. Drei Herzen;
+  sind sie weg, ist das Level verloren (Lösungen stehen am Ende). Sterne = übrige Herzen, auf dem Server aus den Fehlern
+  beim ersten Versuch (`levelStand`, `bioLevelStand`); es zählt die beste Runde. Unter der Karte: Blockwerk,
+  Lösungen zum Nachlesen, Andere Übungen.
+- **Andere Übungen** (früher der Start, niko 2026-11-23 „zu viele Fragen“): Labor-Mission, Fragen der Lehrerin am
+  Stück, Dein Glossar; alles aus dem Buch (Alles/Genetik/Der Mensch, Üben, Wie im Test, Kreuzungsschemata, Großer
+  Test, Lernzettel, „Dein Labor“) steht zugeklappt unter „Mehr üben“.
 - **Fragen der Lehrerin** (Thema `lehrerin`): der Fragenkatalog zum Test am 26.11.2026 (Fotos von niko), Fragen
   1–26 im Wortlaut der Lehrerin als Erklärfragen, dazu kurze Teilfragen zum Selbstschreiben (z. B. 12) Anzahl und n,
   14) Kind vertauscht → Paar 4, 15) Vaterschaftsausschluss → Fall 2, Stammbaum Blutgruppen, Karyogramm richtig/falsch)

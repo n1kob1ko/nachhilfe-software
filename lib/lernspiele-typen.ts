@@ -426,7 +426,7 @@ export type SpielErgebnis =
       /** Europa: je Land die Teile, die jetzt sitzen; beim Rennen der beste Stand davor */
       europa?: { sitzt: LandStand; rekord?: { thema: Teil; vorher: number } };
       /** Biolabor: die Einträge, die jetzt sicher sitzen (lib/biolabor.ts bioStand) */
-      bio?: { sicher: string[] };
+      bio?: { sicher: string[]; level?: Record<number, number> };
       /** Bio Test De La Salle: Stellen („übung:stelle“), die sicher sitzen und die zuletzt falsch waren */
       biotest?: { sicher: string[]; falsch: string[] };
     }

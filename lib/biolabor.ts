@@ -473,6 +473,89 @@ function lehrerinReihe(pool: BioEintrag[], stand: Map<string, EintragStand>, anz
   return [...out.filter((e) => vorne.includes(e)), ...out.filter((e) => !vorne.includes(e)).sort((a, b) => platz(a) - platz(b))];
 }
 
+// ---------- Labor-Mission: die Fragen der Lehrerin als Level (niko 2026-11-23: „es ist irgendwie kein richtiges spiel“) ----------
+
+/** So viele Fehler beim ersten Versuch verzeiht ein Level; der nächste beendet es. */
+export const LEBEN = 3;
+
+/** Kurze Namen der Level (die Nummern vom Blatt der Lehrerin; 18 und 19 sind eine Aufgabe). */
+export const LEVEL_TITEL: Record<number, string> = {
+  1: "Mendelsche Regeln",
+  2: "Dominant-rezessiv",
+  3: "Intermediär",
+  4: "Genotyp und Phänotyp",
+  5: "Allel, homozygot, heterozygot",
+  6: "Rezessiv, dominant, Gen, Chromosom",
+  7: "Geschlechtszellen",
+  8: "Keimzellen und Körperzellen",
+  9: "Enkelkinder",
+  10: "P-, F1- und F2-Generation",
+  11: "Stammbaum Blutgruppen",
+  12: "Wie viele Chromosomen?",
+  13: "Haploid und diploid",
+  14: "Kind vertauscht",
+  15: "Vaterschaft",
+  16: "Erbsen kreuzen",
+  17: "Meerschweinchen",
+  19: "Karyogramm",
+  20: "Aufbau des Nervensystems",
+  21: "Herz und vegetatives Nervensystem",
+  22: "Organe und Gehirn",
+  23: "Nervenzelle",
+  24: "Gehirn beschriften",
+  25: "Hormondrüsen",
+  26: "Hormone und Wirkung",
+};
+
+/** Die Level in der Reihenfolge des Blatts. */
+export const LEVELS: number[] = Object.keys(LEVEL_TITEL).map(Number).sort((a, b) => a - b);
+
+export const levelAuswahl = (n: number): BioAuswahl => `level-${n}`;
+export function levelVon(auswahl: string): number | null {
+  const m = /^level-(\d+)$/.exec(auswahl);
+  const n = m ? Number(m[1]) : NaN;
+  return LEVELS.includes(n) ? n : null;
+}
+
+/** Die Einträge eines Levels: zuerst die kurzen Fragen, am Schluss die Frage der Lehrerin selbst (der Boss). */
+export function levelEintraege(n: number): BioEintrag[] {
+  const alle = BIO_EINTRAEGE.filter((e) => e.thema === "lehrerin" && lehrerNr(e) === n);
+  return [...alle.filter((e) => e.art !== "erklaeren"), ...alle.filter((e) => e.art === "erklaeren")];
+}
+
+/** Sterne nach Fehlern beim ersten Versuch: keiner 3, einer 2, zwei 1, sonst keiner (Level nicht geschafft). */
+export const sterneFuer = (fehler: number) => (fehler <= 0 ? 3 : fehler === 1 ? 2 : fehler === 2 ? 1 : 0);
+
+/**
+ * Die besten Sterne je Level aus den beendeten Runden: eine Runde zählt für ein Level, wenn alle ihre Karten zu ihm
+ * gehören und jede Karte des Levels beantwortet ist (wer vorher alle Leben verliert, hat das Level nicht geschafft).
+ */
+export function levelStand(runden: { antworten: { key: string; richtig: boolean }[] }[]): Record<number, number> {
+  const out: Record<number, number> = {};
+  for (const r of runden) {
+    if (!r.antworten.length) continue;
+    const ids = r.antworten.map((a) => vonKey(a.key));
+    const nrs = new Set(ids.map((id) => (id ? lehrerNr({ id, thema: eintrag(id)?.thema ?? "" }) : null)));
+    if (nrs.size !== 1) continue;
+    const n = [...nrs][0];
+    if (n === null) continue;
+    const keys = new Set(r.antworten.map((a) => a.key));
+    const noetig = levelEintraege(n).flatMap((e) => (e.art === "kreuzung" ? [bioKey(e.id), bioKey(e.id, "frage")] : [bioKey(e.id)]));
+    if (!noetig.every((k) => keys.has(k))) continue;
+    const sterne = sterneFuer(r.antworten.filter((a) => !a.richtig).length);
+    out[n] = Math.max(out[n] ?? 0, sterne);
+  }
+  return out;
+}
+
+/** Die ersten Level der zwei Welten (Genetik, Nervensystem und Hormone) sind immer offen. */
+export const WELT_ANFANG = [1, 20];
+/** Offen: der Anfang einer Welt, oder das Level davor ist geschafft (mindestens ein Stern). */
+export const levelOffen = (n: number, stand: Record<number, number>) => {
+  const i = LEVELS.indexOf(n);
+  return i >= 0 && (WELT_ANFANG.includes(n) || (i > 0 && (stand[LEVELS[i - 1]] ?? 0) > 0));
+};
+
 /** Die Karten einer Runde; `schreiben`: nur Fragen zum Selbstschreiben (Blockwerk), aus allen Themen. */
 export function bioRunde(
   stand: Map<string, EintragStand>,
@@ -483,6 +566,8 @@ export function bioRunde(
     const wahl = waehleEintraege(pool, stand, { anzahl: SCHREIB_JE_RUNDE, wiederholen: o.wiederholen, rng: o.rng, verteilt: true });
     return wahl.flatMap((e) => eintragKarten(e, "test", o.rng));
   }
+  const level = levelVon(o.auswahl);
+  if (level !== null && !o.gross) return levelEintraege(level).flatMap((e) => eintragKarten(e, "test", o.rng));
   if (o.auswahl === "lehrerin" && !o.gross) {
     const pool = eintraegeFuer("lehrerin", o.modus);
     return lehrerinReihe(pool, stand, AUFGABEN_JE_RUNDE[o.modus], o.wiederholen).flatMap((e) => eintragKarten(e, o.modus, o.rng));
