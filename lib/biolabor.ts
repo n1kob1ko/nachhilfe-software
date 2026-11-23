@@ -11,11 +11,11 @@
  * Ein Eintrag ist „sicher“, wenn er zweimal hintereinander beim ersten Versuch stimmte. Eine Runde nimmt zuerst die
  * zuletzt falschen, dann die nie gesehenen und am längsten nicht gesehenen, zuletzt die sicheren.
  */
-import { BIO_EINTRAEGE, BIO_THEMEN, type BegriffEintrag, type BioEintrag, type BioThema, type Bereich, type KreuzungEintrag, type Szene } from "./biolabor-inhalt";
+import { BIO_EINTRAEGE, BIO_THEMEN, type BegriffEintrag, type BioEintrag, type BioThema, type Bereich, type KreuzungEintrag } from "./biolabor-inhalt";
 import type { SpielKarte } from "./lernspiele-typen";
 
 export { BIO_EINTRAEGE, BIO_THEMEN };
-export type { BioEintrag, BioThema, Bereich, Szene };
+export type { BioEintrag, BioThema, Bereich };
 
 export type Rng = () => number;
 
@@ -33,7 +33,6 @@ export const SICHER_NACH = 2;
 export type BioDaten = {
   eintrag: string;
   thema: string;
-  szene: Szene;
   modus: BioModus;
   /** wie geantwortet wird */
   art: "kacheln" | "schreiben" | "selbst" | "schema";
@@ -196,10 +195,8 @@ function begriffFalsch(b: BegriffEintrag, rng: Rng): string[] {
 
 /** Die Karten zu einem Eintrag (ein Kreuzungsschema gibt zwei: das Schema und die Frage danach). */
 export function eintragKarten(e: BioEintrag, modus: BioModus, rng: Rng): SpielKarte[] {
-  const t = thema(e.thema);
-  const szene = t?.szene ?? "erbse";
   const basis = { skill: BIO_SKILL, vor: "", nach: "", regel: e.merke ?? "" };
-  const daten = (d: Omit<BioDaten, "eintrag" | "thema" | "szene" | "modus">): BioDaten => ({ eintrag: e.id, thema: e.thema, szene, modus, ...d });
+  const daten = (d: Omit<BioDaten, "eintrag" | "thema" | "modus">): BioDaten => ({ eintrag: e.id, thema: e.thema, modus, ...d });
   if (e.art === "wahl") {
     const schreiben = modus === "test" && !!e.schreib?.length;
     return [
@@ -372,14 +369,13 @@ export function bioRunde(
 }
 
 /** Je Thema: wie viele Einträge es gibt und wie viele sicher sind (für den Start und das Ende). */
-export function themenStand(stand: Map<string, EintragStand>): { id: string; titel: string; bereich: Bereich; szene: Szene; sicher: number; gesehen: number; alle: number }[] {
+export function themenStand(stand: Map<string, EintragStand>): { id: string; titel: string; bereich: Bereich; sicher: number; gesehen: number; alle: number }[] {
   return BIO_THEMEN.map((t) => {
     const liste = BIO_EINTRAEGE.filter((e) => e.thema === t.id);
     return {
       id: t.id,
       titel: t.titel,
       bereich: t.bereich,
-      szene: t.szene,
       sicher: liste.filter((e) => stand.get(e.id)?.sicher).length,
       gesehen: liste.filter((e) => stand.has(e.id)).length,
       alle: liste.length,
