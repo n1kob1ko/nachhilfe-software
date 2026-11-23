@@ -646,7 +646,7 @@ familiennamen“. Spiel `blatt` (`lib/blaetter.ts`, `components/lernen/BlattSpie
 niko 2026-11-23 mit Foto vom Buch (Expedition Biologie 4) und vom Teststoff einer Schülerin der 4D (Test am
 26.11.): „Ich möchte ein Spiel daraus machen“, „Es soll ein neues Spiel werden“, mit Animationen und Bildern von
 Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `components/lernen/BioLabor.tsx`,
-`BioSzene.tsx`, `biolabor.css`), ohne KI:
+`biolabor.css`), ohne KI:
 
 - **Stoff**: 13 Themen in zwei Bereichen, geschrieben nach dem Lehrplan (die Buchseiten lagen nicht vor).
   Genetik: Grundlagen, Glossar, Weitergabe der Erbinformation (Mitose, Meiose), DNA und Chromosomen, Mendel’sche
@@ -663,18 +663,14 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
 - **Modi**: Üben (10 Karten, Kacheln), Wie im Test (12, schreiben wie bei Blätter bestimmen), Kreuzungsschemata
   (nur das Thema `schema`), Großer Test (24, reihum aus allen Themen), Lernzettel (alle Merkzettel, zählt nicht).
   Oben Alles, Genetik oder Der Mensch; ein Thema in „Dein Labor“ antippen spielt nur dieses.
-- **Fehler**: ein Blatt von unten mit der richtigen Antwort und dem Merkzettel des Themas, die Karte kommt drei
+- **Fehler**: ein Blatt von unten mit der richtigen Antwort und einem Merksatz (`merkeFuer`: eigenes `merke`,
+  sonst `MERKE` in `lib/biolabor.ts`, bei Begriffen die Erklärung, sonst der Satz vom Lernzettel des Themas mit den
+  meisten gleichen Wörtern), die Karte kommt drei
   Karten später noch einmal (höchstens zweimal, nicht bei Erklärfragen). Zuletzt falsche kommen in der nächsten
   Runde zuerst. **Sicher** = zweimal hintereinander beim ersten Versuch richtig (`bioStand`).
-- **Erklär-Animationen** (`components/lernen/BioFilm.tsx`): niko 2026-11-23 „die Animationen helfen beim lernen
-  nicht wirklich“, darum statt Deko-Szenen 11 kurze Abläufe in 4–5 Schritten mit je einem Satz: Gen/Allel/Genotyp/
-  Phänotyp, Mitose/Meiose/Befruchtung, Zellkern → Chromosom → DNA → Basen, Mendel P → F1 → F2 (3 : 1), Kreuzungsschema
-  Schritt für Schritt, Geschlecht und Blutgruppen, Gentechnik (Insulin-Gen ins Bakterium, drei Zweige), Reflexbogen,
-  Teile des Gehirns, Sympathikus/Parasympathikus an Herz, Pupille, Atmung, Verdauung, Hormon im Blut
-  (Schlüssel-Schloss). Ein SVG je Film, Teile gleiten per CSS zwischen den Schritten. Zu sehen: nach einer falschen
-  Antwort (ab dem Schritt, dessen Stichwort `such` in Frage oder Antwort steht), nach „Hatte ich nicht“ und einem
-  falschen Kreuzungsschema, über „Erklärung ansehen“ bei jeder Frage und im Lernzettel. Läuft von selbst, nur
-  solange sichtbar; bei „weniger Bewegung“ nur mit den Pfeilen. Neues Thema → Eintrag in `FILM_ZU_THEMA`.
+- **Keine Animationen**: niko 2026-11-23 zu Deko-Szenen „helfen beim lernen nicht wirklich“, zu den danach gebauten
+  Erklär-Animationen (11 SVG-Abläufe) „Die Animationen sind schlecht ich versteh gar nichts worum es ghet“. Beide
+  wieder entfernt; das Spiel zeigt nur Frage, Antwort und Merksatz. Neue Bilder nur, wenn niko sie ausdrücklich will.
   Maskottchen Erbsi (ruhig, jubelt, denkt nach).
 - **Bilder**: Higgsfield (gpt_image_2_6, etwa 11 Credits): Hintergrund, DNA (Kachel) und Erbsi, `public/spiele/biolabor/*.webp`.
 - **Wer es sieht** (`bioWahl`): ein geplanter Biologie-Test in den nächsten 60 Tagen ab der 3. Klasse (Schulstufe

@@ -193,9 +193,68 @@ function begriffFalsch(b: BegriffEintrag, rng: Rng): string[] {
   return [...new Set([...gleich, ...nah])].filter((x) => x !== b.begriff).slice(0, 3);
 }
 
+/** Wortstämme für den Vergleich: klein, ohne Umlaute, Wörter ab 4 Buchstaben, die ersten 6 Buchstaben. */
+function staemme(text: string): Set<string> {
+  const ohne = new Set(["eine", "einer", "einem", "einen", "der", "die", "das", "und", "oder", "nicht", "werden", "wird", "sind", "haben", "welche", "welcher", "welches", "beim", "immer", "auch", "dann", "wenn", "nach", "sich", "zwei"]);
+  return new Set(
+    text
+      .toLowerCase()
+      .replace(/ä/g, "ae")
+      .replace(/ö/g, "oe")
+      .replace(/ü/g, "ue")
+      .replace(/ß/g, "ss")
+      .split(/[^a-z0-9]+/)
+      .filter((w) => w.length >= 4 && !ohne.has(w))
+      .map((w) => w.slice(0, 6)),
+  );
+}
+
+/** Wo der Satz vom Lernzettel nicht genau passt, steht hier ein eigener. */
+const MERKE: Record<string, string> = {
+  "g-umwelt": "Nicht alles ist vererbt: auch die Umwelt prägt uns (Ernährung, Sonne, Training).",
+  "g-rezessiv-zeigt": "Ein rezessives Allel (Kleinbuchstabe) zeigt sich nur, wenn es doppelt da ist: rr.",
+  "m-9331": "3. Regel: Bei zwei Merkmalen spaltet die F2 im Verhältnis 9 : 3 : 3 : 1 auf.",
+  "m-f2-weiss": "Rr × Rr ergibt RR, Rr, Rr, rr. Nur rr ist weiß: 1 von 4 Feldern = 25 %.",
+  "s-feld": "Ein 2 × 2-Schema hat 4 Felder. Jedes Feld ist 1 von 4 = 25 %.",
+  "h-0-dominant": "A und B sind dominant über 0. Blutgruppe 0 hat nur, wer 00 hat.",
+  "h-00": "00 × 00: Beide Eltern können nur 0 weitergeben, das Kind hat 00 = Blutgruppe 0.",
+  "h-ab-0": "AB × 00: Das Kind bekommt A oder B von der Mutter und 0 vom Vater, also A0 oder B0 = Blutgruppe A oder B.",
+  "n-synapse": "Die Synapse ist die Verbindungsstelle zwischen zwei Nervenzellen. Dort geht das Signal mit chemischen Botenstoffen weiter.",
+  "h-schwanken": "Das Kleinhirn steuert Gleichgewicht und fein abgestimmte Bewegungen. Ist es verletzt, schwankt man.",
+  "o-pubertaet": "Die Geschlechtshormone steuern die Pubertät: Östrogen (Eierstöcke) und Testosteron (Hoden).",
+  "o-adrenalin-wirkt": "Adrenalin aus den Nebennieren macht bereit für Kampf oder Flucht: Herz schneller, mehr Energie.",
+  "t-risiko": "Risiken der Gentechnik: unbekannte Folgen für Natur und Gesundheit, veränderte Pflanzen breiten sich aus.",
+};
+
+/**
+ * Der Merksatz nach einem Fehler (niko 2026-11-23: Animationen raus, dafür klar erklären). Steht beim Eintrag einer,
+ * gilt der; bei Begriffen die Erklärung; sonst der Satz vom Lernzettel des Themas, der die meisten Wörter mit Frage
+ * und Antwort teilt.
+ */
+export function merkeFuer(e: BioEintrag): string {
+  if (e.merke) return e.merke;
+  if (MERKE[e.id]) return MERKE[e.id];
+  if (e.art === "begriff") return `${e.begriff}: ${e.erklaerung}`;
+  const t = thema(e.thema);
+  if (!t) return "";
+  const text = e.art === "wahl" ? `${e.frage} ${e.richtig}` : e.art === "zuordnen" ? `${e.aussage} ${e.richtig}` : e.art === "erklaeren" ? `${e.frage} ${e.punkte.join(" ")}` : `${e.frage} ${e.richtig}`;
+  const such = staemme(text);
+  let best = "";
+  let punkte = 0;
+  for (const m of t.merke) {
+    let n = 0;
+    for (const w of staemme(m)) if (such.has(w)) n++;
+    if (n > punkte) {
+      punkte = n;
+      best = m;
+    }
+  }
+  return best;
+}
+
 /** Die Karten zu einem Eintrag (ein Kreuzungsschema gibt zwei: das Schema und die Frage danach). */
 export function eintragKarten(e: BioEintrag, modus: BioModus, rng: Rng): SpielKarte[] {
-  const basis = { skill: BIO_SKILL, vor: "", nach: "", regel: e.merke ?? "" };
+  const basis = { skill: BIO_SKILL, vor: "", nach: "", regel: merkeFuer(e) };
   const daten = (d: Omit<BioDaten, "eintrag" | "thema" | "modus">): BioDaten => ({ eintrag: e.id, thema: e.thema, modus, ...d });
   if (e.art === "wahl") {
     const schreiben = modus === "test" && !!e.schreib?.length;

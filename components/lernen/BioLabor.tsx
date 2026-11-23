@@ -5,22 +5,21 @@ import "./phantombild.css";
 import "./biolabor.css";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { BookOpen, Check, Eye, EyeOff, Flame, FlaskConical, Grid2x2, PenLine, PlayCircle, Star, Volume2, VolumeX, X, Zap } from "lucide-react";
+import { BookOpen, Check, Eye, EyeOff, Flame, FlaskConical, Grid2x2, PenLine, Star, Volume2, VolumeX, X, Zap } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { bioStartenAction, spielBeendenAction, tabletBioStartenAction, tabletSpielBeendenAction } from "@/app/lernspiel-actions";
 import { BIO_EINTRAEGE, BIO_THEMEN, felder, feldWahl, GROSSER_TEST, pruefeGeschrieben, pruefeSchema, thema as themaVon, type BioAuswahl, type BioDaten, type BioModus } from "@/lib/biolabor";
 import type { SpielErgebnis, SpielKarte } from "@/lib/lernspiele-typen";
-import { BioFilm, FILM_ZU_THEMA, startSchritt } from "./BioFilm";
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
 
 /**
  * Biolabor (lib/biolabor.ts, docs/lernspiele.md „Biolabor“): Genetik und Nervensystem für den Biologie-Test der 4.
- * Klasse. Oben das Thema und „Erklärung ansehen“ (BioFilm.tsx), darunter die Frage. „Üben“: Antworten antippen, im Kreuzungsschema
+ * Klasse. Oben das Thema, darunter die Frage. „Üben“: Antworten antippen, im Kreuzungsschema
  * sind die Keimzellen vorgegeben. „Wie im Test“: Begriffe schreiben, offene Fragen selbst kontrollieren, im Schema
  * auch die Keimzellen eintragen. Ein Fehler zeigt die Lösung und das Merke; die Karte kommt drei Karten später noch
- * einmal; dazu läuft die Erklär-Animation ab dem passenden Schritt. Gezählt wird der erste Versuch. Erbsi, die Labor-Erbse, freut sich mit (Bilder mit Higgsfield gemacht).
+ * einmal (Merksatz: merkeFuer in lib/biolabor.ts). Bilder und Animationen gibt es bewusst keine (niko 2026-11-23). Gezählt wird der erste Versuch. Erbsi, die Labor-Erbse, freut sich mit (Bilder mit Higgsfield gemacht).
  */
 
 type Phase = "start" | "laden" | "spiel" | "ende" | "lernzettel";
@@ -79,7 +78,6 @@ export function BioLabor({
   const [beste, setBeste] = useState(0);
   const [ergebnis, setErgebnis] = useState<SpielErgebnis | null>(null);
   const [daneben, setDaneben] = useState<SpielKarte[]>([]);
-  const [erklaer, setErklaer] = useState(false);
 
   const antworten = useRef(new Map<string, string>());
   const wieder = useRef(new Map<string, number>());
@@ -139,7 +137,6 @@ export function BioLabor({
       setBeste(0);
       setErgebnis(null);
       setDaneben([]);
-      setErklaer(false);
       setPhase("spiel");
     },
     [server],
@@ -163,7 +160,6 @@ export function BioLabor({
       setWahl(null);
       setHilfe(null);
       setEingabe("");
-      setErklaer(false);
       let neu = reihe;
       if (nochmal && nochmal.bio?.art !== "selbst" && (wieder.current.get(nochmal.key) ?? 0) < 2) {
         wieder.current.set(nochmal.key, (wieder.current.get(nochmal.key) ?? 0) + 1);
@@ -223,10 +219,6 @@ export function BioLabor({
     if (phase !== "spiel") return;
     const taste = (e: KeyboardEvent) => {
       if ((e.target as HTMLElement)?.tagName === "TEXTAREA") return;
-      if (erklaer) {
-        if (e.key === "Escape") setErklaer(false);
-        return;
-      }
       if (hilfe && (e.key === "Enter" || e.key === " ")) {
         e.preventDefault();
         weiter(hilfe.art === "falsch" ? hilfe.karte : undefined);
@@ -238,7 +230,7 @@ export function BioLabor({
     };
     window.addEventListener("keydown", taste);
     return () => window.removeEventListener("keydown", taste);
-  }, [phase, hilfe, karte, daten, wahl, weiter, antworte, erklaer]);
+  }, [phase, hilfe, karte, daten, wahl, weiter, antworte]);
 
   const schreiben = (e: FormEvent) => {
     e.preventDefault();
@@ -507,11 +499,6 @@ export function BioLabor({
       <div className="bio-spiel">
         <div className="bio-oben" key={`${karte.key}-${pos}`}>
           <p className="bio-thema-schild">{titel}</p>
-          {FILM_ZU_THEMA[daten.thema] && (
-            <button type="button" className="bio-erklaer-knopf" onClick={() => setErklaer(true)} disabled={!!hilfe} data-testid="bio-erklaerung">
-              <PlayCircle size={18} aria-hidden /> Erklärung ansehen
-            </button>
-          )}
         </div>
 
         <div className="bio-karte" key={`k-${karte.key}-${pos}`} data-testid="bio-karte" data-art={daten.art} data-eintrag={daten.eintrag}>
@@ -580,18 +567,6 @@ export function BioLabor({
         </div>
       </div>
 
-      {erklaer && !hilfe && FILM_ZU_THEMA[daten.thema] && (
-        <div className="bio-hilfe" role="dialog" aria-label="Erklärung" data-art="erklaer" data-testid="bio-erklaer-blatt">
-          <div className="ls-blatt bio-hilfe-blatt">
-            <p className="bio-hilfe-titel">{titel}</p>
-            <BioFilm film={FILM_ZU_THEMA[daten.thema]} start={startSchritt(FILM_ZU_THEMA[daten.thema], `${daten.frage} ${daten.ueber ?? ""}`)} />
-            <button type="button" className="ls-knopf ls-los mt-3" onClick={() => setErklaer(false)} autoFocus data-testid="bio-erklaer-zu">
-              Zurück zur Frage
-            </button>
-          </div>
-        </div>
-      )}
-
       {hilfe && (
         <div className="bio-hilfe" role="alert" data-art={hilfe.art} data-testid="bio-hilfe">
           <div className="ls-blatt bio-hilfe-blatt">
@@ -615,7 +590,6 @@ export function BioLabor({
                 <FlaskConical size={16} aria-hidden /> {hilfe.karte.regel}
               </p>
             )}
-            {hilfe.art === "falsch" && <FilmZurKarte karte={hilfe.karte} />}
             <button type="button" className="ls-knopf ls-los mt-4" onClick={() => weiter(hilfe.art === "falsch" ? hilfe.karte : undefined)} autoFocus data-testid="bio-weiter">
               Weiter
             </button>
@@ -747,11 +721,6 @@ function Schema({ karte, daten, gesperrt, onFertig, weiter }: { karte: SpielKart
         <div className="ks-ergebnis" role="status" data-testid="ks-ergebnis">
           <p className="bio-hilfe-titel">{ergebnis.ok ? "Richtig ausgefüllt!" : "Nicht ganz: die richtigen stehen klein darunter."}</p>
           {!ergebnis.ok && <p className="bio-merke mt-2">{karte.regel}</p>}
-          {!ergebnis.ok && (
-            <div className="mt-3">
-              <BioFilm film="quadrat" start={3} kompakt />
-            </div>
-          )}
           <button type="button" className="ls-knopf ls-los mt-3 w-full" onClick={weiter} autoFocus data-testid="ks-weiter">
             Weiter
           </button>
@@ -841,16 +810,9 @@ function Selbst({ daten, gesperrt, antworte, weiter }: { daten: BioDaten; gesper
               </button>
             </div>
           ) : (
-            <>
-            {bewertet === false && FILM_ZU_THEMA[daten.thema] && (
-              <div className="mt-3">
-                <BioFilm film={FILM_ZU_THEMA[daten.thema]} start={startSchritt(FILM_ZU_THEMA[daten.thema], daten.frage)} kompakt />
-              </div>
-            )}
             <button type="button" className="ls-knopf ls-los mt-3 w-full" onClick={weiter} autoFocus data-testid="bio-selbst-weiter">
               {bewertet ? "Super, weiter" : "Merk ich mir, weiter"}
             </button>
-            </>
           )}
         </>
       )}
@@ -882,11 +844,6 @@ function Lernzettel({ kopf, ueben, zurueck }: { kopf: React.ReactNode; ueben: (t
               return (
                 <article key={t.id} className="ls-blatt bio-zettel-blatt mt-3" data-testid={`bio-zettel-${t.id}`}>
                   <h3 className="bio-zettel-titel">{t.titel}</h3>
-                  {FILM_ZU_THEMA[t.id] && (t.id !== "vegetativ" && t.id !== "glossar") && (
-                    <div className="mt-3">
-                      <BioFilm film={FILM_ZU_THEMA[t.id]} />
-                    </div>
-                  )}
                   <ul className="bio-zettel-liste">
                     {t.merke.map((m) => (
                       <li key={m}>{m}</li>
@@ -928,12 +885,4 @@ function Lernzettel({ kopf, ueben, zurueck }: { kopf: React.ReactNode; ueben: (t
       </div>
     </div>
   );
-}
-
-/** Nach einer falschen Antwort: die Erklär-Animation zum Thema, ab dem Schritt, der zur Frage passt. */
-function FilmZurKarte({ karte }: { karte: SpielKarte }) {
-  const d = karte.bio;
-  const film = d ? FILM_ZU_THEMA[d.thema] : undefined;
-  if (!d || !film) return null;
-  return <BioFilm film={film} start={startSchritt(film, `${d.frage} ${d.ueber ?? ""} ${karte.richtig}`)} kompakt />;
 }
