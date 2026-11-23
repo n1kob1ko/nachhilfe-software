@@ -689,7 +689,7 @@ function Schema({ karte, daten, gesperrt, onFertig, weiter }: { karte: SpielKart
           <li key={l}>{l}</li>
         ))}
       </ul>
-      <p className="bio-frage mt-2 text-[17px]">{ohneGameten ? "Füll die vier Felder aus." : "Trag die Keimzellen ein, dann die vier Felder."}</p>
+      <p className="bio-frage mt-2 text-[17px]">{ohneGameten ? "Füll die vier Felder aus." : "Trag die Geschlechtszellen ein, dann die vier Felder."}</p>
       <div className="ks-raster" data-zeile={aktivFeld >= 0 ? Math.floor(aktivFeld / 2) : undefined} data-spalte={aktivFeld >= 0 ? aktivFeld % 2 : undefined}>
         <span className="ks-ecke" aria-hidden>
           <i>♂</i>
