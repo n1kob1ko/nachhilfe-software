@@ -11,6 +11,10 @@ import {
   BIO_THEMEN,
   bioRunde,
   bioStand,
+  SCHREIB_JE_RUNDE,
+  BLOCK_THEMEN,
+  lehrerNr,
+  schreibbar,
   eintragKarten,
   eintraegeFuer,
   felder,
@@ -33,7 +37,7 @@ const kreuzung = (id: string) => BIO_EINTRAEGE.find((e): e is KreuzungEintrag =>
 
 test("Der Stoff: jedes Thema des Teststoffs, eindeutige ids, jede Frage mit genug falschen Antworten", () => {
   const titel = BIO_THEMEN.map((t) => t.titel);
-  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Gentechnik und Lebensmittel", "Biotechnik", "Das Nervensystem", "Das Gehirn", "Das Rückenmark", "Lernen und Gedächtnis", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus", "Hormone"])
+  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Glossar aus dem Heft", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Gentechnik und Lebensmittel", "Biotechnik", "Das Nervensystem", "Das Gehirn", "Das Rückenmark", "Lernen und Gedächtnis", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus", "Hormone"])
     assert.ok(titel.includes(t), t);
   const ids = BIO_EINTRAEGE.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, "ids doppelt");
@@ -196,6 +200,65 @@ test("Runden: Fehler zuerst, sicher nach zweimal richtig, großer Test aus allen
   assert.ok(w.filter((e) => e.art === "erklaeren").length <= 2);
 });
 
+test("Blockwerk: nur Fragen zum Selbstschreiben, aus vielen Themen, Fehler zuerst", () => {
+  const rng = zufall(7);
+  // nur Fragen der Lehrerin und das Glossar aus dem Heft (niko: „es sind zu viele Fragen“)
+  const pool = BIO_EINTRAEGE.filter((e) => schreibbar(e) && BLOCK_THEMEN.includes(e.thema));
+  assert.ok(pool.length >= 80, `nur ${pool.length} Fragen zum Schreiben`);
+  const r = bioRunde(new Map(), { auswahl: "alle", modus: "ueben", schreiben: true, rng });
+  assert.equal(r.length, SCHREIB_JE_RUNDE);
+  assert.ok(r.every((k) => k.bio?.art === "schreiben" && k.faecher.length === 1), "nichts zum Ankreuzen");
+  assert.ok(r.every((k) => BLOCK_THEMEN.includes(k.bio!.thema)));
+  const fehler = pool.find((e) => e.art === "begriff")!;
+  const r2 = bioRunde(new Map(), { auswahl: "alle", modus: "ueben", schreiben: true, wiederholen: [fehler.id, "x-gibt-es-nicht"], rng });
+  assert.ok(r2.some((k) => vonKey(k.key) === fehler.id));
+  // was man nur ankreuzen kann (Sympathikus oder Parasympathikus, offene Fragen, Schemata) kommt nicht
+  const nie = new Set(BIO_EINTRAEGE.filter((e) => !schreibbar(e)).map((e) => e.id));
+  for (let i = 0; i < 20; i++) assert.ok(bioRunde(new Map(), { auswahl: "alle", modus: "test", schreiben: true, rng }).every((k) => !nie.has(vonKey(k.key)!)));
+});
+
+test("Glossar aus dem Heft: die Begriffe der Schülerin in ihren Worten, zum Schreiben", () => {
+  const heft = BIO_EINTRAEGE.filter((e) => e.thema === "heft");
+  const begriffe = heft.flatMap((e) => (e.art === "begriff" ? [e.begriff] : []));
+  for (const b of ["Gen", "Allel", "Karyogramm", "homologe Chromosomen", "Merkmalsträger", "Mendel’sche Regeln", "dominant-rezessiver Erbgang", "intermediärer Erbgang", "Hybrid", "Stammbaum", "Parentalgeneration", "F2-Generation"])
+    assert.ok(begriffe.includes(b), b);
+  assert.ok(heft.every(schreibbar));
+  const ib = BIO_EINTRAEGE.find((e) => e.id === "v-intermediaer");
+  assert.ok(ib?.art === "begriff" && /kein Merkmal setzt sich durch/i.test(ib.erklaerung));
+  assert.equal(pruefeGeschrieben("Elterngeneration", ["Parentalgeneration", "Elterngeneration", "P-Generation", "P", "E"]), "richtig");
+  assert.equal(pruefeGeschrieben("Chromosomensatz", ["Karyogramm"]), "falsch");
+});
+
+test("Fragen der Lehrerin: jede Nummer vom Blatt, der Reihe nach, mit Nummer, Lösungen stimmen", () => {
+  const l = BIO_EINTRAEGE.filter((e) => e.thema === "lehrerin");
+  const nrs = new Set(l.map((e) => lehrerNr(e)));
+  for (let n = 1; n <= 26; n++) if (n !== 18) assert.ok(nrs.has(n), `Frage ${n} fehlt`);
+  assert.ok(!nrs.has(null), "jede hat eine Nummer");
+  const richtig = (id: string) => {
+    const e = BIO_EINTRAEGE.find((x) => x.id === id)!;
+    return e.art === "wahl" || e.art === "kreuzung" ? e.richtig : "";
+  };
+  assert.equal(richtig("l-14"), "Paar 4");
+  assert.equal(richtig("l-15"), "Fall 2");
+  assert.equal(richtig("l-11-kind"), "A0");
+  assert.equal(richtig("l-11-partner"), "B0");
+  assert.equal(richtig("l-12-koerper"), "46");
+  assert.equal(richtig("l-19-21"), "falsch");
+  assert.equal(richtig("k-l-erbse-f2"), "3 gelb : 1 grün");
+  assert.equal(felder(kreuzung("k-l-erbse-f1").mutter, kreuzung("k-l-erbse-f1").vater, ["G", "g"]).join(" "), "Gg Gg Gg Gg");
+  assert.equal(felder(kreuzung("k-l-meer-f2").mutter, kreuzung("k-l-meer-f2").vater, ["S", "s"]).join(" "), "SS Ss Ss ss");
+  // eine Runde: der Reihe nach wie auf dem Blatt, die Nummer steht oben, zuerst Frage 1
+  const r = bioRunde(new Map(), { auswahl: "lehrerin", modus: "test", rng: zufall(4) });
+  const n = r.map((k) => lehrerNr({ id: vonKey(k.key)!, thema: "lehrerin" })!);
+  assert.deepEqual(n, [...n].sort((a, b) => a - b));
+  assert.equal(n[0], 1);
+  assert.match(r[0].bio!.ueber!, /^Frage 1 der Lehrerin/);
+  // sicher Gewusstes kommt erst später: dann geht es mit den nächsten Nummern weiter
+  const stand = bioStand([{ antworten: r.map((k) => ({ key: k.key, richtig: true })) }, { antworten: r.map((k) => ({ key: k.key, richtig: true })) }]);
+  const r2 = bioRunde(stand, { auswahl: "lehrerin", modus: "test", rng: zufall(5) });
+  assert.ok(lehrerNr({ id: vonKey(r2[0].key)!, thema: "lehrerin" })! > 1);
+});
+
 async function setup(o: { grade?: number; klasse?: number; subjects?: string[] } = {}) {
   const { resetForTests } = await import("./db");
   resetForTests();
@@ -239,6 +302,11 @@ test("Server: wer es sieht, Runden und Stand", async () => {
   assert.equal(themen.length, BIO_THEMEN.length);
   assert.ok(themen.find((t) => t.id === "schema")!.gesehen >= 5);
   assert.ok(!sp.spielVorschlaege(vierte, { heute }).some((v) => v.art === "bio"), "keine Kachel bei den Fächern");
+  // Blockwerk: Endlos-Lauf mit Fragen zum Schreiben
+  const c = sp.starteRunde(student, "bio", { heute, endlos: "neu", bloecke: true, bio: { auswahl: "alle", modus: "test", schreiben: true }, rng: zufall(3) });
+  assert.equal(c.karten.length, 10);
+  assert.ok(c.karten.every((k) => k.bio?.art === "schreiben"));
+  assert.ok(sp.istBlockwerk(student.id, c.rundeId));
 });
 
 test("Merksatz: jede Karte zeigt nach einem Fehler einen passenden Satz (statt Animationen)", () => {

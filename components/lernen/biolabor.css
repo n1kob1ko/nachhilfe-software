@@ -827,3 +827,22 @@ button.bio-thema:active {
     transition: none !important;
   }
 }
+
+/* Start (niko 2026-11-23 „zu viele Fragen“): die Fragen der Lehrerin stehen vorne und fallen auf, der Rest ist zugeklappt */
+.bio .pb-wahl-knopf.bio-wichtig {
+  outline: 3px solid #f3b51c;
+  outline-offset: 0;
+}
+.bio .pb-wahl-knopf.bio-wichtig > svg {
+  color: #d99a00;
+}
+.bio-mehr {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  font-weight: 700;
+  font-size: 15px;
+}

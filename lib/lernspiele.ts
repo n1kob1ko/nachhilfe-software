@@ -868,7 +868,7 @@ export function starteRunde(
     /** Europa: Modus, Thema und Region (lib/europa.ts) */
     europa?: EuropaWunsch;
     /** Biolabor: Themen, Üben oder wie im Test, großer Test (lib/biolabor.ts) */
-    bio?: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean };
+    bio?: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean; schreiben?: boolean };
     /** Bio Test De La Salle: eine Übung, ganz oder nur diese Stellen (lib/biotest.ts) */
     biotest?: { uebung: string; nur?: string[] };
   } = {},
@@ -941,7 +941,7 @@ export function starteRunde(
   } else if (art === "bio") {
     // Biolabor: zuerst die zuletzt falschen, dann die noch nicht sicheren
     const wiederholen = [...new Set(offeneFehler(student.id, art, 3).map((k) => bioVonKey(k)).filter((id): id is string => !!id))];
-    karten = bioRunde(bioStandVon(student.id), { auswahl: o.bio?.auswahl ?? "alle", modus: o.bio?.modus ?? "ueben", gross: o.bio?.gross, wiederholen, rng: o.rng ?? Math.random });
+    karten = bioRunde(bioStandVon(student.id), { auswahl: o.bio?.auswahl ?? "alle", modus: o.bio?.modus ?? "ueben", gross: o.bio?.gross, schreiben: o.bio?.schreiben, wiederholen, rng: o.rng ?? Math.random });
   } else if (art === "biotest") {
     karten = o.biotest ? biotestKarten(o.biotest.uebung, o.biotest.nur) : [];
   } else if (art === "vokabeln") {

@@ -17,6 +17,7 @@ import { SatzbauFeld } from "./SatzbauFeld";
 import { StrahlFeld } from "./StrahlFeld";
 import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
+import { BioSchreibFeld } from "./BioSchreibFeld";
 import { MathText } from "@/components/MathText";
 import { Abriss, Funken, vibriere } from "./SpielTeile";
 import { BlockFeld, FrageKopf, FrageLeiste, type BlockAntwort, type BlockFrage } from "./BlockFeld";
@@ -755,7 +756,8 @@ export function Lernspiel({
 
   // Tasten 1–5 am Laptop (ohne Bewegung beim Antippen: wiederholte Aktionen sollen sofort wirken)
   useEffect(() => {
-    if (phase !== "spiel" || !aktuell || aktuell.form || (bloecke && !frage)) return;
+    // Biolabor zum Schreiben: Ziffern gehören ins Feld (46, 2n), nicht auf die Kisten
+    if (phase !== "spiel" || !aktuell || aktuell.form || aktuell.bio?.art === "schreiben" || (bloecke && !frage)) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.metaKey || e.ctrlKey || e.altKey) return;
       const n = Number(e.key);
@@ -962,11 +964,19 @@ export function Lernspiel({
           </p>
           <div className="bw-fragen-aus mt-2" style={{ "--n": 3 } as CSSProperties} data-testid={`${info.kurz}-quellen`}>
             {quellLink && quellen.length > 1 ? (
-              quellen.map((v) => (
-                <ZuLink key={v.art} href={`${quellLink}${v.art}`} aria-current={v.art === art ? "true" : undefined}>
-                  {SPIEL_TITEL[v.art]}
-                </ZuLink>
-              ))
+              <>
+                {/* ein Spiel, das selbst keine Kachel bei den Vorschlägen hat (Biolabor): steht vorne, ausgewählt */}
+                {!quellen.some((v) => v.art === art) && (
+                  <ZuLink href={`${quellLink}${art}`} aria-current="true">
+                    {SPIEL_TITEL[art]}
+                  </ZuLink>
+                )}
+                {quellen.map((v) => (
+                  <ZuLink key={v.art} href={`${quellLink}${v.art}`} aria-current={v.art === art ? "true" : undefined}>
+                    {SPIEL_TITEL[v.art]}
+                  </ZuLink>
+                ))}
+              </>
             ) : (
               <span className="ls-grund">{SPIEL_TITEL[art]}</span>
             )}
@@ -1520,7 +1530,7 @@ export function Lernspiel({
       {brett === "bloecke" && <BlockMusik />}
       {brett === "bloecke" && (
         <BlockFeld
-          key={blockAnfang.n}
+          key={`brett-${blockAnfang.n}`}
           aktiv={!frage || imBrett}
           frage={brettFrage}
           antwort={blockAntwort}
@@ -1550,7 +1560,7 @@ export function Lernspiel({
   const feld = aktuell?.form;
   if (feld === "paar") {
     return schale(
-        <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+        <div className={feldKlasse} key={bloecke ? `frage-${frage?.n}` : undefined}>
           {frageZeile}
           <PaarFeld key={rundeId} karten={karten} auftrag={SPIEL_AUFGABE[art]} onVersuch={paarVersuch} onRichtig={paarRichtig} onFalsch={paarFalsch} onFertig={paarFertig}>
             {zuletztZeile}
@@ -1560,10 +1570,21 @@ export function Lernspiel({
     );
   }
 
+  // Biolabor im Blockwerk (niko 2026-11-23: „sie muss die antwort schreiben“): die Antwort wird getippt
+  if (aktuell?.bio?.art === "schreiben") {
+    return schale(
+      <div className={feldKlasse} key={bloecke ? `frage-${frage?.n}` : undefined}>
+        {frageZeile}
+        <BioSchreibFeld key={`${rundeId}-${pos}`} karte={aktuell} onPruefe={reihePruefe} onWeiter={reiheWeiter} />
+        {jubelZeile}
+      </div>,
+    );
+  }
+
   if (aktuell && feld) {
     const eigen = { key: `${rundeId}-${pos}`, karte: aktuell, onPruefe: reihePruefe, onWeiter: reiheWeiter };
     return schale(
-        <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+        <div className={feldKlasse} key={bloecke ? `frage-${frage?.n}` : undefined}>
           {frageZeile}
           {feld === "reihe" ? (
             <SatzbauFeld {...eigen} auftrag={aktuell.auftrag ?? SPIEL_AUFGABE[art]} />
@@ -1589,7 +1610,7 @@ export function Lernspiel({
   if (aktuell) fachRefs.current.length = aktuell.faecher.length;
   const falsch = !!stand && !stand.richtig;
   return schale(
-      <div className={feldKlasse} key={bloecke ? frage?.n : undefined}>
+      <div className={feldKlasse} key={bloecke ? `frage-${frage?.n}` : undefined}>
         {frageZeile}
         <p className="ls-auftrag">{aktuell?.auftrag ?? SPIEL_AUFGABE[art]}</p>
         {zuletztZeile}

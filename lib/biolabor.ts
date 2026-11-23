@@ -270,7 +270,9 @@ export function merkeFuer(e: BioEintrag): string {
 /** Die Karten zu einem Eintrag (ein Kreuzungsschema gibt zwei: das Schema und die Frage danach). */
 export function eintragKarten(e: BioEintrag, modus: BioModus, rng: Rng): SpielKarte[] {
   const basis = { skill: BIO_SKILL, vor: "", nach: "", regel: merkeFuer(e) };
-  const daten = (d: Omit<BioDaten, "eintrag" | "thema" | "modus">): BioDaten => ({ eintrag: e.id, thema: e.thema, modus, ...d });
+  const nr = lehrerNr(e);
+  // Fragen der Lehrerin: die Nummer vom Blatt steht oben
+  const daten = (d: Omit<BioDaten, "eintrag" | "thema" | "modus">): BioDaten => ({ eintrag: e.id, thema: e.thema, modus, ...d, ueber: nr ? `Frage ${nr} der Lehrerin${d.ueber ? ` · ${d.ueber}` : ""}` : d.ueber });
   if (e.art === "wahl") {
     const schreiben = modus === "test" && !!e.schreib?.length;
     return [
@@ -430,11 +432,61 @@ export function waehleEintraege(
   return mische(out, o.rng);
 }
 
-/** Die Karten einer Runde. */
+/** Blockwerk mit dem Biolabor: so viele Fragen je Runde, alle zum Selbstschreiben. */
+export const SCHREIB_JE_RUNDE = 10;
+
+/**
+ * Was man im Blockwerk schreiben kann (niko 2026-11-23: „beim test kein ankreuzen … sie muss die antwort schreiben“):
+ * die Fragen mit einer Antwort zum Schreiben und alle Begriffe, keine offenen Fragen und keine Schemata.
+ */
+export const schreibbar = (e: BioEintrag) => (e.art === "wahl" && !!e.schreib?.length) || e.art === "begriff";
+
+/**
+ * Was im Blockwerk drankommt (niko 2026-11-23: „es sind zu viele Fragen“): nur die Fragen der Lehrerin
+ * (Fragenkatalog zum Test) und das Glossar der Schülerin aus ihrem Heft.
+ */
+export const BLOCK_THEMEN = ["lehrerin", "heft"];
+
+/** Die Nummer im Fragenkatalog der Lehrerin („l-11-kind“ → 11, „k-l-erbse-f1“ → 16); sonst null. */
+export function lehrerNr(e: Pick<BioEintrag, "id" | "thema">): number | null {
+  if (e.thema !== "lehrerin") return null;
+  const m = /^l-(\d+)/.exec(e.id);
+  if (m) return Number(m[1]);
+  if (e.id.startsWith("k-l-paar")) return 14;
+  if (e.id.startsWith("k-l-erbse")) return 16;
+  if (e.id.startsWith("k-l-meer")) return 17;
+  return null;
+}
+
+/**
+ * Fragen der Lehrerin: der Reihe nach wie auf dem Blatt. Zuerst die zuletzt falschen, dann die noch nicht sicheren in
+ * der Reihenfolge des Blatts, zum Schluss die sicheren (am längsten her zuerst).
+ */
+function lehrerinReihe(pool: BioEintrag[], stand: Map<string, EintragStand>, anzahl: number, wiederholen: string[] = []): BioEintrag[] {
+  const vorne = wiederholen.map((id) => pool.find((e) => e.id === id)).filter((e): e is BioEintrag => !!e);
+  const offen = pool.filter((e) => !stand.get(e.id)?.sicher);
+  const sicher = pool.filter((e) => stand.get(e.id)?.sicher).sort((a, b) => (stand.get(a.id)?.zuletzt ?? 0) - (stand.get(b.id)?.zuletzt ?? 0));
+  const out: BioEintrag[] = [];
+  for (const e of [...vorne, ...offen, ...sicher]) if (out.length < anzahl && !out.includes(e)) out.push(e);
+  // auf dem Blatt der Reihe nach (die Wiederholungen vorne)
+  const platz = (e: BioEintrag) => (lehrerNr(e) ?? 99) * 1000 + pool.indexOf(e);
+  return [...out.filter((e) => vorne.includes(e)), ...out.filter((e) => !vorne.includes(e)).sort((a, b) => platz(a) - platz(b))];
+}
+
+/** Die Karten einer Runde; `schreiben`: nur Fragen zum Selbstschreiben (Blockwerk), aus allen Themen. */
 export function bioRunde(
   stand: Map<string, EintragStand>,
-  o: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean; wiederholen?: string[]; rng: Rng },
+  o: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean; schreiben?: boolean; wiederholen?: string[]; rng: Rng },
 ): SpielKarte[] {
+  if (o.schreiben) {
+    const pool = eintraegeFuer("alle", "test").filter((e) => schreibbar(e) && BLOCK_THEMEN.includes(e.thema));
+    const wahl = waehleEintraege(pool, stand, { anzahl: SCHREIB_JE_RUNDE, wiederholen: o.wiederholen, rng: o.rng, verteilt: true });
+    return wahl.flatMap((e) => eintragKarten(e, "test", o.rng));
+  }
+  if (o.auswahl === "lehrerin" && !o.gross) {
+    const pool = eintraegeFuer("lehrerin", o.modus);
+    return lehrerinReihe(pool, stand, AUFGABEN_JE_RUNDE[o.modus], o.wiederholen).flatMap((e) => eintragKarten(e, o.modus, o.rng));
+  }
   const modus: BioModus = o.gross ? "test" : o.modus;
   const pool = eintraegeFuer(o.gross ? "alle" : o.auswahl, modus);
   const anzahl = o.gross ? GROSSER_TEST : AUFGABEN_JE_RUNDE[modus];

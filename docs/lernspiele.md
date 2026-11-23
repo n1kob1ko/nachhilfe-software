@@ -648,7 +648,22 @@ niko 2026-11-23 mit Foto vom Buch (Expedition Biologie 4) und vom Teststoff eine
 Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `components/lernen/BioLabor.tsx`,
 `biolabor.css`), ohne KI:
 
-- **Stoff**: 17 Themen in zwei Bereichen, 417 Einträge. Zuerst nach dem Lehrplan geschrieben; am 2026-11-23 abends
+- **Start** (niko 2026-11-23 „es ist nicht übersichtlich … zu viele Fragen“): oben nur **Fragen der Lehrerin**,
+  **Blockwerk**, **Dein Glossar** und **Lösungen zum Nachlesen**. Alles aus dem Buch (Alles/Genetik/Der Mensch,
+  Üben, Wie im Test, Kreuzungsschemata, Großer Test, Lernzettel, „Dein Labor“) steht zugeklappt unter „Mehr üben“.
+- **Fragen der Lehrerin** (Thema `lehrerin`): der Fragenkatalog zum Test am 26.11.2026 (Fotos von niko), Fragen
+  1–26 im Wortlaut der Lehrerin als Erklärfragen, dazu kurze Teilfragen zum Selbstschreiben (z. B. 12) Anzahl und n,
+  14) Kind vertauscht → Paar 4, 15) Vaterschaftsausschluss → Fall 2, Stammbaum Blutgruppen, Karyogramm richtig/falsch)
+  und Kreuzungsschemata für 14), 16) Erbsen und 17) Meerschweinchen. Eine Runde (12, wie im Test) geht der Reihe nach
+  wie auf dem Blatt (`lehrerinReihe`): zuerst die zuletzt falschen, dann die noch nicht sicheren; oben steht
+  „Frage 11 der Lehrerin“ (`lehrerNr`). Der Lernzettel des Themas hat die Lösung zu jeder Nummer.
+- **Glossar aus dem Heft** (Thema `heft`): das handgeschriebene Glossar der Schülerin (Foto von niko), 23 Begriffe in
+  ihren Worten, nur Rechtschreibung verbessert; dazu zwei Fragen zu dominant-rezessiv und intermediär.
+- **Blockwerk** (niko 2026-11-23: „beim test kein ankreuzen … sie muss die antwort schreiben“): Knopf im Biolabor,
+  `spiel?modus=bloecke&art=bio`. Nur Fragen zum Selbstschreiben (`schreibbar`) aus `BLOCK_THEMEN` (Fragen der
+  Lehrerin und Glossar aus dem Heft), 10 je Runde (`bioRunde` mit `schreiben`). Die Frage liegt über dem Brett
+  (`BioSchreibFeld.tsx`), geprüft wie „Wie im Test“ (`pruefeGeschrieben`); „fast“ zählt als richtig.
+- **Stoff**: 19 Themen in zwei Bereichen, 542 Einträge (100 davon Fragen der Lehrerin). Zuerst nach dem Lehrplan geschrieben; am 2026-11-23 abends
   schickte niko die Buchseiten (S. 8–17 und 54–72), seither folgt alles dem Buch: seine Wörter zuerst
   („Elterngeneration (E)“, „1. Folgegeneration“, „Erscheinungsbild“, „sensorische Nerven“, „kurze Fortsätze“,
   „Nervenfaser“, „Endknöpfchen“, „Nachhirn“, „gleich wirksam“ statt kodominant, Rh/rh, Wunderblume rr × ww → rw),
