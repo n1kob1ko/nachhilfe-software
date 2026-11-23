@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, bioSicher, bioWahl, biotestStand, biotestWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, bioLevelStand, bioSicher, bioWahl, biotestStand, biotestWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
@@ -12,7 +12,7 @@ import { gueltigeTorPunkte } from "@/lib/torlauf";
 import { gueltigeWortPunkte } from "@/lib/wortschloss";
 import { gueltigePhantomPunkte } from "@/lib/phantombild";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielKarte, type SpielStart } from "@/lib/lernspiele-typen";
-import { BIO_THEMEN, type BioAuswahl, type BioModus } from "@/lib/biolabor";
+import { BIO_THEMEN, levelVon, type BioAuswahl, type BioModus } from "@/lib/biolabor";
 import { uebung as biotestUebung } from "@/lib/biotest";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
@@ -260,7 +260,7 @@ function blattStarten(student: repo.Student, modus: "kacheln" | "schreiben", all
 function bioStarten(student: repo.Student, auswahl: BioAuswahl, modus: BioModus, gross?: boolean): SpielStart {
   if (!bioWahl(student, wienerDatum())) return { fehler: "Das Biolabor gibt es für dich gerade nicht." };
   // nur bekannte Werte (die Aktion ist öffentlich)
-  const a: BioAuswahl = auswahl === "genetik" || auswahl === "mensch" || BIO_THEMEN.some((t) => t.id === auswahl) ? auswahl : "alle";
+  const a: BioAuswahl = auswahl === "genetik" || auswahl === "mensch" || BIO_THEMEN.some((t) => t.id === auswahl) || levelVon(String(auswahl)) !== null ? auswahl : "alle";
   const runde = starteRunde(student, "bio", { bio: { auswahl: a, modus: modus === "test" ? "test" : "ueben", gross: gross === true } });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
@@ -328,7 +328,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     wort: zeile?.endlos && spiel === "wort" ? { rekord: punkteRekord(student.id, "wort", zeile.endlos), woerter: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "wort") : undefined } : undefined,
     phantom: zeile?.endlos && spiel === "phantom" ? { rekord: punkteRekord(student.id, "phantom", zeile.endlos), merkmale: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "phantom") : undefined } : undefined,
     blatt: zeile?.art === "blatt" ? { sicher: sichereBlaetter(student.id) } : undefined,
-    bio: zeile?.art === "bio" ? { sicher: bioSicher(student.id) } : undefined,
+    bio: zeile?.art === "bio" ? { sicher: bioSicher(student.id), level: bioLevelStand(student.id) } : undefined,
     biotest: zeile?.art === "biotest" ? biotestStand(student.id) : undefined,
     europa: zeile?.art === "europa" ? europaErgebnis(student.id, Number(rundeId), zeile.endlos) : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,

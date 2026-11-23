@@ -37,7 +37,7 @@ import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
-import { bioSicher, bioThemenStand, bioWahl, biotestStand, biotestWahl, europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { bioLevelStand, bioSicher, bioThemenStand, bioWahl, biotestStand, biotestWahl, europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { wienerDatum } from "@/lib/planung/zeit";
 import { analyzeStudent } from "@/lib/service";
 
@@ -229,7 +229,7 @@ export default async function DevicePage() {
     const heute = wienerDatum();
     const wahl = bioWahl(student, heute);
     content = wahl ? (
-      <BioLabor token="" amTablet serie={serie(student.id, heute)} themen={bioThemenStand(student.id)} sicher={bioSicher(student.id)} grund={wahl.grund} zurueck="/geraet/ansicht?zu=spiele" />
+      <BioLabor token="" amTablet serie={serie(student.id, heute)} themen={bioThemenStand(student.id)} sicher={bioSicher(student.id)} level={bioLevelStand(student.id)} grund={wahl.grund} zurueck="/geraet/ansicht?zu=spiele" />
     ) : (
       <p className="panel px-5 py-5 text-[16px] text-ink-2">Das Biolabor gibt es für diesen Schüler gerade nicht.</p>
     );

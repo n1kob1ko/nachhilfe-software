@@ -846,3 +846,395 @@ button.bio-thema:active {
   font-weight: 700;
   font-size: 15px;
 }
+
+/* ---------- Labor-Mission (niko 2026-11-23 „kein richtiges spiel“): Karte mit Leveln, Kampf gegen Keime ---------- */
+
+.bio-herzen {
+  display: inline-flex;
+  flex: 1;
+  gap: 3px;
+  color: #ff5d72;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+.bio-herzen svg[data-weg] {
+  color: rgba(255, 255, 255, 0.45);
+  animation: bio-herz-weg 420ms var(--ls-ease-out);
+}
+@keyframes bio-herz-weg {
+  0% {
+    transform: scale(1.5);
+    color: #ff5d72;
+  }
+}
+.bio-score {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: #ffe58a;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+}
+.bio-score b {
+  display: inline-block;
+  animation: bio-zahl 300ms var(--ls-ease-out);
+}
+@keyframes bio-zahl {
+  from {
+    transform: scale(1.35);
+  }
+}
+
+/* Karte */
+.bio-mission {
+  max-width: 600px;
+  margin: 0 auto;
+}
+.bio-mission .bio-start-kopf .ls-oberzeile {
+  text-align: left;
+}
+.bio-mission-stand {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.bio-mission-sterne {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(0, 40, 40, 0.4);
+  color: #ffd75e;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+}
+.bio-pfad {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 0;
+  list-style: none;
+}
+.bio-pfad-stufe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  transform: translateX(var(--x, 0));
+}
+.bio-welt {
+  margin: 18px 0 10px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: var(--bio-tief);
+  font-weight: 800;
+  font-size: 14px;
+  transform: translateX(calc(var(--x, 0) * -1));
+}
+.bio-knoten {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 78px;
+  height: 78px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffffff, #d5f4ee 70%);
+  box-shadow:
+    0 6px 0 #0b5f63,
+    0 14px 24px -10px rgba(0, 20, 20, 0.7);
+  transition: transform 140ms var(--ls-ease-out);
+}
+.bio-knoten:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow:
+    0 2px 0 #0b5f63,
+    0 8px 18px -10px rgba(0, 20, 20, 0.7);
+}
+.bio-knoten[data-boss] {
+  width: 92px;
+  height: 92px;
+  background: radial-gradient(circle at 35% 30%, #fff6d6, #f3c64a 75%);
+  box-shadow:
+    0 6px 0 #a36d00,
+    0 14px 24px -10px rgba(0, 20, 20, 0.7);
+}
+.bio-knoten[data-zustand="zu"] {
+  background: rgba(255, 255, 255, 0.28);
+  box-shadow: 0 5px 0 rgba(0, 40, 40, 0.35);
+}
+.bio-knoten[data-zustand="geschafft"] {
+  background: radial-gradient(circle at 35% 30%, #eaffef, #9ee6b7 75%);
+  box-shadow:
+    0 6px 0 #13874f,
+    0 14px 24px -10px rgba(0, 20, 20, 0.7);
+}
+.bio-knoten[data-jetzt] {
+  outline: 4px solid #ffd75e;
+  outline-offset: 4px;
+  animation: bio-jetzt 1.6s var(--ls-ease-in-out) infinite;
+}
+@keyframes bio-jetzt {
+  50% {
+    outline-offset: 9px;
+    outline-color: rgba(255, 215, 94, 0.35);
+  }
+}
+.bio-knoten-keim {
+  width: 74%;
+  height: 74%;
+  object-fit: contain;
+  pointer-events: none;
+}
+.bio-knoten[data-zustand="zu"] .bio-knoten-keim {
+  filter: grayscale(1) brightness(1.4);
+  opacity: 0.45;
+}
+.bio-knoten-keim[data-besiegt] {
+  filter: grayscale(0.85);
+  opacity: 0.5;
+}
+.bio-knoten-zahl {
+  position: absolute;
+  right: -6px;
+  bottom: -4px;
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bio-tief);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+  box-shadow: 0 0 0 3px #fff;
+}
+.bio-knoten[data-zustand="zu"] .bio-knoten-zahl {
+  background: #6a8f8c;
+}
+.bio-knoten-name {
+  max-width: 150px;
+  margin-top: 8px;
+  color: #fff;
+  font-weight: 700;
+  font-size: 13px;
+  line-height: 1.2;
+  text-align: center;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.bio-knoten-sterne {
+  display: inline-flex;
+  gap: 2px;
+  margin-bottom: 8px;
+  color: rgba(255, 255, 255, 0.4);
+}
+.bio-knoten-sterne [data-an] {
+  color: #ffd75e;
+}
+
+/* Kampf */
+.bio-arena {
+  display: flex;
+  flex-shrink: 0;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 2px 4px 0;
+}
+.bio-arena .bio-erbsi[data-klein] {
+  width: 62px;
+  height: 62px;
+  margin-bottom: 2px;
+}
+.bio-gegner {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  grid-template-columns: 1fr auto;
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 10px;
+}
+.bio-gegner-name {
+  display: flex;
+  grid-column: 1;
+  align-items: baseline;
+  gap: 8px;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 16px;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.45);
+}
+.bio-gegner-name small {
+  font-family: var(--font-body, inherit);
+  font-weight: 700;
+  font-size: 12px;
+  opacity: 0.85;
+}
+.bio-hp {
+  position: relative;
+  grid-column: 1;
+  height: 14px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(0, 30, 30, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.5);
+}
+.bio-hp i {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: inherit;
+  background: linear-gradient(180deg, #ff8a5c, #e0412f);
+  transition: width 420ms var(--ls-ease-out);
+}
+.bio-hp[data-wenig] i {
+  background: linear-gradient(180deg, #ffd75e, #f08a00);
+}
+.bio-keim-platz {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1 / span 2;
+}
+.bio-keim {
+  display: block;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  user-select: none;
+  filter: drop-shadow(0 10px 12px rgba(0, 30, 30, 0.4));
+  animation: bio-keim-lauern 2.4s var(--ls-ease-in-out) infinite alternate;
+}
+.bio-arena[data-boss] .bio-keim {
+  width: 112px;
+  height: 112px;
+}
+@keyframes bio-keim-lauern {
+  to {
+    transform: translateY(-4px) rotate(2deg);
+  }
+}
+.bio-keim[data-effekt="treffer"],
+.bio-keim[data-effekt="kritisch"] {
+  animation: bio-keim-treffer 460ms var(--ls-ease-out);
+}
+.bio-keim[data-effekt="kritisch"] {
+  animation-duration: 620ms;
+}
+@keyframes bio-keim-treffer {
+  0% {
+    filter: brightness(3) drop-shadow(0 0 0 #fff);
+    transform: translateX(10px) rotate(8deg) scale(0.9, 1.08);
+  }
+  30% {
+    transform: translateX(-8px) rotate(-6deg);
+  }
+  60% {
+    transform: translateX(4px) rotate(3deg);
+  }
+}
+.bio-keim[data-effekt="angriff"] {
+  animation: bio-keim-angriff 520ms var(--ls-ease-out);
+}
+@keyframes bio-keim-angriff {
+  35% {
+    transform: translateX(-46px) scale(1.25) rotate(-10deg);
+  }
+}
+.bio-keim[data-besiegt] {
+  filter: grayscale(1) brightness(1.2);
+  opacity: 0.55;
+  transform: rotate(90deg) translateX(18px) scale(0.85);
+  animation: none;
+  transition:
+    transform 500ms var(--ls-ease-out),
+    opacity 500ms;
+}
+.bio-keim[data-sieger] {
+  animation: bio-huepfen 0.9s var(--ls-ease-out) 2;
+}
+.bio-schaden {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  white-space: nowrap;
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: 20px;
+  transform-origin: right center;
+  text-shadow:
+    0 2px 0 #0b5f63,
+    0 0 8px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  animation: bio-schaden 900ms var(--ls-ease-out) forwards;
+}
+.bio-schaden[data-kritisch] {
+  color: #ffd75e;
+  font-size: 22px;
+}
+@keyframes bio-schaden {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.6);
+  }
+  20% {
+    opacity: 1;
+    transform: translateY(-6px) scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-34px) scale(1);
+  }
+}
+.bio-aua {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 0 rgba(216, 52, 74, 0);
+  animation: bio-aua 520ms var(--ls-ease-out) forwards;
+}
+@keyframes bio-aua {
+  20% {
+    box-shadow: inset 0 0 70px 18px rgba(216, 52, 74, 0.75);
+  }
+  100% {
+    box-shadow: inset 0 0 0 0 rgba(216, 52, 74, 0);
+  }
+}
+.bio-ende-kampf {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 18px;
+}
+.bio-ende-kampf .bio-keim {
+  width: 110px;
+  height: 110px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bio-keim,
+  .bio-keim[data-effekt],
+  .bio-schaden,
+  .bio-aua,
+  .bio-knoten[data-jetzt],
+  .bio-herzen svg,
+  .bio-score b {
+    animation: none !important;
+    transition: none !important;
+  }
+  .bio-schaden {
+    opacity: 1;
+  }
+}

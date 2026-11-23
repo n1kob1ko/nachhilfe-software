@@ -27,6 +27,15 @@ import {
   schemaText,
   vonKey,
   waehleEintraege,
+  LEBEN,
+  LEVELS,
+  LEVEL_TITEL,
+  levelAuswahl,
+  levelEintraege,
+  levelOffen,
+  levelStand,
+  levelVon,
+  sterneFuer,
 } from "./biolabor";
 import type { KreuzungEintrag } from "./biolabor-inhalt";
 import { zufall } from "./phantombild";
@@ -307,6 +316,41 @@ test("Server: wer es sieht, Runden und Stand", async () => {
   assert.equal(c.karten.length, 10);
   assert.ok(c.karten.every((k) => k.bio?.art === "schreiben"));
   assert.ok(sp.istBlockwerk(student.id, c.rundeId));
+  // Labor-Mission: ein Level, ganz richtig = drei Sterne
+  const d = sp.starteRunde(student, "bio", { heute, bio: { auswahl: levelAuswahl(4), modus: "test" }, rng: zufall(5) });
+  assert.equal(d.karten.length, levelEintraege(4).length);
+  sp.beendeRunde(student.id, d.rundeId, d.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  assert.deepEqual(sp.bioLevelStand(student.id), { 4: 3 });
+});
+
+test("Labor-Mission: jede Frage der Lehrerin ist ein Level, Sterne nach Fehlern, ein Stern öffnet das nächste", () => {
+  const lehrerin = BIO_EINTRAEGE.filter((e) => e.thema === "lehrerin");
+  assert.deepEqual(LEVELS, [...new Set(lehrerin.map((e) => lehrerNr(e)!))].sort((a, b) => a - b), "jede Nummer vom Blatt ist ein Level");
+  assert.equal(LEVELS.length, 25);
+  for (const n of LEVELS) assert.ok(LEVEL_TITEL[n] && levelEintraege(n).length > 0, `Level ${n}`);
+  assert.equal(LEVELS.flatMap((n) => levelEintraege(n)).length, lehrerin.length, "alle 100 Einträge kommen vor");
+  // die Frage der Lehrerin selbst kommt am Schluss
+  const l1 = levelEintraege(1);
+  assert.equal(l1[l1.length - 1].art, "erklaeren");
+  assert.equal(levelVon(levelAuswahl(16)), 16);
+  assert.equal(levelVon("level-18"), null, "18 gehört zu 19");
+  assert.equal(levelVon("lehrerin"), null);
+
+  const karten = bioRunde(new Map(), { auswahl: levelAuswahl(16), modus: "ueben", rng: zufall(4) });
+  assert.ok(karten.every((k) => k.bio?.thema === "lehrerin" && k.bio.ueber?.includes("16")));
+  assert.equal(karten.filter((k) => k.bio?.art === "schema").length, 2, "zwei Kreuzungsschemata");
+
+  assert.deepEqual([0, 1, 2, LEBEN].map(sterneFuer), [3, 2, 1, 0]);
+  const runde = (n: number, fehler: number) => {
+    const ks = bioRunde(new Map(), { auswahl: levelAuswahl(n), modus: "test", rng: zufall(n) });
+    return { antworten: ks.map((k, i) => ({ key: k.key, richtig: i >= fehler })) };
+  };
+  const stand = levelStand([runde(1, 2), runde(1, 0), runde(11, 3), runde(4, 1), { antworten: [...runde(5, 0).antworten, ...runde(6, 0).antworten] }]);
+  assert.deepEqual(stand, { 1: 3, 4: 2, 11: 0 }, "beste Runde zählt, gemischte Runden nicht");
+  assert.ok(levelOffen(1, {}) && levelOffen(20, {}), "der Anfang jeder Welt ist offen");
+  assert.ok(!levelOffen(2, {}));
+  assert.ok(levelOffen(2, stand) && !levelOffen(12, stand), "Level 11 ohne Stern öffnet 12 nicht");
+  assert.ok(levelOffen(19, { 17: 1 }), "nach 17 kommt 19");
 });
 
 test("Merksatz: jede Karte zeigt nach einem Fehler einen passenden Satz (statt Animationen)", () => {
