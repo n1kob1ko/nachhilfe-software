@@ -33,7 +33,7 @@ const kreuzung = (id: string) => BIO_EINTRAEGE.find((e): e is KreuzungEintrag =>
 
 test("Der Stoff: jedes Thema des Teststoffs, eindeutige ids, jede Frage mit genug falschen Antworten", () => {
   const titel = BIO_THEMEN.map((t) => t.titel);
-  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Das Nervensystem (ZNS und PNS)", "Das Gehirn", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus", "Hormone"])
+  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Gentechnik und Lebensmittel", "Biotechnik", "Das Nervensystem", "Das Gehirn", "Das Rückenmark", "Lernen und Gedächtnis", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus", "Hormone"])
     assert.ok(titel.includes(t), t);
   const ids = BIO_EINTRAEGE.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, "ids doppelt");
@@ -62,8 +62,18 @@ test("Fachlich: die wichtigsten Fakten stimmen", () => {
   };
   assert.equal(richtig("d-46"), "46");
   assert.equal(richtig("d-23"), "23");
-  assert.equal(richtig("d-at"), "Thymin");
-  assert.equal(richtig("d-gc"), "Cytosin");
+  assert.equal(richtig("d-at"), "T");
+  assert.equal(richtig("d-gc"), "G");
+  // wie im Buch (Expedition Biologie 4, S. 8–17, 54–72)
+  assert.equal(richtig("b-pgen"), "Elterngeneration");
+  assert.equal(richtig("n-sensibel"), "sensorische Nerven");
+  assert.equal(richtig("h-stamm"), "Nachhirn");
+  assert.equal(richtig("h-abschnitte"), "5");
+  assert.equal(richtig("h-eizelle"), "22 + X");
+  assert.deepEqual(kreuzung("k-wunder-p").allele, ["r", "w"]);
+  assert.deepEqual(kreuzung("k-rhesus").allele, ["Rh", "rh"]);
+  assert.equal(richtig("e-kurz"), "Sekunden bis wenige Minuten");
+  assert.equal(richtig("x-dolly"), "Dolly");
   assert.equal(richtig("m-1"), "Uniformitätsregel");
   assert.equal(richtig("m-2"), "Spaltungsregel");
   assert.equal(richtig("m-3"), "Unabhängigkeitsregel");
@@ -154,7 +164,7 @@ test("Karten: Üben mit Kacheln, wie im Test geschrieben, Schema mit Frage danac
   // offene Fragen nur im Test
   assert.ok(!eintraegeFuer("alle", "ueben").some((e) => e.art === "erklaeren"));
   assert.ok(eintraegeFuer("alle", "test").some((e) => e.art === "erklaeren"));
-  assert.ok(eintraegeFuer("mensch", "ueben").every((e) => ["nerven", "gehirn", "vegetativ", "sympathikus", "hormone"].includes(e.thema)));
+  assert.ok(eintraegeFuer("mensch", "ueben").every((e) => ["nerven", "gehirn", "rueckenmark", "lernen", "vegetativ", "sympathikus", "hormone"].includes(e.thema)));
 });
 
 test("Runden: Fehler zuerst, sicher nach zweimal richtig, großer Test aus allen Themen", () => {
@@ -234,8 +244,8 @@ test("Server: wer es sieht, Runden und Stand", async () => {
 test("Merksatz: jede Karte zeigt nach einem Fehler einen passenden Satz (statt Animationen)", () => {
   for (const e of BIO_EINTRAEGE) assert.ok(merkeFuer(e).length > 10, e.id);
   const satz = (id: string) => merkeFuer(BIO_EINTRAEGE.find((e) => e.id === id)!);
-  assert.match(satz("w-mitose"), /^Mitose/);
-  assert.match(satz("w-wo-meiose"), /^Meiose/);
+  assert.match(satz("w-mitose"), /Mitose/);
+  assert.match(satz("w-wo-meiose"), /Meiose/);
   assert.match(satz("b-gen"), /^Gen: /);
   assert.match(satz("g-umwelt"), /Umwelt/);
   const karten = eintragKarten(BIO_EINTRAEGE.find((e) => e.id === "w-meiose")!, "ueben", zufall(1));

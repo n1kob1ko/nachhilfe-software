@@ -648,14 +648,24 @@ niko 2026-11-23 mit Foto vom Buch (Expedition Biologie 4) und vom Teststoff eine
 Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `components/lernen/BioLabor.tsx`,
 `biolabor.css`), ohne KI:
 
-- **Stoff**: 13 Themen in zwei Bereichen, geschrieben nach dem Lehrplan (die Buchseiten lagen nicht vor).
-  Genetik: Grundlagen, Glossar, Weitergabe der Erbinformation (Mitose, Meiose), DNA und Chromosomen, Mendel’sche
-  Regeln, Kreuzungsschemata, Vererbung beim Menschen (Geschlecht, Blutgruppen, Rhesus), Gentechnik (rote, grüne,
-  weiße). Der Mensch: Nervensystem (ZNS, PNS), Gehirn, vegetatives Nervensystem, Sympathikus und Parasympathikus,
-  Hormone. Je Thema ein Merkzettel (`merke`). Einträge: Fragen mit vier Kacheln (`wahl`, mit `schreib` auch zum
-  Schreiben), Begriffe (`begriff`), Sympathikus oder Parasympathikus (`zuordnen`), Erklärfragen (`erklaeren`, nur
-  „Wie im Test“, selbst bewertet: „Hatte ich“ / „Hatte ich nicht“) und 14 Kreuzungen (`kreuzung`).
-- **Kreuzungsschema**: Eltern, Keimzellen und das Quadrat (Zeilen Mutter, Spalten Vater). Feld antippen, Genotyp
+- **Stoff**: 17 Themen in zwei Bereichen, 417 Einträge. Zuerst nach dem Lehrplan geschrieben; am 2026-11-23 abends
+  schickte niko die Buchseiten (S. 8–17 und 54–72), seither folgt alles dem Buch: seine Wörter zuerst
+  („Elterngeneration (E)“, „1. Folgegeneration“, „Erscheinungsbild“, „sensorische Nerven“, „kurze Fortsätze“,
+  „Nervenfaser“, „Endknöpfchen“, „Nachhirn“, „gleich wirksam“ statt kodominant, Rh/rh, Wunderblume rr × ww → rw),
+  Fachwörter aus dem Unterricht gelten beim Schreiben auch (Mitose, Meiose, Dendrit, Axon, P-Generation). Genetik:
+  Grundlagen, Glossar, Weitergabe der Erbinformation (Zellteilung, Geschlechtszellen, Trisomie 21), DNA und
+  Chromosomen (A–T, C–G, Verdopplung, Mutation, Rot-Grün-Sehschwäche), Mendel’sche Regeln (mit Mendels Zahlen,
+  Correns, 9 : 3 : 3 : 1, Kind-Aufgabe), Kreuzungsschemata, Vererbung beim Menschen (44 + XX, 22 + X, Blutgruppen,
+  Rhesus, Augenfarbe), Gentechnik (Gentransfer, Insulin aus Bakterien, transgenes Schaf; die drei Zweige rot,
+  grün, weiß stehen nicht auf den Buchseiten, aber im Teststoff), Gentechnik und Lebensmittel (Bt-Mais,
+  Herbizidresistenz, Genome-Editing, Gesetz) und Biotechnik (Besamung, IVF, Embryonentransfer, Embryosplitting,
+  Klonen, Stammzellen). Der Mensch: Nervensystem (Reiz-Reaktions-Schema, Nervenzelle), Gehirn (fünf Abschnitte,
+  Rindenfelder), Rückenmark (Reflex), Lernen und Gedächtnis, unwillkürliches Nervensystem, Sympathikus und
+  Parasympathikus (Organe wie in Abb. 4 des Buchs), Hormone (S. 18 lag nicht vor, bleibt nach dem Lehrplan). Je
+  Thema ein Lernzettel (`merke`, nach den „Merke dir“-Kästen). Einträge: Fragen mit vier Kacheln (`wahl`, mit
+  `schreib` auch zum Schreiben), Begriffe (`begriff`), Sympathikus oder Parasympathikus (`zuordnen`), Erklärfragen
+  (`erklaeren`, viele nach den Aufgaben im Buch, nur „Wie im Test“, selbst bewertet) und 17 Kreuzungen (`kreuzung`).
+- **Kreuzungsschema**: Eltern, Geschlechtszellen und das Quadrat (Zeilen Mutter, Spalten Vater). Feld antippen, Genotyp
   wählen, „Prüfen“. Beim Üben stehen die Keimzellen schon da, „wie im Test“ trägt man sie selbst ein; ihre
   Reihenfolge ist egal, „rR“ zählt wie „Rr“ (`pruefeSchema`). Danach eine Frage zum fertigen Schema („Wie viele
   Pflanzen der F2 blühen weiß?“). Dabei: dominant-rezessiv, intermediär (Wunderblume), Rückkreuzung, Geschlecht,
