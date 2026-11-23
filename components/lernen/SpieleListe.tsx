@@ -32,6 +32,7 @@ export function SpieleListe({
   wort,
   phantom,
   blatt,
+  bio,
   europa,
 }: {
   student: repo.Student;
@@ -57,6 +58,8 @@ export function SpieleListe({
   phantom?: { href: string; grund?: string; platz?: BestenZeile | null };
   /** Blätter bestimmen (lib/blaetter.ts): wohin die Kachel führt und warum gerade (dann steht sie ganz oben) */
   blatt?: { href: string; grund?: string };
+  /** Biolabor (lib/biolabor.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Aufgaben sicher sind */
+  bio?: { href: string; grund?: string; sicher: number };
   /** Europa (lib/europa.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Länder erobert sind */
   europa?: { href: string; grund?: string; erobert: number };
 }) {
@@ -149,6 +152,7 @@ export function SpieleListe({
         <Kaertchen art={erstes.art} gross />
       </section>
 
+      {bio?.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt?.grund && blattKachel}
       {europa?.grund && europaKachel}
       {phantom?.grund && phantomKachel}
@@ -284,6 +288,7 @@ export function SpieleListe({
       )}
 
       {phantom && !phantom.grund && phantomKachel}
+      {bio && !bio.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt && !blatt.grund && blattKachel}
       {europa && !europa.grund && europaKachel}
 
@@ -354,5 +359,30 @@ export function EuropaKachelBild() {
         <img key={c} src={`/spiele/europa/flaggen/${c}.svg`} alt="" data-i={i} />
       ))}
     </span>
+  );
+}
+
+/** Die Kachel „Biolabor“ (lib/biolabor.ts): die Erbse aus dem Labor mit der DNA. */
+export function BioKachel({ href, grund, sicher, className = "" }: { href: string; grund?: string; sicher: number; className?: string }) {
+  return (
+    <Link href={href} className={`sp-block panel ${className}`} data-testid="spiele-bio">
+      <span className="sp-bio-bild" aria-hidden>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/spiele/biolabor/dna.webp" alt="" className="sp-bio-dna" />
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/spiele/biolabor/maskottchen-ruhig.webp" alt="" className="sp-bio-erbsi" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-2">
+          <span className="sp-titel">Biolabor</span>
+          <span className="sp-schild">{grund ? "Test" : "Biologie"}</span>
+        </span>
+        <span className="sp-kurz">Genetik, Kreuzungsschemata, Blutgruppen, Nervensystem und Hormone.</span>
+        <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-bio-stand">
+          {grund ?? (sicher > 0 ? `${sicher} Aufgaben sicher` : "Neu")}
+        </span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+    </Link>
   );
 }

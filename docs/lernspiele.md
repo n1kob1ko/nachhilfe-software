@@ -641,6 +641,41 @@ familiennamen“. Spiel `blatt` (`lib/blaetter.ts`, `components/lernen/BlattSpie
 - **Gezählt**: `bio.blaetter` (keine Fähigkeit aus dem Lehrplan); die Runden stehen wie alle in `spielrunden`.
 - **Tablet**: Ansicht `blatt`; quer Bogen links, Frage rechts.
 
+## Biolabor (Biologie, 4. Klasse)
+
+niko 2026-11-23 mit Foto vom Buch (Expedition Biologie 4) und vom Teststoff einer Schülerin der 4D (Test am
+26.11.): „Ich möchte ein Spiel daraus machen“, „Es soll ein neues Spiel werden“, mit Animationen und Bildern von
+Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `components/lernen/BioLabor.tsx`,
+`BioSzene.tsx`, `biolabor.css`), ohne KI:
+
+- **Stoff**: 13 Themen in zwei Bereichen, geschrieben nach dem Lehrplan (die Buchseiten lagen nicht vor).
+  Genetik: Grundlagen, Glossar, Weitergabe der Erbinformation (Mitose, Meiose), DNA und Chromosomen, Mendel’sche
+  Regeln, Kreuzungsschemata, Vererbung beim Menschen (Geschlecht, Blutgruppen, Rhesus), Gentechnik (rote, grüne,
+  weiße). Der Mensch: Nervensystem (ZNS, PNS), Gehirn, vegetatives Nervensystem, Sympathikus und Parasympathikus,
+  Hormone. Je Thema ein Merkzettel (`merke`). Einträge: Fragen mit vier Kacheln (`wahl`, mit `schreib` auch zum
+  Schreiben), Begriffe (`begriff`), Sympathikus oder Parasympathikus (`zuordnen`), Erklärfragen (`erklaeren`, nur
+  „Wie im Test“, selbst bewertet: „Hatte ich“ / „Hatte ich nicht“) und 14 Kreuzungen (`kreuzung`).
+- **Kreuzungsschema**: Eltern, Keimzellen und das Quadrat (Zeilen Mutter, Spalten Vater). Feld antippen, Genotyp
+  wählen, „Prüfen“. Beim Üben stehen die Keimzellen schon da, „wie im Test“ trägt man sie selbst ein; ihre
+  Reihenfolge ist egal, „rR“ zählt wie „Rr“ (`pruefeSchema`). Danach eine Frage zum fertigen Schema („Wie viele
+  Pflanzen der F2 blühen weiß?“). Dabei: dominant-rezessiv, intermediär (Wunderblume), Rückkreuzung, Geschlecht,
+  Blutgruppen A/B/0 und Rhesus.
+- **Modi**: Üben (10 Karten, Kacheln), Wie im Test (12, schreiben wie bei Blätter bestimmen), Kreuzungsschemata
+  (nur das Thema `schema`), Großer Test (24, reihum aus allen Themen), Lernzettel (alle Merkzettel, zählt nicht).
+  Oben Alles, Genetik oder Der Mensch; ein Thema in „Dein Labor“ antippen spielt nur dieses.
+- **Fehler**: ein Blatt von unten mit der richtigen Antwort und dem Merkzettel des Themas, die Karte kommt drei
+  Karten später noch einmal (höchstens zweimal, nicht bei Erklärfragen). Zuletzt falsche kommen in der nächsten
+  Runde zuerst. **Sicher** = zweimal hintereinander beim ersten Versuch richtig (`bioStand`).
+- **Bewegung**: je Thema eine kleine Szene über der Frage, nur CSS (`.bs-*`): DNA dreht sich, Erbse wiegt sich,
+  Zelle teilt sich, Funke läuft das Neuron entlang, Herz schlägt mit EKG (schnell bei Sympathikus, langsam bei
+  Parasympathikus), Hormone steigen auf, X und Y tanzen, Schere schneidet die DNA. Steht still bei „weniger
+  Bewegung“. Maskottchen Erbsi (ruhig, jubelt, denkt nach).
+- **Bilder**: Higgsfield (gpt_image_2_6, 11 Bilder, etwa 11 Credits), `public/spiele/biolabor/*.webp`.
+- **Wer es sieht** (`bioWahl`): ein geplanter Biologie-Test in den nächsten 60 Tagen ab der 3. Klasse (Schulstufe
+  7) oder mit Genetik/Nerven/Hormonen im Stoff (dann ganz oben, mit dem Test als Grund; Blätter bestimmen rückt
+  dann nach unten), Biologie im Profil oder eine Biologie-Einheit ab der 3. Klasse, und der Test-Schüler.
+- **Gezählt**: `bio.genetik-mensch`; Runden in `spielrunden`. **Tablet**: Ansicht `bio`.
+
 ## Europa (Länder, Hauptstädte, Flaggen)
 
 niko 2026-11-22: „erstell ein geograpie spiel man soll länder und hauptstäde in europa lernen“, „es soll ganz europa
