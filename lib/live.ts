@@ -52,7 +52,9 @@ export type View =
   // Europa (lib/europa.ts)
   | { kind: "europa" }
   // Biolabor (lib/biolabor.ts)
-  | { kind: "bio" };
+  | { kind: "bio" }
+  // Bio Test De La Salle (lib/biotest.ts)
+  | { kind: "biotest" };
 
 export function parseView(raw: string): View {
   if (raw === "tafel") return { kind: "tafel" };
@@ -68,6 +70,7 @@ export function parseView(raw: string): View {
   if (raw === "blatt") return { kind: "blatt" };
   if (raw === "europa") return { kind: "europa" };
   if (raw === "bio") return { kind: "bio" };
+  if (raw === "biotest") return { kind: "biotest" };
   const b = /^bloecke:([a-z]+)$/.exec(raw);
   if (b && istSpielArt(b[1])) return { kind: "spiel", art: b[1], bloecke: true };
   const f = /^funkel:([a-z]+)$/.exec(raw);
@@ -82,7 +85,7 @@ export function parseView(raw: string): View {
   return t ? { kind: "text", textId: Number(t[1]) } : { kind: "start" };
 }
 const viewText = (v: View) =>
-  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : v.kind === "phantom" ? `phantom:${v.teil}` : v.kind === "blatt" ? "blatt" : v.kind === "europa" ? "europa" : v.kind === "bio" ? "bio" : "";
+  v.kind === "tafel" ? "tafel" : v.kind === "aufgabe" ? `aufgabe:${v.assignmentId}` : v.kind === "text" ? `text:${v.textId}` : v.kind === "praesentation" ? `praesentation:${v.id}:${v.folie}` : v.kind === "spiele" ? "spiele" : v.kind === "spiel" ? `${v.bloecke ? "bloecke" : v.funkel ? "funkel" : v.tor ? "tor" : "spiel"}:${v.art}` : v.kind === "glas" ? `glas:${v.thema}` : v.kind === "wort" ? `wort:${v.thema}` : v.kind === "phantom" ? `phantom:${v.teil}` : v.kind === "blatt" ? "blatt" : v.kind === "europa" ? "europa" : v.kind === "bio" ? "bio" : v.kind === "biotest" ? "biotest" : "";
 
 /** May the tablet of this unit show that text? Only texts of the unit's student, and none that is archived. */
 export function unitText(unit: Pick<UnitView, "student_id">, textId: number) {
@@ -375,7 +378,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
     current,
     text: textNow,
     praesentation: view.kind === "praesentation" ? praesentationNow(view.id, view.folie) : null,
-    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : view.kind === "phantom" ? { titel: view.teil === "text" ? "Phantombild: Text lernen" : SPIEL_TITEL.phantom } : view.kind === "blatt" ? { titel: SPIEL_TITEL.blatt } : view.kind === "europa" ? { titel: SPIEL_TITEL.europa } : view.kind === "bio" ? { titel: SPIEL_TITEL.bio } : null,
+    spiel: view.kind === "spiel" ? { titel: SPIEL_TITEL[view.art] } : view.kind === "glas" ? { titel: SPIEL_TITEL.glas } : view.kind === "wort" ? { titel: SPIEL_TITEL.wort } : view.kind === "phantom" ? { titel: view.teil === "text" ? "Phantombild: Text lernen" : SPIEL_TITEL.phantom } : view.kind === "blatt" ? { titel: SPIEL_TITEL.blatt } : view.kind === "europa" ? { titel: SPIEL_TITEL.europa } : view.kind === "bio" ? { titel: SPIEL_TITEL.bio } : view.kind === "biotest" ? { titel: SPIEL_TITEL.biotest } : null,
     answers,
     ai: aiLiveState(unit.id),
   };

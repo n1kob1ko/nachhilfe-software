@@ -50,8 +50,9 @@ import type { VorlageDaten } from "./phantom-vorlage";
 import type { BlattDaten } from "./blaetter";
 import type { EuropaDaten, LandStand, Teil } from "./europa";
 import type { BioDaten } from "./biolabor";
+import type { BiotestDaten } from "./biotest";
 
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio"] as const;
+export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -59,7 +60,7 @@ export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" 
  * Spiele mit eigenem Spielfeld, die nicht bei den Fächern stehen: Glasklar, Wortschloss und Phantombild (mit „Text
  * lernen“). Sie haben eine eigene Kachel im Tab „Spiele“, kein Duell und kein Blockwerk.
  */
-export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa", "bio"];
+export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa", "bio", "biotest"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
 /** Spiele mit eigenem Feld gehen nicht als Duell, außer Europa: dafür gibt es eigene Duell-Karten im Kachelfeld (lib/europa.ts). */
 const duellTauglich = (a: SpielArt) => a !== "stoff" && a !== "fehler" && (!EIGENES_FELD.includes(a) || a === "europa");
@@ -96,6 +97,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   blatt: "Blätter bestimmen",
   europa: "Europa",
   bio: "Biolabor",
+  biotest: "Bio Test 4.Klasse Vorbereitung De La Salle",
 };
 
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
@@ -136,6 +138,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   europa: "Dein Stoff",
   // Biolabor (lib/biolabor.ts) hat eine eigene Kachel
   bio: "Dein Stoff",
+  // Bio Test De La Salle (lib/biotest.ts) hat eine eigene Kachel
+  biotest: "Dein Stoff",
 };
 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
@@ -169,6 +173,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   blatt: "Welche Pflanze, welche Familie?",
   europa: "Länder, Hauptstädte und Flaggen",
   bio: "Genetik, Nervensystem und Hormone",
+  biotest: "Evolution des Menschen und Nervensystem",
 };
 
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
@@ -202,6 +207,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   blatt: ["Ahorn", "Linde", "Eiche"],
   europa: ["Wien", "Paris", "Rom"],
   bio: ["DNA", "Gen", "Synapse"],
+  biotest: ["Hominini", "Synapse", "Reflex"],
 };
 
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
@@ -235,6 +241,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   blatt: "Welche Pflanze ist das, und zu welcher Familie gehört sie?",
   europa: "Wo liegt das Land, wie heißt die Hauptstadt, welche Flagge hat es?",
   bio: "Genetik und Nervensystem: üben wie für den Test.",
+  biotest: "Die Übungen deiner Lehrkraft für den Biologie-Test.",
 };
 
 /**
@@ -333,6 +340,8 @@ export type SpielKarte = {
   europa?: EuropaDaten;
   /** Nur „Biolabor“ (lib/biolabor.ts): Eintrag, Thema, wie geantwortet wird, beim Kreuzungsschema das Schema */
   bio?: BioDaten;
+  /** Nur „Bio Test De La Salle“ (lib/biotest.ts): Übung und Stelle */
+  biotest?: BiotestDaten;
 };
 
 /**
@@ -418,6 +427,8 @@ export type SpielErgebnis =
       europa?: { sitzt: LandStand; rekord?: { thema: Teil; vorher: number } };
       /** Biolabor: die Einträge, die jetzt sicher sitzen (lib/biolabor.ts bioStand) */
       bio?: { sicher: string[] };
+      /** Bio Test De La Salle: Stellen („übung:stelle“), die sicher sitzen und die zuletzt falsch waren */
+      biotest?: { sicher: string[]; falsch: string[] };
     }
   | { fehler: string };
 

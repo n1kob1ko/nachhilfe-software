@@ -678,6 +678,35 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
   dann nach unten), Biologie im Profil oder eine Biologie-Einheit ab der 3. Klasse, und der Test-Schüler.
 - **Gezählt**: `bio.genetik-mensch`; Runden in `spielrunden`. **Tablet**: Ansicht `bio`.
 
+## Bio Test 4.Klasse Vorbereitung De La Salle (Biologie)
+
+niko 2026-11-23 mit 16 Bildern der Übungen einer Lehrkraft für den Biologie-Test eines anderen Schülers (nicht das
+Biolabor): „ich möchte das du das alles einbaust als spiel für den bio test vorbereitung“, Name „Bio Test 4.Klasse
+Vorbereitung De La Salle“. Spiel `biotest` (`lib/biotest-inhalt.ts`, `lib/biotest.ts`, `components/lernen/BioTest.tsx`,
+`biotest.css`), ohne KI:
+
+- **Stoff**: die 16 Übungen im Wortlaut der Lehrkraft (Überschrift, Auftrag, Schulbuchseite, Wortkasten, Text).
+  Evolution des Menschen (S. 12–15): Mensch und Menschenaffen, Vorfahren, 3 Vertreter der Hominini (Tabelle mit
+  Bildern), Out of Africa, Zuordnen. Nervensystem (S. 19–27): Reflex, Reiz-Reaktions-Schema, Einteilung nach Lage
+  und nach Funktion, Nervenzelle beschriften, Funktionen der Bestandteile, Fachbegriffe 2 (selbst schreiben, wie
+  „e _ _ ktr …“), Synapse beschriften, Vorgänge an der Synapse (Reihenfolge), Sympathicus-Lückentext, Sympathicus
+  oder Parasympathicus (zwei Spalten).
+- **Ausgedacht**: die Auswahllisten von Out of Africa, Reflex und Sympathicus waren auf den Bildern zu; die
+  richtige Antwort ist die aus dem Schulbuch-Stoff, die falschen sind klar falsch. Unsicher ohne Buch: „etwa
+  100 000“ Jahre, „Beringstraße“, „bis zu 120“ m/s, „Menschen und Tiere“, „die Tätigkeit“. Nervenzelle 5 und 6 nach
+  den Linien im Bild: 5 Hüllzelle, 6 Axon.
+- **Bilder**: aus den Bildern der Lehrkraft ausgeschnitten (`public/spiele/biotest/`), graue Felder durch blaue
+  Nummern ersetzt. Die Grafik bleibt beim Scrollen oben, antippen macht sie groß.
+- **Spielen**: Feld antippen (das nächste leere ist gewählt), unten Wort aus dem Wortkasten oder der Auswahlliste.
+  Üben: sofort richtig/falsch, ein Fehler zeigt die Lösung und den Satz der Lehrkraft mit der Lösung (`satzMit`)
+  oder einen kurzen Merksatz. Wie im Test: alles ausfüllen, „Abgeben“. Alle Übungen der Reihe nach, Meine Fehler
+  (nur die zuletzt falschen Felder offen, der Rest eingetragen), Großer Test (alle 16 wie im Test). Keine Animationen.
+- **Runde** = eine Übung (oder nur ihre Fehler), jede Stelle eine Karte `biotest:<übung>:<stelle>`; gezählt der
+  erste Versuch. **Sicher** = zweimal hintereinander richtig.
+- **Wer es sieht** (`biotestWahl`): Schule „De La Salle“ im Profil (`/la\s*salle/i`) und der Test-Schüler; mit einem
+  geplanten Biologie-Test in 60 Tagen ganz oben (das Biolabor rückt dann nach unten).
+- **Gezählt**: `bio.test-4-dls`; Runden in `spielrunden`. **Tablet**: Ansicht `biotest`.
+
 ## Europa (Länder, Hauptstädte, Flaggen)
 
 niko 2026-11-22: „erstell ein geograpie spiel man soll länder und hauptstäde in europa lernen“, „es soll ganz europa

@@ -44,6 +44,7 @@ import { WOERTER_JE_STUFE } from "./wortschloss";
 import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarten, WORT_THEMEN, wortKandidaten, wortThemaVonKey, type WortKandidat } from "./wortschloss-themen";
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
+import { BIOTEST_SKILL, biotestKarten, biotestStand as biotestStandAus } from "./biotest";
 import { BIO_SKILL, bioRunde, bioStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
 import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
 import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
@@ -87,6 +88,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   europa: EUROPA_SKILL,
   // Biolabor (lib/biolabor.ts): Biologie, keine Fähigkeit aus dem Lehrplan
   bio: BIO_SKILL,
+  // Bio Test De La Salle (lib/biotest.ts): Biologie, keine Fähigkeit aus dem Lehrplan
+  biotest: BIOTEST_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -97,7 +100,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -167,7 +170,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || art === "biotest" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -668,6 +671,37 @@ export const bioSicher = (studentId: number): string[] => [...bioStandVon(studen
 /** Je Thema: sicher, gesehen, alle. */
 export const bioThemenStand = (studentId: number) => themenStand(bioStandVon(studentId));
 
+// ---------- Bio Test 4.Klasse Vorbereitung De La Salle (lib/biotest.ts) ----------
+
+/** Die Schule im Profil: De La Salle (Wien). */
+const DE_LA_SALLE = /la\s*salle/i;
+
+/**
+ * Gibt es „Bio Test 4.Klasse Vorbereitung De La Salle“ für diesen Schüler, und warum gerade? Für Schüler mit der Schule
+ * „De La Salle“ im Profil (niko 2026-11-23: die Übungen einer Lehrkraft dort) und für den Test-Schüler von „Spiele
+ * testen“. Mit einem geplanten Biologie-Test in den nächsten 60 Tagen steht die Kachel ganz oben, mit dem Test als
+ * Grund. null: nicht.
+ */
+export function biotestWahl(student: repo.Student, heute: string): { grund?: string } | null {
+  if (!DE_LA_SALLE.test(student.school ?? "") && !student.spiele_test) return null;
+  const bis = tagAddieren(heute, BIO_TAGE);
+  const test = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && istBio(t.subject) && t.date >= heute && t.date <= bis)
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (!test) return {};
+  const tage = Math.round((Date.parse(test.date) - Date.parse(heute)) / 86_400_000);
+  const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+  return { grund: `${test.title || test.kind || "Biologie-Test"} ${wann}` };
+}
+
+/** Je Stelle („übung:stelle“): sicher und zuletzt falsch, aus allen beendeten Runden. */
+export function biotestStand(studentId: number): { sicher: string[]; falsch: string[] } {
+  const rows = db().prepare("SELECT antworten FROM spielrunden WHERE student_id = ? AND art = 'biotest' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as { antworten: string }[];
+  const st = biotestStandAus(rows.map((r) => ({ antworten: json<GespeicherteAntwort[]>(r.antworten, []) })));
+  return { sicher: [...st].filter(([, x]) => x.sicher).map(([id]) => id), falsch: [...st].filter(([, x]) => x.zuletztFalsch).map(([id]) => id) };
+}
+
 // ---------- Europa (lib/europa.ts) ----------
 
 const istGeo = (fach: string | null | undefined) => /^(geo|gw\b|erdkunde)/i.test((fach ?? "").trim());
@@ -835,6 +869,8 @@ export function starteRunde(
     europa?: EuropaWunsch;
     /** Biolabor: Themen, Üben oder wie im Test, großer Test (lib/biolabor.ts) */
     bio?: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean };
+    /** Bio Test De La Salle: eine Übung, ganz oder nur diese Stellen (lib/biotest.ts) */
+    biotest?: { uebung: string; nur?: string[] };
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
@@ -906,6 +942,8 @@ export function starteRunde(
     // Biolabor: zuerst die zuletzt falschen, dann die noch nicht sicheren
     const wiederholen = [...new Set(offeneFehler(student.id, art, 3).map((k) => bioVonKey(k)).filter((id): id is string => !!id))];
     karten = bioRunde(bioStandVon(student.id), { auswahl: o.bio?.auswahl ?? "alle", modus: o.bio?.modus ?? "ueben", gross: o.bio?.gross, wiederholen, rng: o.rng ?? Math.random });
+  } else if (art === "biotest") {
+    karten = o.biotest ? biotestKarten(o.biotest.uebung, o.biotest.nur) : [];
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
