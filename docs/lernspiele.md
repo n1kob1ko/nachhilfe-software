@@ -774,7 +774,7 @@ sein und vielleicht auch eine option mit flaggen“, dann „ja mach alles aber 
 
 ## Österreich erobern (Geografie, 3. Klasse)
 
-niko 2026-11-24 mit dem Teststoff eines Schülers der 3G (GWB-Test am 26.11.2026, GWB-Buch S. 8–13 und Hefteinträge):
+niko 2026-11-24 mit dem Teststoff eines Schülers der 3G (GWB-Test am 26.11.2026, GWB-Buch S. 8–13; Hefteinträge und Arbeitsblatt fehlen noch):
 „Was könnte man für ein Spiel machen damit er alles lernt“; Wahl auf der Karte: „Österreich erobern (Karte + Level)“.
 Spiel `oesterreich` (`lib/oesterreich-inhalt.ts`, `lib/oesterreich.ts`, `components/lernen/OesterreichSpiel.tsx`,
 `oesterreich.css`), ohne KI und ohne Higgsfield-Bilder:
@@ -803,6 +803,7 @@ Spiel `oesterreich` (`lib/oesterreich-inhalt.ts`, `lib/oesterreich.ts`, `compone
   Versuch (`levelStand`); es zählt die beste Runde. Nach jedem Fehler: Lösung und Merksatz.
 - **Mehr zum Lernen**: Begriffe schreiben (12 Fragen zum Schreiben, wie im Test), Meine Fehler, Lernzettel (je Level,
   mit dem Altersaufbaudiagramm).
+- **Nur aus dem Buch** (niko 2026-11-24 „nichts dazu erfunden?“): Merksätze ohne Zusatzwissen (kein Bodensee, keine Nachbarländer). Nicht wörtlich im Buch: die Kürzel NÖ, OÖ, T, V, B (Buch: „W, K, S, St, …“), die Bezirksnamen zu M10 (Aufgabe 4 „recherchiere“), die Touristin-Frage (aus M1 S. 10 und dem Hauptwohnsitz gefolgert) und die Lösungen zu Aufgabe 5 S. 11 und Aufgabe 4 S. 13.
 - **Unsicher ohne Buchseite**: Kinderzahl heute „etwa 1,3 bis 1,5“, Lebenserwartung Frauen „etwa 84“, Männer „etwa
   79“, nicht-österreichische Staatsangehörigkeit 2021 „etwa 17,5 %“ (aus den Grafiken S. 12 abgelesen), die zwei Fehler
   im Interview (Aufgabe 4 S. 13: 1961 über 2 300 statt 2 000, Wolfsthal 2011 schon über 800), „Klosterneuburg“ für KG.

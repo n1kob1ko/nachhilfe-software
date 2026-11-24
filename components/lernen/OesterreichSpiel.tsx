@@ -436,7 +436,7 @@ export function OesterreichSpiel({
               <BookOpen size={26} aria-hidden />
               <span>
                 <b>Lernzettel</b>
-                <small>Das Wichtigste aus dem Buch S. 8–13 und dem Heft.</small>
+                <small>Das Wichtigste aus dem Buch S. 8–13.</small>
               </span>
             </button>
           </div>
