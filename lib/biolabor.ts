@@ -1,7 +1,7 @@
 /**
  * Biolabor (niko 2026-11-23): ein Lernspiel für den Biologie-Test einer 4. Klasse: Genetik (Vererbung, DNA,
  * Mendel’sche Regeln mit Kreuzungsschemata, Blutgruppen, Gentechnik) und „Der Mensch“ (Nervensystem, Gehirn,
- * unwillkürliches Nervensystem, Sympathikus und Parasympathikus, Hormone). Der Stoff steht in lib/biolabor-inhalt.ts.
+ * unwillkürliches Nervensystem, Sympathikus und Parasympathikus). Der Stoff steht in lib/biolabor-inhalt.ts.
  *
  * Gespielt wird in components/lernen/BioLabor.tsx, ohne KI:
  * - „Üben“: vier Antworten zum Antippen, das Kreuzungsschema mit vorgegebenen Keimzellen.
@@ -237,8 +237,6 @@ const MERKE: Record<string, string> = {
   "h-00": "00 × 00: Beide Eltern können nur 0 weitergeben, das Kind hat 00 = Blutgruppe 0.",
   "h-ab-0": "AB × 00: Das Kind bekommt A oder B von der Mutter und 0 vom Vater, also A0 oder B0 = Blutgruppe A oder B.",
   "h-schwanken": "Das Kleinhirn steuert Gleichgewicht und fein abgestimmte Bewegungen. Ist es verletzt, schwankt man.",
-  "o-pubertaet": "Die Geschlechtshormone steuern die Pubertät: Östrogen (Eierstöcke) und Testosteron (Hoden).",
-  "o-adrenalin-wirkt": "Adrenalin aus den Nebennieren macht bereit für Kampf oder Flucht: Herz schneller, mehr Energie.",
 };
 
 /**
@@ -503,8 +501,6 @@ export const LEVEL_TITEL: Record<number, string> = {
   22: "Organe und Gehirn",
   23: "Nervenzelle",
   24: "Gehirn beschriften",
-  25: "Hormondrüsen",
-  26: "Hormone und Wirkung",
 };
 
 /** Die Level in der Reihenfolge des Blatts. */
@@ -548,7 +544,7 @@ export function levelStand(runden: { antworten: { key: string; richtig: boolean 
   return out;
 }
 
-/** Die ersten Level der zwei Welten (Genetik, Nervensystem und Hormone) sind immer offen. */
+/** Die ersten Level der zwei Welten (Genetik, Nervensystem) sind immer offen. */
 export const WELT_ANFANG = [1, 20];
 /** Offen: der Anfang einer Welt, oder das Level davor ist geschafft (mindestens ein Stern). */
 export const levelOffen = (n: number, stand: Record<number, number>) => {

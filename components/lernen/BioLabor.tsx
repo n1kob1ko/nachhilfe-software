@@ -393,7 +393,7 @@ export function BioLabor({
               const welt = WELT_ANFANG.indexOf(n);
               return (
                 <li key={n} className="bio-pfad-stufe" style={{ "--x": PFAD_X[i % PFAD_X.length] } as CSSProperties}>
-                  {welt >= 0 && <p className="bio-welt">{welt === 0 ? "Welt 1 · Genetik" : "Welt 2 · Nervensystem und Hormone"}</p>}
+                  {welt >= 0 && <p className="bio-welt">{welt === 0 ? "Welt 1 · Genetik" : "Welt 2 · Nervensystem"}</p>}
                   <button
                     type="button"
                     className="bio-knoten"

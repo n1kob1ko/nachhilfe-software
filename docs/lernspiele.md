@@ -686,10 +686,10 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
 `biolabor.css`), ohne KI:
 
 - **Labor-Mission** (niko 2026-11-23 „kein richtiges spiel“, Wahl „Kampf gegen Keime“): das Biolabor öffnet mit einer
-  Karte. Jede Nummer vom Blatt der Lehrerin ist ein Level (25 Level, 18 gehört zu 19; `LEVELS`, `LEVEL_TITEL`,
+  Karte. Jede Nummer vom Blatt der Lehrerin ist ein Level (23 Level, 18 gehört zu 19; `LEVELS`, `LEVEL_TITEL`,
   `levelEintraege`: zuerst die kurzen Fragen, am Schluss die Frage der Lehrerin selbst), in zwei Welten (Genetik ab 1,
-  Nervensystem und Hormone ab 20; der Anfang jeder Welt ist immer offen, sonst öffnet ein Stern das nächste Level,
-  `levelOffen`). In jedem Level steht ein Keim (Higgsfield, `public/spiele/biolabor/keim-*.webp`; 19 und 26 der Boss)
+  Nervensystem ab 20; der Anfang jeder Welt ist immer offen, sonst öffnet ein Stern das nächste Level,
+  `levelOffen`). In jedem Level steht ein Keim (Higgsfield, `public/spiele/biolabor/keim-*.webp`; 19 und 24 der Boss)
   mit Lebensbalken: jede richtige Antwort ist ein Treffer (beim ersten Versuch schnell oder in Serie: kritisch, mehr
   Punkte), jede falsche beim ersten Versuch kostet ein Herz, die Karte kommt wie sonst später noch einmal. Drei Herzen;
   sind sie weg, ist das Level verloren (Lösungen stehen am Ende). Sterne = übrige Herzen, auf dem Server aus den Fehlern
@@ -699,7 +699,7 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
   Stück, Dein Glossar; alles aus dem Buch (Alles/Genetik/Der Mensch, Üben, Wie im Test, Kreuzungsschemata, Großer
   Test, Lernzettel, „Dein Labor“) steht zugeklappt unter „Mehr üben“.
 - **Fragen der Lehrerin** (Thema `lehrerin`): der Fragenkatalog zum Test am 26.11.2026 (Fotos von niko), Fragen
-  1–26 im Wortlaut der Lehrerin als Erklärfragen, dazu kurze Teilfragen zum Selbstschreiben (z. B. 12) Anzahl und n,
+  1–24 im Wortlaut der Lehrerin als Erklärfragen, dazu kurze Teilfragen zum Selbstschreiben (z. B. 12) Anzahl und n,
   14) Kind vertauscht → Paar 4, 15) Vaterschaftsausschluss → Fall 2, Stammbaum Blutgruppen, Karyogramm richtig/falsch)
   und Kreuzungsschemata für 14), 16) Erbsen und 17) Meerschweinchen. Eine Runde (12, wie im Test) geht der Reihe nach
   wie auf dem Blatt (`lehrerinReihe`): zuerst die zuletzt falschen, dann die noch nicht sicheren; oben steht
@@ -710,7 +710,9 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
   `spiel?modus=bloecke&art=bio`. Nur Fragen zum Selbstschreiben (`schreibbar`) aus `BLOCK_THEMEN` (Fragen der
   Lehrerin und Glossar aus dem Heft), 10 je Runde (`bioRunde` mit `schreiben`). Die Frage liegt über dem Brett
   (`BioSchreibFeld.tsx`), geprüft wie „Wie im Test“ (`pruefeGeschrieben`); „fast“ zählt als richtig.
-- **Stoff**: 19 Themen in zwei Bereichen, 542 Einträge (100 davon Fragen der Lehrerin). Zuerst nach dem Lehrplan geschrieben; am 2026-11-23 abends
+- **Stoff**: 18 Themen in zwei Bereichen, 510 Einträge (90 davon Fragen der Lehrerin). Hormone sind draußen (niko
+  2026-11-24: „da kommen Hormone nicht also lösch diesen Teil“): Thema Hormone, Fragen 25 und 26 der Lehrerin und die
+  Fragen nach der Hypophyse als Hormondrüse. Zuerst nach dem Lehrplan geschrieben; am 2026-11-23 abends
   schickte niko die Buchseiten (S. 8–17 und 54–72), seither folgt alles dem Buch: seine Wörter zuerst
   („Elterngeneration (E)“, „1. Folgegeneration“, „Erscheinungsbild“, „sensorische Nerven“, „kurze Fortsätze“,
   „Nervenfaser“, „Endknöpfchen“, „Nachhirn“, „gleich wirksam“ statt kodominant, Rh/rh, Wunderblume rr × ww → rw),
@@ -723,7 +725,7 @@ Higgsfield. Spiel `bio` (`lib/biolabor-inhalt.ts`, `lib/biolabor.ts`, `component
   Herbizidresistenz, Genome-Editing, Gesetz) und Biotechnik (Besamung, IVF, Embryonentransfer, Embryosplitting,
   Klonen, Stammzellen). Der Mensch: Nervensystem (Reiz-Reaktions-Schema, Nervenzelle), Gehirn (fünf Abschnitte,
   Rindenfelder), Rückenmark (Reflex), Lernen und Gedächtnis, unwillkürliches Nervensystem, Sympathikus und
-  Parasympathikus (Organe wie in Abb. 4 des Buchs), Hormone (S. 18 lag nicht vor, bleibt nach dem Lehrplan). Je
+  Parasympathikus (Organe wie in Abb. 4 des Buchs). Je
   Thema ein Lernzettel (`merke`, nach den „Merke dir“-Kästen). Einträge: Fragen mit vier Kacheln (`wahl`, mit
   `schreib` auch zum Schreiben), Begriffe (`begriff`), Sympathikus oder Parasympathikus (`zuordnen`), Erklärfragen
   (`erklaeren`, viele nach den Aufgaben im Buch, nur „Wie im Test“, selbst bewertet) und 17 Kreuzungen (`kreuzung`).

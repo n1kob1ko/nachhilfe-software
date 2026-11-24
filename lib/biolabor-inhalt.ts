@@ -1,6 +1,6 @@
 /**
  * Der Stoff von „Biolabor“ (lib/biolabor.ts): Genetik (mit Gentechnik und Biotechnik) und „Der Mensch“ (Nervensystem,
- * Gehirn, Rückenmark, Lernen und Gedächtnis, unwillkürliches Nervensystem, Sympathikus und Parasympathikus, Hormone)
+ * Gehirn, Rückenmark, Lernen und Gedächtnis, unwillkürliches Nervensystem, Sympathikus und Parasympathikus)
  * für die 4. Klasse (8. Schulstufe).
  *
  * niko 2026-11-23 mit dem Teststoff „Biologie 4D 26.11.2026“ (Buch Expedition Biologie 4, Westermann/E. Dorner,
@@ -9,7 +9,7 @@
  * „sensorische Nerven“, „kurze Fortsätze“, „Nachhirn“, Rh/rh, Wunderblume rr × ww), Fachwörter aus dem Unterricht
  * gelten beim Schreiben auch (Mitose, Dendrit, Axon, P-Generation). Dazu kamen die Themen Rückenmark, Lernen und
  * Gedächtnis, Gentechnik und Lebensmittel und Biotechnik. Die drei Zweige der Gentechnik stehen nicht auf den
- * Buchseiten, aber im Teststoff. Hormone (S. 18) lag nicht vor.
+ * Buchseiten, aber im Teststoff. Hormone kommen im Test nicht vor (niko 2026-11-24: „da kommen Hormone nicht also lösch diesen Teil“).
  *
  * Fünf Arten von Einträgen:
  * - `wahl`: eine Frage mit der richtigen und falschen Antworten. Mit `schreib` kann man sie wie im Test schreiben
@@ -80,7 +80,6 @@ export const BIO_THEMEN: BioThema[] = [
       "21) Sympathikus: Herzschlag schneller. Parasympathikus: Herzschlag langsamer.",
       "22) Gehirn: Großhirn (Denken, Gedächtnis, Sinne, Befehle), Zwischenhirn (Gefühle, Körpertemperatur), Mittelhirn (Augenbewegung, Pupille), Kleinhirn (Gleichgewicht, Bewegungsabläufe), Nachhirn (Atmung, Kreislauf, Schlucken, Husten).",
       "23) Nervenzelle: kurze Fortsätze, Zellkörper mit Zellkern, lange Nervenfaser, Endknöpfchen.",
-      "25/26) Hypophyse (Wachstumshormon, steuert andere Drüsen), Schilddrüse (Thyroxin, Stoffwechsel), Bauchspeicheldrüse (Insulin senkt, Glukagon hebt den Blutzucker), Nebennieren (Adrenalin, Stress), Eierstöcke (Östrogen, Progesteron), Hoden (Testosteron).",
     ],
   },
   {
@@ -251,7 +250,7 @@ export const BIO_THEMEN: BioThema[] = [
       "Großhirn: größter Teil, zwei Hälften, verbunden durch den Balken. Außen die graue Substanz (Zellkörper), innen die weiße Substanz (Nervenfasern). Verarbeitet Impulse der Sinnesorgane, gibt Befehle, speichert Informationen.",
       "Rindenfelder: sensorische (z. B. Sehfeld, Hörfeld), motorische (Befehle an die Muskeln) und assoziative Felder (Sitz des Denkens und des Gedächtnisses).",
       "Kleinhirn (unten am Hinterkopf): Bewegungsabläufe und Gleichgewicht; gelernte Abläufe wie Radfahren gehen automatisch.",
-      "Zwischenhirn: bewertet Informationen der Sinneszellen, regelt die Körpertemperatur und Stoffwechselvorgänge; hier entstehen Gefühle. Darunter hängt die erbsengroße Hypophyse (Hormondrüse).",
+      "Zwischenhirn: bewertet Informationen der Sinneszellen, regelt die Körpertemperatur und Stoffwechselvorgänge; hier entstehen Gefühle.",
       "Mittelhirn: Umschaltstelle, steuert Augenbewegungen und Pupillenweite. Nachhirn: Übergang zum Rückenmark, steuert Atmung, Blutkreislauf, Schlucken, Husten, Niesen.",
     ],
   },
@@ -302,20 +301,6 @@ export const BIO_THEMEN: BioThema[] = [
       "Parasympathikus = Entspannung und Erholung: Herzschlag und Atmung langsamer, Bronchien enger, Pupillen kleiner. Verdauung, Ausscheidung und Geschlechtsorgane werden angeregt, Energiereserven aufgefüllt. Er regt auch die Tränendrüsen an (Weinen).",
       "Gegenspieler-Prinzip wie beim Auto: Sympathikus = Gaspedal, Parasympathikus = Bremse.",
       "Ist der Sympathikus zu lange aktiv und fehlt die Erholung, ist der Körper im Dauerstress: Krankheiten von Verdauung, Herz und Kreislauf, Schlafstörungen. Bewegung, Schlaf und Pausen helfen.",
-    ],
-  },
-  {
-    id: "hormone",
-    bereich: "mensch",
-    titel: "Hormone",
-    merke: [
-      "Hormone sind chemische Botenstoffe. Hormondrüsen geben sie direkt ins Blut ab; das Blut bringt sie zu den Zielorganen.",
-      "Ein Hormon wirkt nur an Zellen mit dem passenden Empfänger (Rezeptor): Schlüssel-Schloss-Prinzip.",
-      "Hormone wirken langsamer als Nerven, dafür länger.",
-      "Hypophyse (Hirnanhangdrüse): erbsengroß, unter dem Zwischenhirn, Verbindung zwischen Nerven- und Hormonsystem; steuert andere Hormondrüsen und bildet das Wachstumshormon.",
-      "Schilddrüse: Thyroxin, regt den Stoffwechsel an; sie braucht Jod.",
-      "Bauchspeicheldrüse: Insulin senkt den Blutzucker, Glukagon hebt ihn. Fehlt Insulin: Diabetes (Zuckerkrankheit).",
-      "Nebennieren: Adrenalin, das Stresshormon. Eierstöcke: Östrogen und Progesteron. Hoden: Testosteron.",
     ],
   },
 ];
@@ -516,17 +501,6 @@ export const BIO_EINTRAEGE: BioEintrag[] = [
   w("l-24-balken", "lehrerin", "Beschrifte das Gehirn: Was verbindet die beiden Hälften des Großhirns?", "Balken", ["Kleinhirn", "Rückenmark"], { schreib: ["Balken", "der Balken"], merke: "Die zwei Großhirnhälften sind durch den Balken verbunden." }),
   w("l-24-klein", "lehrerin", "Beschrifte das Gehirn: Welcher Teil liegt unten am Hinterkopf, unter dem Großhirn?", "Kleinhirn", ["Zwischenhirn", "Mittelhirn"], { schreib: ["Kleinhirn"] }),
   w("l-24-nach", "lehrerin", "Beschrifte das Gehirn: Welcher Teil geht ins Rückenmark über?", "Nachhirn", ["Kleinhirn", "Mittelhirn"], { schreib: ["Nachhirn", "verlängertes Mark", "Hirnstamm"] }),
-  w("l-24-hypophyse", "lehrerin", "Beschrifte das Gehirn: Welche erbsengroße Hormondrüse hängt unter dem Zwischenhirn?", "Hypophyse", ["Schilddrüse", "Zirbeldrüse"], { schreib: ["Hypophyse", "Hirnanhangdrüse", "Hirnanhangsdrüse"] }),
-  // 25) und 26) Hormondrüsen
-  e("l-25", "lehrerin", "Nenne die wichtigsten Hormondrüsen des Körpers.", ["Hypophyse (Hirnanhangdrüse)", "Schilddrüse", "Bauchspeicheldrüse", "Nebennieren", "Eierstöcke (Frau) und Hoden (Mann)"]),
-  e("l-26", "lehrerin", "Wie wirken diese Hormondrüsen auf den Körper? Welche Hormone produzieren sie?", ["Hypophyse: Wachstumshormon; steuert die anderen Hormondrüsen.", "Schilddrüse: Thyroxin, regt den Stoffwechsel an (braucht Jod).", "Bauchspeicheldrüse: Insulin senkt den Blutzucker, Glukagon hebt ihn.", "Nebennieren: Adrenalin, das Stresshormon.", "Eierstöcke: Östrogen und Progesteron. Hoden: Testosteron."]),
-  w("l-26-wachstum", "lehrerin", "Welche Hormondrüse bildet das Wachstumshormon und steuert andere Hormondrüsen?", "Hypophyse", ["Schilddrüse", "Nebenniere", "Bauchspeicheldrüse"], { schreib: ["Hypophyse", "Hirnanhangdrüse", "Hirnanhangsdrüse"] }),
-  w("l-26-thyroxin", "lehrerin", "Welche Hormondrüse bildet Thyroxin, das den Stoffwechsel anregt?", "Schilddrüse", ["Hypophyse", "Nebenniere", "Bauchspeicheldrüse"], { schreib: ["Schilddrüse"] }),
-  w("l-26-insulin", "lehrerin", "Welche Hormondrüse bildet Insulin und Glukagon?", "Bauchspeicheldrüse", ["Schilddrüse", "Nebenniere", "Hypophyse"], { schreib: ["Bauchspeicheldrüse", "Pankreas"] }),
-  w("l-26-insulin-wirkt", "lehrerin", "Wie wirkt Insulin?", "Es senkt den Blutzucker.", ["Es hebt den Blutzucker.", "Es macht den Herzschlag schneller.", "Es lässt Knochen wachsen."], { merke: "Insulin senkt den Blutzucker, Glukagon hebt ihn. Fehlt Insulin: Diabetes." }),
-  w("l-26-adrenalin", "lehrerin", "Welches Hormon bilden die Nebennieren bei Stress?", "Adrenalin", ["Insulin", "Thyroxin", "Testosteron"], { schreib: ["Adrenalin"] }),
-  w("l-26-hoden", "lehrerin", "Welches Hormon bilden die Hoden?", "Testosteron", ["Östrogen", "Insulin", "Adrenalin"], { schreib: ["Testosteron"] }),
-  w("l-26-eier", "lehrerin", "Welche Hormone bilden die Eierstöcke?", "Östrogen und Progesteron", ["Testosteron", "Insulin und Glukagon", "Adrenalin"], { schreib: ["Östrogen und Progesteron", "Progesteron und Östrogen", "Östrogen", "Progesteron", "Oestrogen"] }),
   // ---------- Grundlagen der Vererbung (Buch S. 54–55) ----------
   w("g-mendel-wer", "grundlagen", "Wer fand die Grundregeln der Vererbung?", "Gregor Mendel", ["Charles Darwin", "Louis Pasteur", "Robert Koch"], {
     schreib: ["Gregor Mendel", "Mendel", "Johann Gregor Mendel"],
@@ -1077,7 +1051,6 @@ export const BIO_EINTRAEGE: BioEintrag[] = [
   w("h-zwischen-kalt", "gehirn", "Was macht das Zwischenhirn, wenn die Körpertemperatur zu niedrig ist?", "Blutgefäße der Haut verengen, Muskelzittern", ["Schweißdrüsen aktivieren", "Pupillen weiten", "Herz anhalten"]),
   w("h-gefuehle", "gehirn", "Wo entstehen Gefühle wie Freude, Angst, Trauer oder Wut?", "im Zwischenhirn", ["im Kleinhirn", "im Nachhirn", "im Rückenmark"], { schreib: ["Zwischenhirn", "im Zwischenhirn"] }),
   w("h-zwischen-filter", "gehirn", "Welcher Teil bewertet die Informationen der Sinneszellen und leitet nur Wichtiges zum Großhirn?", "Zwischenhirn", ["Kleinhirn", "Nachhirn", "Balken"]),
-  w("h-hypophyse", "gehirn", "Welche erbsengroße Hormondrüse hängt unter dem Zwischenhirn?", "Hypophyse", ["Schilddrüse", "Bauchspeicheldrüse", "Nebenniere"], { schreib: ["Hypophyse", "Hirnanhangdrüse", "Hirnanhangsdrüse"] }),
   w("h-mittel", "gehirn", "Welcher Teil steuert Augenbewegungen und die Pupillenweite?", "Mittelhirn", ["Nachhirn", "Kleinhirn", "Großhirn"], { schreib: ["Mittelhirn"] }),
   w("h-stamm", "gehirn", "Welcher Teil des Gehirns geht ins Rückenmark über und steuert Atmung, Blutkreislauf, Schlucken, Husten und Niesen?", "Nachhirn", ["Großhirn", "Kleinhirn", "Mittelhirn"], { schreib: ["Nachhirn", "verlängertes Mark", "Hirnstamm"] }),
   w("h-sprache", "gehirn", "In welchem Teil liegen die Rindenfelder für Sprechen, Riechen und Lernen?", "im Großhirn", ["im Kleinhirn", "im Nachhirn", "im Rückenmark"]),
@@ -1188,26 +1161,4 @@ export const BIO_EINTRAEGE: BioEintrag[] = [
   e("y-erkl", "sympathikus", "Vergleiche Sympathikus und Parasympathikus: je drei Wirkungen.", ["Sympathikus (Leistungssteigerung): Herz schneller, Pupillen größer, Bronchien weiter, Schweiß; Verdauung, Blase gebremst", "Parasympathikus (Entspannung, Erholung): Herz und Atmung langsamer, Pupillen kleiner, Bronchien enger; Verdauung angeregt", "sie sind Gegenspieler: Gaspedal und Bremse"]),
   e("y-erkl-stress", "sympathikus", "Erkläre, warum Erholungsphasen wichtig sind.", ["ist der Sympathikus lange aktiv und fehlt der Parasympathikus, ist der Körper im Dauerstress", "Folgen: Krankheiten von Verdauung und Herz-Kreislauf, Schlafstörungen, Erschöpfung", "Bewegung, Schlaf und bewusste Pausen stellen das Gleichgewicht her"]),
 
-  // ---------- Hormone ----------
-  w("o-was", "hormone", "Was sind Hormone?", "chemische Botenstoffe, die mit dem Blut transportiert werden", ["elektrische Signale in den Nerven", "Zellen, die Krankheitserreger fressen", "Teile der DNA"]),
-  w("o-blut", "hormone", "Wie kommen Hormone zu ihrem Zielorgan?", "mit dem Blut", ["über die Nerven", "über die Luft", "über die Muskeln"], { schreib: ["mit dem Blut", "Blut", "über das Blut", "Blutkreislauf", "mit dem Blutkreislauf"] }),
-  w("o-insulin", "hormone", "Welches Hormon senkt den Blutzuckerspiegel?", "Insulin", ["Adrenalin", "Testosteron", "Glukagon"], { schreib: ["Insulin"] }),
-  w("o-glukagon", "hormone", "Welches Hormon hebt den Blutzuckerspiegel, wenn er zu niedrig ist?", "Glukagon", ["Insulin", "Östrogen", "Thyroxin"], { schreib: ["Glukagon", "Glucagon"] }),
-  w("o-bauch", "hormone", "Wo wird Insulin gebildet?", "in der Bauchspeicheldrüse", ["in der Schilddrüse", "in der Leber", "in der Nebenniere"], { schreib: ["Bauchspeicheldrüse", "in der Bauchspeicheldrüse", "Pankreas"] }),
-  w("o-diabetes", "hormone", "Welche Krankheit entsteht, wenn der Körper zu wenig Insulin bildet?", "Diabetes (Zuckerkrankheit)", ["Grippe", "Allergie", "Kropf"], { schreib: ["Diabetes", "Zuckerkrankheit", "Diabetes mellitus"] }),
-  w("o-adrenalin", "hormone", "Wie heißt das Stresshormon aus den Nebennieren?", "Adrenalin", ["Insulin", "Melatonin", "Östrogen"], { schreib: ["Adrenalin"] }),
-  w("o-adrenalin-wirkt", "hormone", "Was macht Adrenalin im Körper?", "Herz schneller, mehr Energie für Kampf oder Flucht", ["Man wird müde und schläft ein.", "Der Blutzucker sinkt stark.", "Die Verdauung wird angeregt."]),
-  w("o-hypophyse", "hormone", "Welche Hormondrüse nennt man die „Chefdrüse“?", "Hypophyse (Hirnanhangdrüse)", ["Schilddrüse", "Bauchspeicheldrüse", "Nebenniere"], { schreib: ["Hypophyse", "Hirnanhangdrüse", "Hirnanhangsdrüse"] }),
-  w("o-wachstum", "hormone", "Wo wird das Wachstumshormon gebildet?", "in der Hypophyse", ["in der Schilddrüse", "in den Nebennieren", "in der Bauchspeicheldrüse"], { schreib: ["Hypophyse", "in der Hypophyse", "Hirnanhangdrüse"] }),
-  w("o-schild", "hormone", "Welche Drüse braucht Jod und regt mit ihrem Hormon den Stoffwechsel an?", "Schilddrüse", ["Hypophyse", "Bauchspeicheldrüse", "Nebenniere"], { schreib: ["Schilddrüse"] }),
-  w("o-testo", "hormone", "Welches Hormon bilden die Hoden?", "Testosteron", ["Östrogen", "Insulin", "Adrenalin"], { schreib: ["Testosteron"] }),
-  w("o-oestro", "hormone", "Welches Hormon bilden die Eierstöcke?", "Östrogen", ["Testosteron", "Insulin", "Thyroxin"], { schreib: ["Östrogen", "Oestrogen", "Estrogen", "Progesteron"] }),
-  w("o-schloss", "hormone", "Was bedeutet das Schlüssel-Schloss-Prinzip bei Hormonen?", "Ein Hormon wirkt nur an Zellen mit dem passenden Rezeptor.", ["Hormone öffnen die Blutgefäße.", "Jedes Hormon wirkt in allen Zellen gleich.", "Hormone sperren die Nerven ab."]),
-  w("o-vergleich", "hormone", "Wie unterscheiden sich Hormone von Nervensignalen?", "Hormone wirken langsamer, aber länger.", ["Hormone sind schneller als Nerven.", "Hormone wirken nur im Gehirn.", "Hormone sind elektrische Signale."]),
-  w("o-druesen", "hormone", "Wie heißen Drüsen, die ihre Stoffe direkt ins Blut abgeben?", "Hormondrüsen", ["Schweißdrüsen", "Speicheldrüsen", "Tränendrüsen"], { schreib: ["Hormondrüsen", "Hormondrüse", "endokrine Drüsen", "innere Drüsen"] }),
-  w("o-pubertaet", "hormone", "Welche Hormone steuern die Pubertät?", "die Geschlechtshormone (Östrogen, Testosteron)", ["Insulin und Glukagon", "Adrenalin allein", "keine, nur die Nerven"]),
-  b("b-hormon", "hormone", "Hormon", "Ein chemischer Botenstoff, den eine Drüse ins Blut abgibt und der an einem Zielorgan wirkt.", ["Hormone"]),
-  b("b-rezeptor", "hormone", "Rezeptor", "Der Empfänger an einer Zelle, zu dem nur ein bestimmtes Hormon passt (wie Schloss und Schlüssel).", ["Rezeptoren"]),
-  e("o-erkl-zucker", "hormone", "Erkläre, wie der Blutzuckerspiegel geregelt wird.", ["nach dem Essen steigt der Blutzucker", "die Bauchspeicheldrüse gibt Insulin ab, die Zellen nehmen Zucker auf, der Blutzucker sinkt", "ist er zu niedrig, hebt Glukagon ihn wieder; fehlt Insulin: Diabetes"]),
-  e("o-erkl-vergleich", "hormone", "Vergleiche Nervensystem und Hormonsystem.", ["Nerven: elektrische Signale, sehr schnell, kurz, gezielt", "Hormone: Botenstoffe im Blut, langsamer, wirken länger", "beide steuern den Körper; Hormone wirken nur an Zellen mit passendem Rezeptor"]),
 ];
