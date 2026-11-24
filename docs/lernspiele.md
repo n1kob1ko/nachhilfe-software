@@ -809,6 +809,46 @@ sein und vielleicht auch eine option mit flaggen“, dann „ja mach alles aber 
   Europa ist das einzige Spiel mit eigenem Feld, das als Duell geht (`DUELL_ARTEN`).
 - **Gezählt**: `geo.europa`. **Tablet**: Ansicht `europa`; quer Karte links, Frage rechts.
 
+## Österreich erobern (Geografie, 3. Klasse)
+
+niko 2026-11-24 mit dem Teststoff eines Schülers der 3G (GWB-Test am 26.11.2026, GWB-Buch S. 8–13 und Hefteinträge):
+„Was könnte man für ein Spiel machen damit er alles lernt“; Wahl auf der Karte: „Österreich erobern (Karte + Level)“.
+Spiel `oesterreich` (`lib/oesterreich-inhalt.ts`, `lib/oesterreich.ts`, `components/lernen/OesterreichSpiel.tsx`,
+`oesterreich.css`), ohne KI und ohne Higgsfield-Bilder:
+
+- **Level-Karte**: die Österreich-Karte (`lib/oesterreich-karte.ts`, erzeugt mit `scripts/oesterreich-karte.mjs` aus den
+  Grenzen 2021 von Statistik Austria, CC BY 4.0; nicht von Hand ändern). Jedes Bundesland ist ein Level; geschafft =
+  erobert, das Land färbt sich in seinen Landesfarben (Streifen). Alle Level sind offen. 1 Vorarlberg: die 9
+  Bundesländer (antippen), 2 Tirol: Landeshauptstädte (Punkt antippen, schreiben), 3 Salzburg: Kürzel, 94 Bezirke,
+  Autokennzeichen aus M10 (KG, WO, MU, RE), 4 Kärnten: Einwohner (Wer hat mehr?, drei Gruppen, Wachstum, goldene Mitte),
+  5 Steiermark: Volkszählung, Registerzählung, Hauptwohnsitz, 6 Oberösterreich: Demographie und Ausländeranteil,
+  7 Burgenland: Altersaufbaudiagramm (Balken antippen, Generationen, Babyboom, Richtig/Falsch aus Aufgabe 5),
+  8 Niederösterreich: Die Bevölkerung verändert sich (Kinderzahl, Lebenserwartung, Landflucht, Geburtenbilanz
+  rechnen, Bad Großpertholz und Wolfsthal), 9 Wien: Endgegner mit 15 Fragen aus allen Leveln (zuerst zuletzt falsche,
+  Schreiben bevorzugt, höchstens 3 je Level).
+- **Antworten**: Bundesland auf der Karte antippen (Wien hat einen Tippkreis), Landeshauptstadt antippen (der nächste
+  Punkt zählt), Kacheln, Richtig/Falsch, „Welches Bundesland hat mehr Einwohner?“ (danach stehen die Zahlen da),
+  Gruppen, Balken im Altersaufbaudiagramm (Buch S. 11, M5, links Männer, rechts Frauen), der Reihe nach antippen
+  (M11 Staat → Adresse, die vier größten Bundesländer), Zahl schreiben (mit ±), Begriff schreiben („fast“ zählt).
+- **Selbst eintippen** (niko 2026-11-24: mit Auswahl „würde man einfach raten“): eine Frage, die einmal mit Auswahl
+  richtig war (und zuletzt nicht falsch), kommt beim nächsten Mal zum Tippen (`tippbar`, `alsSchreiben`); Kartenfragen
+  zeigen dann das Land oder den Punkt rot auf der Karte. Schalter „Schwer“ am Start (localStorage `oe-schwer`): alles
+  Tippbare sofort zum Tippen. Der Endgegner Wien ist immer zum Tippen. Lange Sätze, Richtig/Falsch, Reihenfolgen und
+  „Wer hat mehr?“ bleiben zum Antippen. Tippfehler: kleine Abweichungen zählen („fast“), Zahlen mit Toleranz.
+- **Herzen**: drei (Wien fünf); ein Fehler beim ersten Versuch kostet eins, die Karte kommt drei Karten später wieder.
+  Sterne = übrige Herzen (Wien: 0–1 Fehler drei, 2–3 zwei, 4 einer), auf dem Server aus den Fehlern beim ersten
+  Versuch (`levelStand`); es zählt die beste Runde. Nach jedem Fehler: Lösung und Merksatz.
+- **Mehr zum Lernen**: Begriffe schreiben (12 Fragen zum Schreiben, wie im Test), Meine Fehler, Lernzettel (je Level,
+  mit dem Altersaufbaudiagramm).
+- **Unsicher ohne Buchseite**: Kinderzahl heute „etwa 1,3 bis 1,5“, Lebenserwartung Frauen „etwa 84“, Männer „etwa
+  79“, nicht-österreichische Staatsangehörigkeit 2021 „etwa 17,5 %“ (aus den Grafiken S. 12 abgelesen), die zwei Fehler
+  im Interview (Aufgabe 4 S. 13: 1961 über 2 300 statt 2 000, Wolfsthal 2011 schon über 800), „Klosterneuburg“ für KG.
+- **Wer es sieht** (`oesterreichWahl`): ein geplanter Geografie-Test (GW, GWB, GWK, Geografie) bis zum Testtag in der
+  7. Schulstufe oder mit Österreich/Bevölkerung im Stoff (dann ganz oben, statt Europa); ohne Test die 7. Schulstufe mit
+  Geografie im Profil oder einer Geografie-Einheit in den letzten 30 Tagen, aber nur bis 26.11.2026; der Test-Schüler.
+  Danach verschwindet es.
+- **Gezählt**: `geo.oesterreich`; Runden in `spielrunden`. Kein Tablet (`/geraet`), kein Duell.
+
 ## Quiz je Fach (Mathe-Quiz, Deutsch-Quiz, Englisch-Quiz)
 
 niko 2026-11-17: „spiele sind da was fehlt ist stoff“. Vorher hatten die meisten Themen des Lehrplans kein Spiel

@@ -48,6 +48,7 @@ import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
 import { BIOTEST_SKILL, biotestKarten, biotestStand as biotestStandAus } from "./biotest";
 import { eintrag as bioEintrag, eintragKarten } from "./biolabor";
 import { europaKarte } from "./europa";
+import { levelStand as oeLevelStandAus, OE_SKILL, oeRunde, oeStand as oeStandAus, type OeWunsch } from "./oesterreich";
 import { BIO_SKILL, bioRunde, bioStand, levelStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
 import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
 import { BLAETTER_JE_RUNDE, BLATT_SKILL, blattKarten, blattStand, PFLANZEN, vonKey, waehleBlaetter, type BlattModus, type BlattStand } from "./blaetter";
@@ -93,6 +94,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   bio: BIO_SKILL,
   // Bio Test De La Salle (lib/biotest.ts): Biologie, keine Fähigkeit aus dem Lehrplan
   biotest: BIOTEST_SKILL,
+  // Österreich erobern (lib/oesterreich.ts): Geografie, keine Fähigkeit aus dem Lehrplan
+  oesterreich: OE_SKILL,
   // Quiz: die Fähigkeit hängt am Thema der Runde (themenPlan); diese hier hat niemand im Lernstand
   quizmathe: "spiel.quiz.mathe",
   quizdeutsch: "spiel.quiz.deutsch",
@@ -103,7 +106,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99, oesterreich: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -173,7 +176,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || art === "biotest" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || art === "biotest" || art === "oesterreich" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
@@ -712,7 +715,8 @@ export function biotestStand(studentId: number): { sicher: string[]; falsch: str
 
 // ---------- Europa (lib/europa.ts) ----------
 
-const istGeo = (fach: string | null | undefined) => /^(geo|gw\b|erdkunde)/i.test((fach ?? "").trim());
+/** Geografie: „Geografie“, „Geographie“, „GW“, „GWK“, „GWB“ (Geografie und wirtschaftliche Bildung), „Erdkunde“. */
+const istGeo = (fach: string | null | undefined) => /^(geo|gw[bk]?\b|erdkunde)/i.test((fach ?? "").trim());
 
 /**
  * „Europa“ gibt es für alle (Länder, Hauptstädte und Flaggen braucht jeder). Steht ein Geografie-Test in den nächsten
@@ -944,6 +948,8 @@ export function starteRunde(
     schwer?: boolean;
     /** Torlauf: nur Auswahl (die Antworten sind Tore); auch beim Fortsetzen eines Torlaufs */
     ohneSchreiben?: boolean;
+    /** Österreich erobern: ein Level, alle Begriffe oder die Fehler (lib/oesterreich.ts) */
+    oe?: OeWunsch;
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
@@ -1025,6 +1031,8 @@ export function starteRunde(
     if ((o.bio?.modus ?? "ueben") === "ueben" && !o.bio?.gross && !o.bio?.schreiben) karten = zumSchreibenEigen(student.id, art, karten, o.rng ?? Math.random);
   } else if (art === "biotest") {
     karten = o.biotest ? biotestKarten(o.biotest.uebung, o.biotest.nur) : [];
+  } else if (art === "oesterreich") {
+    karten = o.oe ? oeRunde(oeStandVon(student.id), o.oe, o.rng ?? Math.random) : [];
   } else if (art === "vokabeln") {
     const plan = vokabelPlan(student, o.heute ?? wienerDatum());
     karten = waehleVokabeln(plan.pool, {
@@ -1359,4 +1367,51 @@ export function spielUebersicht(studentId: number, heute: string): SpielUebersic
       .sort((a, b) => b.mal - a.mal)
       .slice(0, 6),
   };
+}
+
+// ---------- Österreich erobern (lib/oesterreich.ts) ----------
+
+/** Wörter im Test oder im Stoff, die zu „Österreich erobern“ passen. */
+const OE_STOFF = /österreich|oesterreich|bundesl|hauptst|bevölkerung|bevoelkerung|demograph|demograf|altersauf|volksz|registerz|landflucht/i;
+/** Ohne eingetragenen Test: so lange gibt es das Spiel für die 3. Klasse mit Geografie (Test am 26.11.2026). */
+const OE_OHNE_TEST_BIS = "2026-11-26";
+
+/**
+ * Gibt es „Österreich erobern“ für diesen Schüler, und warum gerade? Gebaut für den GWB-Test einer 3. Klasse AHS am
+ * 26.11.2026 (niko 2026-11-24). Mit einem geplanten Geografie-Test (GW, GWB, Geografie) bis zum Testtag, der in die
+ * 7. Schulstufe fällt oder Österreich/Bevölkerung als Stoff hat: ganz oben, mit dem Test als Grund. Ohne Test bis
+ * 26.11.2026 (Testtag) für die 7. Schulstufe mit Geografie im Profil oder einer Geografie-Einheit in den letzten 30 Tagen. Danach
+ * verschwindet es wieder. Der Test-Schüler von „Spiele testen“ hat es immer. null: nicht.
+ */
+export function oesterreichWahl(student: repo.Student, heute: string): { grund?: string } | null {
+  const stufe = student.grade || 0;
+  const bis = tagAddieren(heute, BIO_TAGE);
+  const test = repo
+    .listTests(student.id)
+    .filter((t) => (t.status ?? "geplant") === "geplant" && istGeo(t.subject) && t.date >= heute && t.date <= bis)
+    .filter((t) => stufe === 7 || OE_STOFF.test([t.title ?? "", t.topic, ...(t.topics ?? []), t.notes].join(" ")))
+    .sort((a, b) => a.date.localeCompare(b.date))[0];
+  if (test) {
+    const tage = Math.round((Date.parse(test.date) - Date.parse(heute)) / 86_400_000);
+    const wann = tage === 0 ? "heute" : tage === 1 ? "morgen" : `in ${tage} Tagen`;
+    return { grund: `${test.title || test.kind || "Geografie-Test"} ${wann}` };
+  }
+  if (student.spiele_test) return {};
+  if (stufe !== 7 || heute > OE_OHNE_TEST_BIS) return null;
+  if (student.subjects.some(istGeo)) return {};
+  const seit = tagAddieren(heute, -30);
+  return repo.listLessons(student.id).some((l) => istGeo(l.subject) && l.starts_at.slice(0, 10) >= seit) ? {} : null;
+}
+
+const oeRunden = (studentId: number) =>
+  (db().prepare("SELECT antworten FROM spielrunden WHERE student_id = ? AND art = 'oesterreich' AND beendet_at IS NOT NULL ORDER BY id").all(studentId) as { antworten: string }[]).map((r) => ({
+    antworten: json<GespeicherteAntwort[]>(r.antworten, []),
+  }));
+/** Der Stand je Eintrag aus allen beendeten Runden „Österreich erobern“. */
+export const oeStandVon = (studentId: number) => oeStandAus(oeRunden(studentId));
+/** Sichere und zuletzt falsche Einträge, die besten Sterne je Level. */
+export function oesterreichStand(studentId: number): { sicher: string[]; falsch: string[]; level: Record<number, number> } {
+  const runden = oeRunden(studentId);
+  const st = oeStandAus(runden);
+  return { sicher: [...st].filter(([, x]) => x.sicher).map(([id]) => id), falsch: [...st].filter(([, x]) => x.zuletztFalsch).map(([id]) => id), level: oeLevelStandAus(runden) };
 }

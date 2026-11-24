@@ -1,7 +1,7 @@
 import "@/components/lernen/spiele.css";
 import "@/components/lernen/torlauf.css";
 import Link from "next/link";
-import { Brain, CalendarDays, ChevronRight, Flame } from "lucide-react";
+import { Brain, CalendarDays, ChevronRight, Flame, MapPinned } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
 import { hatEndlos, torTauglich, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
 import type * as repo from "@/lib/repo";
@@ -34,6 +34,7 @@ export function SpieleListe({
   blatt,
   bio,
   biotest,
+  oesterreich,
   europa,
 }: {
   student: repo.Student;
@@ -63,6 +64,8 @@ export function SpieleListe({
   bio?: { href: string; grund?: string; sicher: number };
   /** Bio Test 4.Klasse Vorbereitung De La Salle (lib/biotest.ts): wohin, warum gerade (dann ganz oben), wie viele Felder sicher sind */
   biotest?: { href: string; grund?: string; sicher: number };
+  /** Österreich erobern (lib/oesterreich.ts): wohin, warum gerade (dann ganz oben), wie viele Bundesländer erobert sind */
+  oesterreich?: { href: string; grund?: string; erobert: number };
   /** Europa (lib/europa.ts): wohin die Kachel führt, warum gerade (dann ganz oben) und wie viele Länder erobert sind */
   europa?: { href: string; grund?: string; erobert: number };
 }) {
@@ -155,6 +158,7 @@ export function SpieleListe({
         <Kaertchen art={erstes.art} gross />
       </section>
 
+      {oesterreich?.grund && <OesterreichKachel {...oesterreich} className="mt-3" />}
       {biotest?.grund && <BioTestKachel {...biotest} className="mt-3" />}
       {bio?.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt?.grund && blattKachel}
@@ -295,6 +299,7 @@ export function SpieleListe({
       {biotest && !biotest.grund && <BioTestKachel {...biotest} className="mt-3" />}
       {bio && !bio.grund && <BioKachel {...bio} className="mt-3" />}
       {blatt && !blatt.grund && blattKachel}
+      {oesterreich && !oesterreich.grund && <OesterreichKachel {...oesterreich} className="mt-3" />}
       {europa && !europa.grund && europaKachel}
 
       {faecher.map(({ fach, spiele }) => (
@@ -406,6 +411,26 @@ export function BioTestKachel({ href, grund, sicher, className = "" }: { href: s
         <span className="sp-kurz">Die Übungen deiner Lehrkraft: Evolution des Menschen und Nervensystem.</span>
         <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-biotest-stand">
           {grund ?? (sicher > 0 ? `${sicher} Felder sicher` : "Neu")}
+        </span>
+      </span>
+      <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
+    </Link>
+  );
+}
+
+/** Die Kachel „Österreich erobern“ (lib/oesterreich.ts): Bundesländer, Hauptstädte und Bevölkerung für den GWB-Test. */
+export function OesterreichKachel({ href, grund, erobert, className = "" }: { href: string; grund?: string; erobert: number; className?: string }) {
+  return (
+    <Link href={href} className={`sp-block panel ${className}`} data-testid="spiele-oesterreich">
+      <span className="sp-bio-bild sp-oe-bild" aria-hidden>
+        <MapPinned size={30} strokeWidth={2.2} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="sp-titel">Österreich erobern</span>
+        <span className="sp-kurz">Bundesländer, Hauptstädte, Einwohner, Altersaufbau und Begriffe für deinen Geo-Test.</span>
+        <span className="mt-1 block text-[13px] font-semibold text-ink-2" data-testid="spiele-oesterreich-stand">
+          {grund ?? (erobert > 0 ? `${erobert} von 9 Bundesländern erobert` : "Neu")}
+          {grund && erobert > 0 ? ` · ${erobert} von 9 erobert` : ""}
         </span>
       </span>
       <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
