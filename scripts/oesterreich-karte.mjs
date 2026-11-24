@@ -63,11 +63,6 @@ const topo = tsrv.topology({ b: bz });
 // nur die Grenzen zwischen Bezirken desselben Bundeslandes (die Landesgrenzen zeichnet das Spiel dicker)
 const innen = tc.mesh(topo, topo.objects.b, (a, b) => a !== b && a.properties.iso[0] === b.properties.iso[0]);
 const bezirksgrenzen = pfad(innen);
-const bezirkMitte = (name) => {
-  const f = bz.features.find((x) => x.properties.name === name);
-  if (!f) throw new Error(`Bezirk fehlt: ${name}`);
-  return pfad.centroid(f).map((v) => Math.round(v));
-};
 
 const STAEDTE = {
   w: [16.373, 48.208],
@@ -81,9 +76,6 @@ const STAEDTE = {
   v: [9.747, 47.505],
 };
 const staedte = Object.fromEntries(Object.entries(STAEDTE).map(([id, [lon, lat]]) => [id, punkt(lon, lat)]));
-
-// die Autokennzeichen aus dem Buch (M10): Klosterneuburg ist eine Stadt im Bezirk Tulln, der Rest sind Bezirke
-const kennzeichen = { kg: punkt(16.325, 48.305), wo: bezirkMitte("Wolfsberg"), mu: bezirkMitte("Murau"), re: bezirkMitte("Reutte") };
 
 const ziel = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../lib/oesterreich-karte.ts");
 const text = `// Erzeugt von scripts/oesterreich-karte.mjs, nicht von Hand ändern.
@@ -101,8 +93,6 @@ export const BEZIRKSGRENZEN = ${JSON.stringify(bezirksgrenzen)};
 /** Die Landeshauptstädte (Kürzel des Bundeslandes) als Punkt auf der Karte. */
 export const STADT_ORTE: Record<string, [number, number]> = ${JSON.stringify(staedte)};
 
-/** Die Autokennzeichen aus dem Buch (M10) als Punkt auf der Karte. */
-export const KENNZEICHEN_ORTE: Record<string, [number, number]> = ${JSON.stringify(kennzeichen)};
 `;
 fs.writeFileSync(ziel, text);
 console.log(`geschrieben: ${ziel} (${Math.round(text.length / 1024)} KB, ${W}×${H})`);

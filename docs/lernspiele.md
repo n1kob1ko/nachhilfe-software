@@ -821,8 +821,8 @@ Spiel `oesterreich` (`lib/oesterreich-inhalt.ts`, `lib/oesterreich.ts`, `compone
 - **Level-Karte**: die Österreich-Karte (`lib/oesterreich-karte.ts`, erzeugt mit `scripts/oesterreich-karte.mjs` aus den
   Grenzen 2021 von Statistik Austria, CC BY 4.0; nicht von Hand ändern). Jedes Bundesland ist ein Level; geschafft =
   erobert, das Land färbt sich in seinen Landesfarben (Streifen). Alle Level sind offen. 1 Vorarlberg: die 9
-  Bundesländer (antippen), 2 Tirol: Landeshauptstädte (Punkt antippen, schreiben), 3 Salzburg: Kürzel, 94 Bezirke,
-  Autokennzeichen aus M10 (KG, WO, MU, RE), 4 Kärnten: Einwohner (Wer hat mehr?, drei Gruppen, Wachstum, goldene Mitte),
+  Bundesländer (antippen), 2 Tirol: Landeshauptstädte (Punkt antippen, schreiben), 3 Salzburg: Kürzel, 94 Bezirke
+  (keine Autokennzeichen: niko 2026-11-24 „Kennzeichen kommen nicht“), 4 Kärnten: Einwohner (Wer hat mehr?, drei Gruppen, Wachstum, goldene Mitte),
   5 Steiermark: Volkszählung, Registerzählung, Hauptwohnsitz, 6 Oberösterreich: Demographie und Ausländeranteil,
   7 Burgenland: Altersaufbaudiagramm (Balken antippen, Generationen, Babyboom, Richtig/Falsch aus Aufgabe 5),
   8 Niederösterreich: Die Bevölkerung verändert sich (Kinderzahl, Lebenserwartung, Landflucht, Geburtenbilanz
@@ -842,7 +842,7 @@ Spiel `oesterreich` (`lib/oesterreich-inhalt.ts`, `lib/oesterreich.ts`, `compone
   Versuch (`levelStand`); es zählt die beste Runde. Nach jedem Fehler: Lösung und Merksatz.
 - **Mehr zum Lernen**: Begriffe schreiben (12 Fragen zum Schreiben, wie im Test), Meine Fehler, Lernzettel (je Level,
   mit dem Altersaufbaudiagramm).
-- **Nur aus dem Buch** (niko 2026-11-24 „nichts dazu erfunden?“): Merksätze ohne Zusatzwissen (kein Bodensee, keine Nachbarländer). Nicht wörtlich im Buch: die Kürzel NÖ, OÖ, T, V, B (Buch: „W, K, S, St, …“), die Bezirksnamen zu M10 (Aufgabe 4 „recherchiere“), die Touristin-Frage (aus M1 S. 10 und dem Hauptwohnsitz gefolgert) und die Lösungen zu Aufgabe 5 S. 11 und Aufgabe 4 S. 13.
+- **Nur aus dem Buch** (niko 2026-11-24 „nichts dazu erfunden?“): Merksätze ohne Zusatzwissen (kein Bodensee, keine Nachbarländer). Nicht wörtlich im Buch: die Kürzel NÖ, OÖ, T, V, B (Buch: „W, K, S, St, …“), die Touristin-Frage (aus M1 S. 10 und dem Hauptwohnsitz gefolgert) und die Lösungen zu Aufgabe 5 S. 11 und Aufgabe 4 S. 13.
 - **Unsicher ohne Buchseite**: Kinderzahl heute „etwa 1,3 bis 1,5“, Lebenserwartung Frauen „etwa 84“, Männer „etwa
   79“, nicht-österreichische Staatsangehörigkeit 2021 „etwa 17,5 %“ (aus den Grafiken S. 12 abgelesen), die zwei Fehler
   im Interview (Aufgabe 4 S. 13: 1961 über 2 300 statt 2 000, Wolfsthal 2011 schon über 800), „Klosterneuburg“ für KG.
