@@ -31,9 +31,16 @@ export function spiegelMelden(unit: Pick<UnitView, "id" | "teacher_id">, neu = t
   for (const d of devicesOfUnit(unit)) publish(deviceChannel(d.id), { type: "spiegel", an, neu: an && neu });
 }
 
-/** Sends the tablet's recorded events to the teachers who watch. */
-export function spiegelSenden(unitId: number, events: unknown[]) {
-  publish(spiegelChannel(unitId), { type: "ev", events });
+/** Which recording a packet belongs to and its number in it (lib/spiegel-reihe.ts); nothing for an old tablet page. */
+export function paketNummer(s: unknown, n: unknown): { s: string; n: number } | null {
+  if (typeof s !== "string" || !/^[a-z0-9]{1,16}$/.test(s)) return null;
+  if (typeof n !== "number" || !Number.isSafeInteger(n) || n < 0) return null;
+  return { s, n };
+}
+
+/** Sends the tablet's recorded events to the teachers who watch, with the packet's number so they can keep the order. */
+export function spiegelSenden(unitId: number, events: unknown[], nummer: { s: string; n: number } | null = null) {
+  publish(spiegelChannel(unitId), { type: "ev", events, ...nummer });
 }
 
 /** A tablet came or went: the open student screens of the unit say so. */

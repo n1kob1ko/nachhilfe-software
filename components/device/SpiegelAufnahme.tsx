@@ -23,24 +23,40 @@ export function SpiegelAufnahme({ an, neu, aus, postUrl = "/geraet/spiegel" }: {
     let vorbei = false;
     let stop: (() => void) | undefined;
     const queue: unknown[] = [];
-    let unterwegs = false;
+    let unterwegs = 0;
     let timer: ReturnType<typeof setTimeout> | undefined;
+    // this recording and the number of its next packet: the teacher puts packets back in order (lib/spiegel-reihe.ts)
+    const strom = Math.random().toString(36).slice(2, 10);
+    let nr = 0;
+    let neuNoetig = false;
 
-    // one request at a time keeps the order; what comes meanwhile goes with the next one
-    const senden = async () => {
+    // Packets go out without waiting for the last answer (niko 2026-11-24 „immer noch laggy“: on mobile data
+    // one answer took ~130 ms, so the copy only moved 6–7 times a second). A few at once, not more.
+    const senden = () => {
       timer = undefined;
-      if (unterwegs || !queue.length || vorbei) return;
-      unterwegs = true;
+      if (vorbei || !queue.length) return;
+      if (unterwegs >= UNTERWEGS_MAX) return; // the next answer sends what waits
       const events = queue.splice(0, queue.length);
-      try {
-        const r = await fetch(postUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ events }) });
-        const j = (await r.json().catch(() => ({}))) as { an?: boolean };
-        if (j.an === false) ausRef.current();
-      } catch {
-        // offline for a moment: the next full picture (on reconnect) catches the teacher up
-      }
-      unterwegs = false;
-      if (queue.length) planen();
+      const n = nr++;
+      unterwegs++;
+      void fetch(postUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ s: strom, n, events }) })
+        .then(async (r) => {
+          const j = (await r.json().catch(() => ({}))) as { an?: boolean };
+          if (j.an === false) ausRef.current();
+          if (!r.ok) neuNoetig = true;
+        })
+        .catch(() => {
+          // lost on the way: the teacher's copy skips it and needs a full picture to go on
+          neuNoetig = true;
+        })
+        .finally(() => {
+          unterwegs--;
+          if (neuNoetig && !vorbei) {
+            neuNoetig = false;
+            recorder.current?.voll();
+          }
+          if (queue.length) planen();
+        });
     };
     const planen = () => {
       // one frame: what one change emits goes together, without making the teacher wait
@@ -110,6 +126,9 @@ export function SpiegelAufnahme({ an, neu, aus, postUrl = "/geraet/spiegel" }: {
     </span>
   );
 }
+
+/** packets on the way at once (HTTP/2: one connection, side by side) */
+const UNTERWEGS_MAX = 8;
 
 /** pointerId of the teacher's finger: never one of the tablet's own */
 const FERN_ID = 31337;

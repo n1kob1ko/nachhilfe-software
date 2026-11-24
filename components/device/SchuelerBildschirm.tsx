@@ -4,6 +4,7 @@ import "rrweb/dist/style.css";
 import { Hand, Minus, MonitorSmartphone, Plus, X } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Steuern } from "@/lib/spiegel";
+import { SpiegelReihe } from "@/lib/spiegel-reihe";
 
 type Replayer = import("rrweb").Replayer;
 type Ev = { type: number; timestamp: number; data?: { width?: number; height?: number; source?: number } };
@@ -11,8 +12,13 @@ type Ev = { type: number; timestamp: number; data?: { width?: number; height?: n
 /** long side of the copy per size, in CSS pixels of the laptop */
 const GROESSEN = [360, 620, 900] as const;
 const SPEICHER = "dreamstudy-schuelerbildschirm";
-/** ms between arrival and showing: just enough to keep a batch together (niko 2026-11-12: „es laggt“) */
-const VERZOEGERUNG = 30;
+/**
+ * ms between arrival and showing. 0: shown on the next frame (niko 2026-11-12 and 2026-11-24 „laggt“). The
+ * packets come in order (lib/spiegel-reihe.ts), so nothing has to be held back to keep a batch together.
+ */
+const VERZOEGERUNG = 0;
+/** at most one request for a fresh full picture in this time */
+const VOLL_ABSTAND = 3000;
 
 type Vorlieben = { offen: boolean; groesse: number; r: number; b: number };
 
@@ -76,6 +82,18 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
     let Rp: typeof import("rrweb").Replayer | null = null;
     const warten: Ev[] = [];
     let pruefen: ReturnType<typeof setTimeout> | undefined;
+    // the tablet sends without waiting: packets can overtake each other, here they go back in order
+    const reihe = new SpiegelReihe<Ev>(1500, (evs) => evs.some((e) => e.type === 4));
+    let frist: ReturnType<typeof setTimeout> | undefined;
+    // a packet got lost: the copy stays as it is until the next full picture
+    let kaputt = false;
+    // the tablet's full picture when the window opened comes by itself; only later ask for one
+    let vollGefragt = Date.now();
+    const bitteVoll = () => {
+      if (Date.now() - vollGefragt < VOLL_ABSTAND) return;
+      vollGefragt = Date.now();
+      void fetch(`/einheiten/${unitId}/spiegel/voll`, { method: "POST" }).catch(() => undefined);
+    };
 
     const neu = () => {
       replayer.current?.destroy();
@@ -109,9 +127,14 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
         const e = { ...raw, timestamp: Date.now() };
         if (e.type === 4) {
           if (e.data?.width && e.data?.height) setVp({ w: e.data.width, h: e.data.height });
+          kaputt = false;
           neu();
           setBild(false);
-        } else if (!replayer.current) continue; // mitten im Strom: auf das nächste ganze Bild warten
+        } else if (!replayer.current || kaputt) {
+          // mitten im Strom oder nach einer Lücke: auf das nächste ganze Bild warten (und darum bitten)
+          bitteVoll();
+          continue;
+        }
         if (e.type === 2) setBild(true);
         if (e.type === 3 && e.data?.source === 4 && e.data.width && e.data.height) setVp({ w: e.data.width, h: e.data.height });
         replayer.current!.addEvent(e as never);
@@ -125,21 +148,45 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
       abspielen(warten.splice(0));
     });
 
+    const einspielen = (pakete: Ev[][]) => {
+      for (const p of pakete) {
+        if (Rp) abspielen(p);
+        else warten.push(...p);
+      }
+    };
+    const fristPruefen = () => {
+      if (frist) clearTimeout(frist);
+      frist = undefined;
+      const ms = reihe.wartezeit(Date.now());
+      if (ms === null) return;
+      frist = setTimeout(() => {
+        frist = undefined;
+        const { pakete, uebersprungen } = reihe.faellig(Date.now());
+        if (uebersprungen) {
+          kaputt = true;
+          bitteVoll();
+        }
+        einspielen(pakete);
+        fristPruefen();
+      }, ms + 10);
+    };
+
     const es = new EventSource(`/einheiten/${unitId}/spiegel`);
     es.onmessage = (m) => {
-      const e = JSON.parse(m.data) as { type: string; tablet?: boolean; laptop?: boolean; online?: boolean; events?: Ev[] };
+      const e = JSON.parse(m.data) as { type: string; tablet?: boolean; laptop?: boolean; online?: boolean; events?: Ev[]; s?: string; n?: number };
       if (e.type === "hallo") setTablet({ online: Boolean(e.tablet), laptop: Boolean(e.laptop) });
       else if (e.type === "tablet") setTablet((t) => ({ laptop: t?.laptop ?? false, online: Boolean(e.online) }));
       else if (e.type === "ev" && e.events) {
         setTablet((t) => (t?.online ? t : { laptop: false, online: true }));
-        if (Rp) abspielen(e.events);
-        else warten.push(...e.events);
+        einspielen(reihe.rein(e.s, e.n, e.events, Date.now()));
+        fristPruefen();
       }
     };
     return () => {
       vorbei = true;
       es.close();
       if (pruefen) clearTimeout(pruefen);
+      if (frist) clearTimeout(frist);
       replayer.current?.destroy();
       replayer.current = null;
       if (host.current) host.current.innerHTML = "";

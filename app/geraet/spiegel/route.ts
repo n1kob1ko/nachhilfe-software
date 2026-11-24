@@ -1,5 +1,5 @@
 import { deviceContext } from "@/lib/device-context";
-import { spiegelAktiv, spiegelSenden } from "@/lib/spiegel";
+import { paketNummer, spiegelAktiv, spiegelSenden } from "@/lib/spiegel";
 
 export const dynamic = "force-dynamic";
 
@@ -15,8 +15,8 @@ export async function POST(request: Request) {
   if (!ctx?.unit || ctx.unit.status !== "gestartet") return Response.json({ an: false });
   if (!spiegelAktiv(ctx.unit.id)) return Response.json({ an: false });
   if (Number(request.headers.get("content-length") || 0) > MAX_BYTES) return Response.json({ an: true, zuGross: true }, { status: 413 });
-  const body = (await request.json().catch(() => null)) as { events?: unknown } | null;
+  const body = (await request.json().catch(() => null)) as { events?: unknown; s?: unknown; n?: unknown } | null;
   if (!body || !Array.isArray(body.events) || !body.events.length) return Response.json({ an: true });
-  spiegelSenden(ctx.unit.id, body.events);
+  spiegelSenden(ctx.unit.id, body.events, paketNummer(body.s, body.n));
   return Response.json({ an: true });
 }
