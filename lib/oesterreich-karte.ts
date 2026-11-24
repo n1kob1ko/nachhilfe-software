@@ -13,5 +13,3 @@ export const BEZIRKSGRENZEN = "M461,306.2L460,309.4L462.2,312.1L462.7,314.6L465.
 /** Die Landeshauptstädte (Kürzel des Bundeslandes) als Punkt auf der Karte. */
 export const STADT_ORTE: Record<string, [number, number]> = {"w":[890,158.4],"n":[794.8,162.5],"o":[623.6,146.5],"b":[912.3,226.9],"st":[776.8,380],"k":[630,468.6],"s":[466.4,242.4],"t":[250.1,342.7],"v":[38.5,290]};
 
-/** Die Autokennzeichen aus dem Buch (M10) als Punkt auf der Karte. */
-export const KENNZEICHEN_ORTE: Record<string, [number, number]> = {"kg":[883.2,140.1],"wo":[701,425],"mu":[612,372],"re":[145,318]};

@@ -23,7 +23,7 @@ import {
   vonKey,
   zahlAus,
 } from "./oesterreich";
-import { KENNZEICHEN_ORTE, LAND_PFADE, STADT_ORTE } from "./oesterreich-karte";
+import { LAND_PFADE, STADT_ORTE } from "./oesterreich-karte";
 
 process.env.DATABASE_PATH = ":memory:";
 
@@ -69,12 +69,11 @@ test("Zahlen im Stoff: Einwohner-Gruppen und Ausländeranteil passen zu den Bund
   assert.deepEqual(reihe.teile, nachEinw.slice(0, 4));
 });
 
-test("Karte: alle Bundesländer, Hauptstädte und Kennzeichen da", () => {
+test("Karte: alle Bundesländer und Hauptstädte da", () => {
   for (const b of BUNDESLAENDER) {
     assert.ok(LAND_PFADE[b.id]?.d.startsWith("M"), b.id);
     assert.ok(STADT_ORTE[b.id], b.id);
   }
-  assert.deepEqual(Object.keys(KENNZEICHEN_ORTE).sort(), ["kg", "mu", "re", "wo"]);
 });
 
 test("Antworten: Balken, Zahlen, Schreiben, Reihe", () => {
