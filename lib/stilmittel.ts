@@ -479,6 +479,11 @@ export function stilKarte(s: StilSatz, schulstufe: number): SpielKarte | null {
     nach: s.nach,
     faecher,
     richtig: sm.name,
+    // beim Selbstschreiben (lib/antwort-schreiben.ts) stimmt auch, was sicher ebenso im Satz steckt
+    ...(() => {
+      const auch = [...new Set([...sm.auch, ...s.auch])].filter((id) => id !== s.id).map((id) => STILMITTEL[id].name);
+      return auch.length ? { auch } : {};
+    })(),
     loesung: `${s.satz} → ${sm.name}`,
     regel: sm.merke,
     kurz: sm.name,

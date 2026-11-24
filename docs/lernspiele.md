@@ -305,6 +305,43 @@ gleiche.“ Die Karten bleiben dieselben, aber die Art zu antworten hängt am Sp
   Schilder oder eine Lücke mit zwei Kacheln (`spielAntwort` für die Themenspiele: wie die meisten Karten des Themas beantwortet
   werden).
 
+## Selbst schreiben und „Schwer“
+
+niko 2026-11-24: „das mit antwort auswählen ist am anfang vielleicht besser aber mit der zeit kommt es mir so vor als
+würde man einfach raten oder man kann's halt auswendig … was wenn es einen schwer modus gibt wo man dann selbst die
+antwort eintippen muss“; dann: „ja übernimm das für alle spiele“. Alles Reine steht in `lib/antwort-schreiben.ts`, das
+Feld in `components/lernen/SchreibFeld.tsx` (`form: "schreiben"`).
+
+- **Kommt zum Schreiben wieder**: war die letzte Antwort auf eine Karte richtig, kommt sie beim nächsten Mal zum selbst
+  Schreiben (im Mathe-Quiz eine Zahl am Ziffernblock). War das Geschriebene falsch, kommt sie danach wieder mit Auswahl.
+  Bis zu zwei Karten, die mit Auswahl richtig und noch nie geschrieben waren, holt jede Runde gleich wieder (nach den
+  Fehlern, `wiederholen`). `schreibenFuer` liest dafür die letzten 80 beendeten Runden des Spiels.
+- **Schwer**: ein Schalter über „Los geht’s“ (je Gerät gemerkt, `ls-schwer`): jede Karte, die sich schreiben lässt,
+  wird geschrieben, auch in Endlos, Blockwerk und Funkelfeld. Im Duell und im Torlauf (die Antworten sind Tore) wird nie
+  geschrieben.
+- **Wo geschrieben wird** (`schreibForm`): Irregular Verbs und Präteritum (statt Buchstaben legen), English Tenses und
+  English Grammar mit Grundform („(take)“ → takes; is/am/are bleiben Kacheln), Stilmittel (der Name), Wortschatz (mit
+  dem Anfangsbuchstaben, sonst gäbe es mehrere treffende Wörter), Meine Fehler (die richtige Stelle), Dein Stoff (kurze
+  Antworten, keine „Welche …?“-Fragen), Deutsch- und Englisch-Quiz nur bei einer Frage zu einem Wort in
+  Anführungszeichen („Mehrzahl von „der Baum““, „„always“ heißt“), Mathe-Quiz bei ganzen Zahlen oder einer
+  Nachkommastelle (nichts Gerundetes).
+- **Nicht geschrieben**: der, die, das; die Endungen und Präposition und Fall (feste kleine Auswahl, Schreiben wäre
+  dasselbe Wählen); alles mit zwei Antworten (Wischen); Die vier Fälle, Satzbau, Zahlenstrahl, Vokabel-Paare (der
+  Vokabeltrainer schreibt schon), Glasklar; Wortschloss schreibt schon.
+- **Europa, Blätter bestimmen, Biolabor** haben schon „Wie im Test“ (= Schwer). Beim Üben kommt dort, was beim letzten
+  Mal richtig war, zum Schreiben wie im Test: Hauptstadt und Land zur Flagge, Name und Familie der Pflanze, der Begriff
+  (`zumSchreibenEigen` in lib/lernspiele.ts).
+- **Prüfen** (`pruefeSchreiben`): Groß/klein, Leerzeichen, Apostrophe, ein Punkt am Ende zählen nie, im Englischen
+  „doesn't“ wie „does not“. Ein Tippfehler ist „fast“ und zählt als richtig (die Schreibung steht da, weiter mit
+  „Weiter“): ein Buchstabe daneben ab 5 Buchstaben, zwei ab 12, Umlaute als ae/oe/ue, Artikel vorne egal; nie, wenn das
+  Geschriebene eine falsche Antwort der Karte ist oder ihr näher. **Streng** (kein Tippfehler) bei Irregular Verbs,
+  Präteritum, English Tenses und Grammar und den eigenen Fehlern: dort ist genau der Buchstabe der Fehler („telled“).
+  Silbentrennung („Kin-der“) muss mit Strich stimmen.
+- **Das Feld**: oben das Blatt, das Geschriebene steht gleich in der Lücke; darunter das Feld, „Weiß ich nicht“ und
+  „Fertig“ (Eingabetaste). Falsch: die richtige Antwort und die Regel stehen da, weiter erst, wenn sie geschrieben ist;
+  die Karte kommt drei Karten später noch einmal. Gezählt wird der erste Versuch (stimmt er, meldet das Feld
+  `karte.richtig`), am Server ändert sich nichts. Im Blockwerk kommt eine Karte zum Schreiben auf eigenem Bildschirm.
+
 ## Wortschatz und Wortfelder (Deutsch)
 
 niko 2026-11-12: „die art der wörter die gefragt werden sollten zu einen bestimmten thema passen also wie zum beispiel

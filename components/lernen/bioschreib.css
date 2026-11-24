@@ -68,3 +68,35 @@
 .bs-knoepfe .ls-knopf:disabled {
   opacity: 0.55;
 }
+
+/*
+ * Selbst schreiben in allen Lernspielen (components/lernen/SchreibFeld.tsx): das Blatt mit dem Satz bleibt so klein,
+ * dass Feld und Knöpfe über der Tastatur des Handys Platz haben.
+ */
+.ls-schreibfeld .ls-kachelblatt {
+  flex: 0 1 auto;
+  min-height: 140px;
+}
+.ls-schreibfeld .ls-kachelblatt[data-knapp] {
+  min-height: 0;
+}
+.ls-schreib-tipp {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 4px;
+  font-size: 13px;
+  font-weight: 650;
+  color: rgba(255, 255, 255, 0.72);
+}
+@media (max-height: 560px) {
+  .ls-schreibfeld .ls-kachelblatt {
+    min-height: 0;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+  .ls-schreib-tipp {
+    display: none;
+  }
+}
