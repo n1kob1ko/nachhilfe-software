@@ -1,6 +1,6 @@
 /**
  * Der Stoff von „Österreich erobern“ (lib/oesterreich.ts): Teststoff einer 3. Klasse AHS (GWB, Test am 26.11.2026),
- * GWB-Buch S. 8–13 und die Hefteinträge (Definitionen). Zahlen und Wörter wie im Buch.
+ * GWB-Buch S. 8–13 (Fotos vom 24.11.2026). Zahlen und Wörter wie im Buch, nichts aus anderen Quellen.
  *
  * Jedes Level gehört zu einem Bundesland: wer es schafft, erobert das Bundesland. Wien ist der Endgegner (Fragen aus
  * allen Leveln).
@@ -16,7 +16,7 @@ export type Bundesland = {
   hauptstadt: string;
   /** andere Schreibweisen der Hauptstadt, die beim Schreiben auch gelten */
   hauptstadtAuch?: string[];
-  /** Registerzählung 2021 (Buch S. 8, M2) */
+  /** Volkszählung 2021 (Buch S. 8, M2) */
   einwohner: number;
   /** Veränderung 2011 → 2021 in Prozent (M2) */
   plus: number;
@@ -97,7 +97,7 @@ export type Level = {
   nr: number;
   land: LandId;
   titel: string;
-  /** Buchseiten oder Heft */
+  /** Buchseiten */
   quelle: string;
   /** Lernzettel: das Wichtigste in kurzen Sätzen */
   zettel: string[];
@@ -115,20 +115,18 @@ export const LEVELS: Level[] = [
     quelle: "Buch S. 9, M7",
     zettel: [
       "Österreich hat 9 Bundesländer: Vorarlberg, Tirol, Salzburg, Kärnten, Steiermark, Oberösterreich, Niederösterreich, Burgenland, Wien.",
-      "Von Westen nach Osten: Vorarlberg, Tirol, Salzburg … ganz im Osten Wien, Niederösterreich und Burgenland.",
-      "Wien liegt mitten in Niederösterreich. Es ist flächenmäßig das kleinste Bundesland, hat aber die meisten Einwohner.",
-      "Kärnten und die Steiermark liegen im Süden, Oberösterreich und Niederösterreich im Norden.",
+            "Wien ist flächenmäßig das kleinste Bundesland, hat aber die meisten Einwohnerinnen und Einwohner (M6).",
     ],
     eintraege: [
-      { id: "l-v", art: "land", frage: "Tippe auf Vorarlberg.", land: "v", merke: "Vorarlberg ist das westlichste Bundesland (Hauptstadt Bregenz am Bodensee)." },
-      { id: "l-t", art: "land", frage: "Tippe auf Tirol.", land: "t", merke: "Tirol liegt zwischen Vorarlberg und Salzburg. Osttirol ist durch Salzburg vom Rest getrennt." },
-      { id: "l-s", art: "land", frage: "Tippe auf Salzburg.", land: "s", merke: "Salzburg liegt in der Mitte zwischen Tirol und Oberösterreich." },
-      { id: "l-k", art: "land", frage: "Tippe auf Kärnten.", land: "k", merke: "Kärnten ist das südlichste Bundesland, an der Grenze zu Italien und Slowenien." },
-      { id: "l-st", art: "land", frage: "Tippe auf die Steiermark.", land: "st", merke: "Die Steiermark liegt im Südosten, über Kärnten." },
-      { id: "l-o", art: "land", frage: "Tippe auf Oberösterreich.", land: "o", merke: "Oberösterreich liegt im Norden, an der Grenze zu Deutschland und Tschechien." },
-      { id: "l-n", art: "land", frage: "Tippe auf Niederösterreich.", land: "n", merke: "Niederösterreich ist das größte Bundesland. Wien liegt mitten darin." },
-      { id: "l-b", art: "land", frage: "Tippe auf das Burgenland.", land: "b", merke: "Das Burgenland ist der schmale Streifen ganz im Osten, an der Grenze zu Ungarn." },
-      { id: "l-w", art: "land", frage: "Tippe auf Wien.", land: "w", merke: "Wien ist der kleine Fleck mitten in Niederösterreich." },
+      { id: "l-v", art: "land", frage: "Tippe auf Vorarlberg.", land: "v", merke: "Vorarlberg (V), Hauptstadt Bregenz." },
+      { id: "l-t", art: "land", frage: "Tippe auf Tirol.", land: "t", merke: "Tirol (T), Hauptstadt Innsbruck." },
+      { id: "l-s", art: "land", frage: "Tippe auf Salzburg.", land: "s", merke: "Salzburg (S), Hauptstadt Salzburg." },
+      { id: "l-k", art: "land", frage: "Tippe auf Kärnten.", land: "k", merke: "Kärnten (K), Hauptstadt Klagenfurt." },
+      { id: "l-st", art: "land", frage: "Tippe auf die Steiermark.", land: "st", merke: "Steiermark (St), Hauptstadt Graz." },
+      { id: "l-o", art: "land", frage: "Tippe auf Oberösterreich.", land: "o", merke: "Oberösterreich (OÖ), Hauptstadt Linz." },
+      { id: "l-n", art: "land", frage: "Tippe auf Niederösterreich.", land: "n", merke: "Niederösterreich (NÖ), Hauptstadt St. Pölten." },
+      { id: "l-b", art: "land", frage: "Tippe auf das Burgenland.", land: "b", merke: "Burgenland (B), Hauptstadt Eisenstadt." },
+      { id: "l-w", art: "land", frage: "Tippe auf Wien.", land: "w", merke: "Wien (W) ist flächenmäßig das kleinste Bundesland." },
       { id: "l-anzahl", art: "wahl", frage: "Wie viele Bundesländer hat Österreich?", richtig: "9", falsch: ["7", "8", "10"], merke: "Österreich hat neun Bundesländer." },
       { id: "l-klein", art: "land", frage: "Tippe auf das flächenmäßig kleinste Bundesland.", land: "w", merke: "Wien ist flächenmäßig das kleinste Bundesland, hat aber die meisten Einwohnerinnen und Einwohner (Buch S. 8, M6)." },
     ],
@@ -146,16 +144,16 @@ export const LEVELS: Level[] = [
     ],
     eintraege: [
       { id: "h-graz", art: "stadt", frage: "Tippe auf Graz.", land: "st", merke: "Graz ist die Landeshauptstadt der Steiermark." },
-      { id: "h-linz", art: "stadt", frage: "Tippe auf Linz.", land: "o", merke: "Linz ist die Landeshauptstadt von Oberösterreich (an der Donau)." },
+      { id: "h-linz", art: "stadt", frage: "Tippe auf Linz.", land: "o", merke: "Linz ist die Landeshauptstadt von Oberösterreich." },
       { id: "h-ibk", art: "stadt", frage: "Tippe auf Innsbruck.", land: "t", merke: "Innsbruck ist die Landeshauptstadt von Tirol." },
       { id: "h-eis", art: "stadt", frage: "Tippe auf Eisenstadt.", land: "b", merke: "Eisenstadt ist die Landeshauptstadt des Burgenlandes." },
-      { id: "h-stp", art: "stadt", frage: "Tippe auf St. Pölten.", land: "n", merke: "St. Pölten ist die Landeshauptstadt von Niederösterreich (westlich von Wien)." },
-      { id: "h-kla", art: "stadt", frage: "Tippe auf Klagenfurt.", land: "k", merke: "Klagenfurt (am Wörthersee) ist die Landeshauptstadt von Kärnten." },
-      { id: "h-bre", art: "stadt", frage: "Tippe auf Bregenz.", land: "v", merke: "Bregenz am Bodensee ist die Landeshauptstadt von Vorarlberg." },
+      { id: "h-stp", art: "stadt", frage: "Tippe auf St. Pölten.", land: "n", merke: "St. Pölten ist die Landeshauptstadt von Niederösterreich." },
+      { id: "h-kla", art: "stadt", frage: "Tippe auf Klagenfurt.", land: "k", merke: "Klagenfurt ist die Landeshauptstadt von Kärnten." },
+      { id: "h-bre", art: "stadt", frage: "Tippe auf Bregenz.", land: "v", merke: "Bregenz ist die Landeshauptstadt von Vorarlberg." },
       { id: "h-sbg", art: "stadt", frage: "Tippe auf die Stadt Salzburg.", land: "s", merke: "Die Landeshauptstadt von Salzburg heißt auch Salzburg." },
       { id: "h-s-n", art: "schreiben", frage: "Wie heißt die Landeshauptstadt von Niederösterreich?", richtig: "St. Pölten", auch: LAND_AUCH("n"), merke: "Niederösterreich: St. Pölten" },
       { id: "h-s-b", art: "schreiben", frage: "Wie heißt die Landeshauptstadt des Burgenlandes?", richtig: "Eisenstadt", merke: "Burgenland: Eisenstadt" },
-      { id: "h-s-k", art: "schreiben", frage: "Wie heißt die Landeshauptstadt von Kärnten?", richtig: "Klagenfurt", auch: LAND_AUCH("k"), merke: "Kärnten: Klagenfurt am Wörthersee" },
+      { id: "h-s-k", art: "schreiben", frage: "Wie heißt die Landeshauptstadt von Kärnten?", richtig: "Klagenfurt", auch: LAND_AUCH("k"), merke: "Kärnten: Klagenfurt" },
       { id: "h-s-v", art: "schreiben", frage: "Wie heißt die Landeshauptstadt von Vorarlberg?", richtig: "Bregenz", merke: "Vorarlberg: Bregenz" },
       { id: "h-s-o", art: "schreiben", frage: "Wie heißt die Landeshauptstadt von Oberösterreich?", richtig: "Linz", merke: "Oberösterreich: Linz" },
       { id: "h-w3", art: "wahl", frage: "Wien ist Bundeshauptstadt, Landeshauptstadt und …", richtig: "Bundesland zugleich", falsch: ["ein Bezirk von Niederösterreich", "eine Gemeinde im Burgenland", "die Hauptstadt der EU"], merke: "Wien ist Bundeshauptstadt, Landeshauptstadt (Gemeinde) und Bundesland zugleich (Buch S. 8)." },
@@ -181,7 +179,7 @@ export const LEVELS: Level[] = [
       { id: "k-re", art: "land", frage: "Autokennzeichen RE (Bezirk Reutte): Tippe auf das Bundesland.", land: "t", merke: "RE = Reutte, ein Bezirk in Tirol." },
       { id: "k-wo", art: "land", frage: "Autokennzeichen WO (Bezirk Wolfsberg): Tippe auf das Bundesland.", land: "k", merke: "WO = Wolfsberg, ein Bezirk in Kärnten." },
       { id: "k-mu", art: "land", frage: "Autokennzeichen MU (Bezirk Murau): Tippe auf das Bundesland.", land: "st", merke: "MU = Murau, ein Bezirk in der Steiermark." },
-      { id: "k-kg", art: "land", frage: "Autokennzeichen KG (Klosterneuburg): Tippe auf das Bundesland.", land: "n", merke: "KG = Klosterneuburg, in Niederösterreich gleich neben Wien." },
+      { id: "k-kg", art: "land", frage: "Autokennzeichen KG (Klosterneuburg): Tippe auf das Bundesland.", land: "n", merke: "KG = Klosterneuburg, in Niederösterreich (auf dem Kennzeichen das Wappen von Niederösterreich)." },
       { id: "k-re-name", art: "wahl", frage: "Für welchen Bezirk steht das Kennzeichen RE?", richtig: "Reutte", falsch: ["Ried", "Rust", "Rohrbach"], merke: "RE = Reutte (Tirol)." },
       { id: "k-wo-name", art: "wahl", frage: "Für welchen Bezirk steht das Kennzeichen WO?", richtig: "Wolfsberg", falsch: ["Wolfsthal", "Wörgl", "Wels"], merke: "WO = Wolfsberg (Kärnten)." },
       { id: "k-bezirke", art: "wahl", frage: "Wie viele Bezirke hat Österreich?", richtig: "94", falsch: ["9", "49", "2 000"], merke: "Österreich hat 94 Bezirke und neun Bundesländer." },
@@ -194,7 +192,7 @@ export const LEVELS: Level[] = [
     titel: "Wer hat mehr Einwohner?",
     quelle: "Buch S. 8, M2 und „Die goldene Mitte“",
     zettel: [
-      "Registerzählung 2021: Wien 1 926 960 · Niederösterreich 1 698 951 · Oberösterreich 1 504 237 · Steiermark 1 251 683 · Tirol 762 652 · Kärnten 564 328 · Salzburg 561 714 · Vorarlberg 401 037 · Burgenland 297 506.",
+      "Volkszählung 2021 (M2): Wien 1 926 960 · Niederösterreich 1 698 951 · Oberösterreich 1 504 237 · Steiermark 1 251 683 · Tirol 762 652 · Kärnten 564 328 · Salzburg 561 714 · Vorarlberg 401 037 · Burgenland 297 506.",
       "Über 1 Million: Wien, Niederösterreich, Oberösterreich, Steiermark. 500 000 bis 1 Million: Tirol, Kärnten, Salzburg. Unter 500 000: Vorarlberg, Burgenland.",
       "Am stärksten gewachsen (2011–2021): Wien +12,4 %. Am wenigsten: Kärnten +1,5 %. Österreich: +6,7 %.",
       "Am 1. Juli 2024 lebten in Österreich 9 179 693 Menschen. Die Zahl wächst weiter.",
@@ -224,7 +222,7 @@ export const LEVELS: Level[] = [
     nr: 5,
     land: "st",
     titel: "Volkszählung und Hauptwohnsitz",
-    quelle: "Buch S. 9, M8, M9, M11 und Heft",
+    quelle: "Buch S. 9, M8, M9, M11 und S. 10, M1",
     zettel: [
       "Bei Volkszählungen wird die Wohnbevölkerung eines Raumes gezählt (Staat, Bundesland, Bezirk, Gemeinde).",
       "Damit Menschen nicht doppelt gezählt werden, müssen sie einen Hauptwohnsitz angeben.",
@@ -252,7 +250,7 @@ export const LEVELS: Level[] = [
     nr: 6,
     land: "o",
     titel: "Demographie",
-    quelle: "Buch S. 8 und 10, M2–M4 und Heft",
+    quelle: "Buch S. 8 und 10, M2–M4",
     zettel: [
       "Demographie beschreibt, wie sich die Bevölkerung zusammensetzt und sich im Lauf der Zeit verändert.",
       "Merkmale in der Volkszählung: Geschlecht, Alter, Staatsangehörigkeit (Zugehörigkeit zu einem Staat), Geburtsland, Migrationshintergrund. Auch der jetzige Wohnort wird mit früheren verglichen.",
@@ -263,7 +261,7 @@ export const LEVELS: Level[] = [
       "Altersverteilung 2023 (M3): Österreich 0–19 Jahre 19,3 %, 20–65 Jahre 61,1 %, ab 65 Jahre 19,6 %. Italien: 17,5 %, 58,4 %, 24,1 %. In Italien leben mehr ältere Menschen.",
     ],
     eintraege: [
-      { id: "d-def", art: "schreiben", frage: "Wie heißt die Wissenschaft, die beschreibt, wie sich die Bevölkerung zusammensetzt und im Lauf der Zeit verändert?", richtig: "Demographie", auch: ["Demografie"], merke: "Demographie beschreibt, wie sich die Bevölkerung zusammensetzt und sich im Lauf der Zeit verändert." },
+      { id: "d-def", art: "schreiben", frage: "Die … beschreibt, wie sich die Bevölkerung zusammensetzt und sich im Lauf der Zeit verändert. Wie heißt das Wort?", richtig: "Demographie", auch: ["Demografie"], merke: "Demographie beschreibt, wie sich die Bevölkerung zusammensetzt und sich im Lauf der Zeit verändert." },
       { id: "d-merkmal", art: "wahl", frage: "Welches Merkmal zählt NICHT zur Zusammensetzung der Bevölkerung in der Volkszählung?", richtig: "die Lieblingsfarbe", falsch: ["das Geschlecht", "das Alter", "die Staatsangehörigkeit"], merke: "Merkmale: Geschlecht, Alter, Staatsangehörigkeit, Geburtsland, Migrationshintergrund." },
       { id: "d-wandel", art: "schreiben", frage: "Die Veränderung und Entwicklung der Bevölkerung nennt man den demographischen …", richtig: "Wandel", auch: ["demographischer Wandel", "demografischer Wandel", "demographischen Wandel", "demografischen Wandel"], merke: "Demographischer Wandel: die Veränderung und Entwicklung der Bevölkerung." },
       { id: "d-staat", art: "wahl", frage: "Was bedeutet Staatsangehörigkeit?", richtig: "die Zugehörigkeit zu einem Staat", falsch: ["das Land, in dem man Urlaub macht", "die Sprache, die man spricht", "der Ort, an dem man arbeitet"], merke: "Staatsangehörigkeit = Zugehörigkeit zu einem Staat." },
@@ -318,7 +316,7 @@ export const LEVELS: Level[] = [
     titel: "Die Bevölkerung verändert sich",
     quelle: "Buch S. 12–13",
     zettel: [
-      "Älter – bunter – städtischer: Die Menschen werden älter, mehr Menschen kommen aus anderen Ländern, mehr leben in Städten.",
+      "Älter – bunter – städtischer: die Bevölkerung verändert sich (Überschrift S. 12).",
       "Kinderzahl (M2): 1965 bekam eine Frau im Durchschnitt etwa 2,7 Kinder, heute etwa 1,3 bis 1,5.",
       "Lebenserwartung (M3) steigt: Frauen heute etwa 84 Jahre, Männer etwa 79 Jahre. Frauen leben länger.",
       "Menschen mit nicht-österreichischer Staatsangehörigkeit (M4): 1961 etwa 1,5 %, 2021 etwa 17,5 %.",
@@ -343,7 +341,7 @@ export const LEVELS: Level[] = [
       { id: "v-leben", art: "rf", frage: "Frauen haben in Österreich eine höhere Lebenserwartung als Männer.", richtig: true, merke: "Richtig: Frauen etwa 84 Jahre, Männer etwa 79 Jahre (M3). Beide Werte steigen." },
       { id: "v-leben-zahl", art: "wahl", frage: "Wie hoch ist die Lebenserwartung von Frauen heute etwa?", richtig: "etwa 84 Jahre", falsch: ["etwa 73 Jahre", "etwa 79 Jahre", "etwa 95 Jahre"], merke: "Frauen etwa 84 Jahre, Männer etwa 79 Jahre (1965: Frauen 73, Männer 67)." },
       { id: "v-auslaender", art: "wahl", frage: "Anteil der Menschen mit nicht-österreichischer Staatsangehörigkeit: Wie hat er sich von 1961 bis 2021 verändert?", richtig: "von etwa 1,5 % auf etwa 17,5 %", falsch: ["von etwa 17,5 % auf etwa 1,5 %", "er ist gleich geblieben", "von etwa 10 % auf etwa 12 %"], merke: "1961 etwa 1,5 %, 2021 etwa 17,5 % (M4): die Bevölkerung wird „bunter“." },
-      { id: "v-bunter", art: "wahl", frage: "„Älter – bunter – städtischer“: Was heißt „bunter“?", richtig: "Mehr Menschen kommen aus anderen Ländern.", falsch: ["Die Häuser werden bunter angemalt.", "Es gibt mehr Feste.", "Es werden mehr Kinder geboren."], merke: "Bunter: mehr Menschen mit anderer Staatsangehörigkeit (M4)." },
+      { id: "v-bunter", art: "wahl", frage: "„Älter – bunter – städtischer“: Was heißt „bunter“?", richtig: "Mehr Menschen haben eine nicht-österreichische Staatsangehörigkeit.", falsch: ["Die Häuser werden bunter angemalt.", "Es gibt mehr Feste.", "Es werden mehr Kinder geboren."], merke: "Bunter: mehr Menschen mit anderer Staatsangehörigkeit (M4)." },
       { id: "v-alter", art: "wahl", frage: "Wie alt kann der Mensch laut Forschern höchstens werden?", richtig: "etwa 120 bis 150 Jahre", falsch: ["etwa 100 Jahre", "etwa 200 Jahre", "es gibt kein Ende, man stirbt nie"], merke: "Nach Berechnungen der Forscher 120 bis 150 Jahre (Studie 2016: 125 Jahre)." },
       { id: "v-wolf-grund", art: "wahl", frage: "Warum ziehen viele Menschen aus Bratislava nach Wolfsthal?", richtig: "wegen der Wohnqualität und niedrigerer Grundstückspreise", falsch: ["weil es dort mehr Fabriken gibt", "weil dort die Schulen schließen", "weil es dort einen Flughafen gibt"], merke: "Wolfsthal wächst: Wohnqualität, die Grundstückspreise sind niedriger als in Bratislava." },
       { id: "v-bgp-grund", art: "wahl", frage: "Warum leben in Bad Großpertholz heute viel weniger Menschen?", richtig: "Die Arbeit in der Forstwirtschaft, in Sägewerken und Textilfabriken fiel weg.", falsch: ["Ein Hochwasser hat den Ort zerstört.", "Die Menschen sind alle nach Bratislava gezogen.", "Der Ort ist zu nahe an Wien."], merke: "1952 arbeiteten 400 Menschen im Forstbetrieb, heute 6. Sägewerke und Textilindustrie gibt es nicht mehr." },
