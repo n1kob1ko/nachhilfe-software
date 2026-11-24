@@ -1,0 +1,879 @@
+/*
+ * Österreich erobern (components/lernen/OesterreichSpiel.tsx): blaue Bühne wie die anderen Lernspiele, weiße Karten,
+ * die Österreich-Karte als Level-Karte. Eroberte Bundesländer in ihren Landesfarben. Nur kleine Rückmeldungen
+ * (Treffer, Herz weg), keine Erklär-Animationen (niko 2026-11-23 beim Biolabor).
+ */
+
+.ls.oe {
+  --oe-rot: #c8102e;
+  --oe-gruen: #13874f;
+}
+.oe .ls-mitte > * {
+  flex-shrink: 0;
+}
+.oe .ls-knopf {
+  color: #173f9a;
+  box-shadow: 0 6px 0 #b9cdf3;
+}
+.oe .ls-knopf[data-zweit] {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: none;
+}
+.oe .ls-blatt .ls-knopf[data-zweit],
+.oe .oe-karte .ls-knopf[data-zweit] {
+  background: var(--panel);
+  color: var(--ink);
+}
+.oe .ls-knopf:disabled {
+  opacity: 0.55;
+}
+.oe .pb-wahl-knopf > svg {
+  color: var(--oe-rot);
+}
+
+/* ---------- Start: Karte mit Leveln ---------- */
+
+.oe-start {
+  max-width: 640px;
+}
+.oe-stand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.oe-stand-zahl {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-gold);
+  font-weight: 800;
+  font-size: 15px;
+}
+.oe-sprech {
+  margin-top: 12px;
+  font-size: 16px;
+  line-height: 1.4;
+  color: var(--ls-on-2);
+}
+.oe-kartenrahmen {
+  margin-top: 12px;
+  padding: 8px;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.1);
+}
+.oe-svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  touch-action: manipulation;
+  user-select: none;
+}
+.oe-land {
+  fill: #eef3fb;
+  stroke: #173f9a;
+  stroke-width: 2.5;
+  stroke-linejoin: round;
+  cursor: pointer;
+  transition: fill 200ms var(--ls-ease-out);
+}
+.oe-land[data-jetzt] {
+  fill: #fff6c9;
+}
+.oe-land[data-erobert] {
+  stroke: #0e2c70;
+}
+@media (hover: hover) {
+  .oe-land:hover:not([data-erobert]) {
+    fill: #dbe7fb;
+  }
+}
+.oe-bezirke {
+  fill: none;
+  stroke: #173f9a;
+  stroke-opacity: 0.22;
+  stroke-width: 1;
+  pointer-events: none;
+}
+.oe-nummer {
+  cursor: pointer;
+}
+.oe-nummer circle {
+  fill: #173f9a;
+  stroke: #fff;
+  stroke-width: 4;
+}
+.oe-nummer[data-erobert] circle {
+  fill: #fff;
+  stroke: #173f9a;
+}
+.oe-nummer text {
+  fill: #fff;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+.oe-nummer[data-erobert] text {
+  fill: #e0a400;
+  font-size: 20px;
+}
+
+.oe-levels {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+.oe-level {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--ink);
+  text-align: left;
+  box-shadow: 0 10px 22px -16px rgba(8, 30, 90, 0.7);
+  transition: transform 160ms var(--ls-ease-out);
+}
+.oe-level:active:not(:disabled) {
+  transform: scale(0.98);
+}
+.oe-level[data-jetzt] {
+  box-shadow:
+    0 0 0 3px var(--ls-gold),
+    0 10px 22px -16px rgba(8, 30, 90, 0.7);
+}
+.oe-level b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+}
+.oe-level small {
+  display: block;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+.oe-level-land {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background: var(--f, #5c9fe6);
+  color: #fff;
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 17px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+}
+.oe-level-sterne {
+  display: inline-flex;
+  gap: 1px;
+  color: #c7cfdc;
+}
+.oe-level-sterne [data-an] {
+  color: #f2b705;
+}
+.oe-zwischen {
+  margin-top: 26px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ls-on-2);
+}
+.oe-quelle {
+  margin-top: 18px;
+  font-size: 12px;
+  color: var(--ls-on-2);
+  opacity: 0.8;
+}
+
+/* Schalter „Schwer“ */
+.oe-schwer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--ls-glas);
+  color: var(--ls-on);
+  text-align: left;
+  box-shadow: 0 0 0 1px var(--ls-glas-linie) inset;
+}
+.oe-schwer b {
+  display: block;
+  font-size: 16px;
+  font-weight: 800;
+}
+.oe-schwer small {
+  display: block;
+  margin-top: 2px;
+  font-size: 13px;
+  line-height: 1.35;
+  color: var(--ls-on-2);
+}
+.oe-schwer-knopf {
+  position: relative;
+  flex-shrink: 0;
+  width: 50px;
+  height: 30px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  transition: background-color 200ms var(--ls-ease-out);
+}
+.oe-schwer-knopf::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  transition: transform 200ms var(--ls-ease-out);
+}
+.oe-schwer[aria-checked="true"] .oe-schwer-knopf {
+  background: #e0a400;
+}
+.oe-schwer[aria-checked="true"] .oe-schwer-knopf::after {
+  transform: translateX(20px);
+}
+
+/* ---------- Lernzettel ---------- */
+
+.oe-zettel {
+  margin-top: 14px;
+  padding: 16px;
+}
+.oe-zettel-kopf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.oe-zettel-kopf b {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+}
+.oe-zettel-kopf small {
+  display: block;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.oe-zettel ul {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+  padding-left: 18px;
+  list-style: disc;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+/* ---------- Spiel ---------- */
+
+.oe-spiel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 4px 16px 16px;
+  overflow-y: auto;
+}
+.oe-oben {
+  position: relative;
+}
+.oe-schild {
+  align-self: center;
+  margin-inline: auto;
+  width: fit-content;
+  padding: 3px 12px;
+  border-radius: 999px;
+  background: rgba(0, 20, 60, 0.3);
+  font-size: 13px;
+  font-weight: 700;
+}
+.oe-erobern {
+  position: relative;
+  display: grid;
+  gap: 6px;
+}
+.oe-erobern-name {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+}
+.oe-erobern-name small {
+  margin-left: 6px;
+  font-family: var(--font-sans, inherit);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ls-on-2);
+}
+.oe-erobern-balken {
+  display: block;
+  height: 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25) inset;
+}
+.oe-erobern-balken i {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  transition: width 380ms var(--ls-ease-out);
+}
+.oe-plus {
+  position: absolute;
+  right: 4px;
+  top: -2px;
+  color: var(--ls-gold);
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+  animation: oe-plus 800ms var(--ls-ease-out) both;
+  pointer-events: none;
+}
+@keyframes oe-plus {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.8);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0) scale(1.1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+.oe-herzen {
+  display: inline-flex;
+  flex: 1;
+  gap: 3px;
+  color: #ff5d72;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
+}
+.oe-herzen svg[data-weg] {
+  color: rgba(255, 255, 255, 0.45);
+  animation: oe-herz-weg 420ms var(--ls-ease-out);
+}
+@keyframes oe-herz-weg {
+  0% {
+    transform: scale(1.5);
+    color: #ff5d72;
+  }
+}
+.oe-punkte {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--ls-glas);
+  color: var(--ls-gold);
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 15px;
+}
+.oe-punkte b {
+  display: inline-block;
+  animation: oe-zahl 300ms var(--ls-ease-out);
+}
+@keyframes oe-zahl {
+  from {
+    transform: scale(1.35);
+  }
+}
+.ls > div.oe-aua {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  background: radial-gradient(circle at 50% 40%, rgba(255, 60, 80, 0), rgba(255, 60, 80, 0.45));
+  animation: oe-aua 450ms var(--ls-ease-out) both;
+}
+@keyframes oe-aua {
+  to {
+    opacity: 0;
+  }
+}
+
+.oe-karte {
+  padding: 18px 16px 16px;
+  border-radius: 22px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 22px 40px -18px rgba(8, 30, 90, 0.75);
+  animation: oe-karte-rein 380ms var(--ls-ease-out) both;
+}
+@keyframes oe-karte-rein {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+}
+.oe-frage {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 800;
+  line-height: 1.3;
+  overflow-wrap: break-word;
+}
+.oe-frage[data-lang] {
+  font-size: 18px;
+}
+.oe-frage-svg {
+  margin-top: 12px;
+}
+.oe-frage-svg .oe-land {
+  fill: #eef3fb;
+}
+.oe-frage-svg[data-modus="stadt"] .oe-land {
+  cursor: default;
+  fill: #f2f5fa;
+}
+.oe-frage-svg .oe-land[data-richtig] {
+  fill: #bdeccf;
+  stroke: var(--oe-gruen);
+}
+.oe-frage-svg .oe-land[data-falsch] {
+  fill: #fbd0d6;
+}
+.oe-zeige {
+  cursor: default;
+}
+.oe-zeige[data-markiert] {
+  fill: #ffd34d;
+  stroke: #0e2c70;
+  stroke-width: 4;
+}
+.oe-wien-markiert {
+  fill: none;
+  stroke: #d4202c;
+  stroke-width: 6;
+}
+.oe-stadt[data-markiert] circle {
+  fill: #d4202c;
+  cursor: default;
+}
+.oe-wien-kreis {
+  fill: transparent;
+  stroke: #173f9a;
+  stroke-width: 2;
+  stroke-dasharray: 6 6;
+  cursor: pointer;
+}
+.oe-wien-kreis[data-richtig] {
+  stroke: var(--oe-gruen);
+  stroke-width: 5;
+}
+.oe-stadt circle {
+  fill: #173f9a;
+  stroke: #fff;
+  stroke-width: 4;
+  cursor: pointer;
+}
+.oe-stadt[data-richtig] circle {
+  fill: var(--oe-gruen);
+  r: 17;
+}
+.oe-stadt[data-falsch] circle {
+  fill: var(--oe-rot);
+}
+.oe-stadt-name,
+.oe-land-name {
+  fill: #0e2c70;
+  paint-order: stroke;
+  stroke: #fff;
+  stroke-width: 7px;
+  stroke-linejoin: round;
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 800;
+  text-anchor: middle;
+  pointer-events: none;
+}
+
+.oe-antworten {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+.oe-antworten[data-lang],
+.oe-antworten[data-anzahl="3"] {
+  grid-template-columns: 1fr;
+}
+.oe-antwort {
+  min-height: 58px;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  overflow-wrap: break-word;
+  hyphens: auto;
+  box-shadow: 0 0 0 2px var(--line) inset;
+  transition:
+    transform 160ms var(--ls-ease-out),
+    background-color 200ms var(--ls-ease-out),
+    opacity 200ms var(--ls-ease-out);
+}
+.oe-antworten[data-lang] .oe-antwort {
+  text-align: left;
+}
+.oe-antwort:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.oe-antwort[data-weg] {
+  opacity: 0.35;
+}
+.oe-antwort[data-richtig],
+.oe-mehr-knopf[data-richtig] {
+  background: #dcf7e8;
+  color: #0c6b3b;
+  box-shadow: 0 0 0 3px #2bbf6a inset;
+}
+.oe-antwort[data-falsch],
+.oe-mehr-knopf[data-falsch] {
+  background: #fde3e6;
+  color: #a51d31;
+  box-shadow: 0 0 0 3px var(--oe-rot) inset;
+}
+:root[data-theme="dark"] .oe-antwort[data-richtig],
+:root[data-theme="dark"] .oe-mehr-knopf[data-richtig] {
+  background: #124a30;
+  color: #b8f5d2;
+}
+:root[data-theme="dark"] .oe-antwort[data-falsch],
+:root[data-theme="dark"] .oe-mehr-knopf[data-falsch] {
+  background: #4d1a22;
+  color: #ffc9d1;
+}
+
+/* Wer hat mehr Einwohner? */
+.oe-mehr {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+.oe-mehr-knopf {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  padding: 12px 8px;
+  border-radius: 18px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px var(--line) inset;
+  transition: transform 160ms var(--ls-ease-out);
+}
+.oe-mehr-knopf:active:not(:disabled) {
+  transform: scale(0.97);
+}
+.oe-mehr-knopf b {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  hyphens: auto;
+}
+.oe-mehr-knopf small {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink-2);
+}
+.oe-mehr-knopf small[data-zeigen] {
+  color: inherit;
+  animation: oe-zahl 300ms var(--ls-ease-out);
+}
+.oe-mini {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+.oe-mini-land {
+  fill: #dfe6f2;
+  stroke: #8ea3c7;
+  stroke-width: 3;
+}
+.oe-mini-land[data-an] {
+  stroke: #173f9a;
+  stroke-width: 4;
+}
+.oe-mini-wien {
+  fill: none;
+  stroke: #d4202c;
+  stroke-width: 6;
+}
+.oe-gruppe-land {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  margin-top: 12px;
+}
+.oe-gruppe-land b {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+.oe-ende-karte {
+  display: flex;
+  justify-content: center;
+}
+.oe-ende-karte .oe-mini {
+  max-width: 300px;
+  filter: drop-shadow(0 10px 18px rgba(0, 20, 60, 0.4));
+}
+.oe-ende-karte .oe-mini-land {
+  fill: rgba(255, 255, 255, 0.85);
+}
+
+/* Altersaufbaudiagramm */
+.oe-pyramide {
+  display: block;
+  width: 100%;
+  max-width: 460px;
+  height: auto;
+  margin: 12px auto 0;
+  user-select: none;
+  touch-action: manipulation;
+}
+.oe-pyr-kopf {
+  fill: var(--ink-2);
+  font-size: 12px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+.oe-pyr-alter {
+  fill: var(--ink-2);
+  font-size: 10px;
+  font-weight: 700;
+  text-anchor: middle;
+  pointer-events: none;
+}
+.oe-balken {
+  cursor: pointer;
+}
+.oe-pyramide[data-klein] .oe-balken {
+  cursor: default;
+}
+.oe-balken-flaeche {
+  fill: transparent;
+}
+.oe-balken-wert {
+  fill: #3b82f6;
+}
+.oe-balken[data-seite="f"] .oe-balken-wert {
+  fill: #ea580c;
+}
+@media (hover: hover) {
+  .oe-pyramide:not([data-klein]) .oe-balken:hover .oe-balken-flaeche {
+    fill: rgba(23, 63, 154, 0.08);
+  }
+}
+.oe-balken[data-richtig] .oe-balken-flaeche {
+  fill: rgba(43, 191, 106, 0.22);
+}
+.oe-balken[data-richtig] .oe-balken-wert {
+  fill: var(--oe-gruen);
+}
+.oe-balken[data-falsch] .oe-balken-flaeche {
+  fill: rgba(216, 52, 74, 0.2);
+}
+.oe-balken[data-falsch] .oe-balken-wert {
+  fill: var(--oe-rot);
+}
+.oe-zettel .oe-pyramide {
+  max-width: 320px;
+}
+
+/* Reihe */
+.oe-reihe-gelegt {
+  display: grid;
+  gap: 6px;
+  margin-top: 14px;
+}
+.oe-reihe-gelegt li {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px dashed var(--line);
+  font-weight: 700;
+}
+.oe-reihe-gelegt li span {
+  color: var(--ink-2);
+  margin-right: 4px;
+}
+.oe-reihe-gelegt li[data-voll] {
+  border-style: solid;
+  border-color: #9db7ea;
+  background: var(--panel);
+}
+.oe-reihe-gelegt li[data-ok=""] {
+  border-color: #2bbf6a;
+}
+.oe-reihe-gelegt li[data-ok="nein"] {
+  border-color: var(--oe-rot);
+}
+
+/* Schreiben */
+.oe-schreiben {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.oe-feld-zeile {
+  display: flex;
+  gap: 8px;
+}
+.oe-feld {
+  flex: 1;
+  min-width: 0;
+  min-height: 56px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 19px;
+  font-weight: 700;
+  box-shadow: 0 0 0 2px var(--line) inset;
+}
+.oe-feld:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px #3b82f6 inset;
+}
+.oe-feld[data-ok=""] {
+  box-shadow: 0 0 0 3px #2bbf6a inset;
+}
+.oe-feld[data-ok="nein"] {
+  box-shadow: 0 0 0 3px var(--oe-rot) inset;
+}
+.oe-minus {
+  width: 56px;
+  min-height: 56px;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 0 0 2px var(--line) inset;
+}
+.oe-schreiben-knoepfe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* nach einem Fehler: ein Blatt von unten */
+.ls > div.oe-hilfe {
+  position: absolute;
+  inset: auto 0 0 0;
+  z-index: 5;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+  background: linear-gradient(to top, rgba(0, 20, 60, 0.5), rgba(0, 20, 60, 0));
+}
+.oe-hilfe-blatt {
+  width: 100%;
+  max-width: 600px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 16px 18px 18px;
+  border-top: 6px solid var(--oe-rot);
+  animation: oe-hoch 300ms var(--ls-ease-out) both;
+}
+.oe-hilfe[data-art="fast"] .oe-hilfe-blatt {
+  border-top-color: #f3b51c;
+}
+@keyframes oe-hoch {
+  from {
+    transform: translateY(100%);
+  }
+}
+.oe-hilfe-titel {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 800;
+}
+.oe-hilfe-text {
+  margin-top: 4px;
+  font-size: 17px;
+  line-height: 1.45;
+  overflow-wrap: break-word;
+}
+.oe-hilfe-text s {
+  opacity: 0.7;
+}
+.oe-merke {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-left: 4px solid #3b82f6;
+  border-radius: 6px;
+  background: var(--panel);
+  font-size: 16px;
+  line-height: 1.45;
+}
+.oe-merke svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+  color: #3b82f6;
+}
+.oe-daneben {
+  display: grid;
+  gap: 10px;
+}
+.oe-daneben li {
+  display: grid;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line);
+  font-size: 15px;
+}
+.oe-daneben li:last-child {
+  border-bottom: none;
+}
+.oe-daneben b {
+  color: var(--oe-gruen);
+}
+.oe-daneben small {
+  font-size: 14px;
+  color: var(--ink-2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .oe-karte,
+  .oe-hilfe-blatt,
+  .oe-plus,
+  .oe-punkte b,
+  .oe-herzen svg[data-weg],
+  .ls > div.oe-aua {
+    animation: none;
+  }
+}

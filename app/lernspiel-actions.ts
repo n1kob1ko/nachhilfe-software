@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { deviceContext } from "@/lib/device-context";
-import { beendeRunde, bioLevelStand, bioSicher, bioWahl, biotestStand, biotestWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
+import { beendeRunde, bioLevelStand, bioSicher, bioWahl, biotestStand, biotestWahl, oesterreichStand, oesterreichWahl, europaRekorde, europaRennenThema, europaSitzt, type EuropaWunsch, blaetterWahl, endlosRekord, endlosStand, glasThemen, phantomWahl, sichereBlaetter, wortThemen, laufIst, laufPunkte, PUNKTE_SPIELE, punkteBestenliste, punkteRekord, rundenSkill, serie, skillFuerSpiel, spielVorschlaege, starteRunde, type PunkteSpiel } from "@/lib/lernspiele";
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
@@ -14,6 +14,7 @@ import { gueltigePhantomPunkte } from "@/lib/phantombild";
 import { hatEndlos, istSpielArt, type SpielAntwort, type SpielErgebnis, type SpielKarte, type SpielStart } from "@/lib/lernspiele-typen";
 import { BIO_THEMEN, levelVon, type BioAuswahl, type BioModus } from "@/lib/biolabor";
 import { uebung as biotestUebung } from "@/lib/biotest";
+import { levelVon as oeLevelVon, type OeWunsch } from "@/lib/oesterreich";
 import { wienerDatum } from "@/lib/planung/zeit";
 import * as repo from "@/lib/repo";
 import { analyzeStudent } from "@/lib/service";
@@ -81,6 +82,13 @@ export async function biotestStartenAction(token: string, uebungId: string, nur?
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
   return biotestStarten(student, uebungId, nur);
+}
+
+/** Österreich erobern (lib/oesterreich.ts): ein Level, alle Begriffe zum Schreiben oder die zuletzt falschen. */
+export async function oesterreichStartenAction(token: string, wunsch: OeWunsch): Promise<SpielStart> {
+  const student = repo.getStudentByToken(token);
+  if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
+  return oesterreichStarten(student, wunsch);
 }
 
 /** Europa (lib/europa.ts): Üben, wie im Test, großer Test, Rennen oder Verwechsler; dazu Thema und Region. */
@@ -197,6 +205,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
   if (art === "bio" && !bioBlock) return bioStarten(student, "alle", "ueben");
   if (bioBlock && !bioWahl(student, wienerDatum())) return { fehler: "Das Biolabor gibt es für dich gerade nicht." };
   if (art === "biotest") return biotestStarten(student, "primaten");
+  if (art === "oesterreich") return oesterreichStarten(student, { was: "level", level: 1 });
   if (art === "phantom" || art === "vorlage") return phantomStarten(student, art === "phantom" ? "fall" : "text", typeof endlos === "number" ? endlos : undefined);
   const heute = wienerDatum();
   const lernstand = lernstandVon(student.id, skillFuerSpiel(student, art, heute));
@@ -277,6 +286,17 @@ function biotestStarten(student: repo.Student, uebungId: string, nur?: string[])
   return runde;
 }
 
+function oesterreichStarten(student: repo.Student, w: OeWunsch): SpielStart {
+  if (!oesterreichWahl(student, wienerDatum())) return { fehler: "Dieses Spiel gibt es für dich gerade nicht." };
+  // nur bekannte Werte (die Aktion ist öffentlich)
+  const schwer = w?.schwer === true;
+  const wunsch: OeWunsch =
+    w?.was === "level" && Number.isInteger(w.level) && oeLevelVon(Number(w.level)) ? { was: "level", level: Number(w.level), schwer } : w?.was === "fehler" ? { was: "fehler", schwer } : { was: "begriffe", schwer };
+  const runde = starteRunde(student, "oesterreich", { oe: wunsch });
+  if (!runde.karten.length) return { fehler: wunsch.was === "fehler" ? "Du hast gerade keine Fehler zum Wiederholen." : "Für dieses Spiel gibt es gerade keine Karten." };
+  return runde;
+}
+
 /** Europa: was jetzt sitzt; nach einem Rennen der beste Stand davor (ohne dieses Rennen). */
 function europaErgebnis(studentId: number, rundeId: number, lauf: number | null) {
   const rennen = lauf === rundeId ? europaRennenThema(studentId, rundeId) : null;
@@ -330,6 +350,7 @@ function beenden(student: repo.Student, rundeId: number, antworten: SpielAntwort
     blatt: zeile?.art === "blatt" ? { sicher: sichereBlaetter(student.id) } : undefined,
     bio: zeile?.art === "bio" ? { sicher: bioSicher(student.id), level: bioLevelStand(student.id) } : undefined,
     biotest: zeile?.art === "biotest" ? biotestStand(student.id) : undefined,
+    oesterreich: zeile?.art === "oesterreich" ? oesterreichStand(student.id) : undefined,
     europa: zeile?.art === "europa" ? europaErgebnis(student.id, Number(rundeId), zeile.endlos) : undefined,
     glas: zeile?.endlos && spiel === "glas" ? { rekord: punkteRekord(student.id, "glas", zeile.endlos), begriffe: endlosStand(student.id, zeile.endlos), bestenliste: o?.punkte !== undefined ? punkteBestenliste(student, "glas") : undefined } : undefined,
   };
