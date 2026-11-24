@@ -18,6 +18,8 @@ import { StrahlFeld } from "./StrahlFeld";
 import { WischFeld } from "./WischFeld";
 import { ZiffernFeld } from "./ZiffernFeld";
 import { BioSchreibFeld } from "./BioSchreibFeld";
+import { SchreibFeld } from "./SchreibFeld";
+import { hatSchreiben } from "@/lib/antwort-schreiben";
 import { MathText } from "@/components/MathText";
 import { Abriss, Funken, vibriere } from "./SpielTeile";
 import { BlockFeld, FrageKopf, FrageLeiste, type BlockAntwort, type BlockFrage } from "./BlockFeld";
@@ -155,12 +157,31 @@ export function Lernspiel({
   weiter?: boolean;
 }) {
   const router = useRouter();
+  // Schwer (lib/antwort-schreiben.ts): jede Antwort selbst schreiben; gilt für alle Runden eines Spiels, im Duell nie
+  const [schwer, setSchwer] = useState(false);
+  const schwerRef = useRef(false);
+  schwerRef.current = schwer && hatSchreiben(art) && !duell;
+  useEffect(() => {
+    try {
+      setSchwer(window.localStorage.getItem(SCHWER_SPEICHER) === "1");
+    } catch {
+      // ohne Speicher: normal
+    }
+  }, []);
+  const setzeSchwer = (an: boolean) => {
+    setSchwer(an);
+    try {
+      window.localStorage.setItem(SCHWER_SPEICHER, an ? "1" : "0");
+    } catch {
+      // ohne Speicher gilt es nur jetzt
+    }
+  };
   const server = useMemo(
     () => ({
       // nie eine Ausnahme: nach ein paar Versuchen `{ fehler: VERBINDUNG_WEG }` (lib/verbindung.ts; sonst blieb ein
       // Endlos- oder Blockwerk-Spiel nach einem Deploy auf der letzten Karte stehen und stellte sie immer wieder)
       starten: (endlos?: "neu" | number, brett?: Brett, pausen?: number[]): Promise<SpielStart> =>
-        sicher(() => (amTablet ? tabletSpielStartenAction(art, endlos, brett) : spielStartenAction(token, art, endlos, brett)), pausen),
+        sicher(() => (amTablet ? tabletSpielStartenAction(art, endlos, brett, schwerRef.current) : spielStartenAction(token, art, endlos, brett, schwerRef.current)), pausen),
       beenden: (id: number, antworten: { key: string; wahl: string }[], o?: { teil?: boolean; punkte?: number }): Promise<SpielErgebnis> =>
         sicher(() => (amTablet ? tabletSpielBeendenAction(id, antworten, o) : spielBeendenAction(token, id, antworten, o))),
       // Blockwerk weiterspielen: nur in der Schüler-App (am Tablet gehört das Gerät der Lehrkraft)
@@ -843,7 +864,8 @@ export function Lernspiel({
 
   // Blockwerk: die Frage schiebt sich unter dem Brett hoch (BrettFrage), wenn sie Antworten zum Antippen hat; sonst
   // (Satzbau, Zahlenstrahl) wie bisher auf eigenem Bildschirm
-  const brettOpts = brett === "bloecke" && aktuell ? brettOptionen(aktuell) : [];
+  // eine Karte zum Selbstschreiben hat keine Antworten zum Antippen: sie kommt auf eigenem Bildschirm
+  const brettOpts = brett === "bloecke" && aktuell && aktuell.form !== "schreiben" ? brettOptionen(aktuell) : [];
   const imBrett = brett === "bloecke" && !!frage && !("brett" in frage) && (laedt || !aktuell || brettOpts.length >= 2);
   const kopf = (
     <div className="ls-kopf">
@@ -1056,7 +1078,7 @@ export function Lernspiel({
           </h1>
           <p className="ls-text mt-2" style={{ "--n": 2 } as CSSProperties}>
             {form === "tippen" ? "" : form === "wischen" && art === "rechnen" ? "Ja oder nein?" : SPIEL_AUFGABE[art]}
-            {form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Tipp die richtige Stelle am Strahl an." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "kacheln" ? " Tipp die richtige Antwort an." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
+            {schwer && hatSchreiben(art) && !duell ? " Du schreibst die Antworten selbst." : form === "paar" ? " Tipp ein englisches Wort an und dann das deutsche dazu." : form === "reihe" ? " Der Anfang steht schon da. Tipp die anderen Teile der Reihe nach an." : form === "strahl" ? " Tipp die richtige Stelle am Strahl an." : form === "tippen" ? "Rechne im Kopf und tipp das Ergebnis ein." : form === "legen" ? " Leg sie aus den Buchstaben." : form === "wischen" ? " Wisch die Karte nach links oder nach rechts." : form === "kacheln" ? " Tipp die richtige Antwort an." : " Zieh die Karte in eine Kiste oder tipp die Kiste an."}
           </p>
           {/* steht schon da, woher die Wörter kommen, braucht es „Deine Vokabelliste“ nicht noch einmal */}
           {vorschlag && vorschlag.quelle !== "fach" && !(woher && vorschlag.quelle === "stoff") && (
@@ -1156,6 +1178,16 @@ export function Lernspiel({
         {/* der Knopf steht fest unten, der Rest darüber kann rollen (acht Spiele passen nicht auf jedes Handy) */}
         <div className="ls-fuss ls-staffel">
           <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
+            {/* Schwer: jede Antwort selbst schreiben (sonst kommt, was schon sitzt, beim nächsten Mal zum Schreiben) */}
+            {hatSchreiben(art) && !duell && (
+              <button type="button" className="ls-schwer treffer" role="switch" aria-checked={schwer} onClick={() => setzeSchwer(!schwer)} disabled={phase === "laden"} data-testid="schwer-schalter">
+                <span className="ls-schwer-text">
+                  <b>Schwer</b>
+                  <small>{schwer ? "Du schreibst jede Antwort selbst." : "Was du schon kannst, schreibst du selbst."}</small>
+                </span>
+                <span className="ls-schwer-knopf" aria-hidden />
+              </button>
+            )}
             <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
               {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
             </button>
@@ -1591,7 +1623,9 @@ export function Lernspiel({
           ) : feld === "strahl" ? (
             <StrahlFeld {...eigen} auftrag={SPIEL_AUFGABE[art]} />
           ) : feld === "tippen" ? (
-            <ZiffernFeld {...eigen} auftrag="Tipp das Ergebnis ein." tasten={tasten} />
+            <ZiffernFeld {...eigen} auftrag={aktuell.mathe && art !== "rechnen" ? "Rechne und tipp das Ergebnis ein." : "Tipp das Ergebnis ein."} tasten={tasten} />
+          ) : feld === "schreiben" ? (
+            <SchreibFeld {...eigen} art={art} auftrag={schreibAuftrag(art, aktuell)} />
           ) : feld === "legen" ? (
             <LegeFeld {...eigen} auftrag="Leg die Form aus den Buchstaben." />
           ) : feld === "wischen" ? (
@@ -1768,6 +1802,19 @@ function BestenReihe({ z }: { z: Bestenliste["zeilen"][number] }) {
 }
 
 /** Kleine Kisten auf dem Anfang: worum es geht (bei Präteritum heißen die Kisten je Karte anders). */
+/** Der Schalter „Schwer“ (lib/antwort-schreiben.ts) gilt für alle Spiele dieses Geräts. */
+const SCHWER_SPEICHER = "ls-schwer";
+
+/** Was über einer Karte zum Selbstschreiben steht. */
+function schreibAuftrag(art: SpielArt, karte: SpielKarte): string {
+  if (karte.auftrag) return karte.auftrag;
+  if (art === "stilmittel") return "Wie heißt das Stilmittel im markierten Teil? Schreib es.";
+  if (art === "fehler") return "Schreib die Stelle richtig.";
+  if (art === "wortschatz") return "Schreib das treffende Wort.";
+  if (art === "irregular" || art === "praeteritum" || art === "zeiten" || art === "grammatik") return "Schreib die richtige Form.";
+  return "Schreib die Antwort selbst.";
+}
+
 const VORSCHAU: Record<SpielArt, string[]> = {
   artikel: ["der", "die", "das"],
   praepositionen: ["der", "die", "das", "dem", "den"],

@@ -3297,3 +3297,76 @@
 .ls-bretter > :last-child:nth-child(odd) small {
   grid-column: auto;
 }
+
+/* ---------- Anfang: der Schalter „Schwer“ (lib/antwort-schreiben.ts) über „Los geht’s“ ---------- */
+.ls-schwer {
+  display: flex;
+  width: 100%;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 14px 8px 16px;
+  border: 0;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--ls-on);
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 160ms ease;
+}
+.ls-schwer:active {
+  background: rgba(255, 255, 255, 0.16);
+}
+.ls-schwer:focus-visible {
+  outline: 3px solid var(--ls-gold);
+  outline-offset: 2px;
+}
+.ls-schwer-text {
+  display: grid;
+  gap: 1px;
+}
+.ls-schwer-text b {
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 800;
+}
+.ls-schwer-text small {
+  color: var(--ls-on-2);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.ls-schwer-knopf {
+  position: relative;
+  flex-shrink: 0;
+  width: 48px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  transition: background-color 180ms ease;
+}
+.ls-schwer-knopf::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  transition: transform 180ms var(--ls-ease-out, ease-out);
+}
+.ls-schwer[aria-checked="true"] .ls-schwer-knopf {
+  background: var(--ls-gold);
+}
+.ls-schwer[aria-checked="true"] .ls-schwer-knopf::after {
+  transform: translateX(20px);
+}
+@media (prefers-reduced-motion: reduce) {
+  .ls-schwer-knopf,
+  .ls-schwer-knopf::after {
+    transition: none;
+  }
+}
