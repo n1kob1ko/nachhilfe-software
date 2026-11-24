@@ -7,7 +7,8 @@ import { BlattSpiel } from "@/components/lernen/BlattSpiel";
 import { EuropaSpiel } from "@/components/lernen/EuropaSpiel";
 import { BioLabor } from "@/components/lernen/BioLabor";
 import { BioTest } from "@/components/lernen/BioTest";
-import { bioLevelStand, bioSicher, bioThemenStand, bioWahl, biotestStand, biotestWahl, europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
+import { OesterreichSpiel } from "@/components/lernen/OesterreichSpiel";
+import { bioLevelStand, bioSicher, bioThemenStand, bioWahl, biotestStand, biotestWahl, oesterreichStand, oesterreichWahl, europaRekorde, europaSitzt, europaVerwechsler, europaWahl, blaetterWahl, geseheneBlaetter, sichereBlaetter, bloeckeRekord, endlosRekord, glasThemen, phantomWahl, punkteBestenliste, vorlageGeschafft, punkteRekord, serie, skillFuerSpiel, spielAntwort, spielVorschau, spielVorschlaege, spielWoher, wortThemen } from "@/lib/lernspiele";
 import { offenesBlockwerk } from "@/lib/blockwerk-stand";
 import { hatEndlos, istSpielArt, torTauglich, type SpielArt } from "@/lib/lernspiele-typen";
 import { wienerDatum } from "@/lib/planung/zeit";
@@ -87,6 +88,13 @@ export default async function SpielSeite({ params, searchParams }: { params: Pro
     const wahl = bioWahl(student, heute);
     if (!wahl) redirect(`/lernen/${token}/spiele`);
     return <BioLabor token={token} serie={serie(student.id, heute)} themen={bioThemenStand(student.id)} sicher={bioSicher(student.id)} level={bioLevelStand(student.id)} grund={wahl.grund} zurueck={von === "start" ? `/lernen/${token}` : undefined} />;
+  }
+  // Österreich erobern (lib/oesterreich.ts): GWB-Test 3. Klasse
+  if (modus === "oesterreich" || gewuenscht === "oesterreich") {
+    const wahl = oesterreichWahl(student, heute);
+    if (!wahl) redirect(`/lernen/${token}/spiele`);
+    const st = oesterreichStand(student.id);
+    return <OesterreichSpiel token={token} sicher={st.sicher} falsch={st.falsch} level={st.level} grund={wahl.grund} zurueck={von === "start" ? `/lernen/${token}` : undefined} />;
   }
   // Bio Test 4.Klasse Vorbereitung De La Salle (lib/biotest.ts): die Übungen der Lehrkraft
   if (modus === "biotest" || gewuenscht === "biotest") {
