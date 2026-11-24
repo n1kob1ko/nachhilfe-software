@@ -30,10 +30,10 @@ const lernstandVon = (studentId: number, skillId: string) => analyzeStudent(stud
  * „neu“ ein Blockwerk-Spiel (lib/blockwerk.ts, `true` oder „bloecke“) oder Funkelfeld (lib/funkelfeld.ts, „funkel“),
  * dessen Runden genauso aneinanderhängen.
  */
-export async function spielStartenAction(token: string, art: string, endlos?: "neu" | number, bloecke?: Brett): Promise<SpielStart> {
+export async function spielStartenAction(token: string, art: string, endlos?: "neu" | number, bloecke?: Brett, schwer?: boolean): Promise<SpielStart> {
   const student = repo.getStudentByToken(token);
   if (!student) return { fehler: "Dieser Link gilt nicht mehr." };
-  return starten(student, art, endlos, bloecke);
+  return starten(student, art, endlos, bloecke, schwer === true);
 }
 
 /**
@@ -136,10 +136,10 @@ async function tabletSchueler() {
   return ctx?.unit && ctx.student && ctx.unit.status === "gestartet" ? ctx.student : null;
 }
 
-export async function tabletSpielStartenAction(art: string, endlos?: "neu" | number, bloecke?: Brett): Promise<SpielStart> {
+export async function tabletSpielStartenAction(art: string, endlos?: "neu" | number, bloecke?: Brett, schwer?: boolean): Promise<SpielStart> {
   const student = await tabletSchueler();
   if (!student) return { fehler: "Die Einheit läuft nicht mehr." };
-  return starten(student, art, endlos, bloecke);
+  return starten(student, art, endlos, bloecke, schwer === true);
 }
 
 export async function tabletGlasStartenAction(thema: string | undefined, lauf?: number): Promise<SpielStart> {
@@ -193,7 +193,7 @@ export async function tabletSpielBeendenAction(rundeId: number, antworten: Spiel
 /** Ein Spielbrett zwischen den Karten (`true` heißt Blockwerk, wie früher). */
 type Brett = boolean | "bloecke" | "funkel" | "tor";
 
-function starten(student: repo.Student, art: string, endlos?: "neu" | number, bloecke?: Brett): SpielStart {
+function starten(student: repo.Student, art: string, endlos?: "neu" | number, bloecke?: Brett, schwer = false): SpielStart {
   if (!istSpielArt(art)) return { fehler: "Dieses Spiel gibt es nicht." };
   // Glasklar startet nur über glasStarten (Thema und Stufe)
   if (art === "glas") return glasStarten(student, undefined, typeof endlos === "number" ? endlos : undefined);
@@ -220,7 +220,7 @@ function starten(student: repo.Student, art: string, endlos?: "neu" | number, bl
       vergissStand(student.id, alt.lauf);
     }
   }
-  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu", bio: bioBlock ? { auswahl: "alle", modus: "test", schreiben: true } : undefined });
+  const runde = starteRunde(student, art, { grund, lernstand, heute, endlos: lauf, bloecke: brett === "bloecke" && lauf === "neu", funkel: brett === "funkel" && lauf === "neu", tor: brett === "tor" && lauf === "neu", ohneSchreiben: brett === "tor", schwer: schwer && brett !== "tor", bio: bioBlock ? { auswahl: "alle", modus: "test", schreiben: true } : undefined });
   if (!runde.karten.length) return { fehler: "Für dieses Spiel gibt es gerade keine Karten." };
   return runde;
 }

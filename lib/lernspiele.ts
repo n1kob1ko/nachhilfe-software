@@ -21,6 +21,7 @@ import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
 import { BEHALTEN_SQL } from "./blockwerk-stand";
 import { haeufigsteForm } from "./lernspiele-antwort";
+import { hatSchreiben, mitSchreiben, schreibStand, ZUM_SCHREIBEN_JE_RUNDE, type SchreibSpur } from "./antwort-schreiben";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { KARTEN_JE_RUNDE, stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { istQuiz } from "./lernspiele-quiz";
@@ -45,6 +46,8 @@ import { STOFF_WORT, stoffWoerter, VOKABEL_WORT, vokabelWoerter, waehleWortKarte
 import { VOKABEL_THEMEN } from "./vokabeln-themen";
 import { fallKarten, MERKMALE, neuerFall, PHANTOM_SKILL } from "./phantombild";
 import { BIOTEST_SKILL, biotestKarten, biotestStand as biotestStandAus } from "./biotest";
+import { eintrag as bioEintrag, eintragKarten } from "./biolabor";
+import { europaKarte } from "./europa";
 import { levelStand as oeLevelStandAus, OE_SKILL, oeRunde, oeStand as oeStandAus, type OeWunsch } from "./oesterreich";
 import { BIO_SKILL, bioRunde, bioStand, levelStand, themenStand, vonKey as bioVonKey, type BioAuswahl, type BioModus } from "./biolabor";
 import { EUROPA_SKILL, europaRunde, europaStand as europaStandAus, grosserTest, LAENDER, LAENDER_JE_RUNDE, rennenKarten, sitzt, TYPISCHE_PAARE, verwechseltMit, verwechslerKarten, verwechslungen, vonKey as europaVonKey, waehleLaender, type EuropaThema, type LandStand, type Paar, type Region, type Teil, type TeilStand } from "./europa";
@@ -849,6 +852,67 @@ export function zuletztGespielt(studentId: number, art: SpielArt): string[] {
   return [...new Set(rows.flatMap((r) => json<SpielKarte[]>(r.karten, []).map((k) => k.key)))];
 }
 
+/**
+ * Spiele mit eigenem Feld, die schon „wie im Test“ schreiben können (Europa, Blätter bestimmen, Biolabor): beim Üben
+ * kommt dort eine Karte, die beim letzten Mal richtig war, zum Schreiben (`zumSchreibenEigen`).
+ */
+const EIGENES_SCHREIBEN: SpielArt[] = ["europa", "blatt", "bio"];
+
+/** Wie eine Karte der eigenen Felder beantwortet wurde: geschrieben oder mit Auswahl. */
+function eigeneForm(k: SpielKarte): SpielForm | undefined {
+  return k.europa?.antwort === "schreiben" || k.blatt?.modus === "schreiben" || k.bio?.art === "schreiben" ? "schreiben" : "kacheln";
+}
+
+/**
+ * Üben in Europa, Blätter bestimmen und Biolabor: was beim letzten Mal richtig war, kommt jetzt zum Selbstschreiben wie
+ * im Test (Hauptstadt und Land zur Flagge schreiben, den Namen der Pflanze, den Begriff). Andere Karten bleiben.
+ */
+function zumSchreibenEigen(studentId: number, art: SpielArt, karten: SpielKarte[], rng: () => number): SpielKarte[] {
+  const { schreiben } = schreibenFuer(studentId, art, eigeneForm);
+  if (!schreiben.size) return karten;
+  return karten.map((k) => {
+    if (!schreiben.has(k.key) || eigeneForm(k) === "schreiben") return k;
+    if (k.europa && k.europa.modus === "ueben") {
+      const frage = k.europa.teil === "hauptstadt" ? { frage: "stadt" as const, antwort: "schreiben" as const } : k.europa.teil === "flagge" ? { frage: "flaggeLand" as const, antwort: "schreiben" as const } : k.europa.frage === "welches" ? { frage: "welches" as const, antwort: "schreiben" as const } : null;
+      if (!frage) return k;
+      const neu = europaKarte(k.europa.land, k.europa.teil, "ueben", rng, { frage });
+      return neu ?? k;
+    }
+    if (k.blatt && k.blatt.modus === "kacheln") return { ...k, faecher: [k.richtig], blatt: { ...k.blatt, modus: "schreiben" } };
+    if (k.bio && k.bio.art === "kacheln") {
+      const e = bioEintrag(k.bio.eintrag);
+      const neu = e ? eintragKarten(e, "test", rng).find((x) => x.key === k.key && x.bio?.art === "schreiben") : undefined;
+      return neu?.bio ? { ...neu, bio: { ...neu.bio, modus: k.bio.modus } } : k;
+    }
+    return k;
+  });
+}
+
+/** So viele beendete Runden zurück sucht `schreibenFuer` den letzten Stand jeder Karte. */
+const SCHREIB_RUNDEN = 80;
+
+/**
+ * Welche Karten dieses Spiels zum Selbstschreiben kommen (lib/antwort-schreiben.ts): die, deren letzte Antwort richtig
+ * war, und davon die, die noch nie geschrieben richtig waren (sie werden vorgezogen). Ohne die Karten, die gerade in
+ * einer laufenden Runde liegen.
+ */
+export function schreibenFuer(studentId: number, art: SpielArt, formVon: (k: SpielKarte) => SpielForm | undefined = (k) => k.form): { schreiben: Set<string>; offen: string[] } {
+  if (!hatSchreiben(art) && !EIGENES_SCHREIBEN.includes(art)) return { schreiben: new Set(), offen: [] };
+  const rows = db()
+    .prepare("SELECT karten, antworten FROM spielrunden WHERE student_id = ? AND art = ? AND beendet_at IS NOT NULL AND anzahl > 0 ORDER BY id DESC LIMIT ?")
+    .all(studentId, art, SCHREIB_RUNDEN) as { karten: string; antworten: string }[];
+  const runden: SchreibSpur[][] = rows.reverse().map((r) => {
+    const form = new Map(json<SpielKarte[]>(r.karten, []).map((k) => [k.key, formVon(k)]));
+    return json<GespeicherteAntwort[]>(r.antworten, []).map((a) => ({ key: a.key, form: form.get(a.key), richtig: a.richtig }));
+  });
+  const st = schreibStand(runden);
+  const laufend = db()
+    .prepare("SELECT karten FROM spielrunden WHERE student_id = ? AND art = ? AND beendet_at IS NULL AND created_at >= datetime('now', '-2 hours')")
+    .all(studentId, art) as { karten: string }[];
+  const drin = new Set(laufend.flatMap((r) => json<SpielKarte[]>(r.karten, []).map((k) => k.key)));
+  return { schreiben: st.schreiben, offen: st.offen.filter((k) => !drin.has(k)) };
+}
+
 /** Startet eine Runde: wählt die Karten und merkt sie sich, damit das Ergebnis nur gegen sie geprüft wird. */
 export function starteRunde(
   student: repo.Student,
@@ -880,6 +944,10 @@ export function starteRunde(
     bio?: { auswahl: BioAuswahl; modus: BioModus; gross?: boolean; schreiben?: boolean };
     /** Bio Test De La Salle: eine Übung, ganz oder nur diese Stellen (lib/biotest.ts) */
     biotest?: { uebung: string; nur?: string[] };
+    /** Schwer (lib/antwort-schreiben.ts): jede Karte, die sich schreiben lässt, wird selbst geschrieben */
+    schwer?: boolean;
+    /** Torlauf: nur Auswahl (die Antworten sind Tore); auch beim Fortsetzen eines Torlaufs */
+    ohneSchreiben?: boolean;
     /** Österreich erobern: ein Level, alle Begriffe oder die Fehler (lib/oesterreich.ts) */
     oe?: OeWunsch;
   } = {},
@@ -888,6 +956,11 @@ export function starteRunde(
   // (lib/blockwerk-stand.ts: es bleibt zum Weiterspielen)
   db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL})`).run(student.id);
   let karten: SpielKarte[];
+  // Selbstschreiben: was beim letzten Mal richtig war; zwei, die mit Auswahl richtig waren, kommen gleich wieder
+  // (nach den Fehlern). Ein Torlauf (auch fortgesetzt) bleibt bei der Auswahl.
+  const imTorlauf = o.ohneSchreiben || o.tor || (typeof o.endlos === "number" && !!db().prepare("SELECT 1 FROM spielrunden WHERE id = ? AND student_id = ? AND tor IS NOT NULL").get(o.endlos, student.id));
+  const schreibPlan = imTorlauf ? null : schreibenFuer(student.id, art);
+  const mitVorgezogen = (fehler: string[]) => (schreibPlan && !o.schwer ? [...fehler, ...schreibPlan.offen.filter((k) => !fehler.includes(k)).slice(0, ZUM_SCHREIBEN_JE_RUNDE)] : fehler);
   // Glasklar und Wortschloss: die wievielte Stufe (eine Runde je Stufe)
   let stufe: number | undefined;
   if (art === "glas") {
@@ -947,12 +1020,15 @@ export function starteRunde(
       .filter((nr): nr is number => nr !== undefined);
     const nrs = waehleBlaetter(blaetterStand(student.id), { anzahl: o.blatt?.alle ? PFLANZEN.length : BLAETTER_JE_RUNDE, wiederholen, rng });
     karten = blattKarten(nrs, o.blatt?.modus ?? "kacheln", rng);
+    if ((o.blatt?.modus ?? "kacheln") === "kacheln") karten = zumSchreibenEigen(student.id, art, karten, rng);
   } else if (art === "europa") {
     karten = europaKarten(student, o.europa ?? { modus: "ueben" }, o.rng ?? Math.random);
+    if ((o.europa?.modus ?? "ueben") === "ueben") karten = zumSchreibenEigen(student.id, art, karten, o.rng ?? Math.random);
   } else if (art === "bio") {
     // Biolabor: zuerst die zuletzt falschen, dann die noch nicht sicheren
     const wiederholen = [...new Set(offeneFehler(student.id, art, 3).map((k) => bioVonKey(k)).filter((id): id is string => !!id))];
     karten = bioRunde(bioStandVon(student.id), { auswahl: o.bio?.auswahl ?? "alle", modus: o.bio?.modus ?? "ueben", gross: o.bio?.gross, schreiben: o.bio?.schreiben, wiederholen, rng: o.rng ?? Math.random });
+    if ((o.bio?.modus ?? "ueben") === "ueben" && !o.bio?.gross && !o.bio?.schreiben) karten = zumSchreibenEigen(student.id, art, karten, o.rng ?? Math.random);
   } else if (art === "biotest") {
     karten = o.biotest ? biotestKarten(o.biotest.uebung, o.biotest.nur) : [];
   } else if (art === "oesterreich") {
@@ -973,22 +1049,23 @@ export function starteRunde(
     // Dein Stoff: der aktuelle Satz Spielkarten, alle Karten gleich wichtig
     const satz = spielSatz(student.id);
     karten = satz
-      ? waehleKarten(art, { pool: satzKandidaten(satz), stufen: [1], wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng })
+      ? waehleKarten(art, { pool: satzKandidaten(satz), stufen: [1], wiederholen: mitVorgezogen(offeneFehler(student.id, art)), zuletzt: zuletztGespielt(student.id, art), rng: o.rng })
       : [];
   } else if (art === "fehler") {
     // Meine Fehler: nur die, die noch nicht zweimal hintereinander richtig waren
-    karten = waehleKarten(art, { pool: fehlerKandidaten(student.id), stufen: [1], wiederholen: offeneFehler(student.id, art), zuletzt: zuletztGespielt(student.id, art), rng: o.rng });
+    karten = waehleKarten(art, { pool: fehlerKandidaten(student.id), stufen: [1], wiederholen: mitVorgezogen(offeneFehler(student.id, art)), zuletzt: zuletztGespielt(student.id, art), rng: o.rng });
   } else {
     const heute = o.heute ?? wienerDatum();
     const plan = themenPlan(student, art, heute);
     karten = waehleKarten(art, {
       pool: plan ? themenKandidaten(plan.skillId) : wortfeldPlan(student, art, heute)?.pool,
       stufen: stufenFuer(art, student.grade, o.lernstand ?? null),
-      wiederholen: offeneFehler(student.id, art),
+      wiederholen: mitVorgezogen(offeneFehler(student.id, art)),
       zuletzt: zuletztGespielt(student.id, art),
       rng: o.rng,
     });
   }
+  if (schreibPlan) karten = mitSchreiben(art, karten, { schwer: o.schwer, schreiben: schreibPlan.schreiben });
   const r = db()
     .prepare("INSERT INTO spielrunden (student_id, art, skill_id, grund, karten, anzahl) VALUES (?, ?, ?, ?, ?, ?)")
     .run(

@@ -256,7 +256,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
  * am Zahlenstrahl treffen, das Ergebnis eintippen, ein Wort aus Buchstaben legen, die Karte nach links oder rechts
  * wischen oder die passende Antwort-Kachel in die Lücke tippen.
  */
-export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "kacheln";
+export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "kacheln" | "schreiben";
 /**
  * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“, „English Tenses“ und „English
  * Grammar“ fehlen: dort hängt es am Thema (Zahlen werden getippt, ja oder nein wird gewischt, drei Formen stehen am
@@ -321,6 +321,8 @@ export type SpielKarte = {
   kurz?: string;
   faecher: string[];
   richtig: string;
+  /** Beim Selbstschreiben (lib/antwort-schreiben.ts): was außer `richtig` auch stimmt (ein zweites Stilmittel im Satz) */
+  auch?: string[];
   /** Der ganze richtige Satz oder „die Haustür“ */
   loesung: string;
   /** Kurze Regel, die nach einem Fehler erscheint; nur, was für diese Karte sicher stimmt */
