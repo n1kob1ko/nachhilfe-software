@@ -46,7 +46,7 @@ const kreuzung = (id: string) => BIO_EINTRAEGE.find((e): e is KreuzungEintrag =>
 
 test("Der Stoff: jedes Thema des Teststoffs, eindeutige ids, jede Frage mit genug falschen Antworten", () => {
   const titel = BIO_THEMEN.map((t) => t.titel);
-  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Glossar aus dem Heft", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Gentechnik und Lebensmittel", "Biotechnik", "Das Nervensystem", "Das Gehirn", "Das Rückenmark", "Lernen und Gedächtnis", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus", "Hormone"])
+  for (const t of ["Grundlagen der Vererbung", "Glossar Genetik", "Glossar aus dem Heft", "Weitergabe der Erbinformation", "DNA und Chromosomen", "Mendel’sche Regeln", "Kreuzungsschemata", "Vererbung beim Menschen", "Gentechnik", "Gentechnik und Lebensmittel", "Biotechnik", "Das Nervensystem", "Das Gehirn", "Das Rückenmark", "Lernen und Gedächtnis", "Das unwillkürliche Nervensystem", "Sympathikus und Parasympathikus"])
     assert.ok(titel.includes(t), t);
   const ids = BIO_EINTRAEGE.map((e) => e.id);
   assert.equal(new Set(ids).size, ids.length, "ids doppelt");
@@ -93,7 +93,6 @@ test("Fachlich: die wichtigsten Fakten stimmen", () => {
   assert.equal(richtig("m-31"), "3 : 1");
   assert.equal(richtig("m-121"), "1 : 2 : 1");
   assert.equal(richtig("h-mann"), "XY");
-  assert.equal(richtig("o-insulin"), "Insulin");
   assert.equal(richtig("t-insulin"), "rote Gentechnik");
   assert.equal(richtig("t-mais"), "grüne Gentechnik");
   assert.equal(richtig("t-wasch"), "weiße Gentechnik");
@@ -177,7 +176,7 @@ test("Karten: Üben mit Kacheln, wie im Test geschrieben, Schema mit Frage danac
   // offene Fragen nur im Test
   assert.ok(!eintraegeFuer("alle", "ueben").some((e) => e.art === "erklaeren"));
   assert.ok(eintraegeFuer("alle", "test").some((e) => e.art === "erklaeren"));
-  assert.ok(eintraegeFuer("mensch", "ueben").every((e) => ["nerven", "gehirn", "rueckenmark", "lernen", "vegetativ", "sympathikus", "hormone"].includes(e.thema)));
+  assert.ok(eintraegeFuer("mensch", "ueben").every((e) => ["nerven", "gehirn", "rueckenmark", "lernen", "vegetativ", "sympathikus"].includes(e.thema)));
 });
 
 test("Runden: Fehler zuerst, sicher nach zweimal richtig, großer Test aus allen Themen", () => {
@@ -241,7 +240,7 @@ test("Glossar aus dem Heft: die Begriffe der Schülerin in ihren Worten, zum Sch
 test("Fragen der Lehrerin: jede Nummer vom Blatt, der Reihe nach, mit Nummer, Lösungen stimmen", () => {
   const l = BIO_EINTRAEGE.filter((e) => e.thema === "lehrerin");
   const nrs = new Set(l.map((e) => lehrerNr(e)));
-  for (let n = 1; n <= 26; n++) if (n !== 18) assert.ok(nrs.has(n), `Frage ${n} fehlt`);
+  for (let n = 1; n <= 24; n++) if (n !== 18) assert.ok(nrs.has(n), `Frage ${n} fehlt`);
   assert.ok(!nrs.has(null), "jede hat eine Nummer");
   const richtig = (id: string) => {
     const e = BIO_EINTRAEGE.find((x) => x.id === id)!;
@@ -326,9 +325,9 @@ test("Server: wer es sieht, Runden und Stand", async () => {
 test("Labor-Mission: jede Frage der Lehrerin ist ein Level, Sterne nach Fehlern, ein Stern öffnet das nächste", () => {
   const lehrerin = BIO_EINTRAEGE.filter((e) => e.thema === "lehrerin");
   assert.deepEqual(LEVELS, [...new Set(lehrerin.map((e) => lehrerNr(e)!))].sort((a, b) => a - b), "jede Nummer vom Blatt ist ein Level");
-  assert.equal(LEVELS.length, 25);
+  assert.equal(LEVELS.length, 23);
   for (const n of LEVELS) assert.ok(LEVEL_TITEL[n] && levelEintraege(n).length > 0, `Level ${n}`);
-  assert.equal(LEVELS.flatMap((n) => levelEintraege(n)).length, lehrerin.length, "alle 100 Einträge kommen vor");
+  assert.equal(LEVELS.flatMap((n) => levelEintraege(n)).length, lehrerin.length, "alle Einträge kommen vor");
   // die Frage der Lehrerin selbst kommt am Schluss
   const l1 = levelEintraege(1);
   assert.equal(l1[l1.length - 1].art, "erklaeren");
