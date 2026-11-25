@@ -7,8 +7,8 @@ import type { DuellSicht } from "@/lib/duelle";
 import { DUELL_ARTEN, SPIEL_TITEL, type SpielArt } from "@/lib/lernspiele-typen";
 
 /**
- * Im Unterricht mit zwei Schülern gleichzeitig (D26): ein Live-Duell starten (lib/duelle.ts). Beide sehen es in ihrer
- * Schüler-App, tippen „Bereit“ und spielen 2 Minuten dieselben Karten. Hier steht der Stand (jede 2 Sekunden).
+ * Im Unterricht mit zwei Schülern gleichzeitig (D26): ein Live-Duell starten (lib/duelle.ts). Beide sehen es am Tablet
+ * (springt gleich zum Duell) oder in ihrer Schüler-App, tippen „Bereit“ und spielen 2 Minuten dieselben Karten. Hier steht der Stand (jede 2 Sekunden).
  */
 export function LiveDuellKnopf({ aId, bId }: { aId: number; bId: number }) {
   const [offen, setOffen] = useState(false);
@@ -62,7 +62,7 @@ export function LiveDuellKnopf({ aId, bId }: { aId: number; bId: number }) {
               <p className="text-ink-2">{SPIEL_TITEL[stand.art]}{stand.status === "laeuft" && rest !== null ? ` · noch ${Math.floor(rest / 60)}:${String(rest % 60).padStart(2, "0")}` : ""}</p>
               <p>{zeile(stand.ich)}</p>
               {stand.gegner && <p>{zeile(stand.gegner)}</p>}
-              {stand.status === "offen" && <p className="mt-1 text-[13px] text-ink-3">Beide öffnen ihre Schüler-App: dort steht oben „Live-Duell“.</p>}
+              {stand.status === "offen" && <p className="mt-1 text-[13px] text-ink-3">Die Tablets zeigen das Duell gleich. In der Schüler-App steht oben „Live-Duell“.</p>}
               <button
                 type="button"
                 className="btn btn-secondary mt-3 w-fit"
