@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { Check, ChevronLeft, Clock, Maximize2, RotateCcw, X } from "lucide-react";
 import { testAbgebenAction, testSelbstAction } from "@/app/eigene-test-actions";
-import { leereFelder, type Antwort, type Antworten, type FrageAnsicht, type FrageErgebnis, type TestAnsicht, type TestErgebnis } from "@/lib/eigene-tests";
+import { leereFelder, punkteZahl, rfWorte, type Antwort, type Antworten, type FrageAnsicht, type FrageErgebnis, type TestAnsicht, type TestErgebnis } from "@/lib/eigene-tests";
 
 /**
  * Ein eigener Test in der Schüler-App (lib/eigene-tests.ts), gebaut nach nikos Artifact: alle Fragen untereinander,
@@ -45,7 +45,7 @@ function Fett({ text }: { text: string }) {
   );
 }
 
-const punkteText = (p: number) => (p === 1 ? "1 P." : `${p} P.`);
+const punkteText = (p: number) => `${punkteZahl(p)} P.`;
 
 export function EigenerTest({ token, test, letzte, zurueck }: { token: string; test: TestAnsicht; letzte: LetzteAbgabe | null; zurueck: string }) {
   const key = speicherKey(test.key, token);
@@ -160,7 +160,7 @@ export function EigenerTest({ token, test, letzte, zurueck }: { token: string; t
 
       {abgabe && (
         <div ref={ergebnisRef} className="scroll-mt-4">
-          <Ergebnis e={abgabe.ergebnis} onNochmal={nochmal} />
+          <Ergebnis e={abgabe.ergebnis} sprache={test.sprache} onNochmal={nochmal} />
         </div>
       )}
 
@@ -168,7 +168,7 @@ export function EigenerTest({ token, test, letzte, zurueck }: { token: string; t
         <section key={teil.id} className="mt-9" aria-labelledby={`teil-${teil.id}`}>
           <h2 id={`teil-${teil.id}`} className="mb-3 flex items-baseline justify-between gap-3 text-[20px] font-semibold text-accent" lang={test.sprache}>
             <span>{teil.titel}</span>
-            <span className="num shrink-0 text-[14px] font-semibold text-ink-3">{teil.punkte} P.</span>
+            <span className="num shrink-0 text-[14px] font-semibold text-ink-3">{punkteZahl(teil.punkte)} P.</span>
           </h2>
           <ol className="space-y-3">
             {teil.fragen.map((f) => (
@@ -226,12 +226,12 @@ export function EigenerTest({ token, test, letzte, zurueck }: { token: string; t
   );
 }
 
-function Ergebnis({ e, onNochmal }: { e: TestErgebnis; onNochmal: () => void }) {
+function Ergebnis({ e, sprache, onNochmal }: { e: TestErgebnis; sprache: "de" | "en"; onNochmal: () => void }) {
   return (
     <section className="panel mt-4 border-accent-bright/60 px-5 py-5" aria-label="Ergebnis" data-testid="test-ergebnis">
       <p className="text-[14px] font-semibold tracking-wide text-ink-3 uppercase">Ergebnis</p>
       <p className="num mt-1 text-[34px] leading-tight font-semibold">
-        {e.punkte} / {e.gesamt} Punkte <span className="text-[20px] text-ink-3">({e.prozent} %)</span>
+        {punkteZahl(e.punkte)} / {e.gesamt} Punkte <span className="text-[20px] text-ink-3">({e.prozent} %)</span>
       </p>
       <p className="mt-1 text-[17px] font-semibold">Note (Orientierung): {e.note}</p>
       {e.offen > 0 && (
@@ -242,14 +242,14 @@ function Ergebnis({ e, onNochmal }: { e: TestErgebnis; onNochmal: () => void }) 
       <ul className="mt-4 space-y-2">
         {e.teile.map((t) => (
           <li key={t.id} className="flex items-center gap-3 text-[15px]">
-            <span className="w-[120px] shrink-0 truncate sm:w-[220px]" lang="en">
+            <span className="w-[120px] shrink-0 truncate sm:w-[220px]" lang={sprache}>
               {t.titel.split(" – ")[1] ?? t.titel}
             </span>
             <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-[var(--bar-track)]">
               <span className="block h-full rounded-full bg-accent" style={{ width: `${t.max ? Math.round((t.punkte / t.max) * 100) : 0}%` }} />
             </span>
             <span className="num w-[56px] shrink-0 text-right font-semibold">
-              {t.punkte}/{t.max}
+              {punkteZahl(t.punkte)}/{punkteZahl(t.max)}
             </span>
           </li>
         ))}
@@ -310,7 +310,7 @@ function FrageKarte({
         <span>
           {f.id}. {f.titel}
         </span>
-        <span className="num shrink-0 rounded-full bg-panel px-2.5 py-0.5 text-[13px] font-semibold text-ink-2">{e && e.punkte !== null ? `${e.punkte}/${e.max}` : punkteText(f.punkte)}</span>
+        <span className="num shrink-0 rounded-full bg-panel px-2.5 py-0.5 text-[13px] font-semibold text-ink-2">{e && e.punkte !== null ? `${punkteZahl(e.punkte)}/${punkteZahl(e.max)}` : punkteText(f.punkte)}</span>
       </h3>
 
       {bild && (
@@ -333,7 +333,7 @@ function FrageKarte({
                 {/* kurze Zeilen (1–9, A–C): Nummer und Auswahl nebeneinander, auch am Handy */}
                 <span className={z.length <= 3 ? "num w-7 shrink-0 text-center text-[18px] font-semibold" : "min-w-0 flex-[1_1_240px] font-semibold"}>{z}</span>
                 <select className={`input min-h-[44px] ${z.length <= 3 ? "min-w-0 flex-1 sm:w-[240px] sm:flex-none" : "w-full sm:w-[240px]"}`} value={typeof wert === "string" ? wert : ""} disabled={gesperrt} aria-label={z} onChange={(ev) => setzeTeil(i, ev.target.value, f.zeilen.length)}>
-                  <option value="">– choose –</option>
+                  <option value="">{sprache === "de" ? "– wählen –" : "– choose –"}</option>
                   {f.optionen.map((o) => (
                     <option key={o}>{o}</option>
                   ))}
@@ -392,7 +392,7 @@ function FrageKarte({
                       onClick={() => setzeTeil(i, w, f.zeilen.length)}
                       className={`min-h-[44px] min-w-[76px] rounded-xl border-[1.5px] px-3 text-[15px] font-semibold ${wert === w ? "border-accent bg-accent text-on-fill" : "border-line-strong bg-surface text-ink"}`}
                     >
-                      {w ? "True" : "False"}
+                      {w ? rfWorte(sprache)[0] : rfWorte(sprache)[1]}
                     </button>
                   ))}
                 </span>
@@ -402,7 +402,7 @@ function FrageKarte({
           })}
 
         {f.art === "luecken" && (
-          <p className="text-[17px] leading-[2.6]">
+          <p className="text-[17px] leading-[2.6] whitespace-pre-line">
             {f.stuecke.map((s, i) => {
               const n = f.stuecke.length - 1;
               const wert = liste(n)[i];
@@ -436,7 +436,7 @@ function FrageKarte({
           <>
             <textarea
               className="input min-h-[120px] w-full py-2.5 text-[16px] leading-relaxed"
-              placeholder="Write your answer here …"
+              placeholder={sprache === "de" ? "Schreib deine Antwort hier …" : "Write your answer here …"}
               value={typeof antwort === "string" ? antwort : ""}
               disabled={gesperrt}
               onChange={(ev) => setze(ev.target.value)}

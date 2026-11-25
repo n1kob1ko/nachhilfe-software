@@ -3,8 +3,9 @@
  * eine Datei in lib/eigene-tests/ und eine Zeile hier.
  */
 import type { EigenerTest } from "./eigene-tests";
+import { CHEMIE_PROBETEST_5 } from "./eigene-tests/chemie-probetest-5";
 import { EUROPE_GEOGRAPHY } from "./eigene-tests/europe-geography";
 
-export const EIGENE_TESTS: EigenerTest[] = [EUROPE_GEOGRAPHY];
+export const EIGENE_TESTS: EigenerTest[] = [EUROPE_GEOGRAPHY, CHEMIE_PROBETEST_5];
 
 export const eigenerTest = (key: string): EigenerTest | null => EIGENE_TESTS.find((t) => t.key === key) ?? null;

@@ -3,6 +3,7 @@ import { ChevronRight, ClipboardCheck } from "lucide-react";
 import { testFreigabeAction } from "@/app/eigene-test-actions";
 import { abgabenVon, ergebnisVon, istFreigegeben } from "@/lib/eigene-tests-speicher";
 import { EIGENE_TESTS } from "@/lib/eigene-tests-liste";
+import { punkteZahl } from "@/lib/eigene-tests";
 import { formatDate } from "@/components/ui";
 import type { Student } from "@/lib/repo";
 
@@ -45,7 +46,7 @@ export function EigeneTestsProfil({ student }: { student: Pick<Student, "id" | "
                     <li key={a.id}>
                       <Link href={`/schueler/${student.id}/test/${a.id}`} className="group flex min-h-[52px] items-center gap-3 py-2.5">
                         <span className="min-w-0 flex-1 text-[15px]">
-                          <span className="num font-semibold group-hover:text-accent">{e ? `${e.punkte} von ${e.gesamt} Punkten · ${e.note}` : "Abgabe"}</span>
+                          <span className="num font-semibold group-hover:text-accent">{e ? `${punkteZahl(e.punkte)} von ${e.gesamt} Punkten · ${e.note}` : "Abgabe"}</span>
                           <span className="block text-[13px] text-ink-2">
                             {formatDate(a.created_at.replace(" ", "T") + "Z", { weekday: "short", day: "numeric", month: "short" })}
                             {a.sekunden ? ` · ${Math.max(1, Math.round(a.sekunden / 60))} Min.` : ""}

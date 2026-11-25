@@ -9,7 +9,7 @@ geprüft am Server, das Ergebnis bei der Lehrkraft statt in Discord.
 |---|---|
 | Fragen, Ansicht ohne Lösungen, Bewertung, Note (ohne Datenbank, auch im Browser) | `lib/eigene-tests.ts` |
 | Liste der Tests (nur Server: die Dateien enthalten die Lösungen) | `lib/eigene-tests-liste.ts` |
-| Die Tests | `lib/eigene-tests/europe-geography.ts`, Bild `public/spiele/tests/europe-geography/karte.webp` |
+| Die Tests | `lib/eigene-tests/europe-geography.ts` (Max), Bild `public/spiele/tests/europe-geography/karte.webp`; `lib/eigene-tests/chemie-probetest-5.ts` (Yanxin, 2026-11-25, aus einem PDF) |
 | Freigabe, Abgaben, Punkte der offenen Fragen | `lib/eigene-tests-speicher.ts`, Tabellen `eigene_test_freigaben`, `eigene_test_abgaben` |
 | Aktionen | `app/eigene-test-actions.ts` |
 | Schüler-App: Test | `app/lernen/[token]/test/[key]/page.tsx`, `components/lernen/EigenerTest.tsx` |
@@ -40,6 +40,18 @@ geprüft am Server, das Ergebnis bei der Lehrkraft statt in Discord.
   Antwort ist die angezeigte Lösung.
 - Die Punkte stehen nicht in der Tabelle, sie kommen bei jedem Anzeigen aus den Antworten: eine berichtigte Lösung gilt
   auch für alte Abgaben.
+
+## Chemie-Probetest 5. Klasse (aus einem PDF)
+
+niko, 2026-11-25: „Sowie damals für Max. Soll das für yanxin freigeschaltet werden.“ Vorlage war ein Probetest als PDF
+(30 Aufgaben, 79 Punkte, Lösungsteil und Notenschlüssel). Deutsch (`sprache: "de"`): Richtig/Falsch-Knöpfe und
+Platzhalter auf Deutsch. Die meisten Aufgaben sind offen (Musterlösung aus dem Lösungsteil, Selbstbewertung); Zahlen
+prüft die App als Lücken (Komma oder Punkt, mit oder ohne Einheit, „6“ ist nicht „6,00“).
+
+- `punkte` bei Auswahl, Richtig/Falsch, Lücken und Multiple Choice: die Punkte der ganzen Frage, gleich auf Zeilen bzw.
+  Lücken verteilt (12: sechs Aussagen zu je 0,5 P.). Halbe Punkte zeigt `punkteZahl` mit Komma.
+- `notenschluessel`: ab 70 / 59 / 50 / 40 Punkten wie auf dem Blatt; ohne ihn gelten die Prozent oben.
+- 20 ist zweigeteilt: die Reihenfolge als Auswahl aus vier Reihenfolgen (2 P.), die Frage dazu offen (2 P.).
 
 ## Einen weiteren Test übernehmen
 

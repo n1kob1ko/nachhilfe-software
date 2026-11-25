@@ -3,7 +3,7 @@ import { Check, X } from "lucide-react";
 import { PageHeader, formatDate } from "@/components/ui";
 import { TestLehrerPunkte } from "@/components/TestLehrerPunkte";
 import { requireTeacher } from "@/lib/auth";
-import { maxPunkte, type FrageErgebnis } from "@/lib/eigene-tests";
+import { maxPunkte, punkteZahl, type FrageErgebnis } from "@/lib/eigene-tests";
 import { ergebnisVon, getAbgabe } from "@/lib/eigene-tests-speicher";
 import { eigenerTest } from "@/lib/eigene-tests-liste";
 import * as repo from "@/lib/repo";
@@ -40,7 +40,7 @@ export default async function TestErgebnisSeite({ params }: { params: Promise<{ 
 
       <section className="panel px-5 py-5" data-testid="test-ergebnis-lehrer">
         <p className="num text-[30px] leading-tight font-semibold">
-          {e.punkte} / {e.gesamt} Punkte <span className="text-[18px] text-ink-3">({e.prozent} %)</span>
+          {punkteZahl(e.punkte)} / {e.gesamt} Punkte <span className="text-[18px] text-ink-3">({e.prozent} %)</span>
         </p>
         <p className="mt-1 font-semibold">Note (Orientierung): {e.note}</p>
         {e.offen > 0 && <p className="mt-2 rounded-xl bg-amber-wash px-4 py-3 text-[15px] text-amber">{e.offen === 1 ? "Eine offene Frage hat" : `${e.offen} offene Fragen haben`} noch keine Punkte. Unten bewerten.</p>}
@@ -49,7 +49,7 @@ export default async function TestErgebnisSeite({ params }: { params: Promise<{ 
             <li key={t.id} className="flex justify-between gap-3 rounded-xl bg-panel px-3.5 py-2 text-[15px]" lang={test.sprache}>
               <span className="min-w-0 truncate">{t.titel}</span>
               <span className="num shrink-0 font-semibold">
-                {t.punkte}/{t.max}
+                {punkteZahl(t.punkte)}/{punkteZahl(t.max)}
               </span>
             </li>
           ))}
@@ -72,7 +72,7 @@ export default async function TestErgebnisSeite({ params }: { params: Promise<{ 
                       {f.id}. {f.titel}
                     </span>
                     <span className={`num shrink-0 rounded-full px-2.5 py-0.5 text-[13px] font-semibold ${r.punkte === null ? "bg-amber-wash text-amber" : r.punkte === max ? "bg-green-wash text-green" : r.punkte > 0 ? "bg-amber-wash text-amber" : "bg-red-wash text-red"}`}>
-                      {r.punkte === null ? "offen" : `${r.punkte}/${max}`}
+                      {r.punkte === null ? "offen" : `${punkteZahl(r.punkte)}/${punkteZahl(max)}`}
                     </span>
                   </h3>
                   <Antworten f={f} r={r} />

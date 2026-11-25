@@ -10,18 +10,22 @@
  * docs/eigene-tests.md.
  */
 
-/** Eine Frage. Punkte: je Zeile bzw. Lücke 1, Multiple Choice 1, Mehrfachwahl je richtige 1, offene Fragen `punkte`. */
+/**
+ * Eine Frage. Punkte: je Zeile bzw. Lücke 1, Multiple Choice 1, Mehrfachwahl je richtige 1, offene Fragen `punkte`.
+ * Bei Auswahl, Richtig/Falsch, Lückentext und Multiple Choice setzt `punkte` die Punkte der ganzen Frage anders (Chemie:
+ * sechs Aussagen zu je 0,5 P.); sie teilen sich dann gleich auf die Zeilen bzw. Lücken auf.
+ */
 export type Frage =
   /** je Zeile eine Auswahl aus `optionen`; items: [Zeile, richtige Option] */
-  | { id: string; art: "auswahl"; titel: string; optionen: string[]; items: [string, string][]; bild?: boolean }
+  | { id: string; art: "auswahl"; titel: string; optionen: string[]; items: [string, string][]; punkte?: number; bild?: boolean }
   /** eine richtige Antwort (Index in optionen) */
-  | { id: string; art: "mc"; titel: string; optionen: string[]; richtig: number; bild?: boolean }
+  | { id: string; art: "mc"; titel: string; optionen: string[]; richtig: number; punkte?: number; bild?: boolean }
   /** mehrere richtige; jede falsch angekreuzte zieht einen Punkt ab (nie unter 0) */
   | { id: string; art: "mehrfach"; titel: string; optionen: string[]; richtige: number[]; bild?: boolean }
   /** je Aussage richtig (true) oder falsch */
-  | { id: string; art: "rf"; titel: string; items: [string, boolean][]; bild?: boolean }
+  | { id: string; art: "rf"; titel: string; items: [string, boolean][]; punkte?: number; bild?: boolean }
   /** Lückentext: {0}, {1} … im Text; je Lücke die erlaubten Antworten (die erste ist die Lösung) */
-  | { id: string; art: "luecken"; titel: string; text: string; luecken: string[][]; bild?: boolean }
+  | { id: string; art: "luecken"; titel: string; text: string; luecken: string[][]; punkte?: number; bild?: boolean }
   /** offene Antwort mit Musterlösung (**fett** für die Schlüsselwörter); bewertet erst der Schüler, dann die Lehrkraft */
   | { id: string; art: "offen"; titel: string; punkte: number; muster: string; bild?: boolean };
 
@@ -36,6 +40,11 @@ export type EigenerTest = {
   sprache: "de" | "en";
   /** empfohlene Zeit in Minuten */
   minuten: number;
+  /**
+   * Notenschlüssel in Punkten, wie auf dem Blatt: ab wie vielen Punkten Sehr gut, Gut, Befriedigend, Genügend. Ohne ihn
+   * gelten 89 / 76 / 63 / 50 % (wie im Europe-Artifact).
+   */
+  notenschluessel?: [number, number, number, number];
   /** ein Bild zu den Fragen mit `bild: true` (Karte), aus public/ */
   bild?: { src: string; alt: string; breite: number; hoehe: number };
   teile: Teil[];
@@ -45,17 +54,20 @@ export function maxPunkte(f: Frage): number {
   switch (f.art) {
     case "auswahl":
     case "rf":
-      return f.items.length;
+      return f.punkte ?? f.items.length;
     case "luecken":
-      return f.luecken.length;
+      return f.punkte ?? f.luecken.length;
     case "mehrfach":
       return f.richtige.length;
     case "offen":
       return f.punkte;
     default:
-      return 1;
+      return f.punkte ?? 1;
   }
 }
+
+/** Punkte zum Anzeigen: ganze Zahlen wie sie sind, halbe mit Komma („1,5“). */
+export const punkteZahl = (p: number) => (Number.isInteger(p) ? String(p) : String(Math.round(p * 100) / 100).replace(".", ","));
 export const teilPunkte = (t: Teil) => t.fragen.reduce((s, f) => s + maxPunkte(f), 0);
 export const gesamtPunkte = (t: EigenerTest) => t.teile.reduce((s, x) => s + teilPunkte(x), 0);
 export const alleFragen = (t: EigenerTest) => t.teile.flatMap((x) => x.fragen);
@@ -149,21 +161,25 @@ export type FrageErgebnis = {
 
 const alsText = (x: unknown) => (typeof x === "string" ? x : "");
 const alsListe = <T,>(x: unknown, n: number, f: (v: unknown) => T): T[] => Array.from({ length: n }, (_, i) => f(Array.isArray(x) ? x[i] : undefined));
-const rfText = (b: boolean | null) => (b === true ? "True" : b === false ? "False" : "");
+/** Die Knöpfe bei Richtig/Falsch in der Sprache des Tests. */
+export const rfWorte = (sprache: "de" | "en") => (sprache === "de" ? (["Richtig", "Falsch"] as const) : (["True", "False"] as const));
+const rfText = (b: boolean | null, sprache: "de" | "en") => (b === true ? rfWorte(sprache)[0] : b === false ? rfWorte(sprache)[1] : "");
+/** Punkte für `richtig` von `n` Zeilen, wenn die Frage `max` Punkte hat (ohne Rundungsrest bei halben Punkten). */
+const anteil = (richtig: number, n: number, max: number) => (n === max ? richtig : Math.round(((richtig * max) / n) * 100) / 100);
 
 /** Bewertet eine Frage. Offene Fragen bekommen `bewertet` (Punkte von Schüler oder Lehrkraft) oder bleiben null. */
-export function bewerteFrage(f: Frage, antwort: unknown, bewertet?: number | null): FrageErgebnis {
+export function bewerteFrage(f: Frage, antwort: unknown, bewertet?: number | null, sprache: "de" | "en" = "en"): FrageErgebnis {
   const max = maxPunkte(f);
   switch (f.art) {
     case "auswahl": {
       const gegeben = alsListe(antwort, f.items.length, alsText);
       const zeilen = f.items.map(([, loesung], i) => ({ richtig: gegeben[i] === loesung, loesung, gegeben: gegeben[i] }));
-      return { id: f.id, art: f.art, max, punkte: zeilen.filter((z) => z.richtig).length, zeilen };
+      return { id: f.id, art: f.art, max, punkte: anteil(zeilen.filter((z) => z.richtig).length, zeilen.length, max), zeilen };
     }
     case "rf": {
       const gegeben = alsListe(antwort, f.items.length, (v) => (v === true || v === false ? v : null));
-      const zeilen = f.items.map(([, wahr], i) => ({ richtig: gegeben[i] === wahr, loesung: rfText(wahr), gegeben: rfText(gegeben[i]) }));
-      return { id: f.id, art: f.art, max, punkte: zeilen.filter((z) => z.richtig).length, zeilen };
+      const zeilen = f.items.map(([, wahr], i) => ({ richtig: gegeben[i] === wahr, loesung: rfText(wahr, sprache), gegeben: rfText(gegeben[i], sprache) }));
+      return { id: f.id, art: f.art, max, punkte: anteil(zeilen.filter((z) => z.richtig).length, zeilen.length, max), zeilen };
     }
     case "luecken": {
       const gegeben = alsListe(antwort, f.luecken.length, alsText);
@@ -171,11 +187,11 @@ export function bewerteFrage(f: Frage, antwort: unknown, bewertet?: number | nul
         const v = normLuecke(gegeben[i]);
         return { richtig: v !== "" && erlaubt.some((a) => normLuecke(a) === v), loesung: erlaubt[0], gegeben: gegeben[i].trim() };
       });
-      return { id: f.id, art: f.art, max, punkte: zeilen.filter((z) => z.richtig).length, zeilen };
+      return { id: f.id, art: f.art, max, punkte: anteil(zeilen.filter((z) => z.richtig).length, zeilen.length, max), zeilen };
     }
     case "mc": {
       const g = typeof antwort === "number" && Number.isInteger(antwort) && antwort >= 0 && antwort < f.optionen.length ? antwort : null;
-      return { id: f.id, art: f.art, max, punkte: g === f.richtig ? 1 : 0, gewaehlt: g === null ? [] : [g], richtige: [f.richtig] };
+      return { id: f.id, art: f.art, max, punkte: g === f.richtig ? max : 0, gewaehlt: g === null ? [] : [g], richtige: [f.richtig] };
     }
     case "mehrfach": {
       const g = [...new Set(Array.isArray(antwort) ? antwort.filter((x): x is number => Number.isInteger(x) && x >= 0 && x < f.optionen.length) : [])].sort((a, b) => a - b);
@@ -202,6 +218,14 @@ export type TestErgebnis = {
   teile: { id: string; titel: string; punkte: number; max: number }[];
 };
 
+const NOTEN = ["Sehr gut (1)", "Gut (2)", "Befriedigend (3)", "Genügend (4)", "Nicht genügend (5)"];
+
+/** Note nach dem Notenschlüssel des Tests in Punkten (ab Sehr gut, Gut, Befriedigend, Genügend). */
+export function noteNachPunkten(punkte: number, schluessel: [number, number, number, number]): string {
+  const i = schluessel.findIndex((ab) => punkte >= ab);
+  return NOTEN[i < 0 ? 4 : i];
+}
+
 /** Österreichische Note zur Orientierung, wie im Artifact: ab 89 % Sehr gut, 76 % Gut, 63 % Befriedigend, 50 % Genügend. */
 export function noteFuer(prozent: number): string {
   if (prozent >= 89) return "Sehr gut (1)";
@@ -217,16 +241,17 @@ export function bewerteTest(t: EigenerTest, antworten: Antworten, offene: Record
   const teile = t.teile.map((x) => {
     let punkte = 0;
     for (const f of x.fragen) {
-      const e = bewerteFrage(f, antworten[f.id], offene[f.id]);
+      const e = bewerteFrage(f, antworten[f.id], offene[f.id], t.sprache);
       fragen.push(e);
       punkte += e.punkte ?? 0;
     }
     return { id: x.id, titel: x.titel, punkte, max: teilPunkte(x) };
   });
   const gesamt = gesamtPunkte(t);
-  const punkte = teile.reduce((s, x) => s + x.punkte, 0);
+  const punkte = Math.round(teile.reduce((s, x) => s + x.punkte, 0) * 100) / 100;
   const prozent = gesamt ? Math.round((punkte / gesamt) * 100) : 0;
-  return { fragen, punkte, gesamt, offen: fragen.filter((f) => f.punkte === null).length, prozent, note: noteFuer(prozent), teile };
+  const note = t.notenschluessel ? noteNachPunkten(punkte, t.notenschluessel) : noteFuer(prozent);
+  return { fragen, punkte, gesamt, offen: fragen.filter((f) => f.punkte === null).length, prozent, note, teile };
 }
 
 /** Wie viele Antwortfelder leer sind (für „Wirklich abgeben?“), gezählt wie im Artifact. */
@@ -309,6 +334,11 @@ export function pruefeTest(t: EigenerTest): string[] {
       if (f.luecken.some((l) => !l.length)) fehler.push(`${f.id}: Lücke ohne Lösung`);
     }
     if (f.bild && !t.bild) fehler.push(`${f.id}: Bild fehlt im Test`);
+    if (f.art !== "offen" && f.art !== "mehrfach" && f.punkte !== undefined && !(f.punkte > 0)) fehler.push(`${f.id}: Punkte müssen über 0 sein`);
+  }
+  if (t.notenschluessel) {
+    const [a, b, c, d] = t.notenschluessel;
+    if (!(a > b && b > c && c > d && d > 0 && a <= gesamtPunkte(t))) fehler.push("Notenschlüssel: Punkte müssen absteigen und zum Test passen");
   }
   return fehler;
 }
