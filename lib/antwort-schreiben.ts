@@ -34,6 +34,7 @@ export type SchreibErgebnis = "richtig" | "fast" | "falsch";
 const SPIELE: Partial<Record<SpielArt, { streng: boolean; englisch?: boolean }>> = {
   irregular: { streng: true, englisch: true },
   praeteritum: { streng: true },
+  konjugieren: { streng: true },
   zeiten: { streng: true, englisch: true },
   grammatik: { streng: true, englisch: true },
   fehler: { streng: true },
@@ -94,6 +95,7 @@ export function schreibForm(art: SpielArt, karte: SpielKarte): Extract<SpielForm
       return "schreiben";
     case "irregular":
     case "praeteritum":
+    case "konjugieren":
       return karte.faecher.length >= 3 ? "schreiben" : null;
     case "zeiten":
     case "grammatik":

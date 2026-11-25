@@ -41,6 +41,9 @@
  * Satz mit angestrichener Stelle, darunter vier Namen von Stilmitteln als Kacheln, je Schulstufe die, die schon dran
  * waren (lib/stilmittel.ts, Sätze in lib/stilmittel-saetze.ts).
  *
+ * Für die Volksschule (niko 2026-11-25): „Wortarten“ (ein Wort im Satz ist markiert: Nomen, Verb oder Adjektiv?,
+ * lib/wortarten-spiel.ts) und „ich gehe, du gehst“ (die Personalform in die Lücke, lib/verben-beugen.ts).
+ *
  * „Glasklar“ (niko 2026-11-16, ein Sortier-Puzzle): Begriffe in Gläsern sortieren, je Runde eine Stufe eines Themas
  * (lib/glasklar.ts, lib/glasklar-themen.ts). Es steht nicht in den Kacheln nach Fach, sondern als eigene Kachel unter
  * „Für dich“, und hat ein eigenes Spielfeld (components/lernen/GlasSpiel.tsx).
@@ -53,7 +56,7 @@ import type { BioDaten } from "./biolabor";
 import type { BiotestDaten } from "./biotest";
 import type { OeDaten } from "./oesterreich";
 
-export const SPIEL_ARTEN = ["artikel", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
+export const SPIEL_ARTEN = ["artikel", "wortarten", "konjugieren", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -70,6 +73,8 @@ export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && duel
 
 export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
+  wortarten: "Wortarten",
+  konjugieren: "ich gehe, du gehst",
   praepositionen: "Präposition und Fall",
   deklination: "Adjektiv-Endungen",
   faelle: "Die vier Fälle",
@@ -105,6 +110,8 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
 /** Zu welchem Fach ein Spiel gehört (Abschnitte im Tab „Spiele“). */
 export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" | "Dein Stoff"> = {
   artikel: "Deutsch",
+  wortarten: "Deutsch",
+  konjugieren: "Deutsch",
   praepositionen: "Deutsch",
   deklination: "Deutsch",
   faelle: "Deutsch",
@@ -149,6 +156,8 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
 /** Eine kurze Zeile für die Kachel im Tab „Spiele“: worum es geht, in Wörtern aus dem Spiel. */
 export const SPIEL_KURZ: Record<SpielArt, string> = {
   artikel: "Jedes Nomen zu seinem Artikel",
+  wortarten: "Nomen, Verb oder Adjektiv? Bestimm das markierte Wort",
+  konjugieren: "ich gehe, du gehst, wir gehen: die richtige Form",
   praepositionen: "mit dem, für den: der richtige Fall",
   deklination: "großer, große, großes: die Endung",
   faelle: "Wer? Wessen? Wem? Wen?",
@@ -184,6 +193,8 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
 /** Zwei, drei Wörter, die für das Spiel stehen: blass im Hintergrund der Bühne und als Kärtchen auf der Kachel. */
 export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   artikel: ["die", "das", "der"],
+  wortarten: ["Nomen", "Verb", "Adjektiv"],
+  konjugieren: ["gehe", "gehst", "geht"],
   praepositionen: ["dem", "den", "der"],
   deklination: ["-en", "-es", "-em"],
   faelle: ["Wem?", "Wen?", "Wer?"],
@@ -219,6 +230,8 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
 /** Ein Satz unter dem Titel: was man in dem Spiel tut. */
 export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",
+  wortarten: "Ist das markierte Wort ein Nomen, ein Verb oder ein Adjektiv?",
+  konjugieren: "Welche Form des Verbs passt zur Person?",
   praepositionen: "Welcher Artikel passt nach der Präposition?",
   deklination: "Welche Endung braucht das Adjektiv?",
   faelle: "In welchem Fall steht der markierte Teil?",
@@ -275,6 +288,8 @@ export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   praepositionen: "kacheln",
   deklination: "kacheln",
   stilmittel: "kacheln",
+  wortarten: "kacheln",
+  konjugieren: "kacheln",
   fehler: "wischen",
 };
 
