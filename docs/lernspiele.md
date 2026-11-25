@@ -461,8 +461,8 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   Schüler der beste Blockwerk-Stand, die Besten zuerst, auf dem Anfang (5 Plätze) und am Ende (3 Plätze), und ganz
   (10 Plätze) unten im Tab „Spiele“ (components/lernen/BestenlisteTafel.tsx; Platz und Rekord auch auf der
   Blockwerk-Kachel, niko: „man soll wo auch das leaderboard sehen können“). Andere stehen
-  alle drin, nur mit Spitzname und Tierbild (lib/spielprofil.ts); wer noch keinen hat, bekommt mit den ersten Punkten
-  einen freien (niko: „es soll generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht;
+  alle drin, mit Namen („Max M.“, seit 2026-11-25) und Tierbild (lib/spielprofil.ts); wer noch kein Profil hat,
+  bekommt mit den ersten Punkten eines (niko: „es soll generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht;
   er sieht sich selbst als „Du“.
 - **Ende** (niko: „ist überfüllt hier“): Ring mit den Punkten (lange Zahlen kleiner, `data-lang`), eine Zeile Titel
   („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen

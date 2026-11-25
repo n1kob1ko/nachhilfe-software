@@ -10,7 +10,7 @@
  * - **Fair**: die Karten kommen aus den Stufen für den jüngeren Spieler, ohne die eigenen Fehler-Wiederholungen.
  *   Jede erste Wahl speichert der Server sofort (zuege_*), ein Neuladen ändert also nichts mehr.
  * - Jede Duell-Runde ist auch eine normale Runde (Lernstand, Serie, Ligapunkte).
- * - Andere Schüler sehen nur Spitzname und Bild (lib/spielprofil.ts). Per Code darf nur duellieren, wer ein Profil mit
+ * - Andere Schüler sehen den Namen („Max M.“) und das Tierbild (lib/spielprofil.ts). Per Code darf nur duellieren, wer ein Profil mit
  *   Duellen hat und mitmachen darf; live entscheidet der Lehrer, die beiden sitzen ja nebeneinander.
  */
 import { parseTime } from "./analysis";
@@ -21,7 +21,7 @@ import { stufenFuer, waehleKarten } from "./lernspiele-karten";
 import { europaDuellKarten } from "./europa";
 import { istDuellArt, istSpielArt, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import * as repo from "./repo";
-import { aktivesProfil, BILDER, profilVon } from "./spielprofil";
+import { aktivesProfil, BILDER, profilVon, spielNameVon } from "./spielprofil";
 import { stilmittelKandidaten } from "./stilmittel";
 
 export const CODE_ZEICHEN = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
@@ -315,7 +315,8 @@ function seite(d: Zeile, rolle: "von" | "gegen", ohneProfil: string): DuellSeite
   const rundeId = rolle === "von" ? d.von_runde : d.gegen_runde;
   const r = rundeId ? (db().prepare("SELECT created_at, beendet_at FROM spielrunden WHERE id = ?").get(rundeId) as { created_at: string; beendet_at: string | null } | undefined) : undefined;
   return {
-    name: p?.name ?? ohneProfil,
+    // der echte Name („Max M.“, niko 2026-11-25); nur wenn es den Schüler nicht mehr gibt, der Ersatz
+    name: p?.name ?? (repo.getStudent(sid) ? spielNameVon(sid) : ohneProfil),
     bild: p ? (BILDER[p.bild] ?? "🙂") : "🙂",
     richtig: zuege.filter((z) => z.richtig).length,
     beantwortet: zuege.length,

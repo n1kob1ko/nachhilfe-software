@@ -4,7 +4,7 @@ import type { Bestenliste } from "@/lib/lernspiele-typen";
 
 /**
  * Die Bestenliste von Blockwerk oder Glasklar im Tab „Spiele“ (niko 2026-11-16: „man soll wo auch das leaderboard sehen können“). Dieselbe
- * Liste wie am Anfang und Ende von Blockwerk (lib/lernspiele.ts bloeckeBestenliste): andere nur mit Spitzname und
+ * Liste wie am Anfang und Ende von Blockwerk (lib/lernspiele.ts bloeckeBestenliste): andere mit Namen („Max M.“) und
  * Erlaubnis, die eigene Zeile immer.
  */
 export function BestenlisteTafel({ liste, spielen, arena, spiel = "Blockwerk" }: { liste: Bestenliste; spielen: string; arena: string; /** Blockwerk oder Glasklar */ spiel?: string }) {
@@ -50,7 +50,7 @@ export function BestenlisteTafel({ liste, spielen, arena, spiel = "Blockwerk" }:
                 <>
                   Nur du siehst dich hier.{" "}
                   <Link href={arena} className="font-semibold text-accent underline">
-                    Mit Spitzname mitspielen
+                    Mitspielen
                   </Link>
                   , dann sehen dich alle.
                 </>

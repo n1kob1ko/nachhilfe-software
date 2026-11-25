@@ -9,12 +9,12 @@
  * - Gruppen bis 8 Spieler in vier Stufen (Bronze, Silber, Gold, Diamant). Jeden Montag (Wiener Zeit) beginnt eine neue
  *   Woche; wer in seiner Gruppe unter den ersten 3 war (mit Punkten), steigt auf. Absteigen gibt es nicht.
  * - Mit dabei ist nur, wer ein Spielprofil mit Liga hat und mitmachen darf (lib/spielprofil.ts). Gezeigt werden nur
- *   Spitzname, Bild, Punkte und Runden.
+ *   Name („Max M.“), Bild, Punkte und Runden.
  */
 import { parseTime } from "./analysis";
 import { db } from "./db";
 import { tagAddieren, wienerDatum, wochenstartVon } from "./planung/zeit";
-import { aktivesProfil, BILDER, darfMitspielen } from "./spielprofil";
+import { aktivesProfil, BILDER, darfMitspielen, spielName } from "./spielprofil";
 import type { Student } from "./repo";
 
 export const STUFEN = ["Bronze", "Silber", "Gold", "Diamant"] as const;
@@ -146,7 +146,7 @@ export function ligaTabelle(student: Pick<Student, "id" | "grade">, heute: strin
   const woche = wochenstartVon(heute);
   const profile = new Map(
     (
-      db().prepare("SELECT sp.student_id, sp.name, sp.bild, sp.liga, s.grade, s.wettspiel FROM spielprofile sp JOIN students s ON s.id = sp.student_id").all() as {
+      db().prepare("SELECT sp.student_id, s.name, sp.bild, sp.liga, s.grade, s.wettspiel FROM spielprofile sp JOIN students s ON s.id = sp.student_id").all() as {
         student_id: number;
         name: string;
         bild: string;
@@ -170,7 +170,7 @@ export function ligaTabelle(student: Pick<Student, "id" | "grade">, heute: strin
     ichPunkte: liste.find((x) => x.studentId === student.id)?.punkte ?? 0,
     zeilen: liste.map((x, i) => {
       const z = profile.get(x.studentId);
-      return { platz: i + 1, name: z?.name ?? "", bild: BILDER[z?.bild ?? ""] ?? "🙂", punkte: x.punkte, runden: x.runden, ich: x.studentId === student.id };
+      return { platz: i + 1, name: z ? spielName(z.name) : "", bild: BILDER[z?.bild ?? ""] ?? "🙂", punkte: x.punkte, runden: x.runden, ich: x.studentId === student.id };
     }),
   };
 }

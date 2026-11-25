@@ -39,20 +39,25 @@ async function setup() {
   return { db, repo, profil, liga, duelle, sp, teacher, neu, runde, mitProfil };
 }
 
-test("Erlaubnis: für alle Schulstufen (niko 2026-11-16), „Aus“ sperrt; Spitzname nur aus den Listen", async () => {
+test("Erlaubnis: für alle Schulstufen (niko 2026-11-16), „Aus“ sperrt; gezeigt wird der echte Name (niko 2026-11-25)", async () => {
   const { profil, neu, mitProfil } = await setup();
   const klein = neu("Lena Test", 3);
   const gross = neu("Jonas Test", 10);
   assert.equal(profil.erlaubnis(klein).darf, true, "auch die Volksschule");
   assert.equal(profil.erlaubnis(gross).darf, true);
   mitProfil(klein, "Blitz", "fuchs");
-  assert.equal(profil.profilVon(klein.id)!.name, "Blitzfuchs");
+  assert.equal(profil.profilVon(klein.id)!.name, "Lena T.");
+  assert.equal(profil.spielName("Anna Maria Huber"), "Anna H.");
+  assert.equal(profil.spielName(" Max "), "Max");
+  assert.equal(profil.spielName(""), "Mitspieler");
   // „ja“ von früher zählt wie „An“
   profil.setzeWettspiel(klein.id, "ja");
   assert.notEqual(profil.aktivesProfil(klein), null);
-  // selber Name für jemand anderen: nein; freier Text: nein
-  assert.equal(profil.speichereProfil(gross, { vorne: "Blitz", hinten: "fuchs", bild: "eule", liga: true, duelle: true }).ok, false);
-  assert.equal(profil.speichereProfil(gross, { vorne: "Doof", hinten: "fuchs", bild: "eule", liga: true, duelle: true }).ok, false);
+  // der innere Schlüssel ist schon vergeben oder frei erfunden: das Profil bekommt einen freien, gezeigt wird der Name
+  assert.equal(profil.speichereProfil(gross, { vorne: "Blitz", hinten: "fuchs", bild: "eule", liga: true, duelle: true }).ok, true);
+  assert.equal(profil.profilVon(gross.id)!.name, "Jonas T.");
+  assert.equal(profil.speichereProfil(gross, { bild: "keins", liga: true, duelle: true }).ok, false, "nur Bilder aus der Liste");
+  assert.equal(profil.anzeige(klein.id).name, "Lena T.");
   assert.deepEqual(profil.namensTeile("Blitzfuchs"), { vorne: "Blitz", hinten: "fuchs" });
   // „Aus“ sperrt auch die Großen, das Profil zählt dann nicht
   mitProfil(gross, "Sturm", "eule");
@@ -61,10 +66,10 @@ test("Erlaubnis: für alle Schulstufen (niko 2026-11-16), „Aus“ sperrt; Spit
   assert.notEqual(profil.profilVon(gross.id), null);
   assert.equal(profil.speichereProfil(gross, { vorne: "Sturm", hinten: "eule", bild: "eule", liga: true, duelle: true }).ok, false);
   assert.equal(profil.sorgeFuerProfil(gross), null);
-  // ohne Spitzname: bekommt einen freien aus den Listen, Liga und Duelle an; ein zweiter Aufruf ändert nichts
+  // ohne Profil: bekommt eines, Liga und Duelle an; ein zweiter Aufruf ändert nichts
   const neuer = neu("Mira Test", 5);
   const auto = profil.sorgeFuerProfil(neuer)!;
-  assert.ok(profil.namensTeile(auto.name));
+  assert.equal(auto.name, "Mira T.");
   assert.ok(auto.liga && auto.duelle);
   assert.equal(profil.sorgeFuerProfil(neuer)!.name, auto.name);
 });
@@ -180,7 +185,7 @@ test("Duell per Code: annehmen, gleiche Karten, erste Wahl zählt sofort, Sieger
   assert.equal(sa.status, "fertig");
   assert.equal(sa.ausgang, "gewonnen");
   assert.equal(sb.ausgang, "verloren");
-  assert.equal(sb.gegner!.name, "Blitzfuchs", "nur der Spitzname");
+  assert.equal(sb.gegner!.name, "Ada T.", "der echte Name");
   assert.deepEqual(sa.beideFalsch, [ra.karten[11].loesung]);
 
   const rev = duelle.revanche(b, neuD.id);
