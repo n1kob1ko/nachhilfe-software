@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, ClipboardCheck } from "lucide-react";
 import { abgabenVon, ergebnisVon, testsFuer } from "@/lib/eigene-tests-speicher";
+import { punkteZahl } from "@/lib/eigene-tests";
 import type { Student } from "@/lib/repo";
 
 /**
@@ -30,7 +31,7 @@ export function EigeneTestsTeaser({ student, token, von }: { student: Pick<Stude
                   {e ? (
                     <>
                       <span className="num">
-                        {e.punkte} von {e.gesamt} Punkten
+                        {punkteZahl(e.punkte)} von {e.gesamt} Punkten
                       </span>{" "}
                       · {e.note}
                       {e.offen > 0 && ` · ${e.offen === 1 ? "1 Frage" : `${e.offen} Fragen`} noch bewerten`}

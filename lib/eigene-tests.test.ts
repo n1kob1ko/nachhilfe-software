@@ -7,7 +7,7 @@ import { existsSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { EIGENE_TESTS, eigenerTest } from "./eigene-tests-liste";
-import { bewerteTest, gesamtPunkte, leereFelder, lueckenStuecke, noteFuer, normLuecke, pruefeTest, saubereAntworten, testAnsicht, type Antworten, type EigenerTest } from "./eigene-tests";
+import { bewerteTest, gesamtPunkte, leereFelder, lueckenStuecke, noteFuer, noteNachPunkten, normLuecke, pruefeTest, punkteZahl, saubereAntworten, testAnsicht, type Antworten, type EigenerTest } from "./eigene-tests";
 
 process.env.DATABASE_PATH = ":memory:";
 
@@ -159,4 +159,45 @@ test("Keine Lösung im Browser: die Seite des Schülers lädt die Testdateien ni
     const text = readFileSync(path.join(process.cwd(), datei), "utf8");
     assert.ok(!/from "[^"]*eigene-tests(-liste|\/)/.test(text), datei);
   }
+});
+
+test("Chemie-Probetest 5. Klasse: wie auf dem Blatt, 79 Punkte, halbe Punkte, Notenschlüssel in Punkten", () => {
+  const CH = eigenerTest("chemie-probetest-5")!;
+  assert.equal(gesamtPunkte(CH), 79);
+  assert.deepEqual(
+    testAnsicht(CH).teile.map((t) => t.punkte),
+    [13, 16, 10, 9, 20, 11],
+  );
+  const a = richtigeAntworten(CH);
+  const offen = Object.fromEntries(CH.teile.flatMap((t) => t.fragen).flatMap((f) => (f.art === "offen" ? [[f.id, f.punkte]] : [])));
+  const voll = bewerteTest(CH, a, offen);
+  assert.equal(voll.punkte, 79);
+  assert.equal(voll.note, "Sehr gut (1)");
+
+  // 12: je Aussage 0,5 P., auf Deutsch „Richtig“/„Falsch“
+  a["12"] = [false, true, true, true, null, true]; // c) falsch, e) leer
+  const e = bewerteTest(CH, a);
+  const f12 = e.fragen.find((x) => x.id === "12")!;
+  assert.equal(f12.punkte, 2);
+  assert.equal(f12.zeilen![2].loesung, "Falsch");
+  assert.equal(f12.zeilen![2].gegeben, "Richtig");
+  assert.equal(punkteZahl(bewerteTest(CH, { ...a, "12": [false, true, true, true, false, true] }).fragen.find((x) => x.id === "12")!.punkte!), "2,5");
+
+  // Zahlen mit Komma oder Punkt, mit oder ohne Einheit; signifikante Stellen zählen
+  const z = richtigeAntworten(CH);
+  z["23"] = ["2.35", "12,8", "0,0725", "6"];
+  z["26"] = ["62,42 g", "2.6 g/cm³"];
+  z["28"] = ["18mL", "20 ml"];
+  const ez = bewerteTest(CH, z);
+  const p = (id: string) => ez.fragen.find((x) => x.id === id)!.punkte;
+  assert.equal(p("23"), 3); // „6“ ist nicht 6,00
+  assert.equal(p("26"), 4);
+  assert.equal(p("28"), 2);
+  assert.equal(p("20a"), 2); // Reihenfolge: 2 Punkte
+
+  // Notenschlüssel vom Blatt: ab 70 / 59 / 50 / 40 Punkten (nicht die Prozent des Europe-Tests)
+  assert.equal(noteNachPunkten(59, CH.notenschluessel!), "Gut (2)");
+  assert.equal(noteNachPunkten(58.5, CH.notenschluessel!), "Befriedigend (3)");
+  assert.equal(noteNachPunkten(39.5, CH.notenschluessel!), "Nicht genügend (5)");
+  assert.equal(noteFuer(Math.round((59 / 79) * 100)), "Befriedigend (3)"); // darum der eigene Schlüssel
 });
