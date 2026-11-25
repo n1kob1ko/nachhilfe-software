@@ -10,15 +10,15 @@ import { duellAnnehmenAction, duellErstellenAction, spielprofilSpeichernAction }
 import type { DuellSicht } from "@/lib/duelle";
 import type { LigaTabelle } from "@/lib/liga";
 import { SPIEL_TITEL, type SpielArt } from "@/lib/lernspiele-typen";
-import { BILDER, BILD_SCHLUESSEL, NAME_HINTEN, NAME_VORNE } from "@/lib/spielprofil-listen";
+import { BILDER, BILD_SCHLUESSEL } from "@/lib/spielprofil-listen";
 
 /**
  * Liga und Duelle in der Schüler-App (lib/spielprofil.ts, lib/liga.ts, lib/duelle.ts), auf der Bühne der Lernspiele.
- * Ohne Profil steht zuerst „Mitspielen?“ mit Spitzname aus zwei Listen und einem Tierbild; danach die Wochenliga und die
- * Duelle per Code.
+ * Ohne Profil steht zuerst „Mitspielen?“ mit dem eigenen Namen („Max M.“) und einem Tierbild; danach die Wochenliga
+ * und die Duelle per Code.
  */
 
-type Profil = { vorne: string; hinten: string; bild: string; liga: boolean; duelle: boolean; name: string };
+type Profil = { bild: string; liga: boolean; duelle: boolean; name: string };
 
 export function Arena({
   token,
@@ -33,7 +33,7 @@ export function Arena({
   token: string;
   erlaubnis: { darf: boolean; grund: string };
   profil: Profil | null;
-  vorschlag: { vorne: string; hinten: string; bild: string };
+  vorschlag: { bild: string; name: string };
   bearbeiten: boolean;
   liga: LigaTabelle | null;
   duelle: DuellSicht[];
@@ -56,7 +56,7 @@ export function Arena({
         </Link>
         <span className="flex-1" />
         {profil && !bearbeiten && (
-          <Link href={`/lernen/${token}/arena?bearbeiten=1`} className="ar-chip" aria-label="Spitzname und Einstellungen ändern">
+          <Link href={`/lernen/${token}/arena?bearbeiten=1`} className="ar-chip" aria-label="Bild und Einstellungen ändern">
             <span aria-hidden>{BILDER[profil.bild]}</span>
             {profil.name}
             <Pencil size={14} aria-hidden />
@@ -83,7 +83,7 @@ export function Arena({
             </div>
           </>
         ) : !profil || bearbeiten ? (
-          <ProfilForm token={token} start={profil ?? { ...vorschlag, liga: true, duelle: true, name: "" }} neu={!profil} />
+          <ProfilForm token={token} start={profil ?? { ...vorschlag, liga: true, duelle: true }} neu={!profil} />
         ) : (
           <>
             {/* Duelle zuerst (niko 2026-11-11: „Ranking muss jetzt nicht sein, aber diese Duelle“), die Liga darunter */}
@@ -111,8 +111,6 @@ export function Arena({
 
 function ProfilForm({ token, start, neu }: { token: string; start: Profil; neu: boolean }) {
   const router = useRouter();
-  const [vorne, setVorne] = useState(start.vorne);
-  const [hinten, setHinten] = useState(start.hinten);
   const [bild, setBild] = useState(start.bild);
   const [liga, setLiga] = useState(start.liga);
   const [duelle, setDuelle] = useState(start.duelle);
@@ -122,7 +120,7 @@ function ProfilForm({ token, start, neu }: { token: string; start: Profil; neu: 
   async function speichern() {
     setSendet(true);
     setFehler(null);
-    const r = await spielprofilSpeichernAction(token, { vorne, hinten, bild, liga, duelle });
+    const r = await spielprofilSpeichernAction(token, { bild, liga, duelle });
     setSendet(false);
     if (!r.ok) {
       setFehler(r.fehler);
@@ -135,43 +133,20 @@ function ProfilForm({ token, start, neu }: { token: string; start: Profil; neu: 
   return (
     <>
       <h1 className="ls-titel" style={{ "--n": 0 } as CSSProperties}>
-        {neu ? "Mitspielen?" : "Dein Spielname"}
+        {neu ? "Mitspielen?" : "Dein Spielprofil"}
       </h1>
       <p className="ls-text mt-2" style={{ "--n": 1 } as CSSProperties}>
-        Spiel gegen andere aus dem Institut. Niemand sieht deinen echten Namen, deine Schule oder Klasse.
+        Spiel gegen andere aus dem Institut. Sie sehen deinen Vornamen und den ersten Buchstaben deines Nachnamens, aber nicht deine Schule oder Klasse.
       </p>
 
       <div className="mt-6 flex items-center gap-4" style={{ "--n": 2 } as CSSProperties}>
         <span className="ar-bild" data-gross="" aria-hidden>
           {BILDER[bild]}
         </span>
-        <p className="display text-[28px] leading-tight font-extrabold" aria-live="polite">
-          {vorne}
-          {hinten}
-        </p>
+        <p className="display text-[28px] leading-tight font-extrabold">{start.name}</p>
       </div>
 
       <p className="ar-abschnitt" style={{ "--n": 3 } as CSSProperties}>
-        Erster Teil
-      </p>
-      <div className="ar-wahl mt-2" role="group" aria-label="Erster Teil" style={{ "--n": 3 } as CSSProperties}>
-        {NAME_VORNE.map((v) => (
-          <button key={v} type="button" className="ohne-druck" aria-pressed={v === vorne} onClick={() => setVorne(v)}>
-            {v}
-          </button>
-        ))}
-      </div>
-      <p className="ar-abschnitt" style={{ "--n": 4 } as CSSProperties}>
-        Zweiter Teil
-      </p>
-      <div className="ar-wahl mt-2" role="group" aria-label="Zweiter Teil" style={{ "--n": 4 } as CSSProperties}>
-        {NAME_HINTEN.map((h) => (
-          <button key={h} type="button" className="ohne-druck" aria-pressed={h === hinten} onClick={() => setHinten(h)}>
-            {h}
-          </button>
-        ))}
-      </div>
-      <p className="ar-abschnitt" style={{ "--n": 5 } as CSSProperties}>
         Dein Bild
       </p>
       <div className="ar-wahl mt-2" data-bilder="" role="group" aria-label="Bild" style={{ "--n": 5 } as CSSProperties}>

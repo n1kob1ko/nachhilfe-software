@@ -7,12 +7,15 @@ Lernspielen (docs/lernspiele.md), alle drei Konzepte: Wochenliga, Duell per Code
 
 - **Einsatz statt Können**: Ligapunkte gibt es für fertige Runden und fürs Besserwerden gegen sich selbst. So können
   auch schwächere Schüler vorne stehen.
-- **Freiwillig und ohne echten Namen**: wer mitspielt, wählt einen Spitznamen aus zwei festen Listen („Blitz“ +
-  „fuchs“) und ein Tierbild. Schule, Klasse und Name stehen nirgends. Liga und Duelle lassen sich einzeln ausschalten.
+- **Mit dem echten Namen** (niko 2026-11-25: „ich will nicht mehr anonyme Usernames, es soll der Schülername angezeigt
+  werden“): andere sehen Vorname und ersten Buchstaben des Nachnamens („Max M.“, `spielName` in lib/spielprofil.ts)
+  und ein Tierbild, das der Schüler wählt. Schule und Klasse stehen nirgends. Bis dahin gab es Spitznamen aus zwei
+  Listen („Blitzfuchs“); die Spalte `spielprofile.name` ist nur noch ein innerer Schlüssel. Liga und Duelle lassen sich
+  einzeln ausschalten.
 - **Für alle erlaubt** (niko 2026-11-16: „mach die erlaubnis weg es soll generell erlaubt sein“; vorher „ab der 9.
   Schulstufe, jünger nur mit Erlaubnis der Eltern“). Der Lehrer kann es im Profil › Fortschritt › „Liga und Duelle“ für
-  einen Schüler ausschalten („Aus“). „Spielnamen zurücksetzen“, wenn ein Name nicht passt. Wer Blockwerk-Punkte hat und
-  noch keinen Spitznamen, bekommt einen freien (`sorgeFuerProfil`), damit alle in der Bestenliste stehen.
+  einen Schüler ausschalten („Aus“). „Spielprofil zurücksetzen“ setzt Bild und Schalter zurück. Wer Blockwerk-Punkte hat und
+  noch kein Profil, bekommt eines (`sorgeFuerProfil`), damit alle in der Bestenliste stehen.
 
 ## Was der Schüler sieht
 
@@ -48,8 +51,8 @@ sobald der Schüler wieder spielt oder die Liga öffnet.
   mehr beim ersten Versuch richtig hat, bei Gleichstand der Schnellere. Wer nicht spielt, verliert kampflos.
 - **Live im Unterricht**: hat der Lehrer zwei Einheiten gleichzeitig laufen, steht in der Einheit neben den beiden Namen
   „Live-Duell“. Spiel wählen, „Duell starten“, beide tippen „Bereit“, 3 Sekunden Countdown, 2 Minuten. Bei Gleichstand
-  gewinnt, wer mehr Karten geschafft hat. Live braucht kein Spielprofil (die beiden sitzen nebeneinander); ohne
-  Spitzname steht der Vorname da. Der Lehrer sieht den Stand alle 2 Sekunden und kann abbrechen.
+  gewinnt, wer mehr Karten geschafft hat. Live braucht kein Spielprofil (die beiden sitzen nebeneinander); dort steht
+  der Name wie überall („Max M.“), beim Lehrer der Vorname. Der Lehrer sieht den Stand alle 2 Sekunden und kann abbrechen.
 - Jede erste Wahl speichert der Server sofort (`spielduelle.zuege_*`), ein Neuladen ändert nichts. Jede Duell-Runde ist
   auch eine normale Runde (Lernstand, Serie, Ligapunkte).
 

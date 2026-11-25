@@ -23,7 +23,7 @@ const schueler = (token: string) => repo.getStudentByToken(String(token));
 export async function spielprofilSpeichernAction(token: string, e: ProfilEingabe): Promise<{ ok: true } | { ok: false; fehler: string }> {
   const s = schueler(token);
   if (!s) return { ok: false, fehler: KEIN_LINK };
-  const r = speichereProfil(s, { vorne: String(e?.vorne ?? ""), hinten: String(e?.hinten ?? ""), bild: String(e?.bild ?? ""), liga: !!e?.liga, duelle: !!e?.duelle });
+  const r = speichereProfil(s, { bild: String(e?.bild ?? ""), liga: !!e?.liga, duelle: !!e?.duelle });
   if (!r.ok) return r;
   revalidatePath(`/lernen/${token}`, "layout");
   return { ok: true };

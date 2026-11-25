@@ -367,6 +367,26 @@ braucht“.
 - **Vorschlag**: ein Schreib-Thema im Stoff bringt „Wortschatz“, „der, die, das“ und „Präteritum“ (in dieser
   Reihenfolge) nach vorne; „Spannend erzählen“ allein bringt „Wortschatz“.
 
+## Weiterspielen (Spielstand)
+
+niko 2026-11-25: „das spiel abspeichern wenn ein update kommt oder so funktioniert nicht gut. es soll halt den stand
+halten und wenn was passiert, dass man halt zurück zum spielstand gehen kann“.
+
+- Jedes Spiel der Spielschale (components/lernen/Lernspiel.tsx: alle Kartenspiele, Endlos, Blockwerk, Funkelfeld,
+  Torlauf) merkt nach jedem Zug seinen Stand: die laufende Runde mit ihren Karten, wo man steht, die ersten Antworten,
+  Herzen, Punkte und bei Blockwerk das Brett (`SchalenStand`). Funkelfeld und Torlauf behalten Punkte und Herzen, das
+  Brett beginnt neu.
+- Gemerkt wird zweimal (components/lernen/spielstand.ts `useSpielstand`): sofort auf dem Gerät (localStorage) und kurz
+  danach am Server (Tabelle `spielstaende`, lib/spielstand.ts). Startet der Server gerade neu (Deploy), zählt die Kopie
+  auf dem Gerät; beim Öffnen gewinnt der neuere Stand (`at`).
+- Beim nächsten Öffnen steht „Weiterspielen“ mit dem Stand („Karte 4 von 12“, „Endlos · 4 richtig · 2 Herzen“,
+  „Blockwerk · 1.230 Punkte“) über „Neue Runde“. Nach „Neu laden“ (Verbindung weg) geht es mit `?weiter=1` gleich weiter.
+- Auch am Schüler-Tablet: dort gilt der Stand für den Schüler der Einheit; eine Kopie eines anderen Schülers lässt der
+  Server nicht gelten.
+- Ein Stand gilt, solange seine Runde offen ist (14 Tage, so lange räumt sich die Runde nicht weg). Das Ende des Spiels
+  löscht ihn; schlägt das Zählen am Ende fehl, bleibt er für „Neu laden“. Im Duell wird nichts gemerkt (das Duell merkt
+  sich jede Wahl selbst). Ein Stand je Spiel: wer ein anderes Brett mit denselben Karten beginnt, ersetzt ihn.
+
 ## Endlos-Modus
 
 Jedes Spiel außer den Vokabel-Paaren hat am Anfang neben „Los geht’s“ den Knopf **Endlos** (darunter der Rekord oder
@@ -461,8 +481,8 @@ kommen die Karten eines Spiels aus dem Stoff (`components/lernen/BlockFeld.tsx`,
   Schüler der beste Blockwerk-Stand, die Besten zuerst, auf dem Anfang (5 Plätze) und am Ende (3 Plätze), und ganz
   (10 Plätze) unten im Tab „Spiele“ (components/lernen/BestenlisteTafel.tsx; Platz und Rekord auch auf der
   Blockwerk-Kachel, niko: „man soll wo auch das leaderboard sehen können“). Andere stehen
-  alle drin, nur mit Spitzname und Tierbild (lib/spielprofil.ts); wer noch keinen hat, bekommt mit den ersten Punkten
-  einen freien (niko: „es soll generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht;
+  alle drin, mit Namen („Max M.“, seit 2026-11-25) und Tierbild (lib/spielprofil.ts); wer noch kein Profil hat,
+  bekommt mit den ersten Punkten eines (niko: „es soll generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht;
   er sieht sich selbst als „Du“.
 - **Ende** (niko: „ist überfüllt hier“): Ring mit den Punkten (lange Zahlen kleiner, `data-lang`), eine Zeile Titel
   („Neuer Rekord!“ oder „Kein Platz mehr“), Fragen und Rekord in einer Zeile, Lernstand und Serie in einer schmalen

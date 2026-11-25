@@ -30,6 +30,7 @@ import { gesetzt, KartenInhalt, type Stand } from "./KartenInhalt";
 import { Funkenregen, type FunkenApi } from "./Funkenregen";
 import { klang } from "./klang";
 import { vibriere } from "./SpielTeile";
+import { startHerzen, startPunkte } from "./spielstand";
 
 /**
  * Torlauf (lib/torlauf.ts, niko 2026-11-17 „Läufer mit Antwort-Toren“): oben die Frage mit den Antworten in den Farben
@@ -102,6 +103,8 @@ export function TorLauf({
   onPunkte,
   onEnde,
   rekord,
+  anfang,
+  onHerzen,
 }: {
   /** die nächste Frage (null, solange die nächsten Karten geholt werden) */
   karte: SpielKarte | null;
@@ -114,6 +117,10 @@ export function TorLauf({
   onEnde: () => void;
   /** der beste Stand bisher (0: noch keiner) */
   rekord: number;
+  /** weitergespielt (lib/spielstand.ts): Punkte und Herzen von vorher, der Lauf beginnt neu */
+  anfang?: { punkte: number; herzen: number };
+  /** die Herzen nach jeder Änderung (zum Merken) */
+  onHerzen?: (herzen: number) => void;
 }) {
   const leinwand = useRef<HTMLCanvasElement | null>(null);
   const flaeche = useRef<HTMLDivElement | null>(null);
@@ -134,7 +141,7 @@ export function TorLauf({
     front: 22,
     tor: null,
     alt: null,
-    punkte: 0,
+    punkte: startPunkte(anfang?.punkte),
     t: 0,
     schritt: 0,
     unverwundbar: 0,
@@ -148,7 +155,7 @@ export function TorLauf({
   });
 
   const [frage, setFrage] = useState<{ id: string; karte: SpielKarte; optionen: string[]; stand: { i: number; ok: boolean } | null } | null>(null);
-  const [herzen, setHerzen] = useState(TOR_HERZEN);
+  const [herzen, setHerzen] = useState(() => startHerzen(anfang?.herzen, TOR_HERZEN));
   const [serie, setSerie] = useState(0);
   const [strecke, setStrecke] = useState(1);
   const [ziel, setZiel] = useState(1);
@@ -157,7 +164,8 @@ export function TorLauf({
   const faktor = torFaktor(serie);
 
   // die neuesten Werte für die Schleife (sie läuft außerhalb von React)
-  const herzenRef = useRef(TOR_HERZEN);
+  const herzenRef = useRef(herzen);
+  useEffect(() => onHerzen?.(herzen), [herzen, onHerzen]);
   const serieRef = useRef(0);
   const toreRef = useRef(0);
   const offen = useRef<{ frageId: string; karte: SpielKarte; optionen: string[] } | null>(null);

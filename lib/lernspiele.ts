@@ -20,6 +20,7 @@ import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
 import { BEHALTEN_SQL } from "./blockwerk-stand";
+import { STAND_BEHALTEN_SQL } from "./spielstand";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { hatSchreiben, mitSchreiben, schreibStand, ZUM_SCHREIBEN_JE_RUNDE, type SchreibSpur } from "./antwort-schreiben";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
@@ -34,7 +35,7 @@ import * as repo from "./repo";
 import { THEMEN } from "./themen";
 import { leseListe } from "./vokabeln";
 import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
-import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil } from "./spielprofil";
+import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil, spielName } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { FEHLER_SKILL, fehlerKandidaten, offeneFehlerZahl } from "./fehlerprotokoll";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
@@ -962,8 +963,8 @@ export function starteRunde(
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
-  // (lib/blockwerk-stand.ts: es bleibt zum Weiterspielen)
-  db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL})`).run(student.id);
+  // (lib/blockwerk-stand.ts) oder eine Runde mit gemerktem Spielstand (lib/spielstand.ts): sie bleiben zum Weiterspielen
+  db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL}) AND NOT ${STAND_BEHALTEN_SQL}`).run(student.id);
   let karten: SpielKarte[];
   // Selbstschreiben: was beim letzten Mal richtig war; zwei, die mit Auswahl richtig waren, kommen gleich wieder
   // (nach den Fehlern). Ein Torlauf (auch fortgesetzt) bleibt bei der Auswahl.
@@ -1163,8 +1164,8 @@ export const BESTENLISTE_PLAETZE = 10;
 
 /**
  * Die Bestenliste für alle (niko 2026-11-16: „mach einen highscore also leaderboard für alle“), je Spiel (Blockwerk,
- * Glasklar): je Schüler sein bester Stand, die Besten zuerst. Jeder steht nur mit Spitzname und Tierbild drin
- * (lib/spielprofil.ts); wer Punkte hat, aber noch keinen Spitznamen, bekommt hier einen (niko 2026-11-16: „es soll
+ * Glasklar): je Schüler sein bester Stand, die Besten zuerst. Jeder steht mit seinem Namen („Max M.“, niko 2026-11-25)
+ * und Tierbild drin (lib/spielprofil.ts); wer Punkte hat, aber noch kein Profil, bekommt hier eines (niko 2026-11-16: „es soll
  * generell erlaubt sein“). Nur wen der Lehrer ausgeschaltet hat, sehen die anderen nicht; er selbst sieht sich als „Du“.
  */
 export function punkteBestenliste(student: Pick<repo.Student, "id" | "grade">, spiel: PunkteSpiel, anzahl = BESTENLISTE_PLAETZE): Bestenliste {
@@ -1176,21 +1177,23 @@ export function punkteBestenliste(student: Pick<repo.Student, "id" | "grade">, s
     )
     .all() as { id: number; grade: number }[];
   for (const s of ohneName) sorgeFuerProfil(s);
+  // wer selbst noch keine Punkte hat, steht trotzdem gleich mit Namen drin, sobald er welche hat
+  sorgeFuerProfil(student);
   const rows = db()
     .prepare(
-      `SELECT r.student_id AS id, MAX(r.${c}) AS punkte, MIN(r.id) AS zuerst, sp.name, sp.bild, s.grade, s.wettspiel
+      `SELECT r.student_id AS id, MAX(r.${c}) AS punkte, MIN(r.id) AS zuerst, sp.student_id AS profil, s.name, sp.bild, s.grade, s.wettspiel
        FROM spielrunden r JOIN students s ON s.id = r.student_id LEFT JOIN spielprofile sp ON sp.student_id = r.student_id
        WHERE r.${c} > 0 GROUP BY r.student_id ORDER BY punkte DESC, zuerst ASC`,
     )
-    .all() as { id: number; punkte: number; name: string | null; bild: string | null; grade: number; wettspiel: string | null }[];
-  const sichtbar = (z: (typeof rows)[number]) => !!z.name && darfMitspielen(z.wettspiel);
+    .all() as { id: number; punkte: number; profil: number | null; name: string; bild: string | null; grade: number; wettspiel: string | null }[];
+  const sichtbar = (z: (typeof rows)[number]) => z.profil !== null && darfMitspielen(z.wettspiel);
   const eigenes = profilVon(student.id);
   const darf = erlaubnis(student).darf;
   const liste = rows
     .filter((z) => z.id === student.id || sichtbar(z))
     .map((z, i): BestenZeile => {
       const ich = z.id === student.id;
-      const zeigen = ich ? (darf && eigenes ? eigenes.name : "Du") : z.name!;
+      const zeigen = ich ? (darf && eigenes ? eigenes.name : "Du") : spielName(z.name);
       return { platz: i + 1, name: zeigen, bild: (ich && !(darf && eigenes) ? "🙂" : BILDER[z.bild ?? ""]) ?? "🙂", punkte: z.punkte, ich };
     });
   return { zeilen: liste.slice(0, anzahl), ich: liste.find((z) => z.ich) ?? null, profil: !darf ? "erlaubnis" : eigenes ? "da" : "anlegen" };

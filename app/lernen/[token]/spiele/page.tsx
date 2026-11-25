@@ -137,7 +137,7 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
                 <span className="block text-[17px] font-semibold">Duelle</span>
                 <span className="block text-[14px] text-ink-2">
                   {!profil
-                    ? "Fordere jemanden heraus. Du spielst mit einem Spitznamen."
+                    ? "Fordere jemanden heraus. Die anderen sehen deinen Namen."
                     : !profil.duelle
                       ? "Ausgeschaltet. Antippen, um sie wieder einzuschalten."
                       : dran > 0

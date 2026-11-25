@@ -13,6 +13,8 @@ import type { SpielErgebnis, SpielKarte } from "@/lib/lernspiele-typen";
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
+import { useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 
 /**
  * Biolabor (lib/biolabor.ts, docs/lernspiele.md „Biolabor“): Genetik und Nervensystem für den Biologie-Test der 4.
@@ -29,6 +31,12 @@ import { vibriere } from "./SpielTeile";
 
 type Phase = "karte" | "start" | "laden" | "spiel" | "ende" | "lernzettel";
 type Runde = { rundeId: number; karten: SpielKarte[]; auswahl: BioAuswahl; modus: BioModus; gross: boolean };
+/** Eine angefangene Runde zum Weiterspielen (components/lernen/spielstand.ts). */
+type BioStand = { v: 1; runde: Runde; reihe: SpielKarte[]; pos: number; antworten: [string, string][]; wieder: [string, number][]; folge: number; beste: number; daneben: SpielKarte[]; kampf: Kampf };
+const istBioStand = (x: unknown): x is BioStand => {
+  const s = x as BioStand | null;
+  return !!s && s.v === 1 && !!s.runde && Number.isInteger(s.runde.rundeId) && Array.isArray(s.reihe) && s.reihe.length > 0 && Number.isInteger(s.pos) && Array.isArray(s.antworten);
+};
 type Hilfe = { karte: SpielKarte; art: "falsch" | "fast"; eingabe?: string };
 type ThemaStand = { id: string; titel: string; bereich: "genetik" | "mensch"; sicher: number; gesehen: number; alle: number };
 
@@ -120,6 +128,37 @@ export function BioLabor({
   const reduziert = useRef(false);
   const feld = useRef<HTMLInputElement | null>(null);
 
+  // angefangene Runde merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<BioStand>("bio", amTablet ? "" : token);
+  const gemerkt = spielstand.offen && istBioStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !runde || !reihe.length) return;
+    merkeSpiel({ v: 1, runde, reihe, pos, antworten: [...antworten.current.entries()], wieder: [...wieder.current.entries()], folge, beste, daneben, kampf }, [runde.rundeId]);
+  }, [phase, runde, reihe, pos, folge, beste, daneben, kampf, wahl, merkeSpiel]);
+  const fortsetzen = (g: BioStand) => {
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    wieder.current = new Map(Array.isArray(g.wieder) ? g.wieder : []);
+    auswahlLaden.current = g.runde.auswahl;
+    gezeigt.current = Date.now();
+    setFehler(null);
+    setRunde(g.runde);
+    setReihe(g.reihe);
+    setPos(Math.max(0, Math.min(g.pos, g.reihe.length - 1)));
+    setWahl(null);
+    setHilfe(null);
+    setEingabe("");
+    setFolge(g.folge || 0);
+    setBeste(g.beste || 0);
+    setErgebnis(null);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setKampf(g.kampf && Number.isFinite(g.kampf.herzen) ? g.kampf : KAMPF_ANFANG);
+    setEffekt(null);
+    setPhase("spiel");
+  };
+  const gemerktText = (g: BioStand) => `${levelVon(g.runde.auswahl) !== null ? `Level ${levelVon(g.runde.auswahl)}` : auswahlName(g.runde.auswahl)} · Frage ${Math.min(g.pos + 1, g.reihe.length)} von ${g.reihe.length}`;
+
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setTon(tonAn());
@@ -189,15 +228,16 @@ export function BioLabor({
     const richtig = runde.karten.filter((k) => antworten.current.get(k.key) === k.richtig).length;
     if (levelVon(runde.auswahl) !== null) spiele((k) => (kampf.herzen > 0 ? k.rekord() : k.aus()));
     else spiele((k) => (richtig / Math.max(1, runde.karten.length) >= 0.7 ? k.frei() : k.aus()));
-    const e = await server.beenden(runde.rundeId, liste);
+    const e = await server.beenden(runde.rundeId, liste).catch(() => ({ fehler: "Die Verbindung ist weg. Lade die Seite neu, dein Stand ist gemerkt." }));
     setErgebnis(e);
+    if (!("fehler" in e)) vergissSpiel();
     if (!("fehler" in e) && e.bio) {
       setSicher(new Set(e.bio.sicher));
       if (e.bio.level) setLevelStand(e.bio.level);
     }
     setGesehen((g) => new Set([...g, ...runde.karten.map((k) => k.bio?.eintrag ?? "")].filter(Boolean)));
     router.refresh();
-  }, [runde, server, router, spiele, kampf.herzen]);
+  }, [runde, server, router, spiele, kampf.herzen, vergissSpiel]);
 
   const weiter = useCallback(
     (nochmal?: SpielKarte) => {
@@ -374,6 +414,7 @@ export function BioLabor({
               <p className="bio-sprech">Besiege die Keime mit den Fragen der Lehrerin!</p>
             </div>
           </div>
+          {gemerkt && <WeiterKnopf className="mb-4" text={gemerktText(gemerkt)} onClick={() => fortsetzen(gemerkt)} />}
           <div className="bio-mission-stand">
             <span className="bio-mission-sterne tabular-nums" data-testid="bio-sterne-gesamt">
               <Star size={20} fill="currentColor" aria-hidden /> {summe} von {LEVELS.length * 3}
@@ -490,6 +531,7 @@ export function BioLabor({
             </span>
           )}
 
+          {gemerkt && <WeiterKnopf className="mt-4" text={gemerktText(gemerkt)} onClick={() => fortsetzen(gemerkt)} disabled={phase === "laden"} />}
           {/* niko 2026-11-23 „es sind zu viele Fragen“: oben nur der Fragenkatalog der Lehrerin, Blockwerk und das eigene Glossar */}
           <div className="pb-wahl mt-4" style={{ "--n": 2 } as CSSProperties}>
             <button type="button" className="pb-wahl-knopf bio-wichtig" onClick={() => setPhase("karte")} disabled={phase === "laden"} data-testid="bio-start-mission" autoFocus>

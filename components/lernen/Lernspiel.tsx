@@ -31,6 +31,7 @@ import { FunkelFeld, FunkelKopf, type FunkelFrage } from "./FunkelFeld";
 import { FunkelZeichen, MiniFunkel } from "./FunkelSteine";
 import { TorLauf } from "./TorLauf";
 import { sicher, VERBINDUNG_WEG, verbindungWeg } from "@/lib/verbindung";
+import { startHerzen, startPunkte, useSpielstand } from "./spielstand";
 
 /**
  * Ein Lernspiel der Schüler-App (lib/lernspiele.ts): Karten in Fächer werfen oder antippen. Wie eine Karte beantwortet
@@ -83,6 +84,57 @@ export type DuellRahmen = {
 };
 
 type Eintrag = { karte: SpielKarte; wiederholung: boolean };
+
+/**
+ * Der Stand eines angefangenen Spiels zum Weiterspielen (components/lernen/spielstand.ts, lib/spielstand.ts; niko
+ * 2026-11-25: „es soll den Stand halten“): die laufende Runde mit ihren Karten, wo man steht, die ersten Antworten, und
+ * je nach Spiel Herzen, Punkte oder das Brett. Im Duell wird nichts gemerkt (das merkt sich das Duell selbst).
+ */
+export type SchalenStand = {
+  v: 1;
+  modus: "runde" | "endlos" | Brett;
+  rundeId: number;
+  lauf: number | null;
+  anzahl: number;
+  reihe: Eintrag[];
+  pos: number;
+  antworten: { key: string; wahl: string }[];
+  geloest: string[];
+  verlauf: boolean[];
+  combo: number;
+  /** Endlos */
+  herzen: number;
+  punkte: number;
+  daneben: SpielKarte[];
+  /** Blockwerk, Funkelfeld, Torlauf */
+  brettPunkte: number;
+  brettHerzen: number | null;
+  feld: FeldStand | null;
+};
+
+const istSchalenStand = (x: unknown): x is SchalenStand => {
+  const s = x as SchalenStand | null;
+  return (
+    !!s &&
+    s.v === 1 &&
+    Number.isInteger(s.rundeId) &&
+    Number.isInteger(s.pos) &&
+    Array.isArray(s.reihe) &&
+    s.reihe.length > 0 &&
+    s.reihe.every((e) => !!e?.karte && typeof e.karte.key === "string" && Array.isArray(e.karte.faecher)) &&
+    Array.isArray(s.antworten) &&
+    Array.isArray(s.verlauf) &&
+    Array.isArray(s.geloest)
+  );
+};
+
+/** Was auf „Weiterspielen“ steht: wo man im Spiel ist. */
+function standText(s: SchalenStand): string {
+  const brettTitel = s.modus === "bloecke" ? "Blockwerk" : s.modus === "funkel" ? "Funkelfeld" : s.modus === "tor" ? "Torlauf" : null;
+  if (brettTitel) return `${brettTitel} · ${s.brettPunkte.toLocaleString("de-AT")} Punkte`;
+  if (s.modus === "endlos") return `Endlos · ${s.punkte} richtig · ${s.herzen} ${s.herzen === 1 ? "Herz" : "Herzen"}`;
+  return `Karte ${Math.min(s.verlauf.length + 1, s.anzahl)} von ${s.anzahl}`;
+}
 type Phase = "start" | "laden" | "spiel" | "ende";
 type Wurf = { x: number; y: number; r: number; s?: number };
 const zugGroesse = (dy: number) => 1 - (Math.min(Math.max(dy, 0), 220) / 220) * 0.38;
@@ -190,6 +242,9 @@ export function Lernspiel({
     }),
     [amTablet, token, art],
   );
+  // angefangene Spiele merken und weiterspielen (components/lernen/spielstand.ts); im Duell nicht
+  const spielstand = useSpielstand<SchalenStand>(duell ? null : `lernspiel:${art}`, token);
+  const gemerkt = spielstand.offen && istSchalenStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
   // für den Anfang: wie das Spiel beantwortet wird. Im Spiel entscheidet die Karte (`aktuell.form`).
   const form = antwort ?? SPIEL_FORM[art];
   const zurueck = duell?.zurueck ?? zurueckZiel ?? `/lernen/${token}/spiele`;
@@ -223,6 +278,8 @@ export function Lernspiel({
   const [treffer, setTreffer] = useState<{ fach: number; n: number } | null>(null);
 
   const erste = useRef(new Map<string, string>());
+  // zählt jede neue erste Antwort (dann wird der Stand gemerkt)
+  const [antwortN, setAntwortN] = useState(0);
   const beschaeftigt = useRef(false);
   // ---------- Endlos-Modus ----------
   const [endlos, setEndlos] = useState(false);
@@ -251,6 +308,17 @@ export function Lernspiel({
   const frageFalsch = useRef(false);
   // Blockwerk weiterspielen (lib/blockwerk-stand.ts): der gemerkte Stand des Bretts, und ob die offene Frage schon falsch war
   const [blockAnfang, setBlockAnfang] = useState<{ feld?: FeldStand; n: number }>({ n: 0 });
+  // Funkelfeld und Torlauf weitergespielt: Punkte und Herzen von vorher (das Brett selbst beginnt neu)
+  const [brettAnfang, setBrettAnfang] = useState<{ punkte: number; herzen: number } | undefined>(undefined);
+  const brettHerzen = useRef<number | null>(null);
+  const [brettHerzenN, setBrettHerzenN] = useState(0);
+  const brettHerzenNeu = useCallback((h: number) => {
+    if (brettHerzen.current === h) return;
+    brettHerzen.current = h;
+    setBrettHerzenN((n) => n + 1);
+  }, []);
+  // Blockwerk: zählt jeden Zug am Brett (dann wird der Stand gemerkt)
+  const [feldN, setFeldN] = useState(0);
   const weiterFalsch = useRef(false);
   // Blockwerk: richtig innerhalb der Zeit der Frage (Bonus am Brett)
   const frageSchnell = useRef(false);
@@ -270,12 +338,12 @@ export function Lernspiel({
   const [laedt, setLaedt] = useState(false);
   // die nächste Runde kam auch nach mehreren Versuchen nicht (Deploy, kein Netz): das Spiel wartet auf „Neu laden“
   const [abgerissen, setAbgerissen] = useState(false);
-  // Blockwerk geht nach dem Neuladen gleich weiter (`?weiter=1`, der gemerkte Stand), die anderen beginnen am Start
+  // nach dem Neuladen geht das Spiel gleich weiter (`?weiter=1`, der gemerkte Stand, components/lernen/spielstand.ts)
   const neuLaden = useCallback(() => {
     const ziel = new URL(window.location.href);
-    if (brett === "bloecke" && !amTablet) ziel.searchParams.set("weiter", "1");
+    if (!duellRef.current) ziel.searchParams.set("weiter", "1");
     window.location.replace(ziel.toString());
-  }, [brett, amTablet]);
+  }, []);
   const karteRef = useRef<HTMLDivElement | null>(null);
   const fachRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const zug = useRef<{ id: number; x0: number; y0: number; x: number; y: number; t: number; vx: number; vy: number; cx: number } | null>(null);
@@ -315,6 +383,8 @@ export function Lernspiel({
     setEndlos(mitEndlos && !mitBrett && !!r.endlos);
     setBrett(mitBrett && r.endlos ? mitBrett : null);
     setBlockAnfang((a) => ({ n: a.n + 1 }));
+    setBrettAnfang(undefined);
+    brettHerzen.current = null;
     setFrage(null);
     setBlockAntwort(null);
     setBlockStand(0);
@@ -369,6 +439,7 @@ export function Lernspiel({
     (karte: SpielKarte, wahl: string) => {
       if (erste.current.has(karte.key)) return;
       erste.current.set(karte.key, wahl);
+      setAntwortN((n) => n + 1);
       duellRef.current?.ersteWahl?.(karte.key, wahl);
       // Blockwerk: keine Herzen, aber die falschen Karten kommen am Ende noch einmal
       if (bloecke && wahl !== karte.richtig) setDaneben((d) => [...d, karte]);
@@ -522,6 +593,7 @@ export function Lernspiel({
   const blockStandNeu = useCallback(
     (s: FeldStand | null) => {
       feldStand.current = s;
+      if (s) setFeldN((n) => n + 1);
       if (s) merkeBald();
       else if (merkUhr.current) {
         // das Spiel ist aus: nichts mehr merken (das Ende löscht den Stand am Server)
@@ -604,13 +676,109 @@ export function Lernspiel({
     setTreffer(null);
     setPhase("spiel");
   }, [server]);
-  // `?weiter=1`: gleich weiterspielen (vom Knopf auf einem anderen Spiel als Fragenquelle)
+  // ---------- Jedes Spiel merken und weiterspielen (components/lernen/spielstand.ts) ----------
+  // Nach jedem Zug (neue Karte, erste Antwort, Herz, Punkte, Zug am Brett) geht der Stand auf das Gerät und an den Server.
+  const merkeSpiel = spielstand.merke;
+  useEffect(() => {
+    if (phase !== "spiel" || duellRef.current || !rundeId || !reihe.length) return;
+    const modus: SchalenStand["modus"] = brett ?? (endlos ? "endlos" : "runde");
+    const stand: SchalenStand = {
+      v: 1,
+      modus,
+      rundeId,
+      lauf: lauf.current,
+      anzahl,
+      reihe,
+      pos: Math.min(pos, reihe.length - 1),
+      antworten: [...erste.current.entries()].map(([key, wahl]) => ({ key, wahl })),
+      geloest: [...geloest],
+      verlauf,
+      combo,
+      herzen: herzenRef.current,
+      punkte,
+      daneben,
+      brettPunkte: blockPunkte.current,
+      brettHerzen: brettHerzen.current,
+      feld: brett === "bloecke" ? feldStand.current : null,
+    };
+    merkeSpiel(stand, lauf.current && lauf.current !== rundeId ? [rundeId, lauf.current] : [rundeId]);
+  }, [phase, rundeId, reihe, pos, anzahl, geloest, verlauf, combo, herzen, punkte, daneben, blockStand, brettHerzenN, feldN, antwortN, brett, endlos, merkeSpiel]);
+  // zu Ende gezählt: nichts mehr zum Weiterspielen (schlug das Zählen fehl, bleibt der Stand für „Neu laden“)
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase === "ende" && ergebnis && !("fehler" in ergebnis) && !duellRef.current) vergissSpiel();
+  }, [phase, ergebnis, vergissSpiel]);
+
+  /** Ein gemerktes Spiel genau dort fortsetzen, wo es stand. */
+  const fortsetzen = useCallback((s: SchalenStand) => {
+    setFehler(null);
+    setAbgerissen(false);
+    const mitBrett = s.modus === "bloecke" || s.modus === "funkel" || s.modus === "tor" ? s.modus : null;
+    const geloestNeu = new Set(s.geloest.filter((k) => typeof k === "string"));
+    // Paare: alle Karten liegen auf einmal da; weiter geht es mit den noch offenen
+    const paare = s.reihe[0]?.karte.form === "paar";
+    const neueReihe = paare ? s.reihe.filter((e) => !geloestNeu.has(e.karte.key)) : s.reihe;
+    if (!neueReihe.length) return;
+    const p = paare ? 0 : Math.max(0, Math.min(Math.round(s.pos), neueReihe.length - 1));
+    erste.current = new Map(s.antworten.filter((a) => typeof a?.key === "string" && typeof a?.wahl === "string").map((a) => [a.key, a.wahl]));
+    const offenKarte = neueReihe[p]?.karte;
+    const schon = offenKarte ? erste.current.get(offenKarte.key) : undefined;
+    weiterFalsch.current = mitBrett === "bloecke" && !!offenKarte && schon !== undefined && schon !== offenKarte.richtig;
+    feldStand.current = mitBrett === "bloecke" ? s.feld : null;
+    const bp = startPunkte(s.brettPunkte);
+    setEndlos(s.modus === "endlos");
+    setBrett(mitBrett);
+    setBlockAnfang((a) => ({ feld: mitBrett === "bloecke" && s.feld ? s.feld : undefined, n: a.n + 1 }));
+    brettHerzen.current = typeof s.brettHerzen === "number" ? s.brettHerzen : null;
+    setBrettAnfang(mitBrett === "funkel" || mitBrett === "tor" ? { punkte: bp, herzen: s.brettHerzen ?? 0 } : undefined);
+    setFrage(null);
+    setBlockAntwort(null);
+    setBlockStand(bp);
+    setLaedt(false);
+    blockPunkte.current = bp;
+    frageFalsch.current = false;
+    lauf.current = Number.isInteger(s.lauf) ? s.lauf : null;
+    herzenRef.current = startHerzen(s.herzen, ENDLOS_HERZEN);
+    if (s.modus === "endlos" && s.herzen === 0) herzenRef.current = 0;
+    setHerzen(herzenRef.current);
+    setPunkte(startPunkte(s.punkte));
+    setDaneben(Array.isArray(s.daneben) ? s.daneben : []);
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
+    comboRef.current = startPunkte(s.combo);
+    paarGeloest.current = new Set(geloestNeu);
+    beschaeftigt.current = false;
+    setRundeId(s.rundeId);
+    setAnzahl(s.anzahl || s.reihe.length);
+    setReihe(neueReihe);
+    setPos(p);
+    setStand(null);
+    setFalschGewaehlt([]);
+    setCombo(comboRef.current);
+    setGeloest(geloestNeu);
+    setZuletzt(null);
+    setErgebnis(null);
+    setVerlauf(s.verlauf.filter((v) => typeof v === "boolean"));
+    setInKiste({});
+    setJubel(null);
+    setTreffer(null);
+    setPhase("spiel");
+  }, []);
+
+  // `?weiter=1` (nach „Neu laden“ oder vom Knopf auf einem anderen Spiel als Fragenquelle): gleich weiterspielen
   const weiterGestartet = useRef(false);
   useEffect(() => {
-    if (!weiterGleich || weiterGestartet.current || !blockOffen || blockOffen.art !== art) return;
+    if (!weiterGleich || weiterGestartet.current || duell || !spielstand.geprueft) return;
+    if (gemerkt) {
+      weiterGestartet.current = true;
+      fortsetzen(gemerkt);
+      return;
+    }
+    if (!blockOffen || blockOffen.art !== art) return;
     weiterGestartet.current = true;
     void weiterspielen();
-  }, [weiterGleich, blockOffen, art, weiterspielen]);
+  }, [weiterGleich, duell, spielstand.geprueft, gemerkt, fortsetzen, blockOffen, art, weiterspielen]);
 
   // Duell: gleich losspielen; ist die Zeit um, endet die Runde von selbst
   const sofort = !!duell?.sofort;
@@ -629,6 +797,7 @@ export function Lernspiel({
   const paarVersuch = useCallback((karte: SpielKarte, wahl: string) => {
     if (erste.current.has(karte.key)) return;
     erste.current.set(karte.key, wahl);
+    setAntwortN((n) => n + 1);
     duellRef.current?.ersteWahl?.(karte.key, wahl);
   }, []);
   const comboRef = useRef(0);
@@ -1031,8 +1200,16 @@ export function Lernspiel({
         </div>
         <div className="ls-fuss ls-staffel">
           <div className="grid gap-3" style={{ "--n": 6 } as CSSProperties}>
+            {/* ein angefangenes Spiel geht weiter, wo es stand (components/lernen/spielstand.ts) */}
+            {gemerkt && (
+              <button type="button" className="ls-knopf ls-los ls-weiter" onClick={() => fortsetzen(gemerkt)} disabled={phase === "laden"} autoFocus data-testid="spiel-weiter">
+                <Play size={20} fill="currentColor" aria-hidden />
+                <span>Weiterspielen</span>
+                <small>{standText(gemerkt)}</small>
+              </button>
+            )}
             {/* Blockwerk: ein angefangenes Spiel geht weiter (lib/blockwerk-stand.ts); ein neues beendet es mit seinen Punkten */}
-            {modus === "bloecke" && blockOffen && !amTablet ? (
+            {modus === "bloecke" && blockOffen && !amTablet && gemerkt?.modus !== "bloecke" ? (
               <>
                 {blockOffen.art === art ? (
                   <button type="button" className="ls-knopf ls-los ls-weiter" onClick={() => void weiterspielen()} disabled={phase === "laden"} autoFocus data-testid="bw-weiter">
@@ -1054,8 +1231,8 @@ export function Lernspiel({
                 </button>
               </>
             ) : (
-              <button type="button" className="ls-knopf ls-los" onClick={() => void starten(false, modus)} disabled={phase === "laden"} autoFocus data-testid={`${info.kurz}-start`}>
-                {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
+              <button type="button" className="ls-knopf ls-los" data-zweit={gemerkt ? "" : undefined} onClick={() => void starten(false, modus)} disabled={phase === "laden"} autoFocus={!gemerkt} data-testid={`${info.kurz}-start`}>
+                {phase === "laden" ? "Karten werden gemischt …" : gemerkt ? "Neues Spiel" : "Los geht’s"}
               </button>
             )}
           </div>
@@ -1188,8 +1365,15 @@ export function Lernspiel({
                 <span className="ls-schwer-knopf" aria-hidden />
               </button>
             )}
-            <button type="button" className="ls-knopf ls-los" onClick={() => void starten()} disabled={phase === "laden"} autoFocus>
-              {phase === "laden" ? "Karten werden gemischt …" : "Los geht’s"}
+{gemerkt && (
+              <button type="button" className="ls-knopf ls-los ls-weiter" onClick={() => fortsetzen(gemerkt)} disabled={phase === "laden"} autoFocus data-testid="spiel-weiter">
+                <Play size={20} fill="currentColor" aria-hidden />
+                <span>Weiterspielen</span>
+                <small>{standText(gemerkt)}</small>
+              </button>
+            )}
+            <button type="button" className="ls-knopf ls-los" data-zweit={gemerkt ? "" : undefined} onClick={() => void starten()} disabled={phase === "laden"} autoFocus={!gemerkt}>
+              {phase === "laden" ? "Karten werden gemischt …" : gemerkt ? "Neue Runde" : "Los geht’s"}
             </button>
             {/* Endlos: weiter, bis drei Herzen weg sind */}
             {hatEndlos(art) && !duell && (
@@ -1571,11 +1755,11 @@ export function Lernspiel({
           onEnde={blockEnde}
           rekord={bloeckeRekord}
           anfang={blockAnfang.feld}
-          onStand={amTablet ? undefined : blockStandNeu}
+          onStand={blockStandNeu}
         />
       )}
-      {brett === "funkel" && <FunkelFeld aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} />}
-      {brett === "tor" && <TorLauf karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} />}
+      {brett === "funkel" && <FunkelFeld key={`brett-${blockAnfang.n}`} aktiv={!frage} antwort={blockAntwort} onFrage={blockFrage} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={funkelRekord} anfang={brettAnfang} onHerzen={brettHerzenNeu} />}
+      {brett === "tor" && <TorLauf key={`brett-${blockAnfang.n}`} karte={laedt ? null : aktuell} frageId={`${rundeId}-${pos}`} onPruefe={reihePruefe} onWeiter={reiheWeiter} onUeberspringen={naechste} onPunkte={blockPunkteNeu} onEnde={blockEnde} rekord={torRekord} anfang={brettAnfang} onHerzen={brettHerzenNeu} />}
       {(!bloecke || (frage && !imBrett)) && inhalt}
       {abriss}
     </div>
@@ -1740,7 +1924,7 @@ export function Lernspiel({
 
 /**
  * Die Blockwerk-Bestenliste (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): die ersten Plätze mit
- * Spitzname und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
+ * Namen („Max M.“) und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
  * für sich selbst drin; darunter ein Satz, wie man für alle sichtbar wird.
  */
 export function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: string; n: number }) {
@@ -1769,12 +1953,12 @@ export function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arena
               <>
                 Nur du siehst dich hier.{" "}
                 <Link href={arenaLink} className="font-semibold underline">
-                  Mit Spitzname mitspielen
+                  Mitspielen
                 </Link>
                 , dann sehen dich alle.
               </>
             ) : (
-              "Nur du siehst dich hier. Mit einem Spitznamen (Spiele › Liga) sehen dich alle."
+              "Nur du siehst dich hier. Spiel unter Spiele › Liga mit, dann sehen dich alle."
             )
           ) : (
             "Nur du siehst dich hier. Dein Lehrer hat Liga und Duelle für dich ausgeschaltet."

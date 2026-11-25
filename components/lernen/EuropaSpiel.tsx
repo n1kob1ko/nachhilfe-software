@@ -15,6 +15,8 @@ import { EuropaKarte, type Zustand } from "./EuropaKarte";
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Hintergrund, Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
+import { useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 
 /**
  * Europa (lib/europa.ts, docs/lernspiele.md „Europa“): Länder, Hauptstädte und Flaggen auf einer echten Karte.
@@ -34,6 +36,13 @@ import { vibriere } from "./SpielTeile";
 type Phase = "start" | "laden" | "spiel" | "ende" | "erkunden";
 type Wunsch = { modus: Exclude<EuropaModus, "duell">; thema?: EuropaThema; region?: Region };
 type Runde = { rundeId: number; karten: SpielKarte[]; wunsch: Wunsch };
+/** Eine angefangene Runde zum Weiterspielen (components/lernen/spielstand.ts); das Rennen nicht (es läuft gegen die Zeit). */
+type EuStand = { v: 1; runde: Runde; reihe: SpielKarte[]; pos: number; antworten: [string, string][]; wieder: [string, number][]; folge: number; beste: number; daneben: { karte: SpielKarte; wahl: string }[] };
+const istEuStand = (x: unknown): x is EuStand => {
+  const s = x as EuStand | null;
+  return !!s && s.v === 1 && !!s.runde && Number.isInteger(s.runde.rundeId) && s.runde.wunsch?.modus !== "rennen" && Array.isArray(s.reihe) && s.reihe.length > 0 && Number.isInteger(s.pos) && Array.isArray(s.antworten);
+};
+const EU_MODUS_NAME: Record<string, string> = { ueben: "Üben", test: "Wie im Test", gross: "Großer Test", verwechsler: "Verwechsler" };
 type Wahl = { wert: string; ok: boolean; code?: string };
 type Hilfe = { karte: SpielKarte; art: "falsch" | "fast"; eingabe?: string; gewaehlt?: string };
 
@@ -105,6 +114,34 @@ export function EuropaSpiel({
   const feld = useRef<HTMLInputElement | null>(null);
   const beendet = useRef(false);
 
+  // angefangene Runde merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<EuStand>("europa", amTablet ? "" : token);
+  const offenesSpiel = spielstand.offen && istEuStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !runde || runde.wunsch.modus === "rennen" || !reihe.length) return;
+    merkeSpiel({ v: 1, runde, reihe, pos, antworten: [...antworten.current.entries()], wieder: [...wieder.current.entries()], folge, beste, daneben }, [runde.rundeId]);
+  }, [phase, runde, reihe, pos, folge, beste, daneben, wahl, merkeSpiel]);
+  const fortsetzen = (g: EuStand) => {
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    wieder.current = new Map(Array.isArray(g.wieder) ? g.wieder : []);
+    beendet.current = false;
+    setFehler(null);
+    setRunde(g.runde);
+    setReihe(g.reihe);
+    setPos(Math.max(0, Math.min(g.pos, g.reihe.length - 1)));
+    setWahl(null);
+    setHilfe(null);
+    setEingabe("");
+    setFolge(g.folge || 0);
+    setBeste(g.beste || 0);
+    setErgebnis(null);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setSitztVorher(sitzt);
+    setPhase("spiel");
+  };
+
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setTon(tonAn());
@@ -169,8 +206,9 @@ export function EuropaSpiel({
     const gezaehlt = runde.wunsch.modus === "rennen" ? runde.karten.filter((k) => antworten.current.has(k.key)) : runde.karten;
     const richtig = gezaehlt.filter((k) => antworten.current.get(k.key) === k.richtig).length;
     spiele((k) => (richtig / Math.max(1, gezaehlt.length) >= 0.7 ? k.frei() : k.aus()));
-    const e = await server.beenden(runde.rundeId, liste, runde.wunsch.modus === "rennen");
+    const e = await server.beenden(runde.rundeId, liste, runde.wunsch.modus === "rennen").catch(() => ({ fehler: "Die Verbindung ist weg. Lade die Seite neu, dein Stand ist gemerkt." }));
     setErgebnis(e);
+    if (!("fehler" in e)) vergissSpiel();
     if (!("fehler" in e) && e.europa) {
       setSitzt(e.europa.sitzt);
       const r = e.europa.rekord;
@@ -180,7 +218,7 @@ export function EuropaSpiel({
       }
     }
     router.refresh();
-  }, [runde, server, router, spiele]);
+  }, [runde, server, router, spiele, vergissSpiel]);
 
   /** Weiter zur nächsten Karte (eine falsche kommt `WIEDER_NACH` Karten später noch einmal, außer im Test und Rennen). */
   const weiter = useCallback(
@@ -357,6 +395,7 @@ export function EuropaSpiel({
           <p className="ls-text mt-1" style={{ "--n": 1 } as CSSProperties}>
             Länder, Hauptstädte und Flaggen. Ein Land ist erobert, wenn alle drei sitzen.
           </p>
+          {offenesSpiel && <WeiterKnopf className="mt-4" text={`${EU_MODUS_NAME[offenesSpiel.runde.wunsch.modus ?? "ueben"] ?? "Üben"} · Karte ${Math.min(offenesSpiel.pos + 1, offenesSpiel.reihe.length)} von ${offenesSpiel.reihe.length}`} onClick={() => fortsetzen(offenesSpiel)} disabled={laedt} />}
           {grund && (
             <span className="ls-grund mt-2" style={{ "--n": 2 } as CSSProperties} data-testid="eu-grund">
               <Star size={16} aria-hidden />
