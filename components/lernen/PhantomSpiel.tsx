@@ -16,6 +16,8 @@ import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
 import { PhantomGesicht } from "./PhantomGesicht";
 import { Abriss, vibriere } from "./SpielTeile";
+import { startHerzen, startPunkte, useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
@@ -34,6 +36,16 @@ type Phase = "start" | "laden" | "spiel" | "ende";
 type TeilArt = "fall" | "text";
 type Fall = { rundeId: number; nr: number; karten: SpielKarte[]; daten: PhantomDaten };
 type Text = { rundeId: number; nr: number; karten: SpielKarte[]; daten: VorlageDaten };
+/** Ein angefangener Fall oder Text zum Weiterspielen (components/lernen/spielstand.ts). */
+type PhantomStand =
+  | { v: 1; teil: "fall"; fall: Fall; pos: number; bau: Bau; herzen: number; punkte: number; nachgelesen: boolean; daneben: SpielKarte[]; lauf: number | null; antworten: [string, string][]; fehlerImFall: boolean }
+  | { v: 1; teil: "text"; text: Text; luecke: number; gefuellt: Record<number, "ja" | "nein">; antworten: [string, string][] };
+const istPhantomStand = (x: unknown): x is PhantomStand => {
+  const s = x as PhantomStand | null;
+  if (!s || s.v !== 1 || !Array.isArray(s.antworten)) return false;
+  if (s.teil === "fall") return !!s.fall && Number.isInteger(s.fall.rundeId) && Array.isArray(s.fall.karten) && s.fall.karten.length > 0 && Number.isInteger(s.pos) && !!s.bau;
+  return s.teil === "text" && !!s.text && Number.isInteger(s.text.rundeId) && Array.isArray(s.text.karten) && s.text.karten.length > 0 && Number.isInteger(s.luecke);
+};
 
 const zahl = (n: number) => n.toLocaleString("de-AT");
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
@@ -120,6 +132,61 @@ export function PhantomSpiel({
   const beschaeftigt = useRef(false);
   const reduziert = useRef(false);
   const aktiveLuecke = useRef<HTMLSpanElement | null>(null);
+
+  // angefangenen Fall oder Text merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<PhantomStand>("phantom", amTablet ? "" : token);
+  const offenesSpiel = spielstand.offen && istPhantomStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel") return;
+    const a: [string, string][] = [...antworten.current.entries()];
+    if (teil === "fall" && fall && !gefasst)
+      merkeSpiel(
+        { v: 1, teil: "fall", fall, pos, bau, herzen, punkte, nachgelesen, daneben, lauf: lauf.current, antworten: a, fehlerImFall: fehlerImFall.current },
+        lauf.current && lauf.current !== fall.rundeId ? [fall.rundeId, lauf.current] : [fall.rundeId],
+      );
+    else if (teil === "text" && text && !textEnde) merkeSpiel({ v: 1, teil: "text", text, luecke, gefuellt, antworten: a }, [text.rundeId]);
+  }, [phase, teil, fall, pos, bau, herzen, punkte, nachgelesen, daneben, gefasst, text, luecke, gefuellt, textEnde, richtigWahl, falschWahl, merkeSpiel]);
+  useEffect(() => {
+    if (ergebnis && !("fehler" in ergebnis) && (phase === "ende" || textEnde)) vergissSpiel();
+  }, [phase, ergebnis, textEnde, vergissSpiel]);
+  const fortsetzen = (g: PhantomStand) => {
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
+    beschaeftigt.current = false;
+    setFehler(null);
+    setAbgerissen(false);
+    setErgebnis(null);
+    setFalschWahl(null);
+    setRichtigWahl(null);
+    setTeil(g.teil);
+    if (g.teil === "fall") {
+      lauf.current = Number.isInteger(g.lauf) ? g.lauf : g.fall.rundeId;
+      punkteRef.current = startPunkte(g.punkte);
+      herzenRef.current = startHerzen(g.herzen, PHANTOM_HERZEN);
+      fehlerImFall.current = !!g.fehlerImFall;
+      setPunkte(punkteRef.current);
+      setHerzen(herzenRef.current);
+      setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+      setFall(g.fall);
+      setPos(Math.max(0, Math.min(g.pos, g.fall.karten.length - 1)));
+      setBau(g.bau);
+      setVerdeckt(false);
+      setNachgelesen(!!g.nachgelesen);
+      setBlatt(null);
+      setGefasst(null);
+    } else {
+      setText(g.text);
+      setLuecke(Math.max(0, Math.min(g.luecke, g.text.karten.length - 1)));
+      setGefuellt(g.gefuellt ?? {});
+      setTextEnde(null);
+      setGanzerText(false);
+    }
+    setPhase("spiel");
+  };
 
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -451,6 +518,14 @@ export function PhantomSpiel({
               <BookOpen size={16} aria-hidden />
               {grund}
             </span>
+          )}
+          {offenesSpiel && (
+            <WeiterKnopf
+              className="mt-4"
+              text={offenesSpiel.teil === "fall" ? `Fall ${offenesSpiel.fall.nr} · ${startPunkte(offenesSpiel.punkte).toLocaleString("de-AT")} Punkte` : `Text lernen · Lücke ${Math.min(offenesSpiel.luecke + 1, offenesSpiel.text.karten.length)} von ${offenesSpiel.text.karten.length}`}
+              onClick={() => fortsetzen(offenesSpiel)}
+              disabled={phase === "laden"}
+            />
           )}
           <div className="pb-wahl mt-4" style={{ "--n": 3 } as CSSProperties}>
             <button type="button" className="pb-wahl-knopf" onClick={() => void starten("fall")} disabled={phase === "laden"} data-testid="pb-start-fall" autoFocus={teil === "fall"}>

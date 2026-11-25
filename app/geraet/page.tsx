@@ -54,7 +54,9 @@ const bildThema = (studentId: number) => {
   return m ? `${m.topic} ${materialLabel(m)}` : null;
 };
 
-export default async function DevicePage() {
+export default async function DevicePage({ searchParams }: { searchParams: Promise<{ weiter?: string }> }) {
+  // nach „Neu laden“ in einem Lernspiel (`?weiter=1`): gleich dort weiterspielen, wo es stand
+  const weiter = (await searchParams).weiter === "1";
   const ctx = await deviceContext();
   if (!ctx) return <Pairing />;
   touchDevice(ctx.device.id);
@@ -288,6 +290,7 @@ export default async function DevicePage() {
           antwort={spielAntwort(student, art, heute)}
           rekord={endlosRekord(student.id, art)}
           zurueck="/geraet/ansicht?zu=spiele"
+          weiter={weiter}
         />
       ) : vorschlaege.length ? (
         <div className="geraet-spiele">

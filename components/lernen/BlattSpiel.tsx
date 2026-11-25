@@ -13,6 +13,8 @@ import type { SpielErgebnis, SpielKarte } from "@/lib/lernspiele-typen";
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Hintergrund, Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
+import { useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 
 /**
  * Blätter bestimmen (lib/blaetter.ts, docs/lernspiele.md „Blätter bestimmen“): ein Herbarbogen mit dem gepressten
@@ -24,6 +26,12 @@ import { vibriere } from "./SpielTeile";
 
 type Phase = "start" | "laden" | "spiel" | "ende" | "ansehen";
 type Runde = { rundeId: number; karten: SpielKarte[]; modus: BlattModus; alle: boolean };
+/** Eine angefangene Runde zum Weiterspielen (components/lernen/spielstand.ts). */
+type BlattStand = { v: 1; runde: Runde; reihe: SpielKarte[]; pos: number; etikett: Record<number, { name?: string; familie?: string }>; antworten: [string, string][]; wieder: [string, number][]; folge: number; beste: number; daneben: number[] };
+const istBlattStand = (x: unknown): x is BlattStand => {
+  const s = x as BlattStand | null;
+  return !!s && s.v === 1 && !!s.runde && Number.isInteger(s.runde.rundeId) && Array.isArray(s.reihe) && s.reihe.length > 0 && Number.isInteger(s.pos) && Array.isArray(s.antworten);
+};
 type Hilfe = { karte: SpielKarte; art: "falsch" | "fast"; eingabe?: string };
 
 const DEKO = ["Ahorn", "Linde", "Eiche", "Esche"];
@@ -85,6 +93,33 @@ export function BlattSpiel({
   const reduziert = useRef(false);
   const feld = useRef<HTMLInputElement | null>(null);
 
+  // angefangene Runde merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<BlattStand>("blatt", amTablet ? "" : token);
+  const offenesSpiel = spielstand.offen && istBlattStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !runde || !reihe.length) return;
+    merkeSpiel({ v: 1, runde, reihe, pos, etikett, antworten: [...antworten.current.entries()], wieder: [...wieder.current.entries()], folge, beste, daneben }, [runde.rundeId]);
+  }, [phase, runde, reihe, pos, etikett, folge, beste, daneben, wahl, merkeSpiel]);
+  const fortsetzen = (g: BlattStand) => {
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    wieder.current = new Map(Array.isArray(g.wieder) ? g.wieder : []);
+    setFehler(null);
+    setRunde(g.runde);
+    setReihe(g.reihe);
+    setPos(Math.max(0, Math.min(g.pos, g.reihe.length - 1)));
+    setEtikett(g.etikett ?? {});
+    setWahl(null);
+    setHilfe(null);
+    setEingabe("");
+    setFolge(g.folge || 0);
+    setBeste(g.beste || 0);
+    setErgebnis(null);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setPhase("spiel");
+  };
+
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     setTon(tonAn());
@@ -138,12 +173,13 @@ export function BlattSpiel({
     const liste = [...antworten.current.entries()].map(([key, w]) => ({ key, wahl: w }));
     const richtig = runde.karten.filter((k) => antworten.current.get(k.key) === k.richtig).length;
     spiele((k) => (richtig / Math.max(1, runde.karten.length) >= 0.7 ? k.frei() : k.aus()));
-    const e = await server.beenden(runde.rundeId, liste);
+    const e = await server.beenden(runde.rundeId, liste).catch(() => ({ fehler: "Die Verbindung ist weg. Lade die Seite neu, dein Stand ist gemerkt." }));
     setErgebnis(e);
+    if (!("fehler" in e)) vergissSpiel();
     if (!("fehler" in e) && e.blatt) setSicher(e.blatt.sicher);
     setGesehen((g) => [...new Set([...g, ...runde.karten.map((k) => k.blatt?.nr ?? 0)])].filter(Boolean));
     router.refresh();
-  }, [runde, server, router, spiele]);
+  }, [runde, server, router, spiele, vergissSpiel]);
 
   /** Weiter zur nächsten Karte (eine falsche kommt `WIEDER_NACH` Karten später noch einmal). */
   const weiter = useCallback(
@@ -287,6 +323,7 @@ export function BlattSpiel({
               {grund}
             </span>
           )}
+          {offenesSpiel && <WeiterKnopf className="mt-4" text={`Blatt ${Math.min(offenesSpiel.pos + 1, offenesSpiel.reihe.length)} von ${offenesSpiel.reihe.length}`} onClick={() => fortsetzen(offenesSpiel)} disabled={phase === "laden"} />}
           <Sammlung sicher={sicher} gesehen={gesehenListe} n={3} />
           <div className="pb-wahl mt-4" style={{ "--n": 4 } as CSSProperties}>
             <button type="button" className="pb-wahl-knopf" onClick={() => void starten("kacheln")} disabled={phase === "laden"} data-testid="bl-start-kacheln" autoFocus>
