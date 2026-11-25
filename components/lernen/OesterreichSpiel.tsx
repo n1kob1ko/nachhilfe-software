@@ -31,6 +31,8 @@ import { BEZIRKSGRENZEN, KARTE_BREITE, KARTE_HOEHE, LAND_PFADE, STADT_ORTE } fro
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
+import { useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 
 /**
  * „Österreich erobern“ (lib/oesterreich.ts, docs/lernspiele.md): die Karte von Österreich ist die Level-Karte. Jedes
@@ -43,6 +45,25 @@ type Phase = "karte" | "laden" | "spiel" | "ende" | "zettel";
 type Runde = { rundeId: number; karten: SpielKarte[]; wunsch: OeWunsch };
 type Hilfe = { karte: SpielKarte; art: "falsch" | "fast"; eingabe?: string };
 type Effekt = { punkte: number; n: number } | null;
+/** Ein angefangenes Level zum Weiterspielen (components/lernen/spielstand.ts). */
+type OeStand = {
+  v: 1;
+  runde: Runde;
+  reihe: SpielKarte[];
+  pos: number;
+  antworten: [string, string][];
+  wieder: [string, number][];
+  herzen: number;
+  punkte: number;
+  folge: number;
+  beste: number;
+  geschafft: string[];
+  daneben: SpielKarte[];
+};
+const istOeStand = (x: unknown): x is OeStand => {
+  const s = x as OeStand | null;
+  return !!s && s.v === 1 && !!s.runde && Number.isInteger(s.runde.rundeId) && Array.isArray(s.reihe) && s.reihe.length > 0 && Number.isInteger(s.pos) && Array.isArray(s.antworten);
+};
 
 const WIEDER_NACH = 3;
 const LEVEL_FARBE: Record<LandId, string> = { v: "#e86a5f", t: "#47b8b0", s: "#d66464", k: "#f0c94a", st: "#5cbf62", o: "#efa65c", n: "#5c9fe6", b: "#a774e0", w: "#ef5a5a" };
@@ -97,6 +118,46 @@ export function OesterreichSpiel({
   const antworten = useRef(new Map<string, string>());
   const wieder = useRef(new Map<string, number>());
   const feld = useRef<HTMLInputElement | null>(null);
+
+  // angefangenes Level merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“)
+  const spielstand = useSpielstand<OeStand>("oesterreich", token);
+  const gemerkt = spielstand.offen && istOeStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !runde || !reihe.length) return;
+    merkeSpiel(
+      { v: 1, runde, reihe, pos, antworten: [...antworten.current.entries()], wieder: [...wieder.current.entries()], herzen, punkte, folge, beste, geschafft: [...geschafft], daneben },
+      [runde.rundeId],
+    );
+  }, [phase, runde, reihe, pos, herzen, punkte, folge, beste, geschafft, daneben, wahl, merkeSpiel]);
+  const fortsetzen = (g: OeStand) => {
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    wieder.current = new Map(Array.isArray(g.wieder) ? g.wieder : []);
+    setFehler(null);
+    setRunde(g.runde);
+    setReihe(g.reihe);
+    setPos(Math.max(0, Math.min(g.pos, g.reihe.length - 1)));
+    setWahl(null);
+    setHilfe(null);
+    setEingabe("");
+    setHerzen(Number.isInteger(g.herzen) ? g.herzen : 0);
+    setPunkte(g.punkte || 0);
+    setFolge(g.folge || 0);
+    setBeste(g.beste || 0);
+    setGeschafft(new Set(Array.isArray(g.geschafft) ? g.geschafft : []));
+    setEffekt(null);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setErgebnis(null);
+    setGetippt(null);
+    setGelegt([]);
+    setPhase("spiel");
+  };
+  const gemerktText = (g: OeStand) => {
+    const w = g.runde.wunsch;
+    const wo = w.was === "level" ? (LAND[LEVELS.find((l) => l.nr === w.level)?.land as LandId]?.name ?? `Level ${w.level}`) : w.was === "fehler" ? "Fehler wiederholen" : "Alle Begriffe";
+    return `${wo} · Karte ${Math.min(g.pos + 1, g.reihe.length)} von ${g.reihe.length}`;
+  };
 
   // „Schwer“ bleibt auf diesem Gerät eingeschaltet
   useEffect(() => {
@@ -168,15 +229,16 @@ export function OesterreichSpiel({
     const liste = [...antworten.current.entries()].map(([key, w]) => ({ key, wahl: w }));
     if (runde.wunsch.was === "level") spiele((k) => (herzen > 0 ? k.rekord() : k.aus()));
     else spiele((k) => k.frei());
-    const e = await spielBeendenAction(token, runde.rundeId, liste);
+    const e = await spielBeendenAction(token, runde.rundeId, liste).catch(() => ({ fehler: "Die Verbindung ist weg. Lade die Seite neu, dein Stand ist gemerkt." }));
     setErgebnis(e);
+    if (!("fehler" in e)) vergissSpiel();
     if (!("fehler" in e) && e.oesterreich) {
       setSicher(new Set(e.oesterreich.sicher));
       setFalsch(new Set(e.oesterreich.falsch));
       setLevelStand(e.oesterreich.level);
     }
     router.refresh();
-  }, [runde, spiele, herzen, token, router]);
+  }, [runde, spiele, herzen, token, router, vergissSpiel]);
 
   const weiter = useCallback(
     (nochmal?: SpielKarte) => {
@@ -370,6 +432,7 @@ export function OesterreichSpiel({
               </span>
             )}
           </div>
+          {gemerkt && <WeiterKnopf className="mt-4" text={gemerktText(gemerkt)} onClick={() => fortsetzen(gemerkt)} disabled={phase === "laden"} />}
           <p className="oe-sprech">Tippe auf ein Bundesland und erobere es. Wien ist der Endgegner.</p>
           <button type="button" className="oe-schwer" role="switch" aria-checked={schwer} onClick={() => schwerSetzen(!schwer)} data-testid="oe-schwer">
             <span className="oe-schwer-knopf" aria-hidden />

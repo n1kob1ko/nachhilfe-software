@@ -13,6 +13,8 @@ import type { SpielErgebnis, SpielKarte } from "@/lib/lernspiele-typen";
 import { aufTon, klang, setzeTon, tonAn } from "./klang";
 import { Konfetti } from "./Lernspiel";
 import { vibriere } from "./SpielTeile";
+import { useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 
 /**
  * „Bio Test 4.Klasse Vorbereitung De La Salle“ (lib/biotest.ts, docs/lernspiele.md): die 16 Übungen der Lehrkraft,
@@ -29,6 +31,12 @@ type Runde = { rundeId: number; karten: SpielKarte[]; u: Uebung; offen: string[]
 type Zustand = "richtig" | "falsch" | "geholfen" | "fest";
 type Hilfe = { s: Stelle; art: "falsch" | "fast"; du?: string };
 type Ergebnis = { uebung: string; richtig: number; anzahl: number };
+/** Eine angefangene Übung zum Weiterspielen (components/lernen/spielstand.ts). */
+type BtStand = { v: 1; plan: Plan; schritt: number; runde: Runde; werte: Record<string, string>; zustand: Record<string, Zustand>; aktiv: string | null; erste: [string, string][]; ergebnisse: Ergebnis[] };
+const istBtStand = (x: unknown): x is BtStand => {
+  const s = x as BtStand | null;
+  return !!s && s.v === 1 && !!s.plan && Array.isArray(s.plan.schritte) && !!s.runde && Number.isInteger(s.runde.rundeId) && !!s.runde.u && Array.isArray(s.runde.offen) && !!s.werte && Array.isArray(s.erste);
+};
 
 const MODUS_NAME: Record<BiotestModus, string> = { ueben: "Üben", test: "Wie im Test" };
 
@@ -84,6 +92,34 @@ export function BioTest({
   const erste = useRef(new Map<string, string>());
   const blatt = useRef<HTMLDivElement | null>(null);
   const feld = useRef<HTMLInputElement | null>(null);
+
+  // angefangene Übung merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<BtStand>("biotest", amTablet ? "" : token);
+  const gemerkt = spielstand.offen && istBtStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "uebung" || !runde || !plan || fertig) return;
+    merkeSpiel({ v: 1, plan, schritt, runde, werte, zustand, aktiv, erste: [...erste.current.entries()], ergebnisse }, [runde.rundeId]);
+  }, [phase, plan, schritt, runde, werte, zustand, aktiv, hilfe, ergebnisse, fertig, merkeSpiel]);
+  const fortsetzen = (g: BtStand) => {
+    erste.current = new Map(g.erste.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    setFehler(null);
+    setModus(g.plan.modus);
+    setPlan(g.plan);
+    setSchritt(g.schritt);
+    setRunde(g.runde);
+    setWerte(g.werte);
+    setZustand(g.zustand ?? {});
+    setAktiv(g.aktiv);
+    setHilfe(null);
+    setEingabe("");
+    setFertig(null);
+    setGespeichert(null);
+    setErgebnisse(Array.isArray(g.ergebnisse) ? g.ergebnisse : []);
+    setPhase("uebung");
+  };
+  const gemerktText = (g: BtStand) => `${g.runde.u.titel ?? "Übung"} · ${g.runde.offen.filter((id) => g.werte[id]).length} von ${g.runde.offen.length} ausgefüllt`;
 
   useEffect(() => {
     setTon(tonAn());
@@ -186,15 +222,16 @@ export function BioTest({
       setFertig({ richtig: richtigIds.length, anzahl: runde.offen.length, falsch: f });
       setErgebnisse((e) => [...e, { uebung: runde.u.id, richtig: richtigIds.length, anzahl: runde.offen.length }]);
       setAktiv(null);
-      const e = await server.beenden(runde.rundeId, liste);
+      const e = await server.beenden(runde.rundeId, liste).catch(() => ({ fehler: "Die Verbindung ist weg. Lade die Seite neu, dein Stand ist gemerkt." }));
       setGespeichert(e);
+      if (!("fehler" in e)) vergissSpiel();
       if (!("fehler" in e) && e.biotest) {
         setSicher(new Set(e.biotest.sicher));
         setFalsch(new Set(e.biotest.falsch));
       }
       router.refresh();
     },
-    [runde, server, router, spiele, stelle],
+    [runde, server, router, spiele, stelle, vergissSpiel],
   );
 
   // Üben: wenn alles ausgefüllt ist, ist die Übung fertig
@@ -412,6 +449,7 @@ export function BioTest({
           <p className="ls-text mt-1" style={{ "--n": 1 } as CSSProperties}>
             Die Übungen deiner Lehrkraft, genau wie auf dem Blatt.
           </p>
+          {gemerkt && <WeiterKnopf className="mt-4" text={gemerktText(gemerkt)} onClick={() => fortsetzen(gemerkt)} disabled={phase === "laden"} />}
           {grund && (
             <span className="ls-grund mt-3" style={{ "--n": 2 } as CSSProperties} data-testid="bt-grund">
               <BookOpen size={16} aria-hidden />

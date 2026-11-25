@@ -14,6 +14,8 @@ import type { Bestenliste, SpielErgebnis, SpielKarte, SpielStart } from "@/lib/l
 import { bewerte, ersteWahl, gross, tastatur, tastenFarben, WORT_HERZEN, WORT_PUNKTE, WORT_VERSUCHE, wortPunkte, type Farbe } from "@/lib/wortschloss";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
 import { Abriss, vibriere } from "./SpielTeile";
+import { startHerzen, startPunkte, useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
@@ -29,6 +31,12 @@ import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 type Phase = "start" | "laden" | "spiel" | "ende";
 type Stufe = { rundeId: number; nr: number; karten: SpielKarte[] };
+/** Ein angefangenes Spiel zum Weiterspielen (components/lernen/spielstand.ts). */
+type WortStand = { v: 1; stufe: Stufe; pos: number; reihen: string[]; herzen: number; punkte: number; daneben: SpielKarte[]; richtigGesamt: number; lauf: number | null; antworten: [string, string][]; verlorenInStufe: boolean; ersteReiheAlle: boolean };
+const istWortStand = (x: unknown): x is WortStand => {
+  const s = x as WortStand | null;
+  return !!s && s.v === 1 && !!s.stufe && Number.isInteger(s.stufe.rundeId) && Array.isArray(s.stufe.karten) && s.stufe.karten.length > 0 && Number.isInteger(s.pos) && Array.isArray(s.reihen) && Array.isArray(s.antworten);
+};
 export type WortThemaInfo = { id: string; name: string; fach: string; beispiel: string; grund?: string };
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
@@ -106,6 +114,53 @@ export function WortSchloss({
   const laufVorher = useRef<number | null | undefined>(undefined);
   const beschaeftigt = useRef(false);
   const reduziert = useRef(false);
+
+  // angefangenes Spiel merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<WortStand>("wort", amTablet ? "" : token);
+  const offenesSpiel = spielstand.offen && istWortStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !stufe || geschafft) return;
+    merkeSpiel(
+      { v: 1, stufe, pos, reihen, herzen, punkte, daneben, richtigGesamt, lauf: lauf.current, antworten: [...antworten.current.entries()], verlorenInStufe: verlorenInStufe.current, ersteReiheAlle: ersteReiheAlle.current },
+      lauf.current && lauf.current !== stufe.rundeId ? [stufe.rundeId, lauf.current] : [stufe.rundeId],
+    );
+  }, [phase, stufe, pos, reihen, herzen, punkte, daneben, richtigGesamt, geschafft, offen, blatt, merkeSpiel]);
+  useEffect(() => {
+    if (phase === "ende" && ergebnis && !("fehler" in ergebnis)) vergissSpiel();
+  }, [phase, ergebnis, vergissSpiel]);
+  const fortsetzen = (g: WortStand) => {
+    lauf.current = Number.isInteger(g.lauf) ? g.lauf : g.stufe.rundeId;
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
+    punkteRef.current = startPunkte(g.punkte);
+    herzenRef.current = startHerzen(g.herzen, WORT_HERZEN);
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    verlorenInStufe.current = !!g.verlorenInStufe;
+    ersteReiheAlle.current = g.ersteReiheAlle !== false;
+    beschaeftigt.current = false;
+    // ein gelöstes oder verlorenes Wort (alle Reihen voll): mit dem nächsten weiter
+    const fertigesWort = antworten.current.has(g.stufe.karten[g.pos]?.key ?? "");
+    const p = Math.max(0, Math.min(g.pos + (fertigesWort ? 1 : 0), g.stufe.karten.length - 1));
+    setFehler(null);
+    setAbgerissen(false);
+    setPunkte(punkteRef.current);
+    setHerzen(herzenRef.current);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setRichtigGesamt(Number(g.richtigGesamt) || 0);
+    setErgebnis(null);
+    setStufe(g.stufe);
+    setPos(p);
+    // war es schon das letzte Wort der Stufe, kommt es leer noch einmal (gezählt ist es schon)
+    setReihen(fertigesWort ? [] : g.reihen.filter((r) => typeof r === "string"));
+    setTipp("");
+    setOffen(null);
+    setBlatt(null);
+    setGeschafft(null);
+    setPhase("spiel");
+  };
 
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -377,6 +432,7 @@ export function WortSchloss({
           <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
             <MiniSchloss />
           </div>
+          {offenesSpiel && <WeiterKnopf className="mt-2" text={`Stufe ${offenesSpiel.stufe.nr} · Wort ${Math.min(offenesSpiel.pos + 1, offenesSpiel.stufe.karten.length)} von ${offenesSpiel.stufe.karten.length} · ${startPunkte(offenesSpiel.punkte).toLocaleString("de-AT")} Punkte`} onClick={() => fortsetzen(offenesSpiel)} disabled={phase === "laden"} />}
           <p className="ls-klein mt-5" style={{ "--n": 3 } as CSSProperties}>
             Wörter aus
           </p>

@@ -14,6 +14,8 @@ import type { Bestenliste, SpielErgebnis, SpielKarte, SpielStart } from "@/lib/l
 import { MathText } from "@/components/MathText";
 import { BestenListe, Hintergrund, Konfetti } from "./Lernspiel";
 import { Abriss, vibriere } from "./SpielTeile";
+import { startHerzen, startPunkte, useSpielstand } from "./spielstand";
+import { WeiterKnopf } from "./WeiterKnopf";
 import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 /**
@@ -33,6 +35,26 @@ import { sicher, verbindungWeg } from "@/lib/verbindung";
 
 type Phase = "start" | "laden" | "spiel" | "ende";
 type Stufe = { rundeId: number; nr: number; karten: Map<string, SpielKarte>; sorte: Sorten; reihe: string[]; hoehe: number };
+/** Ein angefangenes Spiel zum Weiterspielen (components/lernen/spielstand.ts): die Stufe mit den Gläsern, Herzen und Punkte. */
+type GlasStand = {
+  v: 1;
+  stufe: Omit<Stufe, "karten"> & { karten: SpielKarte[] };
+  glaeser: Glas[];
+  enthuellt: string[];
+  herzen: number;
+  punkte: number;
+  daneben: SpielKarte[];
+  richtigGesamt: number;
+  lauf: number | null;
+  antworten: [string, string][];
+  bepunktet: string[];
+  fehlerInStufe: boolean;
+  mischZahl: number;
+};
+const istGlasStand = (x: unknown): x is GlasStand => {
+  const s = x as GlasStand | null;
+  return !!s && s.v === 1 && !!s.stufe && Number.isInteger(s.stufe.rundeId) && Array.isArray(s.stufe.karten) && Array.isArray(s.glaeser) && Array.isArray(s.antworten);
+};
 
 const pct = (x: number | null) => (x === null ? "–" : `${Math.round(x * 100)} %`);
 const zahl = (n: number) => n.toLocaleString("de-AT");
@@ -112,6 +134,67 @@ export function GlasSpiel({
   const begriffe = useRef(new Map<string, HTMLElement>());
   const vorher = useRef<Map<string, DOMRect> | null>(null);
   const beschaeftigt = useRef(false);
+
+  // angefangenes Spiel merken und weiterspielen (niko 2026-11-25: „es soll den Stand halten“); am Tablet für den Schüler der Einheit
+  const spielstand = useSpielstand<GlasStand>("glas", amTablet ? "" : token);
+  const offenesSpiel = spielstand.offen && istGlasStand(spielstand.offen.stand) ? spielstand.offen.stand : null;
+  const merkeSpiel = spielstand.merke;
+  const vergissSpiel = spielstand.vergiss;
+  useEffect(() => {
+    if (phase !== "spiel" || !stufe || geschafft) return;
+    merkeSpiel(
+      {
+        v: 1,
+        stufe: { ...stufe, karten: [...stufe.karten.values()] },
+        glaeser,
+        enthuellt: [...enthuellt],
+        herzen,
+        punkte,
+        daneben,
+        richtigGesamt,
+        lauf: lauf.current,
+        antworten: [...antworten.current.entries()],
+        bepunktet: [...bepunktet.current],
+        fehlerInStufe: fehlerInStufe.current,
+        mischZahl: mischZahl.current,
+      },
+      lauf.current && lauf.current !== stufe.rundeId ? [stufe.rundeId, lauf.current] : [stufe.rundeId],
+    );
+  }, [phase, stufe, glaeser, enthuellt, herzen, punkte, daneben, richtigGesamt, geschafft, blatt, merkeSpiel]);
+  useEffect(() => {
+    if (phase === "ende" && ergebnis && !("fehler" in ergebnis)) vergissSpiel();
+  }, [phase, ergebnis, vergissSpiel]);
+  const fortsetzen = (g: GlasStand) => {
+    const karten = new Map(g.stufe.karten.map((k) => [k.key, k]));
+    lauf.current = Number.isInteger(g.lauf) ? g.lauf : g.stufe.rundeId;
+    vorrat.current = null;
+    abschluss.current = null;
+    laufVorher.current = undefined;
+    punkteRef.current = startPunkte(g.punkte);
+    herzenRef.current = startHerzen(g.herzen, GLAS_HERZEN);
+    bepunktet.current = new Set(Array.isArray(g.bepunktet) ? g.bepunktet : []);
+    antworten.current = new Map(g.antworten.filter((a) => Array.isArray(a) && typeof a[0] === "string" && typeof a[1] === "string"));
+    fehlerInStufe.current = !!g.fehlerInStufe;
+    mischZahl.current = Number(g.mischZahl) || 0;
+    begriffe.current = new Map();
+    beschaeftigt.current = false;
+    setFehler(null);
+    setAbgerissen(false);
+    setPunkte(punkteRef.current);
+    setHerzen(herzenRef.current);
+    setDaneben(Array.isArray(g.daneben) ? g.daneben : []);
+    setRichtigGesamt(Number(g.richtigGesamt) || 0);
+    setErgebnis(null);
+    setMeldung(null);
+    setStufe({ ...g.stufe, karten });
+    setGlaeser(g.glaeser);
+    setGehoben(null);
+    setVerlauf([]);
+    setEnthuellt(new Set(Array.isArray(g.enthuellt) ? g.enthuellt : []));
+    setBlatt(null);
+    setGeschafft(null);
+    setPhase("spiel");
+  };
 
   useEffect(() => {
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -471,6 +554,7 @@ export function GlasSpiel({
           <div className="ls-vorschau" aria-hidden style={{ "--n": 3 } as CSSProperties}>
             <MiniGlaeser />
           </div>
+          {offenesSpiel && <WeiterKnopf className="mt-2" text={`Stufe ${offenesSpiel.stufe.nr} · ${startPunkte(offenesSpiel.punkte).toLocaleString("de-AT")} Punkte`} onClick={() => fortsetzen(offenesSpiel)} disabled={phase === "laden"} />}
           <p className="ls-klein mt-5" style={{ "--n": 3 } as CSSProperties}>
             Sortieren nach
           </p>
