@@ -1811,12 +1811,15 @@ function schreibAuftrag(art: SpielArt, karte: SpielKarte): string {
   if (art === "stilmittel") return "Wie heißt das Stilmittel im markierten Teil? Schreib es.";
   if (art === "fehler") return "Schreib die Stelle richtig.";
   if (art === "wortschatz") return "Schreib das treffende Wort.";
+  if (art === "konjugieren") return "Schreib die Form, die zur Person passt.";
   if (art === "irregular" || art === "praeteritum" || art === "zeiten" || art === "grammatik") return "Schreib die richtige Form.";
   return "Schreib die Antwort selbst.";
 }
 
 const VORSCHAU: Record<SpielArt, string[]> = {
   artikel: ["der", "die", "das"],
+  wortarten: ["Nomen", "Verb", "Adjektiv"],
+  konjugieren: ["gehe", "gehst", "geht"],
   praepositionen: ["der", "die", "das", "dem", "den"],
   deklination: ["-e", "-en", "-er", "-es", "-em"],
   faelle: ["Nominativ", "Genitiv", "Dativ", "Akkusativ"],

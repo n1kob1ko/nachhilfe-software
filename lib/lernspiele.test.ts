@@ -183,11 +183,11 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spie
   assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.sprache.satzglieder"]), ["satzbau"]);
   assert.deepEqual(sp.spieleZuSkills(["mathe.brueche.kuerzen"]), ["rechnen"]);
   assert.deepEqual(sp.spieleZuSkills(["mathe.geometrie.dreieck"]), []);
-  // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben
+  // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben, Wortarten und Personalformen zuerst
   const klein = await setup({ grade: 4 });
-  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz", "quizdeutsch"]);
+  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["wortarten", "konjugieren", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz", "quizdeutsch"]);
   const erste = await setup({ grade: 2 });
-  assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["artikel", "quizdeutsch"]);
+  assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["wortarten", "konjugieren", "artikel", "quizdeutsch"]);
 
   // eine Prüfung in mehr als drei Wochen zählt noch nicht
   const ohne = await setup({ subjects: ["Biologie"] });

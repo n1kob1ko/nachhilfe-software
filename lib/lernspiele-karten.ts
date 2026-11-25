@@ -23,6 +23,8 @@ import { wahlFuerSpiel } from "./deutsch-satzlehre";
 import { englischKandidaten, IRREGULAR_SKILL } from "./lernspiele-englisch";
 import { mitAntwortForm } from "./lernspiele-antwort";
 import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-typen";
+import { beugenKandidaten } from "./verben-beugen";
+import { wortartKandidaten } from "./wortarten-spiel";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
 type Rng = () => number;
@@ -439,6 +441,10 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = hauptsatzGliedsatzItems()
       .filter((i) => eintragFehler("hauptsatz-gliedsatz", i).length === 0)
       .flatMap((i) => satzteilKarten(i).map((karte) => ({ karte, stufe: bankStufe("hauptsatz-gliedsatz", i) ?? 2, gruppe: karte.key.split("#")[0] })));
+  } else if (art === "wortarten") {
+    out = wortartKandidaten();
+  } else if (art === "konjugieren") {
+    out = beugenKandidaten();
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
   } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {
@@ -490,6 +496,8 @@ export function stufenFuer(art: SpielArt, schulstufe: number, lernstand: number 
   if (art === "deklination") return lernstand !== null && lernstand < 0.5 ? [1, 2] : lernstand !== null && lernstand >= 0.75 ? [2, 3] : [1, 2, 3];
   // Perfekt: Stufe 1 hat nur „haben“ (regelmäßige Verben), darum ist Stufe 2 immer dabei
   if (art === "perfekt") return lernstand !== null && lernstand >= 0.75 ? [1, 2, 3] : [1, 2];
+  // Wortarten und „ich gehe, du gehst“: in der 1. und 2. Klasse nur die leichten Karten, sonst nach Lernstand
+  if ((art === "wortarten" || art === "konjugieren") && schulstufe <= 2) return lernstand !== null && lernstand >= 0.75 ? [0, 1] : [0];
   // Zahlenstrahl in der Volksschule: die Stufen sind die Zahlenräume (bis 20, bis 100, Zehner, Hunderter)
   if (art === "strahl" && schulstufe <= 4) return ([[0], [0, 1], [1, 2], [2, 3]] as Stufe[][])[Math.max(1, schulstufe) - 1];
   // die übrigen Spiele: unsicher die leichten, sicher auch die schweren

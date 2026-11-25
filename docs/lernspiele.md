@@ -910,6 +910,49 @@ lib/stilmittel-saetze.ts, ohne KI:
 - Wie jedes Spiel mit Kacheln auch als Endlos, Blockwerk, Funkelfeld, Torlauf (drei Tore) und im Duell (Stilmittel
   des Jüngeren).
 
+## Wortarten und „ich gehe, du gehst“ (Volksschule)
+
+niko 2026-11-25: „spiel für volksschule wortarten bestimmen. also verben adjektive nomen und ein weiteres spiel mit
+sowas wie du gehst ich gehe wir gehen usw“. Zwei Spiele mit Kacheln, ohne KI, alles von Hand geschrieben.
+
+**Wortarten** (`wortarten`, lib/wortarten-spiel.ts):
+
+- **Karte**: ein kurzer Satz, ein Wort ist markiert (`mitte`), darunter immer dieselben drei Kacheln Nomen, Verb,
+  Adjektiv. Nach einem Fehler die Probe für genau dieses Wort: Nomen „der, die, das davor, groß“, Name „Namen sind
+  Nomen“, Verb „ich …, du …, er … verändert sich, Grundform: bellen“, Adjektiv „sagt, wie etwas ist: klein; sehr
+  davor“.
+- **Sätze** in `WORTART_SAETZE` (130): nur markierte Wörter werden gefragt („Hund:n“, „bellt:v=bellen“,
+  „kleine:a=klein“). Artikel, Pronomen, Präpositionen und Wörter wie „gern“, „heute“, „viel“ bleiben unmarkiert, damit
+  nie ein Wort kommt, das keine der drei Wortarten ist. Ein Adjektiv, das sagt, wie etwas geschieht („Das Auto fährt
+  schnell“, `aw`), bleibt wie in den Übungen (lib/wortarten.ts) ein Adjektiv.
+- **Stufen**: 0 Nomen, Verben, Adjektive zum Anfassen; 1 Namen, „ist/sind/hat“, Sätze mit `aw`; 2 `aw` selbst und
+  Gefühle/Gedanken („Angst“, „Idee“); 3 Verben als Nomen („das Lachen“, „beim Spielen“). 1. und 2. Klasse nur Stufe 0
+  (ab Lernstand 75 % auch 1), danach nach Lernstand. Zwei Wörter aus demselben Satz kommen nie in dieselbe Runde.
+- **Kein Selbstschreiben**: die drei Antworten stehen fest, Schreiben wäre nur dasselbe Wählen (kein Schalter „Schwer“).
+- **Lernstand**: deutsch.wortarten.bestimmen. Im Stoff (auch Teilfähigkeiten .nomen/.verb/.adjektiv und
+  deutsch.wortarten.nomen) kommt das Spiel zuerst.
+
+**ich gehe, du gehst** (`konjugieren`, lib/verben-beugen.ts):
+
+- **Karte**: „Du ___ in die Schule.“ mit der Grundform darunter („(gehen)“), drei oder vier Formen als Kacheln in
+  fester Reihenfolge (ich, du, er …). Dazu die typische falsche Form, die Kinder schreiben, wo es eine gibt: du fahrst,
+  du tanzst, du arbeitst, du nehmst, ihr seit, er kannt. Die Regel nennt genau den Fall: „Bei du endet das Verb auf
+  -st“, „fahren ändert bei du und er, sie, es den Selbstlaut“, „seid mit d, seit mit t heißt: seit gestern“; bei einem
+  Namen „Lisa ist wie sie“.
+- **Verben** in `VERBEN` (46), jede Form ausgeschrieben (nichts gebildet). Personen: ich, du, er (oder Lisa, Tom, die
+  Oma, mein Bruder), wir, ihr, sie (die Kinder, Lea und Ben, meine Freunde); nie „sie/Sie“ allein, weil das Einzahl
+  oder Mehrzahl sein kann. Je Verb und Person zwei Sätze und einer, in dem das Verb vor der Person steht („Heute gehst
+  du …“).
+- **Stufen**: 0 regelmäßige Verben mit ich, du, er, wir; 1 dazu ihr und sie (mehrere), tanzen/sitzen/putzen,
+  arbeiten/finden/warten/rechnen; 2 Wechsel des Selbstlauts (lesen, fahren, helfen …), sein, haben; 3 können, wollen,
+  müssen, dürfen, mögen, wissen. Verb vor der Person: eine Stufe mehr. 1. und 2. Klasse wie bei den Wortarten.
+- **Selbst schreiben**: eine Karte, die zuletzt richtig war, kommt zum Schreiben wieder; „Schwer“ schreibt alle.
+  Streng: „spielt“ ist nie ein Tippfehler von „spielst“.
+- **Lernstand**: deutsch.vs.sprache.personalformen; auch deutsch.vs.sprache.verbformen im Stoff bringt das Spiel.
+
+Beide ab der 2. Schulstufe „zum Üben“, in der Volksschule als erste Deutsch-Spiele vor „der, die, das“. Wie jedes
+Spiel mit Kacheln auch als Endlos, Blockwerk, Funkelfeld, Torlauf und im Duell. Test: lib/volksschul-spiele.test.ts.
+
 ## Meine Fehler (Fehlerprotokoll)
 
 niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers
