@@ -1390,6 +1390,18 @@ CREATE TABLE IF NOT EXISTS spielrunden (
   beendet_at TEXT
 );
 CREATE INDEX IF NOT EXISTS idx_spielrunden_student ON spielrunden(student_id, beendet_at);
+-- Angefangene Lernspiele zum Weiterspielen (lib/spielstand.ts, niko 2026-11-25: „es soll den Stand halten und wenn was
+-- passiert, dass man zurück zum Spielstand gehen kann“): je Schüler und Spiel der letzte Stand als JSON, die Runden, die
+-- er braucht (runden[0] = die laufende), und at = wann das Spiel ihn gemacht hat (ms, neuer schlägt älter).
+CREATE TABLE IF NOT EXISTS spielstaende (
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  spiel TEXT NOT NULL,
+  stand TEXT NOT NULL,
+  runden TEXT NOT NULL DEFAULT '[]',
+  at INTEGER NOT NULL,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (student_id, spiel)
+);
 -- Ranking und Duelle (lib/spielprofil.ts, lib/liga.ts, lib/duelle.ts; niko 2026-11-11). Ein Spielprofil je Schüler:
 -- Spitzname aus zwei Wortlisten (nie der echte Name), Bild (Tier), liga/duelle 1 = macht mit. Erlaubt der Lehrer es
 -- nicht (students.wettspiel), zählt das Profil nicht.

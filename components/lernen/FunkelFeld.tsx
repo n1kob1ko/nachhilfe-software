@@ -32,6 +32,7 @@ import {
   type Zaehler,
 } from "@/lib/funkelfeld";
 import { vibriere } from "./SpielTeile";
+import { startHerzen, startPunkte } from "./spielstand";
 import { FORM_NAMEN, SteinBild } from "./FunkelSteine";
 
 /**
@@ -66,6 +67,8 @@ export function FunkelFeld({
   onPunkte,
   onEnde,
   rekord,
+  anfang,
+  onHerzen,
 }: {
   /** false, solange die Frage über dem Feld liegt */
   aktiv: boolean;
@@ -75,13 +78,17 @@ export function FunkelFeld({
   onEnde: () => void;
   /** der beste Stand bisher (0: noch keiner) */
   rekord: number;
+  /** weitergespielt (lib/spielstand.ts): Punkte und Herzen von vorher, das Feld ist neu */
+  anfang?: { punkte: number; herzen: number };
+  /** die Herzen nach jeder Änderung (zum Merken) */
+  onHerzen?: (herzen: number) => void;
 }) {
   const rng = useRef<() => number>(funkelZufall(Date.now() % 2147483647));
   const zaehler = useRef<Zaehler>({ n: 0 });
   const [feld, setFeld] = useState<Feld>(() => neuesFeld({ rng: rng.current, zaehler: zaehler.current }));
   const [zuege, setZuege] = useState(ZUEGE_START);
-  const [herzen, setHerzen] = useState(FUNKEL_HERZEN);
-  const [punkte, setPunkte] = useState(0);
+  const [herzen, setHerzen] = useState(() => startHerzen(anfang?.herzen, FUNKEL_HERZEN));
+  const [punkte, setPunkte] = useState(() => startPunkte(anfang?.punkte));
   const [lage, setLage] = useState<Lage>("spiel");
   const [gewaehlt, setGewaehlt] = useState<number | null>(null);
   const [cursor, setCursor] = useState<number | null>(null);
@@ -94,8 +101,8 @@ export function FunkelFeld({
   const feldRef = useRef(feld);
   feldRef.current = feld;
   const zuegeRef = useRef(ZUEGE_START);
-  const herzenRef = useRef(FUNKEL_HERZEN);
-  const punkteRef = useRef(0);
+  const herzenRef = useRef(herzen);
+  const punkteRef = useRef(punkte);
   const fragen = useRef(0);
   const von = useRef(new Map<number, number>());
   const n = useRef(0);
@@ -109,6 +116,7 @@ export function FunkelFeld({
     reduziert.current = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
   useEffect(() => onPunkte(punkte), [punkte, onPunkte]);
+  useEffect(() => onHerzen?.(herzen), [herzen, onHerzen]);
 
   const sage = useCallback((text: string, art: Ansage["art"]) => {
     const k = ++n.current;

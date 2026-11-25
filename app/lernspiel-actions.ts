@@ -6,6 +6,7 @@ import { beendeRunde, bioLevelStand, bioSicher, bioWahl, biotestStand, biotestWa
 import { vergibPunkte } from "@/lib/liga";
 import { gueltigePunkte } from "@/lib/blockwerk";
 import { merkeStand, offenesBlockwerk, vergissStand, type BlockwerkStand } from "@/lib/blockwerk-stand";
+import { besterSpielstand, merkeSpielstand, vergissSpielstand, type Spielstand } from "@/lib/spielstand";
 import { gueltigeGlasPunkte } from "@/lib/glasklar";
 import { gueltigeFunkelPunkte } from "@/lib/funkelfeld";
 import { gueltigeTorPunkte } from "@/lib/torlauf";
@@ -124,6 +125,31 @@ export async function blockwerkWeiterAction(token: string): Promise<{ lauf: numb
   const offen = offenesBlockwerk(student.id);
   if (!offen) return { fehler: "Das angefangene Spiel gibt es nicht mehr." };
   return { lauf: offen.lauf, art: offen.art, karten: offen.karten, stand: offen.stand };
+}
+
+// ---------- Spielstand: angefangene Spiele weiterspielen (lib/spielstand.ts), in der App und am Tablet ----------
+// `token` leer: am Tablet (der Schüler der laufenden Einheit). Still: ein Fehler hier stört das Spiel nicht.
+
+async function standSchueler(token: string) {
+  return token ? (repo.getStudentByToken(String(token)) ?? null) : await tabletSchueler();
+}
+
+export async function spielstandMerkenAction(token: string, spiel: string, stand: unknown, runden: number[], at: number): Promise<boolean> {
+  const student = await standSchueler(token);
+  if (!student) return false;
+  return merkeSpielstand(student.id, String(spiel), stand, runden, Number(at));
+}
+
+/** Beim Öffnen eines Spiels: der neueste gültige Stand (vom Server oder die Kopie `kandidat` vom Gerät). */
+export async function spielstandHolenAction(token: string, spiel: string, kandidat?: { stand: unknown; runden: number[]; at: number } | null): Promise<Spielstand | null> {
+  const student = await standSchueler(token);
+  if (!student) return null;
+  return besterSpielstand(student.id, String(spiel), kandidat ?? null);
+}
+
+export async function spielstandVergessenAction(token: string, spiel: string): Promise<void> {
+  const student = await standSchueler(token);
+  if (student) vergissSpielstand(student.id, String(spiel));
 }
 
 // ---------- am Schüler-Tablet in der Einheit (app/geraet/page.tsx) ----------

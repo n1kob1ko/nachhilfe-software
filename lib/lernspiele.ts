@@ -20,6 +20,7 @@ import { parseTime } from "./analysis";
 import { materialSkills, activeMaterial } from "./current-material";
 import { db, json } from "./db";
 import { BEHALTEN_SQL } from "./blockwerk-stand";
+import { STAND_BEHALTEN_SQL } from "./spielstand";
 import { haeufigsteForm } from "./lernspiele-antwort";
 import { hatSchreiben, mitSchreiben, schreibStand, ZUM_SCHREIBEN_JE_RUNDE, type SchreibSpur } from "./antwort-schreiben";
 import { IRREGULAR_SKILL } from "./lernspiele-englisch";
@@ -962,8 +963,8 @@ export function starteRunde(
   } = {},
 ): { rundeId: number; karten: SpielKarte[]; endlos?: number; stufe?: number } {
   // nicht beendete Runden von gestern und früher räumen sich selbst weg, außer ein angefangenes Blockwerk-Spiel
-  // (lib/blockwerk-stand.ts: es bleibt zum Weiterspielen)
-  db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL})`).run(student.id);
+  // (lib/blockwerk-stand.ts) oder eine Runde mit gemerktem Spielstand (lib/spielstand.ts): sie bleiben zum Weiterspielen
+  db().prepare(`DELETE FROM spielrunden WHERE student_id = ? AND beendet_at IS NULL AND duell_id IS NULL AND created_at < datetime('now', '-1 day') AND NOT (endlos IS NOT NULL AND ${BEHALTEN_SQL}) AND NOT ${STAND_BEHALTEN_SQL}`).run(student.id);
   let karten: SpielKarte[];
   // Selbstschreiben: was beim letzten Mal richtig war; zwei, die mit Auswahl richtig waren, kommen gleich wieder
   // (nach den Fehlern). Ein Torlauf (auch fortgesetzt) bleibt bei der Auswahl.
