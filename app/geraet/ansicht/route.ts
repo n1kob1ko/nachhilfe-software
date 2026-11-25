@@ -1,4 +1,5 @@
 import { deviceContext } from "@/lib/device-context";
+import { duellTeilnehmer } from "@/lib/duelle";
 import { activeLaptop } from "@/lib/laptop";
 import { parseView, showOnTablet, unitAssignment, unitText } from "@/lib/live";
 
@@ -12,7 +13,12 @@ export async function GET(request: Request) {
   const view = parseView(new URL(request.url).searchParams.get("zu") ?? "");
   // a presentation only ever comes from the teacher (app/praesentation-actions.ts)
   // Lernspiele: jedes Spiel geht, gespielt wird für den Schüler der Einheit (app/lernspiel-actions.ts)
-  const allowed = view.kind === "praesentation" ? false : view.kind === "aufgabe" ? unitAssignment(ctx?.unit?.id ?? 0, view.assignmentId) : view.kind === "text" ? ctx?.unit && unitText(ctx.unit, view.textId) : true;
+  // ein Live-Duell nur, wenn der Schüler dieses Tablets mitspielt
+  const imDuell = (id: number) => {
+    const z = duellTeilnehmer(id);
+    return Boolean(ctx?.student && z && (z.von === ctx.student.id || z.gegen === ctx.student.id));
+  };
+  const allowed = view.kind === "praesentation" ? false : view.kind === "duell" ? imDuell(view.id) : view.kind === "aufgabe" ? unitAssignment(ctx?.unit?.id ?? 0, view.assignmentId) : view.kind === "text" ? ctx?.unit && unitText(ctx.unit, view.textId) : true;
   // while the student works on a laptop the tablet only opens and leaves the board, it never moves the laptop on
   const laptop = ctx?.unit ? activeLaptop(ctx.unit.id) : null;
   const tabletOnly = !laptop || view.kind === "tafel" || (view.kind === "start" && ctx?.unit?.device_view === "tafel");

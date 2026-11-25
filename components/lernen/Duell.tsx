@@ -5,7 +5,20 @@ import "./arena.css";
 import Link from "next/link";
 import { Check, Clock, Copy, Share2, Trophy, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from "react";
-import { duellBeendenAction, duellBereitAction, duellRundeAction, duellSichtAction, duellZugAction, revancheAction } from "@/app/wettspiel-actions";
+import {
+  duellBeendenAction,
+  duellBereitAction,
+  duellRundeAction,
+  duellSichtAction,
+  duellZugAction,
+  revancheAction,
+  tabletDuellBeendenAction,
+  tabletDuellBereitAction,
+  tabletDuellRundeAction,
+  tabletDuellSichtAction,
+  tabletDuellZugAction,
+  tabletLiveDuellStartenAction,
+} from "@/app/wettspiel-actions";
 import { Lernspiel, type DuellRahmen } from "@/components/lernen/Lernspiel";
 import type { DuellSicht } from "@/lib/duelle";
 import { SPIEL_TITEL, type SpielErgebnis } from "@/lib/lernspiele-typen";
@@ -14,8 +27,9 @@ import { SPIEL_TITEL, type SpielErgebnis } from "@/lib/lernspiele-typen";
  * Ein Duell (lib/duelle.ts) in der Schüler-App: warten auf den anderen, Countdown (live), spielen mit derselben Mechanik
  * wie die Lernspiele (components/lernen/Lernspiel.tsx mit `duell`), dann das Ergebnis mit Revanche.
  * Der Stand kommt alle paar Sekunden vom Server (live jede Sekunde).
+ * `amTablet`: am Schüler-Tablet in der Einheit (app/geraet/page.tsx); wer spielt, sagt das Gerät, nicht ein Link.
  */
-export function Duell({ token, start }: { token: string; start: DuellSicht }) {
+export function Duell({ token, start, amTablet = false }: { token: string; start: DuellSicht; amTablet?: boolean }) {
   const [sicht, setSicht] = useState(start);
   const [spielt, setSpielt] = useState(false);
   const [ergebnis, setErgebnis] = useState<SpielErgebnis | null>(null);
@@ -23,12 +37,14 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
   const [bereitGetippt, setBereitGetippt] = useState(false);
   const id = start.id;
   const arena = `/lernen/${token}/arena`;
-  const zurueck = sicht.live ? `/lernen/${token}` : arena;
+  const zurueck = amTablet ? "/geraet/ansicht?zu=spiele" : sicht.live ? `/lernen/${token}` : arena;
+  // am Tablet nie next/link: ein Prefetch von /geraet/ansicht würde die Ansicht umschalten
+  const ZuLink = amTablet ? "a" : Link;
 
   const holen = useCallback(async () => {
-    const s = await duellSichtAction(token, id);
+    const s = await (amTablet ? tabletDuellSichtAction(id) : duellSichtAction(token, id));
     if (s) setSicht(s);
-  }, [token, id]);
+  }, [token, id, amTablet]);
 
   // wie oft fragen: live und beim Warten oft, sonst selten; fertig gar nicht mehr
   const takt = sicht.status === "fertig" || sicht.status === "abgelaufen" ? 0 : sicht.live ? 1000 : spielt ? 0 : 4000;
@@ -63,9 +79,9 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
 
   const rahmen: DuellRahmen = useMemo(
     () => ({
-      starten: () => duellRundeAction(token, id),
-      beenden: (_rundeId, antworten) => duellBeendenAction(token, id, antworten),
-      ersteWahl: (key, wahl) => void duellZugAction(token, id, key, wahl),
+      starten: () => (amTablet ? tabletDuellRundeAction(id) : duellRundeAction(token, id)),
+      beenden: (_rundeId, antworten) => (amTablet ? tabletDuellBeendenAction(id, antworten) : duellBeendenAction(token, id, antworten)),
+      ersteWahl: (key, wahl) => void (amTablet ? tabletDuellZugAction(id, key, wahl) : duellZugAction(token, id, key, wahl)),
       fertig: (e) => {
         setErgebnis(e);
         setSpielt(false);
@@ -75,13 +91,14 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
       bis: sicht.live ? sicht.endeAt : null,
       zurueck,
     }),
-    [token, id, holen, sicht.live, sicht.endeAt, zurueck],
+    [token, id, holen, sicht.live, sicht.endeAt, zurueck, amTablet],
   );
 
   if (spielt) {
     return (
       <Lernspiel
         token={token}
+        amTablet={amTablet}
         art={sicht.art}
         vorschlaege={[]}
         serie={0}
@@ -103,7 +120,7 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
         <h1 className="ls-titel">Du gegen {g?.name ?? "…"}</h1>
         <p className="ls-text mt-2">2 Minuten, dieselben Karten. Wer mehr beim ersten Mal richtig hat, gewinnt.</p>
         <div className="mt-auto pt-8">
-          {bereitGetippt ? (
+          {bereitGetippt || sicht.ich.bereit ? (
             <p className="ls-text text-center">Warte auf {g?.name ?? "den anderen"} …</p>
           ) : (
             <button
@@ -111,7 +128,7 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
               className="ls-knopf ls-los"
               onClick={() => {
                 setBereitGetippt(true);
-                void duellBereitAction(token, id).then(holen);
+                void (amTablet ? tabletDuellBereitAction(id) : duellBereitAction(token, id)).then(holen);
               }}
               autoFocus
             >
@@ -147,15 +164,15 @@ export function Duell({ token, start }: { token: string; start: DuellSicht }) {
       </>
     );
   } else {
-    inhalt = <Ergebnis token={token} sicht={sicht} ergebnis={ergebnis} />;
+    inhalt = <Ergebnis token={token} sicht={sicht} ergebnis={ergebnis} amTablet={amTablet} />;
   }
 
   return (
     <div className="ls" role="dialog" aria-modal="true" aria-label="Duell">
       <div className="ls-kopf">
-        <Link href={zurueck} className="ls-zu" aria-label="Schließen">
+        <ZuLink href={zurueck} className="ls-zu" aria-label="Schließen">
           <X size={24} aria-hidden />
-        </Link>
+        </ZuLink>
         <span className="flex-1" />
       </div>
       <div className="ls-mitte ls-staffel">{inhalt}</div>
@@ -213,12 +230,13 @@ function Gegenueber({ sicht, verdeckt }: { sicht: DuellSicht; verdeckt?: boolean
   );
 }
 
-function Ergebnis({ token, sicht, ergebnis }: { token: string; sicht: DuellSicht; ergebnis: SpielErgebnis | null }) {
+function Ergebnis({ token, sicht, ergebnis, amTablet }: { token: string; sicht: DuellSicht; ergebnis: SpielErgebnis | null; amTablet: boolean }) {
   const [sendet, setSendet] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
   const g = sicht.gegner;
   const fertig = sicht.status === "fertig";
-  const titel = !fertig ? `Warte auf ${g?.name ?? "den anderen"}` : sicht.ausgang === "gewonnen" ? "Duell gewonnen!" : sicht.ausgang === "verloren" ? "Knapp daneben!" : "Unentschieden!";
+  const abgebrochen = sicht.live && sicht.status === "abgelaufen";
+  const titel = abgebrochen ? "Duell abgebrochen" : !fertig ? `Warte auf ${g?.name ?? "den anderen"}` : sicht.ausgang === "gewonnen" ? "Duell gewonnen!" : sicht.ausgang === "verloren" ? "Knapp daneben!" : "Unentschieden!";
   const e = ergebnis && !("fehler" in ergebnis) ? ergebnis : null;
 
   async function nochmal() {
@@ -227,6 +245,17 @@ function Ergebnis({ token, sicht, ergebnis }: { token: string; sicht: DuellSicht
     setSendet(false);
     if (!r.ok) return setFehler(r.fehler);
     window.location.href = `/lernen/${token}/duell/${r.id}`;
+  }
+
+  // am Tablet: gleich noch ein Live-Duell gegen denselben (der andere bekommt oben „Mitmachen“)
+  async function nochEinLiveDuell() {
+    setSendet(true);
+    const r = await tabletLiveDuellStartenAction(sicht.art);
+    if (!r.ok) {
+      setSendet(false);
+      return setFehler(r.fehler);
+    }
+    window.location.href = "/geraet";
   }
 
   return (
@@ -238,7 +267,9 @@ function Ergebnis({ token, sicht, ergebnis }: { token: string; sicht: DuellSicht
         {titel}
       </h1>
       <p className="ls-text mt-1 text-center" style={{ "--n": 1 } as CSSProperties}>
-        {!fertig
+        {abgebrochen
+          ? "Dieses Duell zählt nicht."
+          : !fertig
           ? sicht.live
             ? "Gleich steht fest, wer gewonnen hat."
             : "Du hast gespielt. Sobald der andere fertig ist, siehst du hier, wer gewonnen hat."
@@ -285,9 +316,23 @@ function Ergebnis({ token, sicht, ergebnis }: { token: string; sicht: DuellSicht
             <span className="ml-2">{sicht.revancheId ? "Zur Revanche" : "Revanche"}</span>
           </button>
         )}
-        <Link href={sicht.live ? `/lernen/${token}` : `/lernen/${token}/arena`} className="ls-knopf ls-los" data-zweit="">
-          {sicht.live ? "Fertig" : "Zu Liga und Duellen"}
-        </Link>
+        {amTablet ? (
+          <>
+            {(fertig || abgebrochen) && (
+              <button type="button" className="ls-knopf ls-los" onClick={() => void nochEinLiveDuell()} disabled={sendet} data-testid="tablet-duell-nochmal">
+                <Trophy size={20} aria-hidden />
+                <span className="ml-2">Noch ein Duell</span>
+              </button>
+            )}
+            <a href="/geraet/ansicht?zu=spiele" className="ls-knopf ls-los" data-zweit="">
+              Fertig
+            </a>
+          </>
+        ) : (
+          <Link href={sicht.live ? `/lernen/${token}` : `/lernen/${token}/arena`} className="ls-knopf ls-los" data-zweit="">
+            {sicht.live ? "Fertig" : "Zu Liga und Duellen"}
+          </Link>
+        )}
       </div>
     </>
   );

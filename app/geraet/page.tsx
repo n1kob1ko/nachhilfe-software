@@ -13,6 +13,11 @@ import { BioLabor } from "@/components/lernen/BioLabor";
 import { BioTest } from "@/components/lernen/BioTest";
 import { EuropaSpiel } from "@/components/lernen/EuropaSpiel";
 import { SpieleListe } from "@/components/lernen/SpieleListe";
+import { Duell } from "@/components/lernen/Duell";
+import { TabletDuellRuf, TabletDuellStart } from "@/components/device/TabletDuell";
+import { duellSicht, duellTeilnehmer, wartendesLiveDuell } from "@/lib/duelle";
+import { DUELL_ARTEN } from "@/lib/lernspiele-typen";
+import { darfMitspielen, wettspielEinstellung } from "@/lib/spielprofil";
 import { PairForm } from "@/components/device/PairForm";
 import { PraesentationAmGeraet } from "@/components/praesentation/AmGeraet";
 import { Solver } from "@/components/Solver";
@@ -102,7 +107,10 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
 
   const first = student.name.split(" ")[0];
   // two units of the teacher run (D26): the student can hand the tablet over („Wechseln“ asks again)
-  const twoRunning = runningUnits(device.teacher_id).length > 1;
+  const running = runningUnits(device.teacher_id);
+  const twoRunning = running.length > 1;
+  // Live-Duell am Tablet (lib/duelle.ts): gegen den zweiten Schüler, der gerade gleichzeitig da ist
+  const gegenueber = running.length === 2 ? (running.find((u) => u.student_id !== student.id) ?? null) : null;
   const list = unitAssignments(unit.id);
   const view = parseView(unit.device_view);
   // the student works on their own laptop in this unit: exercises and texts are there, the tablet only offers the board
@@ -116,7 +124,7 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
   // a Textarbeit of this student: written here, saved continuously
   const text = view.kind === "text" && !onLaptop ? unitText(unit, view.textId) : null;
 
-  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas" && view.kind !== "wort" && view.kind !== "phantom" && view.kind !== "blatt" && view.kind !== "europa" && view.kind !== "bio" && view.kind !== "biotest";
+  const aufAufgaben = view.kind !== "tafel" && view.kind !== "praesentation" && view.kind !== "spiele" && view.kind !== "spiel" && view.kind !== "glas" && view.kind !== "wort" && view.kind !== "phantom" && view.kind !== "blatt" && view.kind !== "europa" && view.kind !== "bio" && view.kind !== "biotest" && view.kind !== "duell";
   let content: React.ReactNode;
   if (onLaptop) {
     content = (
@@ -259,6 +267,16 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
         zurueck="/geraet/ansicht?zu=spiele"
       />
     );
+  } else if (view.kind === "duell") {
+    // Live-Duell am Tablet: dieselbe Ansicht wie in der Schüler-App, gespielt für den Schüler der Einheit
+    const z = duellTeilnehmer(view.id);
+    const vorname = (sid: number | null) => (sid ? (repo.getStudent(sid)?.name.split(" ")[0] ?? "") : "");
+    const sicht = duellSicht(student.id, view.id, z ? { von: vorname(z.von), gegen: vorname(z.gegen) } : undefined);
+    content = sicht ? (
+      <Duell key={sicht.id} token="" amTablet start={sicht} />
+    ) : (
+      <p className="panel px-5 py-5 text-[16px] text-ink-2">Dieses Duell gibt es nicht mehr.</p>
+    );
   } else if (view.kind === "spiele" || view.kind === "spiel") {
     // Lernspiele in der Einheit (niko 2026-11-12: „was wenn der schüler in der einheit spielen will“): dieselben Spiele
     // wie in der Schüler-App, gezählt für den Schüler der Einheit; der geheime Link kommt nie aufs Tablet
@@ -266,6 +284,13 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
     const lernstand = new Map((analyzeStudent(student.id)?.skills ?? []).map((s) => [s.skill.id, s.mastery]));
     const vorschlaege = spielVorschlaege(student, { heute, lernstand });
     const art = view.kind === "spiel" ? view.art : null;
+    let duellStart: React.ReactNode = null;
+    const anderer = !art && gegenueber ? repo.getStudent(gegenueber.student_id) : null;
+    if (anderer && darfMitspielen(wettspielEinstellung(student.id)) && darfMitspielen(wettspielEinstellung(anderer.id))) {
+      // zuerst die Spiele, die zum Stoff der beiden passen
+      const passend = [...new Set([...vorschlaege, ...spielVorschlaege(anderer, { heute })].map((v) => v.art).filter((a) => DUELL_ARTEN.includes(a)))];
+      duellStart = <TabletDuellStart gegner={shortNames([student.name, anderer.name])[1]} spiele={passend} mehr={DUELL_ARTEN.filter((a) => !passend.includes(a))} />;
+    }
     const brett = view.kind === "spiel" ? (view.bloecke ? "bloecke" : view.funkel ? "funkel" : view.tor ? "tor" : undefined) : undefined;
     content =
       art && vorschlaege.length ? (
@@ -294,6 +319,7 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
         />
       ) : vorschlaege.length ? (
         <div className="geraet-spiele">
+          {duellStart}
           <SpieleListe student={student} heute={heute} lernstand={lernstand} vorschlaege={vorschlaege} href={(a) => `/geraet/ansicht?zu=spiel:${a}`} bloecke={(a) => `/geraet/ansicht?zu=bloecke:${a}`} funkel={(a) => `/geraet/ansicht?zu=funkel:${a}`} tor={(a) => `/geraet/ansicht?zu=tor:${a}`} glas={(() => {
               const t = glasThemen(student, heute)[0];
               return t ? { href: "/geraet/ansicht?zu=glas:", thema: t.name } : undefined;
@@ -316,7 +342,10 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
           />
         </div>
       ) : (
-        <p className="panel px-5 py-5 text-[16px] text-ink-2">Für deine Fächer gibt es noch kein Spiel.</p>
+        <>
+          {duellStart}
+          <p className="panel px-5 py-5 text-[16px] text-ink-2">Für deine Fächer gibt es noch kein Spiel.</p>
+        </>
       );
   } else if (view.kind === "praesentation") {
     content = <PraesentationAmGeraet id={view.id} folie={view.folie} />;
@@ -432,8 +461,8 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
             {!onLaptop && (
               <a
                 href="/geraet/ansicht?zu=spiele"
-                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" || view.kind === "blatt" || view.kind === "europa" || view.kind === "bio" || view.kind === "biotest" ? "page" : undefined}
-                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" || view.kind === "blatt" || view.kind === "europa" || view.kind === "bio" || view.kind === "biotest" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
+                aria-current={view.kind === "spiele" || view.kind === "spiel" || view.kind === "duell" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" || view.kind === "blatt" || view.kind === "europa" || view.kind === "bio" || view.kind === "biotest" ? "page" : undefined}
+                className={`flex min-h-[48px] items-center gap-2 rounded-full px-5 text-[15px] font-semibold ${view.kind === "spiele" || view.kind === "spiel" || view.kind === "duell" || view.kind === "glas" || view.kind === "wort" || view.kind === "phantom" || view.kind === "blatt" || view.kind === "europa" || view.kind === "bio" || view.kind === "biotest" ? "bg-surface shadow-[var(--shadow-card)]" : "text-ink-2"}`}
                 data-testid="geraet-spiele"
               >
                 <Gamepad2 size={18} aria-hidden /> Spiele
@@ -445,6 +474,8 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
           </nav>
         </header>
         {content}
+        {/* ein Live-Duell wartet (vom anderen Schüler oder vom Lehrer gestartet): kommt von selbst */}
+        {gegenueber && !onLaptop && view.kind !== "duell" && <TabletDuellRuf anfang={wartendesLiveDuell(student.id)} />}
       </div>
     </DeviceLive>
   );
