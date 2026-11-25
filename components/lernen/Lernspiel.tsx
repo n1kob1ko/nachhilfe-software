@@ -1740,7 +1740,7 @@ export function Lernspiel({
 
 /**
  * Die Blockwerk-Bestenliste (niko 2026-11-16: „mach einen highscore also leaderboard für alle“): die ersten Plätze mit
- * Spitzname und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
+ * Namen („Max M.“) und Tierbild, die eigene Zeile hervorgehoben (auch weiter unten, nach „…“). Ohne Spielprofil steht man nur
  * für sich selbst drin; darunter ein Satz, wie man für alle sichtbar wird.
  */
 export function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arenaLink?: string; n: number }) {
@@ -1769,12 +1769,12 @@ export function BestenListe({ liste, arenaLink, n }: { liste: Bestenliste; arena
               <>
                 Nur du siehst dich hier.{" "}
                 <Link href={arenaLink} className="font-semibold underline">
-                  Mit Spitzname mitspielen
+                  Mitspielen
                 </Link>
                 , dann sehen dich alle.
               </>
             ) : (
-              "Nur du siehst dich hier. Mit einem Spitznamen (Spiele › Liga) sehen dich alle."
+              "Nur du siehst dich hier. Spiel unter Spiele › Liga mit, dann sehen dich alle."
             )
           ) : (
             "Nur du siehst dich hier. Dein Lehrer hat Liga und Duelle für dich ausgeschaltet."

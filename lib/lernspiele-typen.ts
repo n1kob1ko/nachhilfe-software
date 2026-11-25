@@ -416,7 +416,7 @@ export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau
 /** So viele Fehler verzeiht ein Endlos-Spiel. */
 export const ENDLOS_HERZEN = 3;
 
-/** Eine Zeile der Blockwerk-Bestenliste: Spitzname und Tierbild aus dem Spielprofil, nie der echte Name. */
+/** Eine Zeile der Blockwerk-Bestenliste: der Name („Max M.“) und das Tierbild aus dem Spielprofil. */
 export type BestenZeile = { platz: number; name: string; bild: string; punkte: number; ich: boolean };
 /**
  * Die Blockwerk-Bestenliste (lib/lernspiele.ts `bloeckeBestenliste`): die Besten aller Schüler mit Spielprofil, dazu die

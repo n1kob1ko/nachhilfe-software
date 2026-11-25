@@ -27,7 +27,7 @@ export function ArenaTeaser({ student, token, nurWennDran }: { student: Student;
         <span className="block text-[16px] font-semibold">Duelle</span>
         <span className="block text-[14px] text-ink-2">
           {!p
-            ? "Spiel gegen andere, mit Spitzname"
+            ? "Spiel gegen andere aus dem Institut"
             : [ich && liga ? `Platz ${ich.platz} in der ${liga.stufenName}-Liga · ${ich.punkte} Punkte` : "", dran ? (dran === 1 ? "1 Duell wartet auf dich" : `${dran} Duelle warten auf dich`) : ""].filter(Boolean).join(" · ") ||
               "Fordere jemanden heraus"}
         </span>

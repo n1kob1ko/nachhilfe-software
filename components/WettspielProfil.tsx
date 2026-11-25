@@ -2,12 +2,11 @@ import { Swords } from "lucide-react";
 import { spielprofilLoeschenAction, wettspielSetzenAction } from "@/app/wettspiel-actions";
 import { ligaTabelle } from "@/lib/liga";
 import type { Student } from "@/lib/repo";
-import { BILDER, erlaubnis, profilVon, wettspielEinstellung, type Wettspiel } from "@/lib/spielprofil";
+import { BILDER, erlaubnis, profilVon, spielName, wettspielEinstellung, type Wettspiel } from "@/lib/spielprofil";
 
 /**
- * Im Profil unter Lernstand: ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts). Standard:
- * ab der 9. Schulstufe; Jüngere erst mit „Erlaubt“, wenn die Eltern einverstanden sind. Dazu sein Spitzname, damit der
- * Lehrer ihn in der Liga wiedererkennt, und „Zurücksetzen“, falls ein Name nicht passt.
+ * Im Profil unter Lernstand: ob der Schüler bei Wochenliga und Duellen mitmachen darf (lib/spielprofil.ts), für alle
+ * an, „Aus“ sperrt es. Andere sehen seinen Namen („Max M.“) und sein Tierbild; „Zurücksetzen“ setzt Bild und Schalter zurück.
  */
 export function WettspielProfil({ student }: { student: Student }) {
   const e = wettspielEinstellung(student.id);
@@ -30,8 +29,8 @@ export function WettspielProfil({ student }: { student: Student }) {
         {darf
           ? p
             ? `${first} spielt als ${BILDER[p.bild] ?? ""} ${p.name}${ich && liga ? `, diese Woche Platz ${ich.platz} in der ${liga.stufenName}-Liga mit ${ich.punkte} Punkten` : ""}.`
-            : `${first} darf mitmachen und bekommt mit den ersten Blockwerk-Punkten einen Spitznamen (oder wählt selbst einen unter Spiele › Duelle).`
-          : `${first} spielt nur allein (ausgeschaltet). Andere sehen nie den echten Namen, nur einen Spitznamen aus einer Liste.`}
+            : `${first} darf mitmachen und steht mit den ersten Blockwerk-Punkten als „${spielName(student.name)}“ in der Bestenliste.`
+          : `${first} spielt nur allein (ausgeschaltet) und steht in keiner Bestenliste.`}
       </p>
       <div className="flex flex-wrap gap-2" role="group" aria-label="Liga und Duelle erlauben">
         {wahl.map((w) => (
@@ -48,7 +47,7 @@ export function WettspielProfil({ student }: { student: Student }) {
         {p && (
           <form action={spielprofilLoeschenAction.bind(null, student.id)}>
             <button type="submit" className="treffer min-h-[40px] px-2 text-[14px] font-medium text-accent hover:underline">
-              Spielnamen zurücksetzen
+              Spielprofil zurücksetzen
             </button>
           </form>
         )}

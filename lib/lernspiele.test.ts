@@ -366,7 +366,7 @@ test("Torlauf: eigene Punkte, eigener Rekord und eigene Bestenliste, kein Endlos
   assert.equal(sp.punkteBestenliste(student, "tor").ich?.punkte, 3456);
 });
 
-test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen), ausgeschaltete nur für sich", async () => {
+test("Blockwerk-Bestenliste: alle mit Namen (niko 2026-11-25), wer kein Profil hat, bekommt eines; ausgeschaltete nur für sich", async () => {
   const { sp, repo, student: a } = await setup();
   const profil = await import("./spielprofil");
   const neu = (name: string) => {
@@ -390,7 +390,7 @@ test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen),
 
   const fuerA = sp.bloeckeBestenliste(a);
   const bName = profil.profilVon(b.id)?.name;
-  assert.ok(bName && profil.namensTeile(bName), "B (7. Schulstufe, ohne Spitzname) hat jetzt einen");
+  assert.equal(bName, "Ben P.", "B (ohne Profil) hat jetzt eines, mit seinem Namen");
   assert.deepEqual(
     fuerA.zeilen.map((z) => [z.platz, z.punkte, z.ich]),
     [
@@ -399,7 +399,7 @@ test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen),
     ],
     "C ist ausgeschaltet und steht nicht drin; A zählt mit dem besten Stand",
   );
-  assert.equal(fuerA.zeilen[0].name, profil.spitzname(profil.NAME_VORNE[0], profil.NAME_HINTEN[0]));
+  assert.equal(fuerA.zeilen[0].name, profil.spielName(a.name));
   assert.equal(fuerA.zeilen[1].name, bName);
   assert.equal(fuerA.profil, "da");
 
@@ -413,8 +413,8 @@ test("Blockwerk-Bestenliste: alle mit Spitzname (wer keinen hat, bekommt einen),
   );
   assert.equal(fuerB.zeilen[1].name, bName);
   assert.equal(fuerB.profil, "da");
-  // nie der echte Name
-  assert.ok(!JSON.stringify([fuerA, fuerB, sp.bloeckeBestenliste(c)]).match(/Probe|Mira|Ben|Cleo/));
+  // nie der ganze Nachname, und wer ausgeschaltet ist, steht bei den anderen nicht drin
+  assert.ok(!JSON.stringify([fuerA, fuerB, sp.bloeckeBestenliste(c)]).match(/Probe|Cleo/));
   const fuerC = sp.bloeckeBestenliste(c);
   assert.equal(fuerC.zeilen[0].name, "Du", "ausgeschaltet: auch der eigene Spitzname nicht");
   assert.equal(fuerC.profil, "erlaubnis");
