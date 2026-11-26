@@ -1584,6 +1584,20 @@ CREATE TABLE IF NOT EXISTS biko_auftraege (
 );
 CREATE INDEX IF NOT EXISTS idx_biko_auftraege ON biko_auftraege(art, teacher_id, datum);
 CREATE INDEX IF NOT EXISTS idx_biko_auftraege_status ON biko_auftraege(status);
+-- Geführter Ablauf der Einheit (lib/einheit-ablauf.ts, niko 2026-11-26): Start → (Kurztest | Stoff → Erklären) → Üben → Hausübung.
+-- weg: weiter (gleiches Thema wie letztes Mal) | neu (der Schüler zeigt neuen Stoff); stufe: start | kurztest | stoff | erklaeren |
+-- ueben | schluss; skill_ids: JSON, die Themen von heute; aktuell: das Thema, das gerade erklärt oder geübt wird;
+-- ansicht: gefuehrt | alles (der Lehrer hat „Mehr Werkzeuge“ geöffnet: das ganze frühere Cockpit, bis „Zurück zum Ablauf“).
+CREATE TABLE IF NOT EXISTS einheit_ablauf (
+  unit_id INTEGER PRIMARY KEY REFERENCES units(id) ON DELETE CASCADE,
+  weg TEXT,
+  stufe TEXT NOT NULL DEFAULT 'start',
+  skill_ids TEXT NOT NULL DEFAULT '[]',
+  aktuell TEXT,
+  kurztest_fertig INTEGER NOT NULL DEFAULT 0,
+  ansicht TEXT NOT NULL DEFAULT 'gefuehrt',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

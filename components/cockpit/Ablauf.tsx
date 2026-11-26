@@ -453,7 +453,7 @@ function Block({ titel, ton = "", children }: { titel: string; ton?: "" | "green
 }
 
 /** Ein langer Lehrertext: die ersten Sätze groß, der Rest unter „Mehr“ (lib/cockpit.ts `ersteSaetze`); `offen`: gleich ganz. */
-function LangText({ text, offen = false }: { text: string; offen?: boolean }) {
+export function LangText({ text, offen = false }: { text: string; offen?: boolean }) {
   const { kurz, rest } = ersteSaetze(text);
   return (
     <>
@@ -1217,7 +1217,7 @@ export function werkzeugReihenfolge(fach: string): WerkzeugKachel[] {
  * „Text schreiben“ direkt im Schritt (Deutsch, Englisch): ein freier Text in dieser Einheit, ohne den Umweg über
  * „Weitere Werkzeuge“. Nicht, wo der Schritt schon einen Schreibauftrag startet.
  */
-function TextSchreibenLink({ unitId }: { unitId: number }) {
+export function TextSchreibenLink({ unitId }: { unitId: number }) {
   return (
     <Link href={`/einheiten/${unitId}/text`} className="mt-3 inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="text-schreiben">
       <PenLine size={16} aria-hidden /> Text schreiben
