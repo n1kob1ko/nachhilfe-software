@@ -533,7 +533,9 @@ function finden(c: Ctx): Made | null {
       category: "wortarten",
       prompt: `Schreib ${many ? `alle ${name}` : `${c.focus === "artikel" ? "den" : c.focus === "praeposition" || c.focus === "konjunktion" ? "die" : "das"} ${WORTART_LABEL[c.focus]}`} aus dem Satz heraus${many ? ", in der Reihenfolge, in der sie im Satz stehen" : ""}.\n${quote(s)}\n${name}: ${hits.map(() => GAP).join(", ")}`,
       data: {},
-      answer: { blanks: hits.map((t) => [t.w]), mode: "text", criteria: [many ? `Alle ${name} des Satzes, kein anderes Wort.` : `Das richtige Wort, kein anderes.`] },
+      // Nomen: die Großschreibung gehört zur Antwort („wanderer, baum“ galt als richtig, Test 26.11.2026); bei den anderen
+      // Wortarten zählt sie nicht, ein Verb am Satzanfang darf klein abgeschrieben werden
+      answer: { blanks: hits.map((t) => [t.w]), mode: c.focus === "nomen" ? "exact" : "text", criteria: [many ? `Alle ${name} des Satzes, kein anderes Wort.` : `Das richtige Wort, kein anderes.`] },
       solution: [`${name}: ${hits.map((t) => t.w).join(", ")}`, ...hits.map((t) => reason(t, s)).filter(Boolean)].join("\n"),
       hints: hintsFor([c.focus]),
       errorMap: [],

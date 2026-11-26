@@ -10,6 +10,7 @@ import { loesungsdaten, schritteWieLoesung } from "./loesungsdaten";
 import { gradeMathTask, unknownOf } from "./math-task";
 import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
+import { triesForTask } from "./service";
 import { runningUnitForStudent } from "./units";
 
 /**
@@ -62,6 +63,7 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
       hintsOpened: new Set(hintUses.filter((h) => h.task_id === t.id).map((h) => h.hint_index)).size,
       released: zeigtLoesung(freigabe) ? { solution: t.solution, answer: answerText(t) ?? t.answer.sample ?? null, ...(zeigtAlles(freigabe) ? alles(t) : {}) } : null,
       triesUsed: tries.length,
+      maxTries: triesForTask(assignment.mode, t),
       faulty: t.type === "fix" ? (t.data.faulty ?? "") : null,
       lines: t.type === "free" ? (t.data.lines ?? null) : null,
       genus: isGenus(t.data.genus) ? t.data.genus : null,

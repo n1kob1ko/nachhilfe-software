@@ -280,7 +280,7 @@ test("„Ein anderes Blatt“ in the unit goes the way of „Gelöstes Blatt ein
   assert.ok(!("error" in out), JSON.stringify(out));
   const a = s.repo.getAssignment(out.assignmentId)!;
   assert.equal(a.unit_id, s.unit.id);
-  assert.equal(a.mode, "normal", "not mistaken for the unit's Minitest");
+  assert.equal(a.mode, "normal", "not mistaken for the unit's Kurztest");
   assert.ok(s.repo.listAttemptsForAssignment(a.id).every((x) => x.unit_id === s.unit.id));
   assert.deepEqual(s.p.papierDerEinheit(s.unit.id).map((p) => [p.titel, p.richtig, p.von]), [["Arbeitsblatt aus der Schule", 1, 2]]);
   const pruefen = s.p.speicherePapier({ unitId: s.unit.id, teacherId: s.teacher.id, blatt: s.p.ANDERES_BLATT, materialIds: [], gelesen: "ki", zeilen: [{ nr: "1", aufgabe: "x", antwort: "", bewertung: "richtig", punkte: null, max: null, skillId: null, fehler: "", pruefen: true }] });
@@ -290,13 +290,13 @@ test("„Ein anderes Blatt“ in the unit goes the way of „Gelöstes Blatt ein
   assert.deepEqual(s.p.speicherePapier({ unitId: s.unit.id, teacherId: s.teacher.id, blatt: s.p.ANDERES_BLATT, materialIds: [], gelesen: "hand", zeilen: [] }), { error: "Die Einheit ist schon beendet." });
 });
 
-test("tasks already answered on the device are left out; the unit's printed Minitest is offered as such", async () => {
+test("tasks already answered on the device are left out; the unit's printed Kurztest is offered as such", async () => {
   const s = await setup();
   const ws = s.blatt(s.sid);
   const asg = s.repo.assignWorksheet(ws, s.sid, "", s.unit.id);
   const [erste] = s.repo.listTasks(ws);
   s.repo.recordAttempt({ assignment_id: asg, task_id: erste.id, student_id: s.sid, skill_id: erste.skillId, attempt_no: 1, answer: "3/4", correct: 1, final: 1, time_ms: 20_000, hints_used: 0, solution_viewed: 0, error_label: null, feedback: "", unit_id: s.unit.id });
-  const mini = s.blatt(s.sid, "Minitest Brüche");
+  const mini = s.blatt(s.sid, "Kurztest Brüche");
   s.db().prepare("UPDATE worksheets SET minitest_unit_id = ? WHERE id = ?").run(s.unit.id, mini);
   const blaetter = s.p.blaetterDerEinheit(s.unit.id);
   const gesendet = blaetter.find((b) => b.key === `z${asg}`)!;

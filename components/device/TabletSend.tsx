@@ -76,7 +76,7 @@ export function SendResult({ state, unitId, unitLink = true }: { state: SendStat
         <p className="inline-flex items-center gap-2 text-[15px] font-semibold">
           <TabletSmartphone size={17} aria-hidden /> Noch kein Schülergerät verbunden
         </p>
-        <p className="mt-1 text-[14px] text-ink-2">Die Übung liegt für {s.student} bereit und erscheint am Lernlink. Mit einem verbundenen Tablet kommt sie sofort an.</p>
+        <p className="mt-1 text-[14px] text-ink-2">Die Übung liegt für {s.student} bereit und erscheint in der Schüler-App. Mit einem verbundenen Tablet kommt sie sofort an.</p>
         <div className="mt-2 flex flex-wrap gap-2">
           {/* ohne Gerät auch auf Papier, wie nach einem Vorschlag der Anpassung */}
           {s.worksheetId && (

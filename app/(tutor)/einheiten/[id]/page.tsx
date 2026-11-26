@@ -122,7 +122,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           {/* ohne Schülergerät: am Lernlink bereit, und zum Drucken */}
           {studentDevice(unit) === null && (
             <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] font-normal text-ink-2">
-              Kein Schülergerät verbunden: die Übung liegt am Lernlink bereit.
+              Kein Schülergerät verbunden: die Übung liegt in der Schüler-App bereit.
               <Link href={`/arbeitsblatt/${sent.id}`} target="_blank" className="inline-flex min-h-[44px] items-center gap-1 font-semibold text-accent hover:underline" data-testid="gesendet-drucken">
                 <Printer size={15} aria-hidden /> Zum Drucken öffnen
               </Link>
@@ -162,7 +162,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
       )}
       {sp.minitest && running && (
         <div role="alert" className="mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]">
-          Minitest: {sp.minitest}
+          Kurztest: {sp.minitest}
         </div>
       )}
       {sp.fremd && (
@@ -747,7 +747,7 @@ function UnitExercisesArea({ unit, student, mayManage }: { unit: UnitView; stude
                       {a.title}
                       {a.mode === "test" && (
                         <span className="ml-2 align-middle">
-                          <Pill tone="accent">{a.probe_test_id ? "Probeschularbeit" : a.note === LERNKONTROLLE ? "Lernkontrolle" : "Minitest"}</Pill>
+                          <Pill tone="accent">{a.probe_test_id ? "Probeschularbeit" : a.note === LERNKONTROLLE ? "Lernkontrolle" : "Kurztest"}</Pill>
                         </span>
                       )}
                     </span>

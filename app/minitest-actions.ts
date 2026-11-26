@@ -25,7 +25,7 @@ export async function minitestAction(f: FormData) {
   try {
     out = erstelleMinitest({ unitId, teacherId: teacher.id, anzahl: Number(f.get("anzahl")), ziel });
   } catch (e) {
-    fehler = e instanceof Error ? e.message : "Der Minitest konnte nicht erstellt werden.";
+    fehler = e instanceof Error ? e.message : "Der Kurztest konnte nicht erstellt werden.";
   }
   if (!out) redirect(`/einheiten/${unitId}?minitest=${encodeURIComponent(fehler)}`);
   noteActivity(unit.student_id);

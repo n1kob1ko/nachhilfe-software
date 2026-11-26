@@ -902,7 +902,7 @@ test("Tafel: das Bild aus Linien, Punkten und Texten, gesperrt und der Aufgabe z
   assert.ok(ersatz.some((e) => e.type === "text" && String(e.text).startsWith("Bild: Koordinatensystem")));
 });
 
-test("Mappe, Tafel und Minitest: Aufgaben mit Bild stehen mit Bild in der Mappe, in die Tafel kommt das Bild ohne Lösung, der Minitest macht neue", async () => {
+test("Mappe, Tafel und Kurztest: Aufgaben mit Bild stehen mit Bild in der Mappe, in die Tafel kommt das Bild ohne Lösung, der Kurztest macht neue", async () => {
   const { repo, niko, sid } = await setup();
   const units = await import("./units");
   const { submitAnswer } = await import("./service");
@@ -948,13 +948,13 @@ test("Mappe, Tafel und Minitest: Aufgaben mit Bild stehen mit Bild in der Mappe,
   assert.equal(mt.length, 4);
   const alt = new Set([t0, t1].map(aufgabenSchluessel));
   for (const t of mt) {
-    assert.ok(t.data.figure, `Minitest ohne Bild: ${t.prompt}`);
-    assert.ok(!alt.has(aufgabenSchluessel(t)), `Minitest wiederholt: ${t.prompt}`);
+    assert.ok(t.data.figure, `Kurztest ohne Bild: ${t.prompt}`);
+    assert.ok(!alt.has(aufgabenSchluessel(t)), `Kurztest wiederholt: ${t.prompt}`);
     assert.ok([t0.skillId, t1.skillId].includes(t.skillId));
   }
 });
 
-test("Generatoren ohne KI (Builder, Diagnose, Minitest) machen Aufgaben mit Bild; doppelte gibt es nicht", async () => {
+test("Generatoren ohne KI (Builder, Diagnose, Kurztest) machen Aufgaben mit Bild; doppelte gibt es nicht", async () => {
   const { generateBuiltIn, generateForSlot, hasBuiltInGenerator } = await import("./generators");
   for (const id of [...Object.keys(FIGUR_FAEHIGKEITEN), "mathe.flaechen.rechteck.umfang"]) assert.ok(hasBuiltInGenerator(id), id);
   for (const id of KINDER) {

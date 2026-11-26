@@ -370,7 +370,7 @@ export async function generateTasks(
   if (!skills.length) throw new Error("Bitte mindestens eine Fähigkeit auswählen.");
   const count = Math.max(1, Math.min(30, o.count ?? settings.count));
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
-  // Schreibaufträge: every part of a Textsorte at most twice, the rest of the exercise as planned
+  // Schreibaufträge: every part of a Textsorte once, the rest of the exercise as planned
   const plan = planSlots(settings.subject, skills, cats, count).filter((p, i, all) => {
     const sorte = sorteOfSkill(p.skill.skill.id);
     return !sorte || all.slice(0, i).filter((q) => sorteOfSkill(q.skill.skill.id) === sorte).length < maxTeiluebungen(sorte);

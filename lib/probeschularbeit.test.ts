@@ -138,7 +138,7 @@ test("Probeschularbeit ohne KI: ein Entwurf zur Schularbeit, leicht bis schwer, 
   assert.deepEqual(p.probeschularbeitenZu(testId).map((x) => x.worksheet.id), [lang.worksheetId, kurz.worksheetId, out.worksheetId]);
 });
 
-test("am Gerät wie ein Minitest; im Ergebnis Punkte und Note, offene Aufgaben halten die Note zurück", async () => {
+test("am Gerät wie ein Kurztest; im Ergebnis Punkte und Note, offene Aufgaben halten die Note zurück", async () => {
   const { repo, teacher, sid, schularbeit } = await setup();
   const p = await import("./probeschularbeit");
   const { releaseWorksheet } = await import("./builder");

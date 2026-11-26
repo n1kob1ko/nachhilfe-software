@@ -19,6 +19,7 @@ import {
   requireTeacher,
   setPassword,
 } from "@/lib/auth";
+import { markiereEinheitGesehen } from "@/lib/zu-erledigen";
 import { bestaetigeAbschluss, isAbschlussFeld, korrigiereFeld } from "@/lib/abschluss";
 import { freigeben } from "@/lib/hausuebung";
 import { clientIp } from "@/lib/client-ip";
@@ -241,6 +242,8 @@ export async function bestaetigeDokuAction(lessonId: number, form?: FormData) {
     revalidatePath(`/schueler/${owner.student_id}`);
   }
   bestaetigeAbschluss(lessonId);
+  // the results of this unit were on the card the teacher just confirmed: not again under „Zu erledigen“
+  if (owner) markiereEinheitGesehen(t.id, owner.id);
   revalidatePath("/", "layout");
   redirect("/jetzt");
 }

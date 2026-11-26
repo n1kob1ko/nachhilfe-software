@@ -22,7 +22,7 @@ export function MinitestKarte({ unitId, name, geraet, stoff, gedruckt }: { unitI
           <ClipboardCheck size={20} />
         </span>
         <p className="min-w-0 flex-1 text-[15px]">
-          <span className="font-semibold">Minitest gedruckt</span>
+          <span className="font-semibold">Kurztest gedruckt</span>
           <span className="num text-ink-2"> · {gedruckt.tasks} Aufgaben</span>
         </p>
         <Link href={`/arbeitsblatt/${gedruckt.worksheet.id}?einheit=${unitId}`} className="btn btn-secondary">
@@ -52,7 +52,7 @@ export function MinitestKarte({ unitId, name, geraet, stoff, gedruckt }: { unitI
         </span>
         <div className="min-w-0 flex-1">
           <h2 id="minitest-titel" className="text-[18px] font-semibold">
-            Minitest zum Start
+            Kurztest zum Start
           </h2>
           <p className="mt-0.5 text-[14px] text-ink-2">
             <span className="num">Stoff vom {stoffDatum(stoff)}</span> · {stoff.fach}

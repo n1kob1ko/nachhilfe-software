@@ -10,6 +10,7 @@ import {
   kurztestFertig,
   leseAblauf,
   offenesStoffBlatt,
+  gedruckteUebungZu,
   papierOhneFoto,
   setzeAktuell,
   setzeAnsicht,
@@ -166,10 +167,14 @@ export async function uebenPapierAction(unitId: number, skillId: string) {
     if (a.stufe !== "ueben") setzeStufe(unitId, "ueben");
   }
   const blatt = offenesStoffBlatt(unitId);
+  // already printed for this topic and not photographed yet: the same sheet again, not a second one with the same name
+  const gedruckt = blatt ? null : gedruckteUebungZu(unitId, skillId);
   let wid: number;
   if (blatt) {
     merkeGedruckt(blatt, unitId, 0);
     wid = blatt;
+  } else if (gedruckt) {
+    wid = gedruckt;
   } else {
     const out = await sendeAusGenerator(unitId, skillId, t.id, null, "drucken");
     if ("fehler" in out) weiter(unitId, out);

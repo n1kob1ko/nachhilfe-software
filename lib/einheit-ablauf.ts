@@ -206,7 +206,11 @@ export function stoffFertig(unitId: number): Ergebnis {
  * Lernpaket (Sprechtext, Fragen mit erwarteter Antwort), die Präsentation dazu und ein Übungsblatt mit 8 Aufgaben.
  */
 export function stoffpaketDerEinheit(unitId: number): Stoffpaket | null {
-  const id = db().prepare("SELECT id FROM stoffpakete WHERE unit_id = ? AND status <> 'verworfen' ORDER BY id DESC LIMIT 1").pluck().get(unitId) as number | undefined;
+  // nur der Stoff im Fach der Einheit: nach „Fach ändern“ gilt der des alten Fachs nicht mehr (er bleibt beim Schüler gespeichert)
+  const id = db()
+    .prepare("SELECT p.id FROM stoffpakete p JOIN units u ON u.id = p.unit_id WHERE p.unit_id = ? AND p.status <> 'verworfen' AND (p.fach = '' OR u.subject = '' OR p.fach = u.subject) ORDER BY p.id DESC LIMIT 1")
+    .pluck()
+    .get(unitId) as number | undefined;
   return id ? getStoffpaket(id) : null;
 }
 
@@ -280,6 +284,17 @@ export function gedruckteUebung(unitId: number): { worksheetId: number; titel: s
     )
     .get(unitId, unitId, unitId) as { id: number; title: string } | undefined;
   return r ? { worksheetId: r.id, titel: r.title } : null;
+}
+
+/**
+ * Das in dieser Einheit schon gedruckte, noch nicht fotografierte Blatt zu dieser Fähigkeit: ein zweites Tippen auf „Lieber auf
+ * Papier“ druckt es noch einmal, statt ein zweites mit demselben Namen zu bauen (Test 26.11.2026: zwei gleich benannte Blätter
+ * unter „Welches Blatt?“).
+ */
+export function gedruckteUebungZu(unitId: number, skillId: string): number | null {
+  const g = gedruckteUebung(unitId);
+  if (!g) return null;
+  return repo.getWorksheet(g.worksheetId)?.skill_ids.includes(skillId) ? g.worksheetId : null;
 }
 
 /** „Ohne Foto weiter“: die gedruckte Übung hält Üben nicht mehr auf (fotografieren geht weiter unter „Mehr Werkzeuge“). */

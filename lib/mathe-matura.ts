@@ -1,9 +1,9 @@
 /**
  * Mathematik-Matura ohne KI: eigene Aufgaben in den Antwortformaten der schriftlichen AHS-Matura
- * (1 aus 5, 2 aus 5, Lückentext zum Ankreuzen und Zuordnung, lib/matura-formate.ts) für 15 Fähigkeiten
+ * (1 aus 5, 2 aus 5, Lückentext zum Ankreuzen und Zuordnung, lib/matura-formate.ts) für 18 Fähigkeiten
  * der Oberstufe: quadratische Funktionen, Scheitelform, Verschieben von Graphen, exponentielles Wachstum,
- * Halbwertszeit, Logarithmus, arithmetische und geometrische Folgen, Änderungsrate, Potenzregel,
- * Monotonie, Binomialverteilung, mehrstufige Zufallsversuche und Stammfunktionen.
+ * Halbwertszeit, Logarithmus, arithmetische und geometrische Folgen, Änderungsrate, Potenz-, Produkt-,
+ * Quotienten- und Kettenregel, Monotonie, Binomialverteilung, mehrstufige Zufallsversuche und Stammfunktionen.
  *
  * Nichts ist aus dem Aufgabenpool, aus Maturen, aus Schulbüchern oder vom IQS übernommen: die Aussagen
  * entstehen aus Zufallszahlen, die falschen Antworten aus typischen Fehlern (die Bezeichnungen wie in
@@ -1236,6 +1236,290 @@ const DIFF_POTENZREGEL: Faehigkeit = {
   },
 };
 
+// ---------- Produkt-, Quotienten- und Kettenregel ----------
+// Test mit vier Test-Lehrern (26.11.2026): ohne KI kamen zu diesen Regeln nur allgemeine Schreibaufgaben („Welcher Fehler passiert
+// oft?“). Jetzt eigene Aufgaben wie bei der Potenzregel: lineare Klammern und Potenzen, die falschen Antworten aus den typischen
+// Fehlern (lib/themen/mathe-oberstufe.ts), jede mit Probe.
+
+/** Ein linearer Term „2x + 3“. */
+const lin = (a: number, b: number) => poly([[a, 1], [b, 0]]);
+/** k · (innen)^e, wie man es hinschreibt: „12 · (3x + 1)^3“, „6 · (3x + 1)“, „(3x + 1)^2“, „6“. */
+function kette(k: number, innen: string, e: number): string {
+  if (e === 0) return wert(k);
+  const klammer = `(${innen})${e === 1 ? "" : `^${e}`}`;
+  return k === 1 ? klammer : k === -1 ? `−${klammer}` : `${wert(k)} · ${klammer}`;
+}
+const mal = (p: Term[], q: Term[]): Term[] => p.flatMap(([k, e]) => q.map(([l, f]): Term => [k * l, e + f]));
+const gleich = (s: string) => ({ text: s, b: s });
+const istFsVon = (f: F) => (text: string) => () => istAbleitung(fn(text), f);
+const fsBei = (f: F, x: number) => (w: number) => () => nahe(abl(f, x), w, 1e-5);
+
+const PRODUKT_HILFEN = ["(u · v)′ = u′ · v + u · v′", "Leite jeden Faktor einzeln ab und setz beide in die Regel ein. Danach kannst du ausmultiplizieren."];
+const EINZELN = "Die Faktoren einzeln abgeleitet und multipliziert";
+const EIN_SUMMAND = "Nur einen der beiden Summanden geschrieben";
+/** f(x) = (ax + b) · (cx^n + d). */
+function produktZahlen(rng: Rng, st: Stufe, n: number = pick(rng, st <= 1 ? [2] : [2, 3])) {
+  const a = nz(rng, -4, 4);
+  const b = nz(rng, -6, 6);
+  const c = st >= 3 ? nz(rng, -3, 3) : pick(rng, [1, 1, 2, -1, 3]);
+  const d = nz(rng, -6, 6);
+  const u: Term[] = [[a, 1], [b, 0]];
+  const v: Term[] = [[c, n], [d, 0]];
+  const aus = mal(u, v);
+  const vAbl = poly(pAbl(v));
+  return {
+    text: `(${poly(u)}) · (${poly(v)})`,
+    aus,
+    abl: pAbl(aus),
+    /** u′ · v + u · v′, noch nicht ausmultipliziert */
+    regel: `${kette(a, poly(v), 1)} + (${poly(u)}) · ${vAbl.startsWith("−") ? `(${vAbl})` : vAbl}`,
+    einzeln: mal(pAbl(u), pAbl(v)),
+    links: mal(pAbl(u), v),
+    rechts: mal(u, pAbl(v)),
+  };
+}
+
+const DIFF_PRODUKTREGEL: Faehigkeit = {
+  wahl: (rng, st) => {
+    const z = produktZahlen(rng, st);
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const fs = (g: Term[]) => `f′(x) = ${poly(g)}`;
+    const x0 = nz(rng, -2, 2);
+    const bei = fsBei(f, x0);
+    const minus: Term[] = [...z.links, ...z.rechts.map(([k, e]): Term => [-k, e])];
+    const [richtig, wertVonF] = [pWert(z.abl, x0), pWert(z.aus, x0)];
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      aussagen: [
+        ja(fs(z.abl), ist(poly(z.abl))),
+        ja(`f′(x) = ${z.regel}`, ist(z.regel)),
+        nein(fs(z.einzeln), EINZELN, ist(poly(z.einzeln))),
+        nein(fs(z.links), EIN_SUMMAND, ist(poly(z.links))),
+        nein(fs(z.rechts), EIN_SUMMAND, ist(poly(z.rechts))),
+        nein(fs(minus), "Minus statt Plus zwischen den Summanden gesetzt", ist(poly(minus))),
+        ja(`f′(${zahl(x0)}) = ${wert(richtig)}`, bei(richtig), "stelle"),
+        ...(verschieden(richtig, wertVonF) ? [nein(`f′(${zahl(x0)}) = ${wert(wertVonF)}`, FUNKTIONSWERT, bei(wertVonF), "stelle")] : []),
+      ],
+      loesung: `f′(x) = ${z.regel} = ${poly(z.abl)}; f′(${zahl(x0)}) = ${wert(richtig)}.`,
+      hilfen: PRODUKT_HILFEN,
+    };
+  },
+  luecke: (rng, st) => {
+    const z = produktZahlen(rng, st);
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const x0 = nz(rng, -2, 2);
+    const bei = fsBei(f, x0);
+    const werte = [pWert(z.abl, x0), pWert(z.einzeln, x0), pWert(z.aus, x0)];
+    if (!verschieden(...werte)) return null;
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      satz: `Für die Ableitung von f gilt f′(x) = ${GAP}, und es gilt f′(${zahl(x0)}) = ${GAP}.`,
+      luecken: [
+        [teil(poly(z.abl), true, ist(poly(z.abl))), teil(poly(z.einzeln), false, ist(poly(z.einzeln)), EINZELN), teil(poly(z.links), false, ist(poly(z.links)), EIN_SUMMAND)],
+        [teil(wert(werte[0]), true, bei(werte[0])), teil(wert(werte[1]), false, bei(werte[1]), EINZELN), teil(wert(werte[2]), false, bei(werte[2]), FUNKTIONSWERT)],
+      ],
+      loesung: `f′(x) = ${z.regel} = ${poly(z.abl)}, f′(${zahl(x0)}) = ${wert(werte[0])}.`,
+      hilfen: PRODUKT_HILFEN,
+    };
+  },
+  zuordnung: (rng, st) => {
+    const z1 = produktZahlen(rng, st, 2);
+    const z2 = produktZahlen(rng, st, 3);
+    return zuordnen(
+      rng,
+      [
+        { aussage: `f₁(x) = ${z1.text}`, a: z1.text, richtig: gleich(poly(z1.abl)), falsch: { ...gleich(poly(z1.einzeln)), fehler: EINZELN } },
+        { aussage: `f₂(x) = ${z2.text}`, a: z2.text, richtig: gleich(poly(z2.abl)), falsch: { ...gleich(poly(z2.links)), fehler: EIN_SUMMAND } },
+      ],
+      (fText, gText) => istAbleitung(fn(gText), fn(fText)),
+      {
+        stamm: "Gegeben sind die Funktionen f₁ und f₂.",
+        auftrag: "Ordne den zwei Funktionen jeweils ihre Ableitungsfunktion aus A bis D zu.",
+        fest: true,
+        loesung: `f₁′(x) = ${z1.regel} = ${poly(z1.abl)}, f₂′(x) = ${z2.regel} = ${poly(z2.abl)}.`,
+        hilfen: PRODUKT_HILFEN,
+      },
+    );
+  },
+};
+
+const QUOTIENT_HILFEN = ["(u/v)′ = (u′ · v − u · v′)/v^2", "Im Zähler zuerst u′ · v, dann minus u · v′. Der Nenner wird quadriert."];
+const VERTAUSCHT = "Im Zähler die Reihenfolge vertauscht";
+const NICHT_QUADRIERT = "Den Nenner nicht quadriert";
+/** f(x) = (ax + b)/(cx + d) mit f′(x) = (ad − bc)/(cx + d)^2; die Polstelle liegt an keiner Probestelle. */
+function quotientZahlen(rng: Rng, st: Stufe) {
+  const a = nz(rng, -4, 4);
+  const b = nz(rng, -6, 6);
+  const c = st >= 2 ? pick(rng, [1, 1, -1, 2]) : 1;
+  const d = pick(rng, [-4, -2, -1, 1, 2, 4]);
+  const D = a * d - b * c;
+  const pol = -d / c;
+  if (D === 0 || STELLEN.some((x) => Math.abs(x - pol) < 0.25)) return null;
+  const nenner = lin(c, d);
+  // eine Stelle, an der der Nenner weder 0 noch ±1 ist: sonst sind „nicht quadriert“ und richtig gleich
+  const stellen = [-3, -2, -1, 1, 2, 3].filter((x) => Math.abs(c * x + d) >= 2);
+  if (!stellen.length) return null;
+  const x0 = pick(rng, stellen);
+  return { a, b, c, d, D, pol, nenner, x0, w: c * x0 + d, text: `(${lin(a, b)})/(${nenner})`, abl: `${wert(D)}/(${nenner})^2`, vertauscht: `${wert(-D)}/(${nenner})^2`, einfach: `${wert(D)}/(${nenner})` };
+}
+const quotientWeg = (z: NonNullable<ReturnType<typeof quotientZahlen>>) => `u = ${lin(z.a, z.b)}, v = ${z.nenner}: f′(x) = (${kette(z.a, z.nenner, 1)} − (${lin(z.a, z.b)}) · ${z.c < 0 ? `(${zahl(z.c)})` : zahl(z.c)})/(${z.nenner})^2 = ${z.abl}`;
+
+const DIFF_QUOTIENTENREGEL: Faehigkeit = {
+  wahl: (rng, st) => {
+    const z = quotientZahlen(rng, st);
+    if (!z) return null;
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const bei = fsBei(f, z.x0);
+    const fs = (t: string) => `f′(x) = ${t}`;
+    const offen = `${wert(z.D)}/(${poly([[z.c * z.c, 2], [2 * z.c * z.d, 1], [z.d * z.d, 0]])})`;
+    const plus = `(${poly([[2 * z.a * z.c, 1], [z.a * z.d + z.b * z.c, 0]])})/(${z.nenner})^2`;
+    const einzeln = wert(z.a / z.c);
+    const [richtig, wertVonF] = [z.D / z.w ** 2, (z.a * z.x0 + z.b) / z.w];
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      aussagen: [
+        ja(fs(z.abl), ist(z.abl)),
+        ja(fs(offen), ist(offen)),
+        nein(fs(z.vertauscht), VERTAUSCHT, ist(z.vertauscht)),
+        nein(fs(z.einfach), NICHT_QUADRIERT, ist(z.einfach)),
+        nein(fs(einzeln), "Zähler und Nenner einzeln abgeleitet", ist(einzeln)),
+        nein(fs(plus), "Plus statt Minus im Zähler gesetzt", ist(plus)),
+        ja(`f′(${zahl(z.x0)}) = ${wert(richtig)}`, bei(richtig), "stelle"),
+        ...(verschieden(richtig, wertVonF) ? [nein(`f′(${zahl(z.x0)}) = ${wert(wertVonF)}`, FUNKTIONSWERT, bei(wertVonF), "stelle")] : []),
+      ],
+      loesung: `${quotientWeg(z)}; f′(${zahl(z.x0)}) = ${wert(richtig)}.`,
+      hilfen: QUOTIENT_HILFEN,
+    };
+  },
+  luecke: (rng, st) => {
+    const z = quotientZahlen(rng, st);
+    if (!z) return null;
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const bei = fsBei(f, z.x0);
+    const werte = [z.D / z.w ** 2, -z.D / z.w ** 2, z.D / z.w];
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      satz: `Für die Ableitung von f gilt f′(x) = ${GAP}, und es gilt f′(${zahl(z.x0)}) = ${GAP}.`,
+      luecken: [
+        [teil(z.abl, true, ist(z.abl)), teil(z.vertauscht, false, ist(z.vertauscht), VERTAUSCHT), teil(z.einfach, false, ist(z.einfach), NICHT_QUADRIERT)],
+        [teil(wert(werte[0]), true, bei(werte[0])), teil(wert(werte[1]), false, bei(werte[1]), VERTAUSCHT), teil(wert(werte[2]), false, bei(werte[2]), NICHT_QUADRIERT)],
+      ],
+      loesung: `${quotientWeg(z)}, f′(${zahl(z.x0)}) = ${wert(werte[0])}.`,
+      hilfen: QUOTIENT_HILFEN,
+    };
+  },
+  zuordnung: (rng, st) => {
+    const z1 = quotientZahlen(rng, st);
+    const z2 = quotientZahlen(rng, st);
+    if (!z1 || !z2 || nahe(z1.pol, z2.pol)) return null;
+    return zuordnen(
+      rng,
+      [
+        { aussage: `f₁(x) = ${z1.text}`, a: z1.text, richtig: gleich(z1.abl), falsch: { ...gleich(z1.einfach), fehler: NICHT_QUADRIERT } },
+        { aussage: `f₂(x) = ${z2.text}`, a: z2.text, richtig: gleich(z2.abl), falsch: { ...gleich(z2.vertauscht), fehler: VERTAUSCHT } },
+      ],
+      (fText, gText) => istAbleitung(fn(gText), fn(fText)),
+      {
+        stamm: "Gegeben sind die Funktionen f₁ und f₂.",
+        auftrag: "Ordne den zwei Funktionen jeweils ihre Ableitungsfunktion aus A bis D zu.",
+        fest: true,
+        loesung: `f₁′(x) = ${z1.abl}, f₂′(x) = ${z2.abl}.`,
+        hilfen: QUOTIENT_HILFEN,
+      },
+    );
+  },
+};
+
+const KETTE_HILFEN = ["(u(v(x)))′ = u′(v(x)) · v′(x): äußere Ableitung mal innere Ableitung", "Die innere Funktion ist die Klammer. Ihre Ableitung ist die Zahl vor x."];
+const INNERE = "Die innere Ableitung vergessen";
+const OHNE_HOCHZAHL = "Nicht mit der Hochzahl multipliziert";
+/** f(x) = (ax + b)^n; an der Stelle x0 hat die Klammer den Wert w (klein, damit die Zahlen lesbar bleiben). */
+function ketteZahlen(rng: Rng, st: Stufe, n: number = pick(rng, st <= 1 ? [2, 3] : [3, 4, 5])) {
+  const a = pick(rng, n >= 4 ? [2, 3, -2, -3] : [2, 3, 4, 5, -2, -3, -4]);
+  const x0 = nz(rng, -2, 2);
+  const w = pick(rng, [1, -1, 2, -2]);
+  const b = w - a * x0;
+  if (b === 0 || a === n) return null;
+  const innen = lin(a, b);
+  return { n, a, b, x0, w, innen, text: `(${innen})^${n}`, abl: kette(n * a, innen, n - 1), ohneInnen: kette(n, innen, n - 1), ohneHochzahl: kette(a, innen, n - 1) };
+}
+
+const DIFF_KETTENREGEL: Faehigkeit = {
+  wahl: (rng, st) => {
+    const z = ketteZahlen(rng, st);
+    if (!z) return null;
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const bei = fsBei(f, z.x0);
+    const fs = (t: string) => `f′(x) = ${t}`;
+    const nichtVerringert = kette(z.n * z.a, z.innen, z.n);
+    const nurInnen = wert(z.a ** z.n);
+    const offen = poly([[2 * z.a * z.a, 1], [2 * z.a * z.b, 0]]);
+    const [richtig, ohneInnen] = [z.n * z.a * z.w ** (z.n - 1), z.n * z.w ** (z.n - 1)];
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      aussagen: [
+        ja(fs(z.abl), ist(z.abl)),
+        ja(`Die innere Funktion v(x) = ${z.innen} hat die Ableitung v′(x) = ${zahl(z.a)}.`, () => STELLEN.every((x) => nahe(abl(fn(z.innen), x), z.a, 1e-5))),
+        ...(z.n === 2 ? [ja(fs(offen), ist(offen))] : []),
+        nein(fs(z.ohneInnen), INNERE, ist(z.ohneInnen)),
+        nein(fs(nichtVerringert), NICHT_VERRINGERT, ist(nichtVerringert)),
+        nein(fs(z.ohneHochzahl), OHNE_HOCHZAHL, ist(z.ohneHochzahl)),
+        nein(fs(nurInnen), "Nur die innere Funktion abgeleitet und die äußere stehen gelassen", ist(nurInnen)),
+        ja(`f′(${zahl(z.x0)}) = ${wert(richtig)}`, bei(richtig), "stelle"),
+        nein(`f′(${zahl(z.x0)}) = ${wert(ohneInnen)}`, INNERE, bei(ohneInnen), "stelle"),
+      ],
+      loesung: `Äußere Ableitung mal innere Ableitung: f′(x) = ${kette(z.n, z.innen, z.n - 1)} · ${z.a < 0 ? `(${zahl(z.a)})` : zahl(z.a)} = ${z.abl}; f′(${zahl(z.x0)}) = ${wert(richtig)}.`,
+      hilfen: KETTE_HILFEN,
+    };
+  },
+  luecke: (rng, st) => {
+    const z = ketteZahlen(rng, st);
+    if (!z) return null;
+    const f = fn(z.text);
+    const ist = istFsVon(f);
+    const bei = fsBei(f, z.x0);
+    const nichtVerringert = kette(z.n * z.a, z.innen, z.n);
+    const werte = [z.n * z.a * z.w ** (z.n - 1), z.n * z.w ** (z.n - 1), z.w ** z.n];
+    if (!verschieden(...werte)) return null;
+    return {
+      stamm: `Gegeben ist die Funktion f mit f(x) = ${z.text}.`,
+      satz: `Für die Ableitung von f gilt f′(x) = ${GAP}, und es gilt f′(${zahl(z.x0)}) = ${GAP}.`,
+      luecken: [
+        [teil(z.abl, true, ist(z.abl)), teil(z.ohneInnen, false, ist(z.ohneInnen), INNERE), teil(nichtVerringert, false, ist(nichtVerringert), NICHT_VERRINGERT)],
+        [teil(wert(werte[0]), true, bei(werte[0])), teil(wert(werte[1]), false, bei(werte[1]), INNERE), teil(wert(werte[2]), false, bei(werte[2]), FUNKTIONSWERT)],
+      ],
+      loesung: `f′(x) = ${kette(z.n, z.innen, z.n - 1)} · ${z.a < 0 ? `(${zahl(z.a)})` : zahl(z.a)} = ${z.abl}, f′(${zahl(z.x0)}) = ${wert(werte[0])}.`,
+      hilfen: KETTE_HILFEN,
+    };
+  },
+  zuordnung: (rng, st) => {
+    const n1 = pick(rng, st <= 1 ? [2] : [2, 3]);
+    const z1 = ketteZahlen(rng, st, n1);
+    const z2 = ketteZahlen(rng, st, n1 + 1);
+    if (!z1 || !z2) return null;
+    return zuordnen(
+      rng,
+      [
+        { aussage: `f₁(x) = ${z1.text}`, a: z1.text, richtig: gleich(z1.abl), falsch: { ...gleich(z1.ohneInnen), fehler: INNERE } },
+        { aussage: `f₂(x) = ${z2.text}`, a: z2.text, richtig: gleich(z2.abl), falsch: { ...gleich(z2.ohneHochzahl), fehler: OHNE_HOCHZAHL } },
+      ],
+      (fText, gText) => istAbleitung(fn(gText), fn(fText)),
+      {
+        stamm: "Gegeben sind die Funktionen f₁ und f₂.",
+        auftrag: "Ordne den zwei Funktionen jeweils ihre Ableitungsfunktion aus A bis D zu.",
+        fest: true,
+        loesung: `f₁′(x) = ${z1.abl}, f₂′(x) = ${z2.abl}.`,
+        hilfen: KETTE_HILFEN,
+      },
+    );
+  },
+};
+
 const MONOTONIE_HILFEN = ["Wo f′(x) > 0 ist, ist f streng monoton steigend.", "Wechselt f′ an einer Stelle von + nach −, hat f dort ein lokales Maximum."];
 const HOCH_TIEF = "Hoch- und Tiefpunkt verwechselt";
 const MONO_FEHLER = "Das Monotonieverhalten verkehrt abgelesen";
@@ -1647,6 +1931,9 @@ const FAEHIGKEITEN: Record<string, Faehigkeit> = {
   "mathe.os.folgen.geometrisch": FOLGEN_GEOMETRISCH,
   "mathe.os.diff.aenderungsrate": DIFF_AENDERUNGSRATE,
   "mathe.os.diff.potenzregel": DIFF_POTENZREGEL,
+  "mathe.os.diff.produktregel": DIFF_PRODUKTREGEL,
+  "mathe.os.diff.quotientenregel": DIFF_QUOTIENTENREGEL,
+  "mathe.os.diff.kettenregel": DIFF_KETTENREGEL,
   "mathe.os.diff.monotonie": DIFF_MONOTONIE,
   "mathe.os.wahrscheinlichkeit.binomial-bereiche": WAHRSCHEINLICHKEIT_BINOMIAL,
   "mathe.os.wahrscheinlichkeit.mehrstufig": WAHRSCHEINLICHKEIT_MEHRSTUFIG,

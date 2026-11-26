@@ -295,8 +295,9 @@ export function heuteKarten(teacherId: number, punkte: HeutePunkt[], now: Date =
       plan: b.plan,
       themen,
       kiWoEsHakt: ki?.inhalt.woEsHakt ?? null,
-      // the Platz of this row, else the planned duration the unit's plan uses (lib/briefing.ts `heute`)
-      dauerMin: p.platzId !== null ? p.endeMin - p.startMin : d.minuten,
+      // the Platz of this row; a unit without a Platz that is already held: as long as it really was (10 minutes are not
+      // „100 Min.“); else the planned duration the unit's plan uses (lib/briefing.ts `heute`)
+      dauerMin: p.platzId !== null ? p.endeMin - p.startMin : p.erledigt && p.endeMin > p.startMin ? p.endeMin - p.startMin : d.minuten,
     });
     // the homework of last time and what came of it, in one line with its source (lib/hausuebung-zurueck.ts)
     const unit = begonnen ? getUnit(p.einheitId!) : null;

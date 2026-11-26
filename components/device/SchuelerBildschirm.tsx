@@ -22,9 +22,15 @@ const VOLL_ABSTAND = 3000;
 
 type Vorlieben = { offen: boolean; groesse: number; r: number; b: number };
 
+/** ab dieser Fensterbreite rückt die Seite neben das offene Fenster, statt darunter zu liegen */
+const PLATZ_AB = 1100;
+/** so viel muss für die Seite (mit der Leiste links) übrig bleiben */
+const SEITE_MIN = 820;
+
 function lesen(): Vorlieben {
-  const klein = typeof window !== "undefined" && window.innerWidth < 768;
-  const std = { offen: !klein, groesse: 1, r: 16, b: 16 };
+  // zu Beginn zugeklappt, als Knopf unten rechts (Test 26.11.2026, S3: das offene Fenster lag über dem großen Knopf der
+  // Einheit). Wer es öffnet, behält es offen: das steht dann in den Vorlieben.
+  const std = { offen: false, groesse: 1, r: 16, b: 16 };
   try {
     const v = JSON.parse(localStorage.getItem(SPEICHER) ?? "null") as Partial<Vorlieben> | null;
     return v ? { ...std, ...v, groesse: Math.min(2, Math.max(0, Number(v.groesse ?? 1))) } : std;
@@ -251,6 +257,19 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
     zug.current = null;
     if (v) merken(v);
   };
+
+  // offen und rechts am Rand, auf einem breiten Schirm: die Seite macht Platz (app/(tutor)/layout.tsx liest --spiegel-platz),
+  // damit das Fenster nie über dem großen Knopf der Einheit liegt. Verschoben oder zu groß: es schwebt wie bisher darüber.
+  const fensterBreite = Math.round(vp.w * massstab);
+  const platz = v?.offen && fenster.w >= PLATZ_AB && v.r <= 40 && fenster.w - (fensterBreite + v.r + 16) >= SEITE_MIN ? fensterBreite + v.r + 16 : 0;
+  useEffect(() => {
+    const wurzel = document.documentElement;
+    if (platz) wurzel.style.setProperty("--spiegel-platz", `${platz}px`);
+    else wurzel.style.removeProperty("--spiegel-platz");
+    return () => {
+      wurzel.style.removeProperty("--spiegel-platz");
+    };
+  }, [platz]);
 
   if (!v) return null;
 

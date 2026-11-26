@@ -68,6 +68,8 @@ export type ClientTask = {
    */
   released: { solution: string; answer: string | null; steps?: string[]; ways?: string[]; explanation?: string; watch?: string[] } | null;
   triesUsed: number;
+  /** Versuche für diese Aufgabe, wenn es weniger sind als sonst (Auswahl mit zwei oder drei Möglichkeiten, lib/service.ts triesForTask). */
+  maxTries?: number;
   /** Fehler korrigieren: the text with errors the student corrects. */
   faulty: string | null;
   /** Freie Antwort: 1 = one line, more = a text field of about that many lines. */
@@ -213,7 +215,7 @@ export function Solver({
   const noun = reading ? "Frage" : "Aufgabe";
   const tone = (t: ClientTask) =>
     t.finished ? (t.finished.correct === null || t.finished.review === "teilweise" ? "amber" : t.finished.correct ? "green" : "red") : null;
-  const testName = probe ? "Probeschularbeit" : kontrolle ? "Lernkontrolle" : blatt ? "Test" : "Minitest";
+  const testName = probe ? "Probeschularbeit" : kontrolle ? "Lernkontrolle" : blatt ? "Test" : "Kurztest";
   // ganzes Blatt im Test: alles abgegeben, dann das Ergebnis
   const alleFertig = tasks.every((t) => t.finished);
   useEffect(() => {
@@ -1613,7 +1615,7 @@ function TaskCard({
               )}
               {tries > 0 && !test && (
                 <span className="num text-[14px] text-ink-3">
-                  Versuch {tries + 1} von {maxTries}
+                  Versuch {tries + 1} von {task.maxTries ?? maxTries}
                 </span>
               )}
             </>

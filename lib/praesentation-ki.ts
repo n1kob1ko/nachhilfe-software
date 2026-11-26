@@ -89,7 +89,7 @@ export function bekannteNamen(): string[] {
 
 /** Why the button cannot ask the KI now, or null. Uploading a presentation goes on either way. */
 export function praesKiAusGrund(): string | null {
-  if (!aiEnabled("praesentation")) return "Die KI ist aus oder für den gewählten Anbieter ist kein Schlüssel hinterlegt (Erweitert › KI-Kosten). Eine Präsentation hochladen geht weiter.";
+  if (!aiEnabled("praesentation")) return "Die KI ist gerade aus. Einschalten kann sie die Verwaltung unter Erweitert › KI-Kosten. Eine Präsentation hochladen geht weiter.";
   if (budgetUsedUp("praesentation")) return "Das KI-Budget für diesen Monat ist aufgebraucht. Eine Präsentation hochladen geht weiter.";
   return null;
 }

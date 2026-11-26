@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Camera, Check, Eye, Keyboard, Loader2, NotebookPen, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
 import {
@@ -18,6 +19,7 @@ import {
   uebenAction,
   wegAction,
 } from "@/app/ablauf-actions";
+import { wechsleFachAction } from "@/app/cockpit-actions";
 import { minitestAction } from "@/app/minitest-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { endUnitAction } from "@/app/session-actions";
@@ -30,7 +32,7 @@ import { EinheitBeenden } from "@/components/EinheitBeenden";
 import { FormKnopf } from "@/components/FormKnopf";
 import { StoffpaketForm } from "@/components/StoffpaketForm";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
-import { cockpit, FRAGE_ARTEN, planFuehrung, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
+import { cockpit, FRAGE_ARTEN, merkeFrage, planFuehrung, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
 import {
   STUFE_LABEL,
   erklaerPaket,
@@ -100,19 +102,19 @@ export async function Gefuehrt({ unit, student, folien, stoffHand = false }: { u
           );
           return tippbar ? (
             <form key={s} action={stufeAction.bind(null, unit.id, s)}>
-              <button className="treffer w-full text-center" data-testid={`stufe-${s}`}>
+              <button className="treffer min-h-[44px] w-full text-center" data-testid={`stufe-${s}`}>
                 {inhalt}
               </button>
             </form>
           ) : (
-            <div key={s} aria-current={aktiv ? "step" : undefined} className="text-center" data-testid={`stufe-${s}`}>
+            <div key={s} aria-current={aktiv ? "step" : undefined} className="min-h-[44px] text-center" data-testid={`stufe-${s}`}>
               {inhalt}
             </div>
           );
         })}
       </nav>
 
-      {a.stufe === "start" && <StartKarte unit={unit} name={name} />}
+      {a.stufe === "start" && <StartKarte unit={unit} name={name} faecher={student.subjects} />}
       {a.stufe === "kurztest" && <KurztestKarte unit={unit} a={a} name={name} />}
       {a.stufe === "stoff" && <StoffKarte unit={unit} student={student} name={name} hand={stoffHand} />}
       {a.stufe === "erklaeren" && <ErklaerenKarte unit={unit} a={a} name={name} folien={folien} />}
@@ -202,10 +204,27 @@ function Ergebnis({ e, laeuft }: { e: Auswertung; laeuft: boolean }) {
 // ---------- Start ----------
 
 /** „Was machen wir heute?“: weiter mit dem Stoff vom letzten Mal (zuerst ein Kurztest) oder neues Thema. */
-function StartKarte({ unit, name }: { unit: UnitView; name: string }) {
+function StartKarte({ unit, name, faecher }: { unit: UnitView; name: string; faecher: string[] }) {
   const stoff = letzterStoff(unit.student_id, unit.id);
+  // die anderen Fächer des Schülers, ein Tippen (Test 26.11.2026, M2: sonst nur über „Fach ändern“ oben zu finden)
+  const andere = [...new Set(faecher)].filter((f) => f && f !== unit.subject).slice(0, 4);
   return (
     <Karte titel="Was machen wir heute?" testid="ablauf-start">
+      {unit.subject && andere.length > 0 && (
+        <div className="-mt-1 flex flex-wrap items-center gap-2" data-testid="start-fach">
+          <span className="text-[15px] text-ink-2">
+            Heute <span className="font-semibold text-ink">{unit.subject}</span>. Lieber:
+          </span>
+          {andere.map((f) => (
+            <form key={f} action={wechsleFachAction.bind(null, unit.id)}>
+              <input type="hidden" name="subject" value={f} />
+              <button className="inline-flex min-h-[44px] items-center rounded-full border border-line-strong bg-surface px-4 text-[15px] font-semibold text-ink-2 hover:text-ink" data-testid="start-fach-knopf">
+                {f}
+              </button>
+            </form>
+          ))}
+        </div>
+      )}
       {stoff ? (
         <>
           <p className="text-[16px] leading-relaxed text-ink-2">
@@ -269,7 +288,7 @@ function KurztestKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: str
             {geraet === "laptop" ? "Kurztest auf den Laptop senden" : "Kurztest ans Tablet senden"}
           </FormKnopf>
         </form>
-        {!geraet && <Leise>Noch kein Tablet verbunden: oben „Gerät verbinden“, sonst liegt der Test am Lernlink.</Leise>}
+        {!geraet && <Leise>Noch kein Tablet verbunden: oben „Gerät verbinden“, sonst liegt der Test in der Schüler-App.</Leise>}
         <div className="flex flex-wrap justify-center gap-x-6">
           <form action={minitestAction}>
             <input type="hidden" name="unit_id" value={unit.id} />
@@ -560,7 +579,10 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
   if (paket) return <PaketErklaeren unit={unit} a={a} name={name} folien={folien} paket={paket} thema={thema} />;
   const c = cockpit(unit.id, { mitPlan: true });
   const schritt = erklaerSchritt(c, thema);
-  const f = planFuehrung(unit.id, schritt ?? { id: 0, uebung: null, skillId: thema, art: "erklaeren" });
+  const fragender = schritt ?? { id: 0, uebung: null, skillId: thema, art: "erklaeren" as const };
+  const f = planFuehrung(unit.id, fragender);
+  // what the teacher asks aloud here is in no exercise of the topic afterwards (lib/cockpit.ts merkeFrage)
+  if (f.fragt) after(() => void merkeFrage(unit.id, fragender));
   const andere = a.skillIds.filter((id) => id !== thema);
   return (
     <Karte titel={`${skillName(thema)} erklären`} testid="ablauf-erklaeren">
@@ -770,17 +792,21 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   const k = kurztestStand(unit.id);
   const schreiben = SCHREIB_FAECHER.has(unit.subject ?? "");
   const tf = schreiben ? textFehler(unit.id) : null;
-  const textLink = schreiben ? <TextZeile unitId={unit.id} tf={tf} /> : null;
+  const textLink = schreiben ? <TextZeile unitId={unit.id} tf={tf} skillId={a.aktuell} /> : null;
   // Heft am Tablet: solange es geschrieben oder geprüft wird (oder nicht geprüft werden konnte), ist es die ganze Karte
   const heft = heftDerEinheit(unit.id);
   if (heft && heft.assignmentId === u.letzte?.assignmentId && heft.status !== "geprueft") return <HeftKarte unit={unit} name={name} heft={heft} />;
   // a running exercise: its progress is the whole card; the next button comes when it is done
   if (u.letzte && !u.letzte.fertig) {
+    // ohne verbundenes Gerät liegt die Übung in der Schüler-App: dann heißt die Karte auch so (Test 26.11.2026, K11)
+    const geraet = studentDevice(unit);
     return (
-      <Karte titel={`${name} übt am Tablet`} testid="ablauf-ueben">
+      <Karte titel={geraet === "laptop" ? `${name} übt am Laptop` : geraet ? `${name} übt am Tablet` : `Übung für ${name} liegt bereit`} testid="ablauf-ueben">
         <p className="-mt-2 text-[14.5px] text-ink-2">{u.letzte.titel}</p>
         <Ergebnis e={u.letzte.auswertung} laeuft />
-        <p className="text-[14.5px] text-ink-2">Die Seite zeigt den Stand von selbst. Danach kommen Aufgaben zu den Fehlern.</p>
+        <p className="text-[14.5px] text-ink-2">
+          {geraet ? "Die Seite zeigt den Stand von selbst. Danach kommen Aufgaben zu den Fehlern." : `Kein Tablet verbunden: die Übung liegt in der Schüler-App von ${name}. Oben „Gerät verbinden“ bringt sie aufs Tablet.`}
+        </p>
         <div className="flex flex-wrap justify-center gap-x-6">
           <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
             Fertig geübt: weiter zur Hausübung
@@ -805,7 +831,7 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   const genug = u.gesamt.fertig > 0 && n?.art === "nochmal";
   const sendenText = !n ? "" : blatt && n.art !== "fehler" ? "Übungsblatt aus dem Stoff ans Tablet senden" : n.art === "fehler" ? `Aufgaben zu den Fehlern bei „${skillName(n.skillId)}“ senden` : n.art === "neu" ? `Übungen zu „${skillName(n.skillId)}“ senden` : `Weitere Übung zu „${skillName(n.skillId)}“ senden`;
   return (
-    <Karte titel={u.gesamt.aufgaben ? `Üben: ${u.gesamt.richtig} von ${u.gesamt.fertig} richtig` : "Üben am Tablet"} testid="ablauf-ueben">
+    <Karte titel={u.gesamt.aufgaben ? `Üben: ${u.gesamt.richtig} von ${u.gesamt.fertig} richtig` : "Üben"} testid="ablauf-ueben">
       {u.gesamt.aufgaben > 0 && <Ergebnis e={u.gesamt} laeuft={false} />}
       {heft?.status === "geprueft" && <HeftZeile unit={unit} heft={heft} />}
       {n?.art === "fehler" && <p className="rounded-xl bg-green-wash px-4 py-2.5 text-[15px] font-semibold text-green">Aus den Fehlern kommen neue Aufgaben, genau dazu.</p>}
@@ -942,7 +968,7 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
 }
 
 /** Unter Üben in Deutsch und Englisch: einen Text schreiben lassen (Tablet oder Papier), oder die Korrektur des Texts von heute. */
-function TextZeile({ unitId, tf }: { unitId: number; tf: TextFehler | null }) {
+function TextZeile({ unitId, tf, skillId }: { unitId: number; tf: TextFehler | null; skillId: string | null }) {
   const cls = "treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline";
   return (
     <div className="flex justify-center">
@@ -951,7 +977,8 @@ function TextZeile({ unitId, tf }: { unitId: number; tf: TextFehler | null }) {
           <Eye size={15} aria-hidden /> Korrektur von „{tf.titel}“
         </Link>
       ) : (
-        <Link href={`/einheiten/${unitId}/text`} className={cls} data-testid="text-schreiben">
+        // mit dem Thema von heute: ist es eine Textsorte (Erörterung), sind Titel, Textsorte und Aufgabe schon ausgefüllt (K13)
+        <Link href={`/einheiten/${unitId}/text${skillId ? `?schreiben=${encodeURIComponent(skillId)}` : ""}`} className={cls} data-testid="text-schreiben">
           <PenLine size={15} aria-hidden /> Text schreiben lassen, am Tablet oder auf Papier
         </Link>
       )}

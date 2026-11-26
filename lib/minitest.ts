@@ -217,7 +217,7 @@ export function erstelleMinitest(input: MinitestInput): { worksheetId: number; a
   if (!unit || unit.status !== "gestartet") throw new Error("Die Einheit läuft nicht mehr.");
   const student = repo.getStudent(unit.student_id);
   if (!student) throw new Error("Schüler nicht gefunden.");
-  const zuweisen = (worksheetId: number) => repo.assignWorksheet(worksheetId, student.id, "Minitest", unit.id, "test");
+  const zuweisen = (worksheetId: number) => repo.assignWorksheet(worksheetId, student.id, "Kurztest", unit.id, "test");
 
   const da = minitestDerEinheit(unit.id);
   if (da) {
@@ -230,12 +230,12 @@ export function erstelleMinitest(input: MinitestInput): { worksheetId: number; a
   const anzahl = (MINITEST_ANZAHL as readonly number[]).includes(input.anzahl ?? 0) ? input.anzahl! : MINITEST_STANDARD;
   const grade = student.klasse ? schulstufe(student.school_type, student.klasse) : student.grade;
   const tasks = minitestAufgaben(stoff, anzahl, grade, input.seed);
-  if (!tasks.length) throw new Error("Aus dem Stoff der letzten Einheit ließ sich kein Minitest machen.");
+  if (!tasks.length) throw new Error("Aus dem Stoff der letzten Einheit ließ sich kein Kurztest machen.");
   const first = student.name.split(" ")[0];
   const themen = stoffThemen(stoff);
   const worksheetId = repo.createWorksheet(
     {
-      title: `${first} – Minitest: ${themen}`,
+      title: `${first} – Kurztest: ${themen}`,
       subject: stoff.fach,
       grade,
       school_type: student.school_type,

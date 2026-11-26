@@ -86,6 +86,10 @@ export default async function Teachers({ searchParams }: { searchParams: Promise
             </select>
           </label>
           <button className="btn btn-secondary">Anzeigen</button>
+          {/* Test 26.11.2026: „Lehrer hinzufügen“ lag ganz unten unter der Verfügbarkeit; von oben ein Sprung dorthin */}
+          <a href="#accounts" className="btn btn-ghost ml-auto" data-testid="zu-den-konten">
+            <Plus size={15} aria-hidden /> Lehrer hinzufügen
+          </a>
         </form>
       ) : null}
 

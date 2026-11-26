@@ -464,6 +464,8 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
       .filter((i) => i >= 0);
     const correct = wrong.length === 0;
     if (correct && kuerzen && values.some(nichtGekuerzt)) return NICHT_GEKUERZT;
+    // genau verglichen (mode exact) und jedes falsche Wort stimmt bis auf Groß- und Kleinschreibung: das sagen
+    const nurSchreibung = a.mode === "exact" && !correct && wrong.every((i) => a.blanks![i].some((alt) => same(values[i] ?? "", alt, "text", a.contractions, a.satzzeichen)));
     return {
       correct,
       wrongGaps: correct ? undefined : wrong.map((i) => i + 1),
@@ -477,7 +479,7 @@ export function checkAnswer(task: Pick<TaskDraft, "type" | "data" | "answer" | "
         ? ankreuzFeedback(wrong, values, a.blanks.length)
         : correct
           ? "Alle Lücken richtig!"
-          : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).`,
+          : `${wrong.length} von ${a.blanks.length} Lücken sind noch falsch (Lücke ${wrong.map((i) => i + 1).join(", ")}).${nurSchreibung ? " Achte auf die Groß- und Kleinschreibung." : ""}`,
     };
   }
   if (a.term && a.accepted?.length) return checkTerm(task, given, a.term);

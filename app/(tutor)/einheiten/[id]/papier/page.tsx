@@ -15,7 +15,7 @@ import { canManageUnit, getUnit } from "@/lib/units";
 export const metadata = { title: "Arbeit fotografieren" };
 
 const uhr = (s: string) => new Date(parseTime(s)).toLocaleTimeString("de-AT", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Vienna" });
-const WANN: Record<PapierBlatt["art"], string> = { gesendet: "gesendet um", minitest: "Minitest, erstellt um", gedruckt: "gedruckt um", erstellt: "erstellt um", probe: "Probeschularbeit vom", hausuebung: "Hausübung vom" };
+const WANN: Record<PapierBlatt["art"], string> = { gesendet: "gesendet um", minitest: "Kurztest, erstellt um", gedruckt: "gedruckt um", erstellt: "erstellt um", probe: "Probeschularbeit vom", hausuebung: "Hausübung vom" };
 const tag = (s: string) => tagMonat(parseTime(s));
 
 /**

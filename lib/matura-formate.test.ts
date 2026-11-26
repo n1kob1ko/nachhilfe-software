@@ -219,7 +219,7 @@ test("Generatoren: jede Probe stimmt, über viele Seeds, alle Fähigkeiten, alle
 });
 
 test("Generatoren: jede Aufgabe ist gültig, die richtige Antwort zählt, jede falsche nicht, typische Fehler mit Etikett", () => {
-  assert.ok(MATHE_MATURA_IDS.length >= 10 && MATHE_MATURA_IDS.length <= 15, `${MATHE_MATURA_IDS.length} Fähigkeiten`);
+  assert.ok(MATHE_MATURA_IDS.length >= 10 && MATHE_MATURA_IDS.length <= 18, `${MATHE_MATURA_IDS.length} Fähigkeiten`);
   assert.ok(MATHE_MATURA_IDS.every((id) => id.startsWith("mathe.os.")), "Oberstufe");
   for (const id of MATHE_MATURA_IDS) {
     for (const k of MATURA_KATEGORIEN) {
@@ -256,6 +256,17 @@ test("Generatoren: jede Aufgabe ist gültig, die richtige Antwort zählt, jede f
       assert.ok(texte.size >= 15, `${id} ${k}: nur ${texte.size} verschiedene Aufgaben in 30 Versuchen`);
       assert.ok(plaetze.size >= 2, `${id} ${k}: die richtige Antwort steht immer an derselben Stelle`);
     }
+  }
+});
+
+test("Produkt-, Quotienten- und Kettenregel: echte Aufgaben statt „Welcher Fehler passiert oft?“ (Test 26.11.2026)", async () => {
+  const { generateBuiltIn, hasBuiltInGenerator } = await import("./generators");
+  for (const [id, name] of [["mathe.os.diff.produktregel", "Produktregel"], ["mathe.os.diff.quotientenregel", "Quotientenregel"], ["mathe.os.diff.kettenregel", "Kettenregel"]]) {
+    assert.ok(MATHE_MATURA_IDS.includes(id), id);
+    assert.equal(hasBuiltInGenerator(id), true, id);
+    const tasks = generateBuiltIn({ subject: "Mathematik", skills: [{ id, name }], difficulty: "mittel", count: 6, taskType: "mixed", seed: 3 });
+    assert.equal(tasks.length, 6, id);
+    assert.ok(tasks.every((t) => t.type !== "free" && /f\(x\) = |f₁\(x\) = /.test(JSON.stringify([t.prompt, t.data]))), `${id}: ${tasks.map((t) => t.type).join()}`);
   }
 });
 

@@ -120,7 +120,7 @@ export async function buildWorksheet(req: BuildRequest): Promise<{ id: number; s
     tasks = eigeneVokabelAufgaben(req.studentId!, { count, difficulty: req.difficulty, taskType: req.taskType });
   } else if (skills.every((s) => sorteOfSkill(s.id))) {
     // Schreibaufträge: Teilübungen on a whole Textbeilage or story with line numbers, without KI (lib/schreibauftrag.ts),
-    // the count shared among the Textsorten chosen, each at most twice per part
+    // the count shared among the Textsorten chosen, every part once
     const per = Math.max(1, Math.ceil(count / skills.length));
     tasks = skills.flatMap((s) => {
       const sorte = sorteOfSkill(s.id)!;
@@ -188,6 +188,16 @@ export type SubmitInput = {
 export const MAX_TRIES = 3;
 /** Versuche je Aufgabe: im Minitest einer, wie bei einer Schularbeit (lib/minitest.ts). */
 export const triesFor = (mode: string | null | undefined) => (isMinitest(mode) ? 1 : MAX_TRIES);
+/**
+ * Versuche für diese eine Aufgabe. Eine Auswahlaufgabe mit einer richtigen Antwort hat höchstens einen Versuch weniger, als sie
+ * Möglichkeiten hat: sonst bleibt am Ende nur die richtige übrig, und „erst falsch, dann richtig“ zählte als gekonnt (Test
+ * 26.11.2026). Zwei Möglichkeiten: ein Versuch, drei: zwei, ab vier: wie sonst.
+ */
+export function triesForTask(mode: string | null | undefined, task: Pick<TaskDraft, "type" | "data"> & { answer?: Pick<TaskDraft["answer"], "correct"> }): number {
+  const max = triesFor(mode);
+  const n = task.type === "mc" && Array.isArray(task.data.options) && typeof task.answer?.correct === "number" ? task.data.options.length : 0;
+  return n >= 2 ? Math.max(1, Math.min(max, n - 1)) : max;
+}
 
 export type SubmitResult = {
   correct: boolean | null;
@@ -227,13 +237,13 @@ const NICHT_BEARBEITET = "Nicht bearbeitet.";
 const PENDING = "Deine Antwort ist gespeichert. Deine Lehrerin bzw. dein Lehrer schaut sie sich an.";
 
 /** What the student sees for a stored answer: the same text the first time and on a repeat. */
-function resultOf(a: Pick<repo.Attempt, "correct" | "final" | "attempt_no" | "feedback" | "solution_viewed" | "review">, solution: string, sample?: string): SubmitResult {
+function resultOf(max: number, a: Pick<repo.Attempt, "correct" | "final" | "attempt_no" | "feedback" | "solution_viewed" | "review">, solution: string, sample?: string): SubmitResult {
   const attemptNo = a.attempt_no;
   if (a.solution_viewed) return { correct: false, final: true, feedback: GAVE_UP, attemptNo, solution };
   if (a.review === "offen") return { correct: null, final: true, feedback: a.feedback, attemptNo, solution, sample, pendingReview: true };
   const correct = Boolean(a.correct);
   const final = Boolean(a.final);
-  const left = MAX_TRIES - attemptNo;
+  const left = max - attemptNo;
   return {
     correct,
     final,
@@ -269,7 +279,7 @@ export async function submitAnswer(input: SubmitInput): Promise<SubmitResult> {
   const stored = repo.getAttemptBySubmission(student.id, sid);
   if (stored) {
     if (stored.assignment_id !== assignment.id || stored.task_id !== task.id) throw new Error("Abgabe nicht erkannt.");
-    return reveal(resultOf(stored, task.solution, task.answer.sample));
+    return reveal(resultOf(triesForTask(assignment.mode, task), stored, task.solution, task.answer.sample));
   }
   const key = `${student.id}:${sid}`;
   const running = grading.get(key);
@@ -283,7 +293,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   const previous = repo.listAttemptsForAssignment(assignment.id).filter((a) => a.task_id === task.id);
   const finished = previous.find((a) => a.final);
   if (finished) {
-    return { ...resultOf(finished, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
+    return { ...resultOf(triesForTask(assignment.mode, task), finished, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
   }
   repo.markAssignmentStarted(assignment.id);
   // Practice while a teacher has a unit running for this student belongs to that unit. A unit that
@@ -323,7 +333,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
       const done = before.find((a) => a.final);
       if (done) return { fresh: false as const, attempt: done };
       const attemptNo = before.length + 1;
-      const final = r.solutionViewed || r.correct || r.review === "offen" || attemptNo >= triesFor(assignment.mode);
+      const final = r.solutionViewed || r.correct || r.review === "offen" || attemptNo >= triesForTask(assignment.mode, task);
       const row = {
         ...base,
         attempt_no: attemptNo,
@@ -362,21 +372,21 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   };
 
   // nothing stored: the same submission got there first (its result), or another answer finished the task
-  const settled = (a: Parameters<typeof resultOf>[0] & { submission_id?: string | null }) =>
-    sid !== null && a.submission_id === sid ? resultOf(a, task.solution, task.answer.sample) : { ...resultOf(a, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
+  const settled = (a: Parameters<typeof resultOf>[1] & { submission_id?: string | null }) =>
+    sid !== null && a.submission_id === sid ? resultOf(triesForTask(assignment.mode, task), a, task.solution, task.answer.sample) : { ...resultOf(triesForTask(assignment.mode, task), a, task.solution, task.answer.sample), feedback: "Diese Aufgabe ist schon abgeschlossen." };
 
   if (input.leer && isMinitest(assignment.mode)) {
     const out = store({ answer: "", correct: false, solutionViewed: false, errorLabel: "nicht bearbeitet", feedback: NICHT_BEARBEITET, errorType: null });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null);
-    return resultOf(out.attempt, task.solution);
+    return resultOf(triesForTask(assignment.mode, task), out.attempt, task.solution);
   }
 
   if (input.giveUp) {
     const out = store({ answer: input.answer, correct: false, solutionViewed: true, errorLabel: null, feedback: "Lösung angesehen", errorType: null });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null);
-    return resultOf(out.attempt, task.solution);
+    return resultOf(triesForTask(assignment.mode, task), out.attempt, task.solution);
   }
 
   const result = checkAnswer(task, input.answer);
@@ -395,7 +405,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
       : store({ answer: input.answer, correct: false, solutionViewed: false, errorLabel: null, feedback: keep ? result.feedback : PENDING, errorType: null, review: "offen" });
     if (!out.fresh) return settled(out.attempt);
     after(out.attempt, null, true);
-    const res = resultOf(out.attempt, task.solution, task.answer.sample ?? task.solution);
+    const res = resultOf(triesForTask(assignment.mode, task), out.attempt, task.solution, task.answer.sample ?? task.solution);
     return res;
   }
 
@@ -408,7 +418,7 @@ async function evaluate(input: SubmitInput, student: repo.Student, assignment: r
   const out = store({ answer: input.answer, correct: Boolean(result.correct), solutionViewed: false, errorLabel: result.errorLabel, feedback: result.feedback, errorType, onFinal: result.onFinal });
   if (!out.fresh) return settled(out.attempt);
   after(out.attempt, errorType?.type ?? null, out.attempt.review === "offen");
-  const res = resultOf(out.attempt, task.solution, task.answer.sample ?? undefined);
+  const res = resultOf(triesForTask(assignment.mode, task), out.attempt, task.solution, task.answer.sample ?? undefined);
   if (out.attempt.final) return res;
   return { ...res, ...(result.wrongGaps?.length ? { wrongGaps: result.wrongGaps } : {}) };
 }

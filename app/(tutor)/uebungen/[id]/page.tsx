@@ -386,7 +386,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
                       </span>
                     </div>
                     {isMinitest(x.mode) ? (
-                      <p className="text-[12.5px] text-ink-3">{w.probe_test_id ? "Probeschularbeit" : "Minitest"}: ohne Hilfen und ohne Lösung</p>
+                      <p className="text-[12.5px] text-ink-3">{w.probe_test_id ? "Probeschularbeit" : "Kurztest"}: ohne Hilfen und ohne Lösung</p>
                     ) : (
                       <FreigabeWahl assignmentId={x.id} student={x.student_name} current={freigabeVon(x)} />
                     )}
