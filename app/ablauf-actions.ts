@@ -20,6 +20,7 @@ import {
   stoffUebernehmen,
   waehleWeg,
 } from "@/lib/einheit-ablauf";
+import { alsHeft, gehtAlsHeft, getHeft, pruefeHeft } from "@/lib/heft";
 import { noteActivity } from "@/lib/learning";
 import { pushLive } from "@/lib/live";
 import { letzterStoff } from "@/lib/minitest";
@@ -124,12 +125,17 @@ export async function uebenAction(unitId: number, skillId: string) {
   await sende(unitId, skillId, true);
 }
 
+/** „Lieber tippen“ (Mathe): dieselbe Übung wie sonst am Tablet, mit Antwortfeldern statt im Heft. */
+export async function uebenTippenAction(unitId: number, skillId: string) {
+  await sende(unitId, skillId, true, false);
+}
+
 /** „Aufgaben zu den Fehlern im Text senden“: eine Übung zur Fähigkeit der Fehler, nie das Übungsblatt aus dem Stoff. */
 export async function textFehlerAction(unitId: number, skillId: string) {
   await sende(unitId, skillId, false);
 }
 
-async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean) {
+async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean, heft = true) {
   const { t, unit } = await laufend(unitId);
   const a = leseAblauf(unitId);
   if (a.weg) {
@@ -139,6 +145,7 @@ async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean) {
   const blatt = mitStoffBlatt ? offenesStoffBlatt(unitId) : null;
   const out = blatt ? { worksheetId: blatt, assignmentId: repo.assignWorksheet(blatt, unit.student_id, "", unit.id) } : await sendeAusGenerator(unitId, skillId, t.id);
   if ("fehler" in out) weiter(unitId, out);
+  if (heft && gehtAlsHeft(unit)) alsHeft(out.assignmentId);
   noteActivity(unit.student_id);
   zeigeUebung(unit, out.assignmentId);
   pushLive(unit.id);
@@ -183,3 +190,12 @@ export async function papierOhneFotoAction(unitId: number, worksheetId: number) 
   weiter(unitId, papierOhneFoto(unitId, worksheetId));
 }
 
+
+/** Ein Heft, das nicht geprüft werden konnte (KI gerade nicht erreichbar): noch einmal prüfen lassen. */
+export async function heftNochmalAction(unitId: number, assignmentId: number) {
+  await laufend(unitId);
+  const h = getHeft(assignmentId);
+  if (h && h.unitId === unitId && h.status === "fehler") void pruefeHeft(assignmentId);
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(`/einheiten/${unitId}`);
+}

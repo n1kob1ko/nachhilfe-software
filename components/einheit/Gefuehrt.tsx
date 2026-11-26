@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Camera, Check, Eye, Loader2, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
+import { ArrowLeft, ArrowRight, Camera, Check, Eye, Keyboard, Loader2, NotebookPen, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
 import {
   ansichtAction,
   papierOhneFotoAction,
   textFehlerAction,
   uebenPapierAction,
+  uebenTippenAction,
+  heftNochmalAction,
   kurztestFertigAction,
   schrittAction,
   stoffFertigAction,
@@ -47,6 +49,7 @@ import {
   type Stufe,
   type TextFehler,
 } from "@/lib/einheit-ablauf";
+import { gehtAlsHeft, heftDerEinheit, type Heft } from "@/lib/heft";
 import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
 import { getPraesEntwurf } from "@/lib/praesentation-ki";
 import { kostenSchaetzung, stoffpaketMoeglich, vorschlagFach, type Stoffpaket } from "@/lib/stoffpaket";
@@ -571,8 +574,8 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
       <Gross action={uebenAction.bind(null, unit.id, thema)} icon={<Send size={19} aria-hidden />} testid="ueben-senden">
         Verstanden: Übungen ans Tablet senden
       </Gross>
-      <Leise>Neue Aufgaben zu {skillName(thema)}, passend zum Lernstand von {name}.</Leise>
-      <PapierKlein unitId={unit.id} skillId={thema} />
+      <Leise>{gehtAlsHeft(unit) ? `${name} rechnet im Heft am Tablet, mit dem Stift. Beim „Fertig“ prüft die KI alles auf einmal.` : `Neue Aufgaben zu ${skillName(thema)}, passend zum Lernstand von ${name}.`}</Leise>
+      <AndereWege unit={unit} skillId={thema} />
       {andere.length > 0 && (
         <div className="flex flex-wrap justify-center gap-x-5">
           {andere.slice(0, 3).map((id) => (
@@ -607,7 +610,7 @@ function PaketErklaeren({ unit, a, name, folien, paket, thema }: { unit: UnitVie
         Verstanden: Übungen ans Tablet senden
       </Gross>
       <Leise>{blatt ? `Das Übungsblatt aus den Fotos, ${repo.listTasks(blatt).length} Aufgaben.` : `Neue Aufgaben, passend zum Lernstand von ${name}.`}</Leise>
-      <PapierKlein unitId={unit.id} skillId={thema} />
+      <AndereWege unit={unit} skillId={thema} />
     </>
   );
   return (
@@ -666,6 +669,9 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   const schreiben = SCHREIB_FAECHER.has(unit.subject ?? "");
   const tf = schreiben ? textFehler(unit.id) : null;
   const textLink = schreiben ? <TextZeile unitId={unit.id} tf={tf} /> : null;
+  // Heft am Tablet: solange es geschrieben oder geprüft wird (oder nicht geprüft werden konnte), ist es die ganze Karte
+  const heft = heftDerEinheit(unit.id);
+  if (heft && heft.assignmentId === u.letzte?.assignmentId && heft.status !== "geprueft") return <HeftKarte unit={unit} name={name} heft={heft} />;
   // a running exercise: its progress is the whole card; the next button comes when it is done
   if (u.letzte && !u.letzte.fertig) {
     return (
@@ -696,6 +702,7 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   return (
     <Karte titel={u.gesamt.aufgaben ? `Üben: ${u.gesamt.richtig} von ${u.gesamt.fertig} richtig` : "Üben am Tablet"} testid="ablauf-ueben">
       {u.gesamt.aufgaben > 0 && <Ergebnis e={u.gesamt} laeuft={false} />}
+      {heft?.status === "geprueft" && <HeftZeile unit={unit} heft={heft} />}
       {n?.art === "fehler" && <p className="rounded-xl bg-green-wash px-4 py-2.5 text-[15px] font-semibold text-green">Aus den Fehlern kommen neue Aufgaben, genau dazu.</p>}
       {genug ? (
         <>
@@ -726,9 +733,9 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
           <Gross action={uebenAction.bind(null, unit.id, n.skillId)} icon={<Send size={19} aria-hidden />} testid="ueben-senden">
             {sendenText}
           </Gross>
-          <Leise>Neue Aufgaben am Tablet, passend zum Lernstand von {name}.</Leise>
+          <Leise>{gehtAlsHeft(unit) ? `Im Heft am Tablet, mit dem Stift. Beim „Fertig“ prüft die KI alles auf einmal.` : `Neue Aufgaben am Tablet, passend zum Lernstand von ${name}.`}</Leise>
           <div className="flex flex-wrap justify-center gap-x-6">
-            <PapierKlein unitId={unit.id} skillId={n.skillId} />
+            <AndereWege unit={unit} skillId={n.skillId} />
             <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
               Weiter zur Hausübung
             </Klein>
@@ -844,6 +851,79 @@ function TextZeile({ unitId, tf }: { unitId: number; tf: TextFehler | null }) {
         </Link>
       )}
     </div>
+  );
+}
+
+/** Unter dem großen Knopf: in Mathe „Lieber tippen“ (statt im Heft), und „Lieber auf Papier rechnen“. */
+function AndereWege({ unit, skillId }: { unit: UnitView; skillId: string }) {
+  return (
+    <>
+      {gehtAlsHeft(unit) && (
+        <Klein action={uebenTippenAction.bind(null, unit.id, skillId)} testid="ueben-tippen">
+          <Keyboard size={15} aria-hidden /> Lieber tippen
+        </Klein>
+      )}
+      <PapierKlein unitId={unit.id} skillId={skillId} />
+    </>
+  );
+}
+
+/**
+ * Heft am Tablet (lib/heft.ts): der Schüler rechnet mit dem Stift; beim „Fertig“ liest die KI alle Aufgaben in einem Lauf und die
+ * App übernimmt das Ergebnis (Unsicheres wartet auf dich). Die Seite lädt sich selbst neu, bis es geprüft ist.
+ */
+function HeftKarte({ unit, name, heft }: { unit: UnitView; name: string; heft: Heft }) {
+  return (
+    <Karte titel={heft.status === "schreibt" ? `${name} rechnet im Heft` : heft.status === "pruefen" ? "Das Heft wird geprüft" : "Das Heft ist noch nicht geprüft"} testid="ablauf-heft">
+      <p className="-mt-2 text-[14.5px] text-ink-2">
+        {heft.titel} · {heft.aufgaben.length} Aufgaben
+      </p>
+      {heft.status === "schreibt" ? (
+        <>
+          <p className="text-[16px] leading-relaxed text-ink-2">
+            {name} schreibt frei mit dem Stift. Wenn {name} auf „Fertig“ tippt, prüft die KI alle Aufgaben auf einmal. Du musst nichts tun.
+          </p>
+          <AutoRefresh seconds={8} />
+        </>
+      ) : heft.status === "pruefen" ? (
+        <>
+          <p className="flex items-center gap-2 text-[16px] font-semibold" data-testid="heft-wird-geprueft">
+            <Loader2 size={18} className="animate-spin text-accent" aria-hidden /> Die KI liest alle Aufgaben, das dauert etwa eine halbe Minute.
+          </p>
+          <AutoRefresh seconds={4} />
+        </>
+      ) : (
+        <>
+          <p className="rounded-xl bg-red-wash px-4 py-3 text-[15px] text-red" data-testid="heft-fehler">
+            {heft.grund || "Das Heft konnte nicht geprüft werden."}
+          </p>
+          <Gross action={heftNochmalAction.bind(null, unit.id, heft.assignmentId)} icon={<RotateCcw size={19} aria-hidden />} testid="heft-nochmal">
+            Noch einmal prüfen
+          </Gross>
+        </>
+      )}
+      <div className="flex flex-wrap justify-center gap-x-6">
+        {heft.materialIds.length > 0 && (
+          <Link href={`/einheiten/${unit.id}/heft/${heft.assignmentId}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+            <Eye size={15} aria-hidden /> Heft ansehen
+          </Link>
+        )}
+        <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
+          Fertig geübt: weiter zur Hausübung
+        </Klein>
+      </div>
+    </Karte>
+  );
+}
+
+/** Nach dem Prüfen: das Heft ansehen, und wie viele Antworten noch auf dich warten. */
+function HeftZeile({ unit, heft }: { unit: UnitView; heft: Heft }) {
+  const offen = heft.aufgaben.filter((a) => a.urteil === "offen").length;
+  return (
+    <Link href={`/einheiten/${unit.id}/heft/${heft.assignmentId}`} className={`flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-4 py-2 text-[15px] font-semibold ${offen ? "bg-[#fff1dc] text-[#a35a00]" : "text-accent"}`} data-testid="heft-ansehen">
+      <NotebookPen size={16} aria-hidden />
+      {offen ? `Heft ansehen: ${offen === 1 ? "1 Aufgabe wartet" : `${offen} Aufgaben warten`} auf dich` : "Heft ansehen"}
+    </Link>
   );
 }
 
