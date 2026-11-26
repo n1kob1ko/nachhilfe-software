@@ -120,13 +120,22 @@ export async function kurztestFertigAction(unitId: number) {
  * Lernstand (lib/cockpit.ts `sendeAusGenerator`), aufs Gerät des Schülers. Das Thema wird das aktuelle; die Stufe ist danach Üben.
  */
 export async function uebenAction(unitId: number, skillId: string) {
+  await sende(unitId, skillId, true);
+}
+
+/** „Aufgaben zu den Fehlern im Text senden“: eine Übung zur Fähigkeit der Fehler, nie das Übungsblatt aus dem Stoff. */
+export async function textFehlerAction(unitId: number, skillId: string) {
+  await sende(unitId, skillId, false);
+}
+
+async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean) {
   const { t, unit } = await laufend(unitId);
   const a = leseAblauf(unitId);
   if (a.weg) {
     setzeAktuell(unitId, skillId);
     if (a.stufe !== "ueben") setzeStufe(unitId, "ueben");
   }
-  const blatt = offenesStoffBlatt(unitId);
+  const blatt = mitStoffBlatt ? offenesStoffBlatt(unitId) : null;
   const out = blatt ? { worksheetId: blatt, assignmentId: repo.assignWorksheet(blatt, unit.student_id, "", unit.id) } : await sendeAusGenerator(unitId, skillId, t.id);
   if ("fehler" in out) weiter(unitId, out);
   noteActivity(unit.student_id);

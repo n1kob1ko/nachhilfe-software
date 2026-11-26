@@ -18,6 +18,9 @@ import { getLernpaket, type LernpaketMitSchritten, type LernpaketSchritt, type S
 import { minitestDerEinheit } from "./minitest";
 import * as repo from "./repo";
 import { getStoffpaket, uebernimmStoffpaket, type Stoffpaket } from "./stoffpaket";
+import { aiState, latestCorrection, listItems } from "./text-correction";
+import { categoryLabel } from "./text-correction-rules";
+import { textsForUnit } from "./texts";
 import { getUnit } from "./units";
 
 export type Weg = "weiter" | "neu";
@@ -346,3 +349,83 @@ export function naechsteUebung(a: Pick<Ablauf, "skillIds" | "aktuell">, kurztest
   const nochmal = a.aktuell ?? reihe[0] ?? null;
   return nochmal && repo.getSkill(nochmal) ? { skillId: nochmal, art: "nochmal" } : null;
 }
+
+// ---------- Deutsch, Englisch: ein Text von heute und Aufgaben zu seinen Fehlern ----------
+
+export type TextFehler = {
+  textId: number;
+  titel: string;
+  /** noch nichts drin (auf Papier geschrieben, noch nicht fotografiert) */
+  leer: boolean;
+  /** keine: noch nicht korrigiert; laeuft: die KI korrigiert gerade; fertig: Korrektur da */
+  korrektur: "keine" | "laeuft" | "fertig";
+  /** die Fehler der Korrektur (ohne abgelehnte), je Bereich, die meisten zuerst */
+  fehler: number;
+  bereiche: { label: string; anzahl: number }[];
+  /** die Fähigkeiten der Fehler, die meisten zuerst; `offen`: seit der Korrektur noch keine Übung dazu in dieser Einheit */
+  skills: { skillId: string; name: string; anzahl: number; offen: boolean }[];
+};
+
+/**
+ * Der Text dieser Einheit (der zuletzt geschriebene oder weitergeschriebene, nicht archiviert) und was seine Korrektur ergab
+ * (niko, 26.11.2026: „Text mit der Hand schreiben, abfotografieren, korrigieren, dann zu den Fehlern die Übungen“). Es zählen
+ * die Fehler der KI und des Lehrers, außer den abgelehnten: ein offener Vorschlag der KI reicht für die Wahl der Übung (der
+ * Lernstand ändert sich erst durch die Antworten des Schülers). Eine Fähigkeit ist `offen`, solange seit der Korrektur keine
+ * Übung zu ihr in dieser Einheit gesendet wurde. Keine KI, nur Lesen.
+ */
+export function textFehler(unitId: number): TextFehler | null {
+  const t = textsForUnit(unitId)
+    .filter((x) => !x.archived_at)
+    .at(-1);
+  if (!t) return null;
+  const c = latestCorrection(t.id);
+  const basis = { textId: t.id, titel: t.title || "Text", leer: !t.words, fehler: 0, bereiche: [], skills: [] };
+  if (!c) return { ...basis, korrektur: "keine" };
+  const state = aiState(c);
+  if (state === "laeuft") return { ...basis, korrektur: "laeuft" };
+  const alle = listItems(c.id);
+  // die Korrektur ist nur geöffnet (oder die KI ging nicht) und nichts ist markiert: noch nicht korrigiert
+  if (!alle.length && (state === "keine" || state === "fehler")) return { ...basis, korrektur: "keine" };
+  const items = alle.filter((i) => i.kind === "fehler" && i.status !== "abgelehnt");
+  const zaehle = (keys: string[]) => {
+    const n = new Map<string, number>();
+    for (const k of keys) n.set(k, (n.get(k) ?? 0) + 1);
+    return [...n].sort((a, b) => b[1] - a[1]);
+  };
+  const deutsch = (t.subject || "Deutsch") === "Deutsch";
+  let skillZahl = zaehle(items.map((i) => i.skill_id ?? (deutsch ? skillAusStelle(i) : null)).filter((x): x is string => Boolean(x && repo.getSkill(x))));
+  // ohne Fähigkeit an den Fehlern: die Empfehlung der Korrektur
+  if (!skillZahl.length && items.length && c.recommendation_skill && repo.getSkill(c.recommendation_skill)) skillZahl = [[c.recommendation_skill, items.length]];
+  const geuebt = (skillId: string) =>
+    Boolean(
+      db()
+        .prepare("SELECT 1 FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id WHERE a.unit_id = ? AND a.assigned_at >= datetime(?) AND w.skill_ids LIKE ? LIMIT 1")
+        .get(unitId, c.created_at, `%"${skillId}"%`),
+    );
+  return {
+    ...basis,
+    korrektur: "fertig",
+    fehler: items.length,
+    bereiche: zaehle(items.map((i) => i.category)).map(([k, anzahl]) => ({ label: categoryLabel(k), anzahl })),
+    skills: skillZahl.map(([skillId, anzahl]) => ({ skillId, name: repo.getSkill(skillId)!.name, anzahl, offen: !geuebt(skillId) })),
+  };
+}
+
+/**
+ * Eine Korrektur des Lehrers trägt keine Fähigkeit (die der KI schon). Für die häufigsten Fehler in Deutsch ist sie an der
+ * Stelle selbst zu sehen: nur Groß/klein anders, das/dass, s/ss/ß, getrennt/zusammen, ein Beistrich. Sonst null.
+ */
+export function skillAusStelle(i: { category: string; quote: string; replacement: string }): string | null {
+  const q = i.quote.trim();
+  const r = i.replacement.trim();
+  if (!q || !r || q === r) return i.category === "zeichensetzung" ? "deutsch.beistrich.nebensatz" : null;
+  if (i.category === "zeichensetzung" || (q.replace(/,/g, "") === r.replace(/,/g, "") && q.split(",").length !== r.split(",").length)) return "deutsch.beistrich.nebensatz";
+  if (i.category !== "rechtschreibung" && i.category !== "grammatik") return null;
+  if (q.toLowerCase() === r.toLowerCase()) return "deutsch.recht.gross";
+  if (/\bdass?\b/i.test(q) && /\bdass?\b/i.test(r)) return "deutsch.recht.dasdass";
+  const ohneS = (x: string) => x.toLowerCase().replace(/ss|ß|s/g, "s");
+  if (ohneS(q) === ohneS(r)) return "deutsch.recht.sss";
+  if (q.replace(/[\s-]/g, "").toLowerCase() === r.replace(/[\s-]/g, "").toLowerCase()) return "deutsch.recht.getrennt-zusammen";
+  return null;
+}
+

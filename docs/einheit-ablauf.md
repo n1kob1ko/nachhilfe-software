@@ -23,8 +23,14 @@ Start ─┬─ Weiter mit dem Stoff vom letzten Mal → Kurztest → Üben → 
 2. Sonst ein Thema von heute, das noch nicht geübt wurde (beim neuen Thema zuerst erklären).
 3. Sonst „Weiter zur Hausübung“ groß, „Weitere Übung“ klein.
 
+**Deutsch und Englisch: der Text von heute** (`textFehler`, lib/einheit-ablauf.ts) geht in Üben vor, solange er etwas braucht:
+1. auf Papier geschrieben, noch leer: „Text fotografieren“ (`/texte/[id]/papier`, liest die Handschrift wörtlich);
+2. noch nicht korrigiert: „Text korrigieren“ (`/texte/[id]/korrektur`); während die KI korrigiert, wartet die Karte;
+3. korrigiert: die Fehler je Bereich und „Aufgaben zu den Fehlern im Text senden: …“, eine Fähigkeit nach der anderen (aus dem Generator, nie das Übungsblatt aus dem Stoff). Es zählen die Fehler außer den abgelehnten. Eine Korrektur des Lehrers ohne Fähigkeit bekommt sie aus der Stelle (`skillAusStelle`: Groß/klein, das/dass, s/ss/ß, getrennt/zusammen, Beistrich), sonst gilt die Empfehlung der Korrektur.
+Ohne Text: unter Üben „Text schreiben lassen, am Tablet oder auf Papier“.
+
 **Mehr Werkzeuge** schaltet für diese Einheit auf das ganze frühere Cockpit (`einheit_ablauf.ansicht = 'alles'`), „Zurück zum geführten Ablauf“ wieder zurück. Eine Einheit, die schon im Cockpit läuft (etwas gesendet, keine Zeile in `einheit_ablauf`), bleibt dort; „Geführten Ablauf starten“ holt sie herein.
 
 Läuft die Einheit geführt und wurde im Cockpit nie „Weiter“ oder „Überspringen“ getippt, beschreibt der Plan des Cockpits sie nicht: kein „Plan für heute: 1 von 6 Schritten“ und kein „Lernpaket „…“: 0 von 7 Schritten“ im Abschluss (`nurGefuehrt` in lib/cockpit.ts). Was mit dem Lernpaket erklärt wurde, schreibt `dokumentiereGefuehrt` in „Was wurde gemacht?“: „Erklärt mit Präsentation: „Thema“, 3 von 5 Schritten; Fragen: 2 richtig, 1 teilweise.“
 
-Noch offen (eigene PRs): Deutsch: Text auf Papier → Foto → Korrektur → Übungen zu den Fehlern; Mathe mit Stift.
+Noch offen: Mathe mit Stift (niko will das gemeinsam überlegen).
