@@ -162,7 +162,7 @@ test("Abschluss with belege: each source in its field with its label, nothing wi
   assert.deepEqual(zeilen(k.gemacht), [
     "Bruchrechnung: Dividieren, Multiplizieren [antworten]",
     "7 Aufgaben bearbeitet, 5 richtig (71 %) [antworten]",
-    "Minitest am Anfang: 3 von 4 richtig [antworten]",
+    "Kurztest am Anfang: 3 von 4 richtig [antworten]",
     "Aus deiner Vorgabe geübt: Dividieren [vorgabe]",
   ]);
   // the documentation's „sicher“ line (1 of 1) is no rule: only the teacher's observation stays, labelled
@@ -172,7 +172,7 @@ test("Abschluss with belege: each source in its field with its label, nothing wi
     "Dividieren: 2 von 4 richtig [antworten]",
     "Fehler: Kehrwert vergessen (2×) [antworten]",
     "Fehler: Rechenfehler (1×, vermutet) [antworten]",
-    "Minitest: Fehler bei Kürzen [antworten]",
+    "Kurztest: Fehler bei Kürzen [antworten]",
     "Frage „Warum mal den Kehrwert?“: falsch beantwortet [beobachtung]",
     "Leichtere Aufgabe nötig bei Dividieren (danach 2 von 2 richtig) [anpassung]",
   ]);

@@ -431,7 +431,7 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   } else if (belege?.uebungen?.length) gemacht.push({ text: `${belege.uebungen.length === 1 ? "Übung" : "Übungen"}: ${belege.uebungen.map((t) => `„${t}“`).join(", ")}`, von: "antworten", punkt: "uebungen" });
   const mt = belege?.minitest;
   const mtDauer = taetig ? gesamtDauer(taetig.filter((x) => x.art === "minitest")) : 0;
-  if (mt?.erledigt) gemacht.push({ text: `Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}${mtDauer > 0 ? `, ${dauerText(mtDauer)}` : ""}`, von: "antworten", punkt: "ergebnisse" });
+  if (mt?.erledigt) gemacht.push({ text: `Kurztest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}${mtDauer > 0 ? `, ${dauerText(mtDauer)}` : ""}`, von: "antworten", punkt: "ergebnisse" });
   // the measured result of each Lernkontrolle, not only what the teacher heard
   for (const k of belege?.lernkontrollen ?? [])
     if (k.erledigt) gemacht.push({ text: `Lernkontrolle${k.skill ? ` ${k.skill}` : ""}: ${k.richtig} von ${k.von} richtig${k.erledigt < k.von ? ` (${k.erledigt} abgegeben)` : ""}${k.dauer ? `, ${k.dauer}` : ""}`, von: "antworten", punkt: "ergebnisse" });
@@ -485,7 +485,7 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
     ? [...belege.fehler.map((f): KartenZeile => ({ text: `Fehler: ${f}`, von: "antworten", punkt: "schwierig" })), ...(brief?.errors ?? []).filter((l) => l.from === "lehrer").map((l) => zeile(l))]
     : (brief?.errors ?? []).map((l) => ({ ...zeile(l, undefined, "schwierig"), text: l.from === "daten" ? `Fehler: ${l.text}` : l.text }));
   const schwierig = [...(brief?.difficulties ?? []).filter((l) => !sicher(l)).map((l) => zeile(l, "antworten", "schwierig")), ...fehler];
-  if (mt?.falsch.length) schwierig.push({ text: `Minitest: Fehler bei ${mt.falsch.join(", ")}`, von: "antworten", punkt: "schwierig" });
+  if (mt?.falsch.length) schwierig.push({ text: `Kurztest: Fehler bei ${mt.falsch.join(", ")}`, von: "antworten", punkt: "schwierig" });
   for (const o of belege?.beobachtungen ?? []) if (o.antwort !== "richtig") schwierig.push({ ...beobachtungsZeile(o), punkt: "schwierig" });
   // the Anpassung im Unterricht had to go easier: once per skill, with what came of it
   const leichter = new Map<string, { art: Art; skill: string; ts: AufgabeBeleg[] }>();

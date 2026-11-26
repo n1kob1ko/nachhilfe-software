@@ -38,6 +38,7 @@ import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
 import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
 import { textaufgabeTask } from "./textaufgaben";
 import { EXPLAIN } from "./erklaerungen";
+import { typischeFehler } from "./themen";
 import { VOKABEL_GENERATOREN, istVokabelThema, vokabelFuerSlot, vokabelFuerTyp } from "./vokabeln-themen";
 import { isWortartenSkill, saetzeIn, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
@@ -562,18 +563,27 @@ const FREE_PROMPTS = [
 const LANG_PROMPT = (n: string) => `Schreibe drei eigene Sätze zu „${n}“. Erkläre bei einem Satz, warum er so richtig ist.`;
 
 function freeTask(skillId: string, skillName: string, diff: Difficulty, variant = 0): TaskDraft {
-  // a real sample answer or none: never a placeholder like „Eine korrekte Erklärung zu …“
-  const sample = EXPLAIN[skillId] ?? EXPLAIN[skillId.split(".").slice(0, 3).join(".")] ?? "";
+  const v = variant % FREE_PROMPTS.length;
   const lang = /^(deutsch|englisch)\./.test(skillId);
-  const criteria =
-    lang && variant % FREE_PROMPTS.length === 2
-      ? ["Drei eigene, passende Sätze ohne Fehler an der geübten Stelle.", "Die Erklärung nennt die Regel."]
-      : ["Die Regel oder das Vorgehen ist richtig beschrieben.", "Ein eigenes, passendes Beispiel ist dabei."];
+  const saetze = lang && v === 2;
+  // a real sample answer that fits the question, or none: never a placeholder like „Eine korrekte Erklärung zu …“. The
+  // explanation answers „Erkläre …“ (and shows what own sentences should follow), the typical errors answer „Welcher
+  // Fehler …“; an invented task has no sample (Test 26.11.2026: the rule stood under the question about the typical error).
+  const erklaerung = EXPLAIN[skillId] ?? EXPLAIN[skillId.split(".").slice(0, 3).join(".")] ?? "";
+  const fehler = typischeFehler(skillId);
+  const sample = v === 0 || saetze ? erklaerung : v === 1 ? (fehler.length ? `Typische Fehler: ${fehler.join("; ")}` : "") : "";
+  const criteria = saetze
+    ? ["Drei eigene, passende Sätze ohne Fehler an der geübten Stelle.", "Die Erklärung nennt die Regel."]
+    : v === 1
+      ? ["Ein Fehler, der bei diesem Thema wirklich oft passiert.", "Es ist erklärt, wie man ihn vermeidet."]
+      : v === 2
+        ? ["Die eigene Aufgabe passt zum Thema.", "Der Lösungsweg ist Schritt für Schritt richtig."]
+        : ["Die Regel oder das Vorgehen ist richtig beschrieben.", "Ein eigenes, passendes Beispiel ist dabei."];
   return {
     type: "free",
     skillId,
     difficulty: diff,
-    prompt: lang && variant % FREE_PROMPTS.length === 2 ? LANG_PROMPT(skillName) : FREE_PROMPTS[variant % FREE_PROMPTS.length](skillName),
+    prompt: saetze ? LANG_PROMPT(skillName) : FREE_PROMPTS[v](skillName),
     data: { lines: 5 },
     answer: { ...(sample ? { sample } : {}), criteria },
     solution: sample || `Bewertet wird: ${criteria.join(" ")}`,

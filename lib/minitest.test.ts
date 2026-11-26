@@ -4,7 +4,7 @@ import type * as repo from "./repo";
 
 process.env.DATABASE_PATH = ":memory:";
 
-test("a Minitest gives one try per task; every other exercise keeps three", async () => {
+test("a Kurztest gives one try per task; every other exercise keeps three", async () => {
   const { triesFor, MAX_TRIES } = await import("./service");
   const { isAssignmentMode, isMinitest, showsQuickRound } = await import("./quick-round");
   assert.equal(triesFor("test"), 1);
@@ -13,10 +13,10 @@ test("a Minitest gives one try per task; every other exercise keeps three", asyn
   assert.equal(isAssignmentMode("test"), true);
   assert.equal(isMinitest("test"), true);
   assert.equal(isMinitest("schnell"), false);
-  assert.equal(showsQuickRound("test", [{ type: "mc", options: ["a", "b"] }]), false, "a Minitest is never a Schnellrunde");
+  assert.equal(showsQuickRound("test", [{ type: "mc", options: ["a", "b"] }]), false, "a Kurztest is never a Schnellrunde");
 });
 
-test("the tasks of a Minitest go round the skills, weak skills and wrong tasks first", async () => {
+test("the tasks of a Kurztest go round the skills, weak skills and wrong tasks first", async () => {
   const { vorlagen } = await import("./minitest");
   const t = (id: number, skillId: string | null) => ({ id, skillId }) as repo.Task;
   const stoff = {
@@ -37,7 +37,7 @@ test("the tasks of a Minitest go round the skills, weak skills and wrong tasks f
   assert.deepEqual(vorlagen(stoff, 2).map((v) => v.task.id), [4, 1]);
 });
 
-test("Minitest: from the last unit's material, one try, no hints; it shows in the report and the Einschätzung", async () => {
+test("Kurztest: from the last unit's material, one try, no hints; it shows in the report and the Einschätzung", async () => {
   const repo = await import("./repo");
   const { buildWorksheet, submitAnswer } = await import("./service");
   const units = await import("./units");
@@ -84,7 +84,7 @@ test("Minitest: from the last unit's material, one try, no hints; it shows in th
   assert.equal(druck.neu, true);
   const w = repo.getWorksheet(druck.worksheetId)!;
   assert.equal(w.kind, "ueberpruefung");
-  assert.match(w.title, /^Mia – Minitest: /);
+  assert.match(w.title, /^Mia – Kurztest: /);
   const aufgaben = repo.listTasks(w.id);
   assert.equal(aufgaben.length, 5);
   const alt = new Set(repo.listTasks(wid).map((t) => t.prompt));
@@ -124,7 +124,7 @@ test("Minitest: from the last unit's material, one try, no hints; it shows in th
   const report = learning.readReport(repo.getLessonForUnit(unit.id)!)!;
   assert.deepEqual(report.minitest, { von: 5, erledigt: 3, richtig: 2, falsch: [report.minitest!.falsch[0]] });
   const e = leseEinschaetzung(repo.getLessonForUnit(unit.id)!)!;
-  assert.ok(e.saetze.some((x) => /^Minitest am Anfang: 2 von 5 richtig \(3 abgegeben\), Fehler bei /.test(x)), e.saetze.join(" | "));
+  assert.ok(e.saetze.some((x) => /^Kurztest am Anfang: 2 von 5 richtig \(3 abgegeben\), Fehler bei /.test(x)), e.saetze.join(" | "));
 
   // the next unit: its material is this unit's practice and the test; a Minitest is never material itself
   const naechste = units.startUnit(teacher.id, sid, { at: Date.now() - 5 * 60_000, subject: "Mathematik" }).unit;

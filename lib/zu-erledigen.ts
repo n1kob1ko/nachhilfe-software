@@ -95,6 +95,15 @@ export function markiereGesehen(teacherId: number, art: GesehenArt, refId: numbe
     .run(teacherId, art, refId, at.toISOString());
 }
 
+/**
+ * Die fertigen Übungen einer Einheit als gesehen: die Lehrkraft hat ihre Ergebnisse im Abschluss vor sich gehabt und die
+ * Dokumentation bestätigt (Test 26.11.2026: „Ergebnis von Mia ansehen“ stand danach noch zweimal in „Zu erledigen“).
+ */
+export function markiereEinheitGesehen(teacherId: number, unitId: number, at = new Date()) {
+  const ids = db().prepare("SELECT id FROM assignments WHERE unit_id = ? AND completed_at IS NOT NULL").pluck().all(unitId) as number[];
+  for (const id of ids) markiereGesehen(teacherId, "ergebnis", id, at);
+}
+
 // ---------- die Liste ----------
 
 /**

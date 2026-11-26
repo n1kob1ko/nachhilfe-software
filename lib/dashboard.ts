@@ -13,7 +13,7 @@
  */
 import { analyzeStudent } from "./service";
 import { parseTime, type Trend } from "./analysis";
-import { lessonsBetween, listStudents } from "./repo";
+import { getTeacher, lessonsBetween, listStudents } from "./repo";
 import { listUnits } from "./units";
 import { wochenUebersicht } from "./planung/uebersicht";
 import { WOCHENTAG_KURZ, labelMinuten, minutenLabel, tagAddieren, wienerDatum, wienerMinuten, wienerWochenstart, wochentageDerWoche, type Wochentag } from "./planung/zeit";
@@ -161,14 +161,16 @@ export function fortschrittSortieren(liste: SchuelerFortschritt[]): SchuelerFort
 }
 
 /**
- * Der Fortschritt der eigenen Schüler: wer in den letzten 60 Tagen bei diesem Lehrer war; hatte er noch niemanden,
- * alle Schüler (z. B. die Verwaltung).
+ * Der Fortschritt der eigenen Schüler: wer dieser Lehrkraft zugeteilt ist oder in den letzten 60 Tagen bei ihr war. Nur die
+ * Verwaltung sieht ohne eigene Schüler alle (`alle`); eine neue Lehrkraft sieht nicht das ganze Institut (Test 26.11.2026).
  */
 export function schuelerFortschritt(teacherId: number, now = Date.now()) {
   const seit = new Date(now - 60 * DAY).toISOString();
-  const eigene = new Set(listUnits({ teacherId, from: seit }).map((u) => u.student_id));
-  const alle = listStudents();
-  const schueler = eigene.size > 0 ? alle.filter((s) => eigene.has(s.id)) : alle;
+  const unterrichtet = new Set(listUnits({ teacherId, from: seit }).map((u) => u.student_id));
+  const alleSchueler = listStudents();
+  const eigene = alleSchueler.filter((s) => s.teacher_id === teacherId || unterrichtet.has(s.id));
+  const alle = eigene.length === 0 && Boolean(getTeacher(teacherId)?.is_admin);
+  const schueler = alle ? alleSchueler : eigene;
   const liste: SchuelerFortschritt[] = [];
   for (const s of schueler) {
     const a = analyzeStudent(s.id, now);
@@ -188,6 +190,7 @@ export function schuelerFortschritt(teacherId: number, now = Date.now()) {
   const sortiert = fortschrittSortieren(liste);
   return {
     liste: sortiert,
+    alle,
     besser: liste.filter((f) => f.trend === "up").length,
     gleich: liste.filter((f) => f.trend === "flat").length,
     schlechter: liste.filter((f) => f.trend === "down").length,

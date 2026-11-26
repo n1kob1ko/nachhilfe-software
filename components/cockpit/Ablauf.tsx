@@ -1307,7 +1307,7 @@ function Werkzeuge({ c, unit, student, liste, teacherId, ids, aktuell, mehrOffen
           <summary className="inline-flex min-h-[44px] cursor-pointer list-none flex-wrap items-center gap-x-2 text-[15px] font-semibold text-accent [&::-webkit-details-marker]:hidden">
             Mehr <ChevronDown size={16} className="transition-transform group-open:rotate-180" aria-hidden />
             <span className="text-[13.5px] font-normal text-ink-3 group-open:hidden">
-              {[notizSchritt ? "Foto vom Stoff" : null, "Neue Übung", "Fortschritt", "Text schreiben", notizSchritt ? "Schritt überspringen" : null, stoff || gedruckt ? "Minitest" : null, "Lernpaket", "Einheit abbrechen"].filter(Boolean).join(", ")} …
+              {[notizSchritt ? "Foto vom Stoff" : null, "Neue Übung", "Fortschritt", "Text schreiben", notizSchritt ? "Schritt überspringen" : null, stoff || gedruckt ? "Kurztest" : null, "Lernpaket", "Einheit abbrechen"].filter(Boolean).join(", ")} …
             </span>
           </summary>
           <div className="grid gap-6 pt-3">

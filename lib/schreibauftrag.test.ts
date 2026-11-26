@@ -414,10 +414,11 @@ test("builder: every Textsorte makes Teilübungen on its Textbeilage with line n
     assert.deepEqual(readingSetIssues(out.tasks), []);
     for (const t of out.tasks) assert.deepEqual(readingIssues(t, set.text, out.tasks), [], t.prompt);
 
-    // every part twice at most: more is not useful
+    // every part once: the same part twice about the same text on one sheet is no new task
+    // (Test mit vier Test-Lehrern, 26.11.2026: Erörterung mit 8 Aufgaben stellte „Einleitung“ zweimal)
     const many = await builder.generateTasks(settings({ skillIds: [s.skill], count: 30, useAI: false }), null);
     assert.equal(many.tasks.length, maxTeiluebungen(k), k);
-    assert.equal(new Set(many.tasks.map((t) => t.prompt)).size, many.tasks.length, `${k}: no prompt twice`);
+    assert.deepEqual(many.tasks.map((t) => t.data.teil), s.parts.map((p) => p.key), `${k}: no part twice`);
   }
 });
 
@@ -500,7 +501,8 @@ test("recommendation path: a worksheet for one Textsorte is Teilübungen, withou
   }, () => buildWorksheet({ subject: "Deutsch", schoolType: "Gymnasium", klasse: 7, skillIds: ["deutsch.os.matura.eroerterung"], difficulty: "mittel", count: 10, taskType: "mixed", kind: "uebung" } as Parameters<typeof buildWorksheet>[0]));
   assert.equal(calls.length, 0);
   const tasks = repo.listTasks(out.id);
-  assert.equal(tasks.length, 10, "every part of the Erörterung twice");
+  assert.deepEqual(tasks.map((t) => t.data.teil), ["einleitung", "position", "gegenseite", "eigeneseite", "schluss"], "every part of the Erörterung once, none repeated to fill the sheet");
+  assert.equal(tasks.length, 5);
   assert.ok(tasks.every((t) => t.data.teil && t.data.zeilen && t.type === "free" && t.data.schreibsorte === "eroerterung"));
 });
 

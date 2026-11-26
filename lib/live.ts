@@ -104,12 +104,13 @@ export function unitAssignments(unitId: number) {
       `SELECT a.*, w.title, w.source_task_id,
         (SELECT COUNT(*) FROM tasks t WHERE t.worksheet_id = w.id) AS task_count,
         (SELECT COUNT(DISTINCT task_id) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1) AS done_count,
-        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count
+        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.correct = 1) AS correct_count,
+        (SELECT COUNT(*) FROM attempts x WHERE x.assignment_id = a.id AND x.final = 1 AND x.review = 'offen') AS offen_count
        FROM assignments a JOIN worksheets w ON w.id = a.worksheet_id
        JOIN units u ON u.id = a.unit_id
        WHERE a.unit_id = ? AND a.student_id = u.student_id AND ${repo.ASSIGNMENT_ARCHIVED} IS NULL ORDER BY a.id`,
     )
-    .all(unitId) as (repo.Assignment & { title: string; source_task_id: number | null; task_count: number; done_count: number; correct_count: number })[];
+    .all(unitId) as (repo.Assignment & { title: string; source_task_id: number | null; task_count: number; done_count: number; correct_count: number; offen_count: number })[];
 }
 
 export function unitAssignment(unitId: number, assignmentId: number) {
@@ -288,6 +289,8 @@ export type LiveSnapshot = {
     last: null | { correct: boolean; final: boolean; at: string; pending?: boolean; answer?: string | null; label?: string | null };
     done: number;
     correct: number;
+    /** finished answers that wait for the teacher's grade (free answers): not right yet, but not wrong either */
+    wartet?: number;
     solutionsVisible: boolean;
     hasNext: boolean;
   };
@@ -362,6 +365,7 @@ export function liveSnapshot(unitId: number): LiveSnapshot | null {
         : null,
       done: a.done_count,
       correct: a.correct_count,
+      wartet: a.offen_count,
       solutionsVisible: Boolean(a.solutions_visible),
       hasNext: a.source_task_id !== null && nextTaskAfter(a.source_task_id) !== null,
     };

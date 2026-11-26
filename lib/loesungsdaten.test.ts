@@ -150,7 +150,7 @@ test("Schülerdaten: alte Zuweisung mit freigegebenen Lösungen bleibt bei „Hi
   assert.deepEqual(finde(JSON.stringify(clientTasks(repo.getAssignment(aid)!))), ["loesung", "hilfe", "antwort"]);
 });
 
-test("Schülerdaten: ein Minitest gibt nichts frei, auch bei „Alles“", async () => {
+test("Schülerdaten: ein Kurztest gibt nichts frei, auch bei „Alles“", async () => {
   const { repo, sid, wid } = await setup();
   const { clientTasks } = await import("./solver-tasks");
   const aid = repo.assignWorksheet(wid, sid, "", null, "test");

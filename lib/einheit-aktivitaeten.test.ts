@@ -52,7 +52,7 @@ test("one line per thing the student did, in order, with result and how long it 
   const min = (n: number) => beginn + n * 60_000;
 
   // Minitest at the start: 3 tasks, 40 s each
-  const mt = s.repo.assignWorksheet(s.blatt("Lea – Minitest Brüche", 3), s.sid, "", unit.id, "test");
+  const mt = s.repo.assignWorksheet(s.blatt("Lea – Kurztest Brüche", 3), s.sid, "", unit.id, "test");
   s.antworte(mt, unit.id, [true, true, false], { ms: 40_000, at: min(2) });
   // an exercise: 4 of 5 done, one waits for the teacher
   const ue = s.repo.assignWorksheet(s.blatt("Brüche dividieren", 5), s.sid, "", unit.id);
@@ -83,7 +83,7 @@ test("one line per thing the student did, in order, with result and how long it 
 
   const xs = aktivitaetenDerEinheit(unit.id, min(60));
   assert.deepEqual(xs.map(aktivitaetZeile), [
-    "Minitest: 2 von 3 richtig, 2 min",
+    "Kurztest: 2 von 3 richtig, 2 min",
     "Textarbeit „Mein Ausflug“: 140 Wörter dazu, ca. 15 min",
     "Übung „Brüche dividieren“: 4 von 5 Aufgaben, 2 richtig, 1 Antwort noch zu bewerten, 12 min",
     "Am Whiteboard „Tafelaufgaben“: 1 von 2 richtig, 1 teilweise, ca. 8 min",
@@ -117,11 +117,11 @@ test("one line per thing the student did, in order, with result and how long it 
     "Duell der, die, das: 8 von 10 richtig, 2 min",
     "Vokabeln „Unit 3“: 8 von 10 richtig, 4 min",
   ]);
-  assert.ok(k.gemacht.some((z) => z.text === "Minitest am Anfang: 2 von 3 richtig, 2 min"), k.gemacht.map((z) => z.text).join("\n"));
+  assert.ok(k.gemacht.some((z) => z.text === "Kurztest am Anfang: 2 von 3 richtig, 2 min"), k.gemacht.map((z) => z.text).join("\n"));
   ab.bestaetigeAbschluss(lessonId);
   const nach = s.repo.getLesson(lessonId)!.activities;
   assert.match(nach, /^Lernspiel Wortschatz: 21 von 24 richtig in 2 Runden, 4 min$/m);
-  assert.match(nach, /^Minitest am Anfang: 2 von 3 richtig, 2 min$/m);
+  assert.match(nach, /^Kurztest am Anfang: 2 von 3 richtig, 2 min$/m);
 });
 
 test("formats: seconds, minutes, hours; open answers only after grading; nothing handed in", async () => {

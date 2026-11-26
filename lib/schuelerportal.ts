@@ -48,6 +48,15 @@ export type PortalHausuebung = {
 };
 
 /**
+ * Die offenen Übungen der Startseite ohne die, die zu einer offenen Hausübung gehören: die stehen mit ihrem Datum unter
+ * „Hausübungen“ („Zur Übung“) und sonst zweimal auf der Seite (Test 26.11.2026).
+ */
+export function ohneHausuebungen<T extends { id: number }>(uebungen: T[], hausuebungen: Pick<PortalHausuebung, "uebungId">[]): T[] {
+  const dort = new Set(hausuebungen.map((h) => h.uebungId));
+  return uebungen.filter((u) => !dort.has(u.id));
+}
+
+/**
  * Offene Hausübungen (die früheste Fälligkeit zuerst, ohne Fälligkeit am Ende) und erledigte als Verlauf (die
  * zuletzt fällige zuerst). Erledigt heißt wie bei „Zu erledigen“: abgehakt oder die verknüpfte Übung ist fertig
  * (repo.homeworkOpen); der Zustand wird beim Lesen berechnet, nach dem Neuladen stimmt er also.

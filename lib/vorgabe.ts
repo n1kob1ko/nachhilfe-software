@@ -142,9 +142,15 @@ const FUELL = wort(
   "giu",
 );
 
+/**
+ * Eine Seitenangabe („Buch Seite 45-48“, „S. 45 bis 48“, „im Heft Seite 12“): sie sagt, wo der Stoff steht, und ist kein
+ * Lerninhalt. Sie steht einmal als Umfang da und wird keinem Thema zugeordnet.
+ */
+const SEITEN = /(?:(?:im\s+|aus\s+dem\s+)?(?:schul|arbeits|übungs)?(?:buch|heft)\s*,?\s*)?(?<![\p{L}\p{N}])(?:seiten?|s\.)\s*\d+(?:\s*(?:-|–|,|bis|und|u\.)\s*\d+|\s+\d+)*(?:\s*ff?\.?)?/giu;
+
 const GRAMMATIK = /tense|simple|continuous|progressive|perfect|grammar|grammatik|question|frage|verneinung|negation|irregular|verb|adjektiv|adverb|plural|pronoun|comparison|steigerung|signal|word order|wortstellung|passive|if-clause|going to|will-future|should|can\b|must\b/i;
 export function gruppeVon(t: string): Gruppe {
-  if (/\b(?:units?|kapitel|lektion|chapter)\s*\d/i.test(t)) return "umfang";
+  if (/\b(?:units?|kapitel|lektion|chapter|seiten?)\s*\d|\bs\.\s*\d/i.test(t)) return "umfang";
   if (/writing|e-?mail|letter|brief|story|geschichte|postcard|postkarte|invitation|einladung|dialog|aufsatz/i.test(t)) return "writing";
   if (/reading|listening|leseverst|hörverst|\blesen\b|\bhören\b/i.test(t)) return "reading_listening";
   if (GRAMMATIK.test(t)) return "grammatik";
@@ -160,7 +166,14 @@ export function regelLesung(text: string): Pick<Lesung, "punkte" | "schwierigkei
   const punkte: RohPunkt[] = [];
   const schwierigkeiten: string[] = [];
   let termin: string | null = null;
-  for (const satz of text.split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean)) {
+  const umfang: RohPunkt[] = [];
+  // „S. 45“ is no end of a sentence: take the page references out first, each once as the Umfang
+  const ohneSeiten = text.replace(SEITEN, (m) => {
+    const s = m.replace(/\s+/g, " ").trim();
+    if (!umfang.some((x) => x.original.toLowerCase() === s.toLowerCase())) umfang.push({ gruppe: "umfang", original: s.slice(0, 200), inhalt: s.slice(0, 120), einheit: "", dokument: 0, quelle: "lehrer", status: "pruefung", grund: "", skill_id: null });
+    return " ";
+  });
+  for (const satz of ohneSeiten.replace(/\(\s*\)/g, " ").split(/(?<=[.!?])\s+|\n+/).map((s) => s.trim()).filter(Boolean)) {
     let rest = satz;
     const t = satz.match(TERMIN);
     const p = satz.match(PRUEFUNG_WORT);
@@ -180,7 +193,7 @@ export function regelLesung(text: string): Pick<Lesung, "punkte" | "schwierigkei
       punkte.push({ gruppe: gruppeVon(s), original: s.slice(0, 200), inhalt: s.slice(0, 120), einheit: "", dokument: 0, quelle: "lehrer", status: "pruefung", grund: "", skill_id: null });
     }
   }
-  return { punkte: punkte.slice(0, 12), schwierigkeiten: schwierigkeiten.slice(0, 5), termin_text: termin };
+  return { punkte: [...punkte.slice(0, 12), ...umfang.slice(0, 2)], schwierigkeiten: schwierigkeiten.slice(0, 5), termin_text: termin };
 }
 
 /** Wörter, die zwei Lerninhalte in einem Punkt verbinden („Gleichungen mit negativen Zahlen“). „und“ trennt schon `splitTopics`. */

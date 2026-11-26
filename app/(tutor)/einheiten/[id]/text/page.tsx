@@ -18,9 +18,9 @@ function textSubject(unitSubject: string, subjects: string[]) {
   return languages.find((l) => subjects.includes(l)) ?? (unitSubject || "Deutsch");
 }
 
-export default async function StartTextPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ schreiben?: string }> }) {
+export default async function StartTextPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ schreiben?: string; thema?: string }> }) {
   const { id } = await params;
-  const { schreiben } = await searchParams;
+  const { schreiben, thema } = await searchParams;
   const teacher = await requireTeacher();
   const unit = getUnit(Number(id));
   if (!unit) notFound();
@@ -31,7 +31,14 @@ export default async function StartTextPage({ params, searchParams }: { params: 
   // „Schreibauftrag starten“ in a step of the guided lesson: prefilled from the Vorgabe, the exam material or the skill
   const start = schreiben ? schreibStartFuer(unit, schreiben) : null;
   if (start && start.art !== "text") redirect(start.href);
-  const vorlage = start?.art === "text" ? { titel: start.titel, textsorte: start.textsorte, aufgabe: start.aufgabe, quelle: start.quelle } : null;
+  // „… schreibt eine Zusammenfassung“ zu einem Thema ohne Aufgaben der App (geführter Ablauf, Nebenfach): im Fach der Einheit
+  const frei = !start && thema?.trim() ? thema.trim().slice(0, 120) : "";
+  const vorlage =
+    start?.art === "text"
+      ? { titel: start.titel, textsorte: start.textsorte, aufgabe: start.aufgabe, quelle: start.quelle }
+      : frei
+        ? { titel: frei, textsorte: "Zusammenfassung", aufgabe: `Schreibe in eigenen Worten auf, was du heute über „${frei}“ gelernt hast. Erkläre es so, dass es jemand versteht, der nicht dabei war.`, quelle: "dem Stoff von heute" }
+        : null;
   return (
     <div className="max-w-[720px]">
       <PageHeader
@@ -41,7 +48,7 @@ export default async function StartTextPage({ params, searchParams }: { params: 
       />
       <StartTextForm
         unitId={unit.id}
-        subject={start?.art === "text" ? start.fach : textSubject(unit.subject, student.subjects)}
+        subject={start?.art === "text" ? start.fach : frei && unit.subject ? unit.subject : textSubject(unit.subject, student.subjects)}
         subjects={fachNamen()}
         kinds={TEXT_KINDS}
         device={studentDevice(unit)}

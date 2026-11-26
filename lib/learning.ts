@@ -412,14 +412,24 @@ function plannedLessonFor(unit: Pick<UnitView, "student_id" | "started_at">): re
   return repo.listLessons(unit.student_id).find((l) => l.kind === "stunde" && l.status === "geplant" && !l.unit_id && l.starts_at.slice(0, 10) === day) ?? null;
 }
 
+/** The subject of the student's last documented unit (what the lesson really was about, after „Fach ändern“); "" without one. */
+function letztesFach(studentId: number, at: number): string {
+  const r = db()
+    .prepare("SELECT subject FROM lessons WHERE student_id = ? AND unit_id IS NOT NULL AND status = 'abgeschlossen' AND subject <> '' AND starts_at <= ? ORDER BY starts_at DESC, id DESC LIMIT 1")
+    .pluck()
+    .get(studentId, localStamp(at)) as string | undefined;
+  return r ?? "";
+}
+
 /**
  * Subject shown for a unit before any exercise was done: today's planned lesson, else the subject of today's automatic
- * preparation (`vorbereitet`, lib/heute.ts `fachHeute`: the subject of the exam or package Heute showed), else the
- * student's first subject.
+ * preparation (`vorbereitet`, lib/heute.ts `fachHeute`: the subject of the exam or package Heute showed), else the subject of
+ * the last unit (test 2026-11-26, M2: the unit started in the first subject of the profile, although last time was another;
+ * then „Weiter wie letztes Mal“ was missing too), else the student's first subject.
  */
 export function expectedSubject(studentId: number, at = Date.now(), vorbereitet = ""): string {
   const planned = plannedLessonFor({ student_id: studentId, started_at: new Date(at).toISOString() });
-  return planned?.subject || vorbereitet || repo.getStudent(studentId)?.subjects[0] || "";
+  return planned?.subject || vorbereitet || letztesFach(studentId, at) || repo.getStudent(studentId)?.subjects[0] || "";
 }
 
 /**

@@ -265,9 +265,9 @@ test("ohne KI oder bei einem Fehler: Meldung, nichts gespeichert; „Erneut vers
   const { entwerfeLernpaket, kiAusGrund } = await import("./lernpaket-ki");
   const zahl = () => (s.db().prepare("SELECT COUNT(*) AS n FROM lernpakete").get() as { n: number }).n;
   (await import("./ai/router")).setTransport(null);
-  assert.match(kiAusGrund() ?? "", /KI ist aus/);
+  assert.match(kiAusGrund() ?? "", /KI ist gerade aus/);
   const aus = await entwerfeLernpaket({ skillId: SKILL }, s.niko.id);
-  assert.ok(!aus.ok && /KI ist aus/.test(aus.error));
+  assert.ok(!aus.ok && /KI ist gerade aus/.test(aus.error));
   assert.equal(zahl(), 0);
 
   const ki = await mitKi(() => ANTWORT(s.bibId), { fehler: 1, ms: 30 });

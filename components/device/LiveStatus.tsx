@@ -1,5 +1,6 @@
 "use client";
 
+import { fehlerVon } from "@/lib/live-zaehlen";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -199,7 +200,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
       ) : c ? (
         <div className="mt-4">
           <p className="text-[13px] text-ink-3">
-            {s.student} · {c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Minitest" : c.single ? "Einzelaufgabe" : "Übung"}
+            {s.student} · {c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Kurztest" : c.single ? "Einzelaufgabe" : "Übung"}
             {onLaptop ? " · am eigenen Laptop" : ""}
           </p>
           <p className="truncate text-[17px] font-semibold" title={c.title}>
@@ -308,15 +309,17 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
         : devOnline
           ? { text: `${dev} verbunden`, ton: "text-green", punkt: "bg-green" }
           : { text: `${dev} offline`, ton: "text-red", punkt: "bg-red" };
-  const fehler = c && !c.test ? Math.max(0, c.done - c.correct) : 0;
+  const fehler = c && !c.test ? fehlerVon(c) : 0;
+  const wartet = c && !c.test ? (c.wartet ?? 0) : 0;
   const teile: { text: string; ton?: string }[] = [];
   if (s.text) teile.push({ text: `Textarbeit „${s.text.title}“ · ${s.text.words.toLocaleString("de-AT")} Wörter` });
   else if (c) {
-    teile.push({ text: `${c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Minitest" : "Übung"} „${c.title}“` });
+    teile.push({ text: `${c.probe ? "Probeschularbeit" : c.kontrolle ? "Lernkontrolle" : c.test ? "Kurztest" : "Übung"} „${c.title}“` });
     if (c.state === "nicht angekommen") teile.push({ text: "nicht angekommen", ton: "font-semibold text-red" });
     else if (c.state === "fertig") teile.push({ text: `fertig · ${c.correct} von ${c.total} richtig`, ton: "text-green" });
     else teile.push({ text: `Aufgabe ${Math.min(c.taskNo, c.total)} von ${c.total}` });
     if (fehler > 0 && c.state !== "fertig") teile.push({ text: fehler === 1 ? "1 Aufgabe falsch" : `${fehler} Aufgaben falsch`, ton: "text-red" });
+    if (wartet > 0) teile.push({ text: wartet === 1 ? "1 Antwort wartet auf deine Bewertung" : `${wartet} Antworten warten auf deine Bewertung`, ton: "text-ink-2" });
     if (c.last && !c.last.pending && c.state !== "fertig") teile.push(c.last.correct ? { text: "Letzte Antwort richtig", ton: "text-green" } : { text: c.last.answer ? `Letzte Antwort falsch: „${c.last.answer.length > 30 ? `${c.last.answer.slice(0, 29)}…` : c.last.answer}“${c.last.label && c.last.label.length <= 32 ? ` (${c.last.label})` : ""}` : "Letzte Antwort falsch", ton: "font-semibold text-red" });
     if (c.last?.pending) teile.push({ text: "Antwort wartet auf dich", ton: "text-amber" });
     if (fest) teile.push({ text: `hängt bei Aufgabe ${Math.min(c.taskNo, c.total)} fest (${fest})`, ton: "font-semibold text-amber" });

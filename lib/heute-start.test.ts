@@ -210,3 +210,14 @@ test("Übung senden ohne Plan-Schritt (eigene Fähigkeit): der Plan wird trotzde
   assert.deepEqual(s.plan, plan);
   assert.deepEqual(s.gesendet, {}, "kein Schritt, bei dem die Übung stehen könnte");
 });
+
+test("Heute: eine ungeplante, schon gehaltene Einheit zeigt ihre wirkliche Dauer, nicht die übliche Länge (Test 26.11.2026)", async () => {
+  const { repo, teacher, schueler } = await setup();
+  const { tagesplan, heuteKarten } = await import("./heute");
+  const jonas = schueler("Jonas Feldner");
+  repo.saveLesson({ student_id: jonas, teacher_id: teacher.id, starts_at: `${MONTAG}T08:00`, duration_min: 10, subject: "Mathematik", topic: "", status: "abgeschlossen", activities: "Brüche kürzen", mistakes: "", understanding: null, tutor_notes: "", next_steps: "", skill_ids: [] });
+  const punkte = tagesplan(teacher.id, MORGEN);
+  assert.equal(punkte.length, 1);
+  assert.equal(punkte[0].erledigt, true);
+  assert.equal(heuteKarten(teacher.id, punkte, MORGEN).get(punkte[0].key)!.dauerMin, 10);
+});

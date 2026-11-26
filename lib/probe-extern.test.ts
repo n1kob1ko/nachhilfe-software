@@ -425,7 +425,7 @@ test("on paper: Arbeit fotografieren offers the Probeschularbeit, reads it again
     const lesson = s.repo.getLesson(endUnit(unit.id, { byTeacherId: s.teacher.id })!)!;
     const b = ab.belegeDerEinheit(unit.id, lesson);
     assert.deepEqual(b.papier, [], "the Probeschularbeit has its own line instead of the paper line");
-    assert.equal(b.minitest, null, "a Probeschularbeit is no Minitest");
+    assert.equal(b.minitest, null, "a Probeschularbeit is no Kurztest");
     const zeile = "Probeschularbeit „Brüche“ auf Papier: Note 5 (Nicht genügend), 2,5 von 6 Punkten";
     assert.deepEqual(b.proben?.map(ab.probeZeile), [zeile]);
     assert.ok(ab.abschlussKarte(null, null, [], b).gemacht.some((z) => z.text === zeile && z.von === "papier"), "the line stands under „Heute gemacht“");

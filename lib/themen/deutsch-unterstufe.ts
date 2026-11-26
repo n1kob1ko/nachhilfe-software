@@ -974,6 +974,12 @@ const SUCHWOERTER_BISHER: Record<string, string[]> = {
   "deutsch.grammatik.praeteritum": ["Mitvergangenheit"],
   "deutsch.grammatik.perfekt": ["Vergangenheit"],
   "deutsch.satz.hauptsatz-gliedsatz": ["Nebensatz"],
+  // so schreiben es Lehrkräfte in „Was steht heute an?“ (Test 26.11.2026: „Adjektiv erkennen“ landete nicht bei den Adjektiven)
+  "deutsch.wortarten.nomen": ["Nomen erkennen", "Namenwörter", "Hauptwörter"],
+  "deutsch.wortarten.bestimmen.adjektiv": ["Adjektiv erkennen", "Adjektive erkennen", "Eigenschaftswörter", "Wiewörter"],
+  "deutsch.wortarten.bestimmen.verb": ["Verb erkennen", "Verben erkennen", "Zeitwörter", "Tunwörter"],
+  "deutsch.wortarten.bestimmen.artikel": ["Artikel erkennen", "Begleiter"],
+  "deutsch.wortarten.bestimmen.pronomen": ["Pronomen erkennen", "Fürwörter"],
 };
 
 export const DEUTSCH_UNTERSTUFE: Modul = {

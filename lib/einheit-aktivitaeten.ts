@@ -75,7 +75,7 @@ export function aktivitaetName(a: Pick<Aktivitaet, "art" | "titel" | "endlos">):
     case "uebung":
       return `Übung${q}`;
     case "minitest":
-      return "Minitest";
+      return "Kurztest";
     case "lernkontrolle":
       return `Lernkontrolle${q}`;
     case "probe":

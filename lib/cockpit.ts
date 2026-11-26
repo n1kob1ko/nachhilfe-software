@@ -618,6 +618,9 @@ export function wechsleFach(unitId: number, roh: string): { ok: true; fach: stri
     // auch der geführte Ablauf (lib/einheit-ablauf.ts) fängt bei „Start“ an: Weg, Themen und Kurztest gehören zum alten Fach
     // (Test 26.11.2026: nach Deutsch → Chemie stand weiter „übt am Tablet: Erörterung“ da). „Mehr Werkzeuge“ bleibt, wie es ist.
     db().prepare("UPDATE einheit_ablauf SET weg = NULL, stufe = 'start', skill_ids = '[]', aktuell = NULL, kurztest_fertig = 0, schritt_id = NULL, updated_at = datetime('now') WHERE unit_id = ?").run(unitId);
+    // „Was steht heute an?“ gehörte zum alten Fach: unter „Stoff“ stand sonst weiter „Heute: Erörterung“ (derselbe Test, M1).
+    // Was schon geübt wurde, bleibt über seine Übungen in der Dokumentation.
+    db().prepare("DELETE FROM einheit_vorgabe WHERE unit_id = ?").run(unitId);
     eigeneWahl(unitId);
   })();
   return { ok: true, fach, geaendert: true };
@@ -1690,8 +1693,15 @@ export function beispielDerEinheit(unitId: number, skillId: string): TaskDraft |
  */
 const beispielFragen = (unitId: number, skillId: string): string[] => {
   const b = beispielDerEinheit(unitId, skillId);
-  return [...new Set([...(b ? [gleicheFrage(b)] : []), ...knopfBeispielFragen(unitId, skillId)])];
+  const g = gefragteAufgabe(unitId, skillId);
+  return [...new Set([...(b ? [gleicheFrage(b)] : []), ...(g ? [gleicheFrage(g)] : []), ...knopfBeispielFragen(unitId, skillId)])];
 };
+
+/** Die Frage, die „Erklären“ zur Fähigkeit in dieser Einheit schon gestellt hat (`merkeFrage`); null, wenn noch keine. */
+function gefragteAufgabe(unitId: number, skillId: string): TaskDraft | null {
+  const r = db().prepare("SELECT aufgabe FROM einheit_fragen WHERE unit_id = ? AND skill_id = ?").get(unitId, skillId) as { aufgabe: string } | undefined;
+  return r ? json<TaskDraft | null>(r.aufgabe, null) : null;
+}
 
 /** Die Fragen (`gleicheFrage`) der Beispiele, die die Lehrer-Knöpfe in dieser Einheit gezeigt haben; ohne `skillId` alle. */
 export function knopfBeispielFragen(unitId: number, skillId?: string | null): string[] {
@@ -1770,6 +1780,29 @@ export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" |
   if (!unit || !repo.getStudent(unit.student_id)) return leer;
   const skillId = skillDesSchritts(unitId, s);
   const sagt = erklaerungZu(skillId);
+  const zweite = beispielImSchritt(unitId, { ...s, skillId }, gesendet, ausser) ?? undefined;
+  const erste = frageImSchritt(unitId, s, gesendet, ausser) ?? undefined;
+  const antwort = fragbar(erste) ? antwortText(erste) : "";
+  const loesung = fragbar(zweite) ? loesungText(zweite) : "";
+  // a sample solution that only repeats the explanation (a writing task) shows nothing new
+  const norm = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
+  const wiederholt = Boolean(sagt && loesung && norm(sagt).startsWith(norm(loesung).slice(0, 80)));
+  return {
+    sagt,
+    zeigt: fragbar(zweite) && loesung && !wiederholt ? { aufgabe: frageText(zweite), loesung } : null,
+    fragt: fragbar(erste) ? frageText(erste) : null,
+    antwort: fragbar(erste) && antwort ? antwort : null,
+  };
+}
+
+/**
+ * Die Aufgabe, die der Schritt als „Das fragst du“ zeigt (dieselbe Rechnung wie `planFuehrung`); null, wenn er keine fragt.
+ * Ein erklärender Schritt, dessen Frage schon festgehalten ist (`merkeFrage`), fragt weiter diese.
+ */
+function frageImSchritt(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): TaskDraft | null {
+  const skillId = skillDesSchritts(unitId, s);
+  const gemerkt = skillId && erklaert(s) ? gefragteAufgabe(unitId, skillId) : null;
+  if (gemerkt && fragbar(gemerkt)) return gemerkt;
   const aufgaben = aufgabenImSchritt(unitId, { ...s, skillId }, gesendet);
   const zweite = beispielImSchritt(unitId, { ...s, skillId }, gesendet, ausser) ?? undefined;
   // never the example of this step, nor one an earlier step showed
@@ -1782,18 +1815,25 @@ export function planFuehrung(unitId: number, s: Pick<PlanStep, "id" | "uebung" |
   // with the same instruction („Write the 3rd form …“) it looks like the same task: another one first, if there is one
   const auftrag = (t: TaskDraft) => t.prompt.replace(/\s+/g, " ").trim().toLowerCase();
   const anders = (t: TaskDraft) => !zweite || auftrag(t) !== auftrag(zweite);
-  const erste = passend.find((t) => frei(t) && anders(t)) ?? passend.find(frei) ?? (frei(aufgaben[0]) ? aufgaben[0] : undefined);
-  const antwort = fragbar(erste) ? antwortText(erste) : "";
-  const loesung = fragbar(zweite) ? loesungText(zweite) : "";
-  // a sample solution that only repeats the explanation (a writing task) shows nothing new
-  const norm = (x: string) => x.replace(/\s+/g, " ").trim().toLowerCase();
-  const wiederholt = Boolean(sagt && loesung && norm(sagt).startsWith(norm(loesung).slice(0, 80)));
-  return {
-    sagt,
-    zeigt: fragbar(zweite) && loesung && !wiederholt ? { aufgabe: frageText(zweite), loesung } : null,
-    fragt: fragbar(erste) ? frageText(erste) : null,
-    antwort: fragbar(erste) && antwort ? antwort : null,
-  };
+  return passend.find((t) => frei(t) && anders(t)) ?? passend.find(frei) ?? (frei(aufgaben[0]) ? aufgaben[0] : null);
+}
+
+/** Erklärt der Schritt ein Thema (Erklären oder Grundlage)? Nur dort fragt der Lehrer laut, bevor der Schüler übt. */
+const erklaert = (s: Pick<PlanStep, "art">) => s.art === "erklaeren" || s.art === "grundlage";
+
+/**
+ * Hält die Frage fest, die der erklärende Schritt gerade zeigt (nach dem Zeigen, wie `merkeBeispiel`; Test 26.11.2026: der
+ * Lehrer fragte sie laut, danach war sie die erste Aufgabe der Übung, das Kind sah sie zweimal). Danach stellt sie keine Übung der
+ * Fähigkeit in dieser Einheit mehr, und „Erklären“ zeigt weiter dieselbe. Die erste gefragte gilt. Nicht, wenn zur Fähigkeit schon
+ * eine Übung gesendet ist: dann hat der Schüler die Aufgabe schon.
+ */
+export function merkeFrage(unitId: number, s: Pick<PlanStep, "id" | "uebung" | "skillId" | "art">, gesendet: number[] = [], ausser: TaskDraft[] = []): boolean {
+  const unit = getUnit(unitId);
+  const skillId = skillDesSchritts(unitId, s);
+  if (!unit || unit.status !== "gestartet" || !skillId || !erklaert(s) || uebungenZur(unitId, skillId).length > 0) return false;
+  const f = frageImSchritt(unitId, s, gesendet, ausser);
+  if (!f) return false;
+  return db().prepare("INSERT OR IGNORE INTO einheit_fragen (unit_id, skill_id, aufgabe) VALUES (?, ?, ?)").run(unitId, skillId, JSON.stringify(f)).changes > 0;
 }
 
 /** Endet ein Text mit einer Abkürzung („z. B.“, „bzw.“, ein einzelner Buchstabe mit Punkt), endet dort kein Satz. */

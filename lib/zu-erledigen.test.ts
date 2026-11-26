@@ -199,3 +199,26 @@ test("old results drop out after the window, but answers still waiting for a gra
   assert.equal(finde(l, `a${alt.aid}`), "fehlt");
   assert.equal(zustandVon(l, `a${wartet.aid}`), "wartet");
 });
+
+test("Ergebnisse einer Einheit, deren Dokumentation die Lehrkraft bestätigt hat, sind gesehen (Test 26.11.2026)", async () => {
+  const { repo, ze, niko, thomas, heute } = await setup();
+  const units = await import("./units");
+  const sid = repo.createStudent(kid("Mia Bestaetigt", niko.id));
+  const unit = units.startUnit(niko.id, sid, { subject: "Mathematik" }).unit;
+  const inDerEinheit = await uebung(sid, "Kurztest: Brüche");
+  const { db } = await import("./db");
+  db().prepare("UPDATE assignments SET unit_id = ? WHERE id = ?").run(unit.id, inDerEinheit.aid);
+  inDerEinheit.fertig();
+  const wartet = await uebung(sid, "Freie Antwort");
+  db().prepare("UPDATE assignments SET unit_id = ? WHERE id = ?").run(unit.id, wartet.aid);
+  wartet.fertig({ offen: true });
+  const zuHause = await uebung(sid, "Zu Hause geübt");
+  zuHause.fertig();
+  assert.equal(finde(ze.zuErledigen(niko.id, heute), `a${inDerEinheit.aid}`), "offen");
+  ze.markiereEinheitGesehen(niko.id, unit.id, new Date(Date.now() + 1000));
+  const l = ze.zuErledigen(niko.id, heute);
+  assert.equal(finde(l, `a${inDerEinheit.aid}`), "erledigt", "im Abschluss gesehen und bestätigt: nicht noch einmal ansehen");
+  assert.equal(zustandVon(l, `a${wartet.aid}`), "wartet", "was auf die Bewertung wartet, bleibt");
+  assert.equal(finde(l, `a${zuHause.aid}`), "offen", "eine Übung außerhalb der Einheit bleibt offen");
+  assert.equal(finde(ze.zuErledigen(thomas.id, heute), `a${inDerEinheit.aid}`), "fehlt");
+});

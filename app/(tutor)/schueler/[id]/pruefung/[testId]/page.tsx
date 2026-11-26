@@ -186,7 +186,7 @@ export default async function ExamPrepPage({
             <span>
               Probeschularbeit
               <Info label="Was ist eine Probeschularbeit?">
-                Ein ganzer Test zum Stoff, wie eine echte Schularbeit: leichte Aufgaben zuerst, schwere am Ende, jede mit Punkten, dazu der Notenschlüssel. Sie entsteht als Entwurf. Du prüfst sie, dann druckst du sie oder sendest sie aufs Gerät. Dort läuft sie wie ein Minitest: ohne Tipps, ein Versuch je Aufgabe.
+                Ein ganzer Test zum Stoff, wie eine echte Schularbeit: leichte Aufgaben zuerst, schwere am Ende, jede mit Punkten, dazu der Notenschlüssel. Sie entsteht als Entwurf. Du prüfst sie, dann druckst du sie oder sendest sie aufs Gerät. Dort läuft sie wie ein Kurztest: ohne Tipps, ein Versuch je Aufgabe.
               </Info>
             </span>
           </SectionTitle>

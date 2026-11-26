@@ -16,6 +16,7 @@ import { termineFuerSchueler } from "@/lib/planung/schueler-termine";
 import * as repo from "@/lib/repo";
 import { activeMaterial, materialLabel } from "@/lib/current-material";
 import { notizFuerSchueler } from "@/lib/schueler-notiz";
+import { hausuebungen, ohneHausuebungen } from "@/lib/schuelerportal";
 import { runningUnitForStudent } from "@/lib/units";
 import { wartendesLiveDuell } from "@/lib/duelle";
 
@@ -35,6 +36,8 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
   const student = repo.getStudentByToken(token);
   if (!student) notFound();
   const open = repo.listAssignments(student.id).filter((a) => !a.completed_at);
+  // the exercise of an open Hausübung is listed there („Zur Übung“), not a second time above
+  const oben = ohneHausuebungen(open, hausuebungen(student.id).offen);
   const first = student.name.split(" ")[0];
   const unit = runningUnitForStudent(student.id);
   // wo und wann: nur veröffentlichte Plätze, ohne Namen (lib/planung/schueler-termine.ts)
@@ -75,9 +78,9 @@ export default async function LearnHome({ params }: { params: Promise<{ token: s
         </Link>
       )}
 
-      {open.length > 0 && (
+      {oben.length > 0 && (
         <ul className="staffel mt-8 space-y-3" data-testid="offene-uebungen">
-          {open.map((x) => (
+          {oben.map((x) => (
             <li key={x.id}>
               <Link href={`/lernen/${token}/${x.id}`} className="panel flex items-center gap-4 px-5 py-4 transition-colors hover:border-accent">
                 <div className="min-w-0 flex-1">

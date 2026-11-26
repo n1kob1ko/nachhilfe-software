@@ -22,6 +22,7 @@ import { aiState, latestCorrection, listItems } from "./text-correction";
 import { categoryLabel } from "./text-correction-rules";
 import { textsForUnit } from "./texts";
 import { getUnit } from "./units";
+import { vorgabeDerEinheit } from "./vorgabe";
 
 export type Weg = "weiter" | "neu";
 export type Stufe = "start" | "kurztest" | "stoff" | "erklaeren" | "ueben" | "schluss";
@@ -142,6 +143,61 @@ export function setzeAnsicht(unitId: number, alles: boolean): Ergebnis {
   return { ok: true };
 }
 
+// ---------- Neues Thema ohne Fähigkeit (Nebenfach ohne KI) ----------
+
+export type FreiesThema = {
+  /** „Zelle, Aufbau, Zellorganellen“: höchstens drei Punkte, für Titel und Knopf */
+  titel: string;
+  /** alle Punkte, wie die Lehrkraft sie geschrieben hat (ohne Seitenangabe) */
+  punkte: string[];
+  /** „Buch Seite 45-48“, sonst leer */
+  umfang: string;
+  /** der ganze getippte Text */
+  text: string;
+  /** die angehängten Fotos und PDFs */
+  materialIds: number[];
+};
+
+/**
+ * Der Stoff von heute, zu dem die App **keine Fähigkeit** kennt (Test 26.11.2026, S2: Biologie und Chemie ohne KI, oder wenn das
+ * KI-Budget erreicht ist): was die Lehrkraft unter „Stoff“ geschrieben oder fotografiert hat, ist dann selbst das Thema von heute.
+ * „Erklären“ zeigt es, „Üben“ bietet an, was ohne Aufgaben der App geht, und die Dokumentation nennt es. Null, sobald die
+ * Vorgabe eine Fähigkeit hat (dann gilt sie) oder es keine Vorgabe gibt.
+ */
+export function freiesThema(unitId: number): FreiesThema | null {
+  const v = vorgabeDerEinheit(unitId);
+  if (!v || v.skillIds.length) return null;
+  const punkte = v.punkte.filter((p) => p.gruppe !== "umfang").map((p) => p.inhalt.trim()).filter(Boolean);
+  const umfang = v.punkte.filter((p) => p.gruppe === "umfang").map((p) => p.inhalt.trim()).filter(Boolean).join(", ");
+  const text = v.text.trim();
+  if (!punkte.length && !text && !v.materialIds.length) return null;
+  const kurz = punkte.length ? `${punkte.slice(0, 3).join(", ")}${punkte.length > 3 ? " …" : ""}` : text ? (text.length > 60 ? `${text.slice(0, 59)}…` : text) : "der Stoff von den Fotos";
+  return { titel: kurz, punkte, umfang, text, materialIds: v.materialIds };
+}
+
+/**
+ * Was die Lehrkraft für heute geschrieben hat und heute nicht drankommt, weil keine Fähigkeit dazu feststeht (nicht erkannt oder
+ * nicht bestätigt): die Karte „Stoff“ nennt es, statt es still wegzulassen (Test 26.11.2026, M4). Leer, wenn alles zugeordnet ist.
+ */
+export function ohneFaehigkeit(unitId: number): string[] {
+  const v = vorgabeDerEinheit(unitId);
+  if (!v) return [];
+  return [...new Set(v.punkte.filter((p) => p.gruppe !== "umfang" && p.status !== "ausgeschlossen" && !(p.skill_id && (p.zuordnung === "sicher" || p.zuordnung === "bestaetigt"))).map((p) => p.inhalt.trim()).filter(Boolean))];
+}
+
+/**
+ * „Weiter: … erklären“ nach dem Stoff: die erkannten Themen der Vorgabe sind die von heute; ohne Fähigkeit geht es mit dem
+ * freien Thema weiter (`freiesThema`). Ohne beides bleibt die Einheit beim Stoff.
+ */
+export function stoffFertig(unitId: number): Ergebnis {
+  if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
+  const ids = vorgabeDerEinheit(unitId)?.skillIds ?? [];
+  if (!ids.length && !freiesThema(unitId)) return { fehler: "Es ist noch kein Thema erkannt. Bitte Fotos aufnehmen oder kurz hineinschreiben, was dran ist." };
+  const t = setzeThemen(unitId, ids);
+  if ("fehler" in t) return t;
+  return setzeStufe(unitId, "erklaeren");
+}
+
 // ---------- Neues Thema mit „Stoff vorbereiten“ (Fotos → Präsentation, Sprechtext, Fragen, Übungsblatt) ----------
 
 /**
@@ -150,7 +206,11 @@ export function setzeAnsicht(unitId: number, alles: boolean): Ergebnis {
  * Lernpaket (Sprechtext, Fragen mit erwarteter Antwort), die Präsentation dazu und ein Übungsblatt mit 8 Aufgaben.
  */
 export function stoffpaketDerEinheit(unitId: number): Stoffpaket | null {
-  const id = db().prepare("SELECT id FROM stoffpakete WHERE unit_id = ? AND status <> 'verworfen' ORDER BY id DESC LIMIT 1").pluck().get(unitId) as number | undefined;
+  // nur der Stoff im Fach der Einheit: nach „Fach ändern“ gilt der des alten Fachs nicht mehr (er bleibt beim Schüler gespeichert)
+  const id = db()
+    .prepare("SELECT p.id FROM stoffpakete p JOIN units u ON u.id = p.unit_id WHERE p.unit_id = ? AND p.status <> 'verworfen' AND (p.fach = '' OR u.subject = '' OR p.fach = u.subject) ORDER BY p.id DESC LIMIT 1")
+    .pluck()
+    .get(unitId) as number | undefined;
   return id ? getStoffpaket(id) : null;
 }
 
@@ -226,6 +286,17 @@ export function gedruckteUebung(unitId: number): { worksheetId: number; titel: s
   return r ? { worksheetId: r.id, titel: r.title } : null;
 }
 
+/**
+ * Das in dieser Einheit schon gedruckte, noch nicht fotografierte Blatt zu dieser Fähigkeit: ein zweites Tippen auf „Lieber auf
+ * Papier“ druckt es noch einmal, statt ein zweites mit demselben Namen zu bauen (Test 26.11.2026: zwei gleich benannte Blätter
+ * unter „Welches Blatt?“).
+ */
+export function gedruckteUebungZu(unitId: number, skillId: string): number | null {
+  const g = gedruckteUebung(unitId);
+  if (!g) return null;
+  return repo.getWorksheet(g.worksheetId)?.skill_ids.includes(skillId) ? g.worksheetId : null;
+}
+
 /** „Ohne Foto weiter“: die gedruckte Übung hält Üben nicht mehr auf (fotografieren geht weiter unter „Mehr Werkzeuge“). */
 export function papierOhneFoto(unitId: number, worksheetId: number): Ergebnis {
   if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
@@ -235,6 +306,21 @@ export function papierOhneFoto(unitId: number, worksheetId: number): Ergebnis {
 
 /** Anfang der Zeile, die der geführte Ablauf in die Dokumentation schreibt (zum Ersetzen beim zweiten Mal). */
 const ERKLAERT = "Erklärt mit Präsentation: ";
+/** Dasselbe für ein Thema ohne Fähigkeit (`freiesThema`). */
+const THEMA_HEUTE = "Thema heute: ";
+
+/** Schreibt eine Zeile des geführten Ablaufs in „Was wurde gemacht?“; ein Feld, das der Lehrer selbst geschrieben hat, bleibt. */
+function schreibeZeile(lesson: repo.Lesson, anfang: string, zeile: string): string {
+  const auto = autoFelderVon(lesson);
+  const bisher = lesson.activities ?? "";
+  if (bisher.trim() && !auto.has("activities")) return zeile;
+  const wert = mitZeile(bisher, anfang, zeile);
+  const werte = json<Record<string, unknown>>(lesson.auto_felder, {});
+  werte.activities = wert;
+  repo.saveLesson({ ...lesson, activities: wert }, lesson.id);
+  db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify(werte), lesson.id);
+  return zeile;
+}
 
 /**
  * Beim Beenden: lief „Erklären“ mit einem Lernpaket aus dem Stoff dieser Einheit, steht in „Was wurde gemacht?“, welches Thema
@@ -247,22 +333,20 @@ export function dokumentiereGefuehrt(lessonId: number, unitId: number): string |
   if (!a.weg || !lesson) return null;
   const p = stoffpaketDerEinheit(unitId);
   const paket = p?.paket_id && p.status === "uebernommen" ? getLernpaket(p.paket_id) : null;
-  if (!paket || leseStand(unitId).paket_id !== paket.id) return null;
+  if (!paket || leseStand(unitId).paket_id !== paket.id) {
+    // ein Thema ohne Fähigkeit (Nebenfach ohne KI): sonst stünde in der Dokumentation nichts davon
+    const frei = a.weg === "neu" && a.stufe !== "start" && a.stufe !== "stoff" ? freiesThema(unitId) : null;
+    if (!frei) return null;
+    const was = frei.punkte.length ? frei.punkte.slice(0, 6).join(", ") : frei.titel;
+    return schreibeZeile(lesson, THEMA_HEUTE, `${THEMA_HEUTE}${was}${frei.umfang ? ` (${frei.umfang})` : ""}.`);
+  }
   const schritte = erklaerSchritte(paket);
   const bis = schritte.findIndex((s) => s.id === a.schrittId);
   const antworten = leseStand(unitId).antworten;
   const zahl = (w: string) => schritte.filter((s) => antworten[s.id] === w).length;
   const fragen = [["richtig", zahl("richtig")], ["teilweise", zahl("teilweise")], ["falsch", zahl("falsch")]].filter(([, n]) => Number(n) > 0).map(([w, n]) => `${n} ${w}`);
   const zeile = `${ERKLAERT}„${p!.thema || paket.title}“, ${Math.max(1, bis + 1)} von ${schritte.length} Schritten${fragen.length ? `; Fragen: ${fragen.join(", ")}` : ""}.`;
-  const auto = autoFelderVon(lesson);
-  const bisher = lesson.activities ?? "";
-  if (bisher.trim() && !auto.has("activities")) return zeile;
-  const wert = mitZeile(bisher, ERKLAERT, zeile);
-  const werte = json<Record<string, unknown>>(lesson.auto_felder, {});
-  werte.activities = wert;
-  repo.saveLesson({ ...lesson, activities: wert }, lesson.id);
-  db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify(werte), lesson.id);
-  return zeile;
+  return schreibeZeile(lesson, ERKLAERT, zeile);
 }
 
 /**

@@ -74,7 +74,8 @@ export default async function TutorLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </aside>
-      <main className="min-w-0 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 lg:px-10 print:p-0">
+      {/* --spiegel-platz: das offene Fenster „Bildschirm von …“ (components/device/SchuelerBildschirm.tsx) steht daneben, nicht darüber */}
+      <main className="min-w-0 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] transition-[margin] duration-200 md:px-8 md:py-8 lg:px-10 print:!m-0 print:p-0" style={{ marginRight: "var(--spiegel-platz, 0px)" }}>
         <div className="mx-auto max-w-[1120px]">
           <RunningUnits units={running} />
           <SeitenRahmen>{children}</SeitenRahmen>

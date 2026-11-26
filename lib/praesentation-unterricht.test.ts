@@ -259,9 +259,9 @@ test("ohne KI: kein Erstellen (mit dem kurzen Grund), keine Anfrage; vorhandene 
   s.router.setTransport(null);
   const z = s.pu.schrittDerEinheit(unit.id, erklaeren.id)!;
   const tor = s.pu.erstellenTor(z);
-  assert.ok(!tor.erlaubt && /KI ist aus/.test(tor.grund));
+  assert.ok(!tor.erlaubt && /KI ist gerade aus/.test(tor.grund));
   const r = await s.pu.erstelleSchrittEntwurf(unit.id, erklaeren.id, s.teacher.id);
-  assert.ok(!r.ok && /KI ist aus/.test(r.error));
+  assert.ok(!r.ok && /KI ist gerade aus/.test(r.error));
   assert.equal(s.zaehle("SELECT COUNT(*) AS n FROM ai_calls WHERE fn = 'praesentation'"), 0);
   assert.equal(s.zaehle("SELECT COUNT(*) AS n FROM praesentation_entwuerfe"), 0);
 

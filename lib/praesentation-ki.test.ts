@@ -262,9 +262,9 @@ test("ohne KI oder mit aufgebrauchtem Budget: Meldung, keine Anfrage, nichts ges
   s.lp.markiereGeprueft(s.paketId, s.niko.id, { hinweiseGeprueft: true });
   const pk = await import("./praesentation-ki");
   (await import("./ai/router")).setTransport(null);
-  assert.match(pk.praesKiAusGrund() ?? "", /KI ist aus/);
+  assert.match(pk.praesKiAusGrund() ?? "", /KI ist gerade aus/);
   const aus = await pk.erstellePraesEntwurf(s.paketId, s.niko.id);
-  assert.ok(!aus.ok && /KI ist aus/.test(aus.error));
+  assert.ok(!aus.ok && /KI ist gerade aus/.test(aus.error));
 
   const ki = await mitKi(() => ANTWORT());
   try {

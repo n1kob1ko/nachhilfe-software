@@ -166,13 +166,13 @@ test("materials: only presentations of the student's own units, and only exercis
   await uebung(s.id, "Ältere Zeile ohne Stufe");
   const mitLoesung = await uebung(s.id, "Stufe Lösung", { freigabe: "loesung" });
   await uebung(s.id, "Stufe Alles", { freigabe: "alles" });
-  await uebung(s.id, "Minitest", { freigabe: "alles", mode: "test" });
+  await uebung(s.id, "Kurztest", { freigabe: "alles", mode: "test" });
   const weg = await uebung(s.id, "Archiviert", { freigabe: "alles" });
   db().prepare("UPDATE assignments SET archived_at = datetime('now') WHERE id = ?").run(weg.aid);
   mitLoesung.fertig();
 
   const u = sp.uebungenMitLoesung(s.id);
-  assert.deepEqual(u.map((x) => x.titel).sort(), ["Stufe Alles", "Stufe Lösung"], "only „Hilfen und Lösung“ and „Alles“, no Minitest, nothing archived");
+  assert.deepEqual(u.map((x) => x.titel).sort(), ["Stufe Alles", "Stufe Lösung"], "only „Hilfen und Lösung“ and „Alles“, no Kurztest, nothing archived");
   assert.equal(u.find((x) => x.titel === "Stufe Alles")?.mitErklaerung, true, "the explanation only with „Alles“");
   assert.equal(u.find((x) => x.titel === "Stufe Lösung")?.mitErklaerung, false);
   assert.equal(u.find((x) => x.titel === "Stufe Lösung")?.fertig, true);
@@ -212,4 +212,12 @@ test("past lessons: date, subject, topic and what was practised; nothing of the 
   assert.equal(st.richtig, 1);
   assert.deepEqual(Object.keys(st).sort(), ["aufgaben", "datum", "fach", "geuebt", "id", "richtig", "thema"]);
   assert.ok(!JSON.stringify(liste).includes("INTERN"), "no notes, difficulties, summary or family note");
+});
+
+test("Startseite: die Übung einer offenen Hausübung steht nur bei den Hausübungen, nicht noch einmal oben (Test 26.11.2026)", async () => {
+  const { ohneHausuebungen } = await import("./schuelerportal");
+  const offen = [{ id: 1 }, { id: 2 }, { id: 3 }];
+  const hu = [{ uebungId: 2 }, { uebungId: null }];
+  assert.deepEqual(ohneHausuebungen(offen, hu), [{ id: 1 }, { id: 3 }]);
+  assert.deepEqual(ohneHausuebungen(offen, []), offen);
 });

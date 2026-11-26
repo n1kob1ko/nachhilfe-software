@@ -719,8 +719,12 @@ export function beispielQuelle(sorte: SorteKey): AuftragQuelle {
   return { sorte, ...b.beilage, countBlank: false, samples: Object.fromEntries(b.teile.map((t) => [t.key, t.text])) };
 }
 
-/** At most this many Teilübungen per exercise and Textsorte: every part twice. */
-export const maxTeiluebungen = (sorte: SorteKey) => (sorte === "textinterpretation" ? MAX_TEILUEBUNGEN : SORTEN[sorte].parts.length * 2);
+/**
+ * At most this many Teilübungen per exercise and Textsorte: every part once. The same part twice about the same
+ * Textbeilage is no new task („Neu erstellen“ still gives the other wording). The Textinterpretation asks a
+ * different question in its second round and keeps both.
+ */
+export const maxTeiluebungen = (sorte: SorteKey) => (sorte === "textinterpretation" ? MAX_TEILUEBUNGEN : SORTEN[sorte].parts.length);
 
 const TEIL_PROMPTS: ((s: Sorte, p: Teil, ref: string, words: number) => string)[] = [
   (s, p, ref, words) => `Schreib den Teil „${p.title}“ ${s.eines} zu ${ref}. ${p.hint} (etwa ${words} Wörter)`,

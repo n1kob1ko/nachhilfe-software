@@ -84,3 +84,37 @@ test("ohne „Fach ändern“ bleibt es wie bisher: das Fach kommt aus den Übun
   const lessonId = s.learning.endUnit(s.unit.id, { byTeacherId: s.teacher.id })!;
   assert.equal(s.repo.getLesson(lessonId)?.subject, "Deutsch");
 });
+
+test("Fach ändern: der Stoff des alten Fachs (Vorgabe, vorbereiteter Stoff) gilt im neuen Fach nicht mehr", async () => {
+  const s = await setup();
+  const ablauf = await import("./einheit-ablauf");
+  const vorgabe = await import("./vorgabe");
+  ablauf.waehleWeg(s.unit.id, "neu");
+  await vorgabe.speichereVorgabe({ unitId: s.unit.id, teacherId: s.teacher.id, text: "Erörterung: Einleitung und Argumente", materialIds: [], testId: null, keinName: false, heute: "2026-11-26" });
+  assert.ok(vorgabe.vorgabeDerEinheit(s.unit.id), "in Deutsch steht der Stoff da");
+  const pid = Number(s.db().prepare("INSERT INTO stoffpakete (student_id, teacher_id, unit_id, status, fach, thema) VALUES (?, ?, ?, 'fertig', 'Deutsch', 'Erörterung')").run(s.sid, s.teacher.id, s.unit.id).lastInsertRowid);
+  assert.equal(ablauf.stoffpaketDerEinheit(s.unit.id)?.id, pid);
+  s.c.wechsleFach(s.unit.id, "Mathematik");
+  assert.equal(vorgabe.vorgabeDerEinheit(s.unit.id), null, "„Heute: Erörterung“ steht in Mathematik nicht mehr da (Test 26.11.2026, M1)");
+  assert.equal(ablauf.stoffpaketDerEinheit(s.unit.id), null, "der vorbereitete Stoff aus Deutsch auch nicht");
+  assert.equal(ablauf.freiesThema(s.unit.id), null);
+  // zurück in Deutsch ist der vorbereitete Stoff wieder da (er wurde nicht gelöscht)
+  s.c.wechsleFach(s.unit.id, "Deutsch");
+  assert.equal(ablauf.stoffpaketDerEinheit(s.unit.id)?.id, pid);
+  s.units.finishUnit(s.unit.id, "abgebrochen");
+});
+
+test("Start ohne Plan: die Einheit beginnt im Fach vom letzten Mal, nicht im ersten Fach des Profils", async () => {
+  const s = await setup();
+  // setup: das Profil nennt Deutsch zuerst; letztes Mal war Mathematik dran
+  s.c.wechsleFach(s.unit.id, "Mathematik");
+  s.learning.endUnit(s.unit.id, { byTeacherId: s.teacher.id });
+  assert.equal(s.learning.expectedSubject(s.sid, Date.now()), "Mathematik", "Test 26.11.2026, M2: Mia hatte zuletzt Deutsch, die Einheit startete in Mathematik");
+  assert.equal(s.learning.expectedSubject(s.sid, Date.now(), "Deutsch"), "Deutsch", "die Vorbereitung von heute geht vor");
+  // ein neuer Schüler ohne Einheit: wie bisher das erste Fach des Profils
+  const neu = s.repo.createStudent({
+    name: "Paul Beispiel", grade: 7, klasse: 3, teacher_id: s.teacher.id, school: "", school_type: "AHS", subjects: ["Englisch", "Mathematik"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  assert.equal(s.learning.expectedSubject(neu, Date.now()), "Englisch");
+});

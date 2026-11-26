@@ -399,7 +399,7 @@ test("before the first tap a Vorgabe rebuilds the plan; a package the teacher pi
   s.router.setTransport(null);
 });
 
-test("the Lernkontrolle: three tasks, one try without hints, not counted as Minitest; Richtig/Teilweise/Falsch is kept with its skill", async () => {
+test("the Lernkontrolle: three tasks, one try without hints, not counted as Kurztest; Richtig/Teilweise/Falsch is kept with its skill", async () => {
   const s = await setup();
   s.pruefung(6, ["englisch.tenses.pastsimple"]);
   const unit = s.start();

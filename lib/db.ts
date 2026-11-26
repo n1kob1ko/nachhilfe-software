@@ -1237,6 +1237,17 @@ CREATE TABLE IF NOT EXISTS einheit_beispiele (
   PRIMARY KEY (unit_id, skill_id)
 );
 
+-- „Das fragst du“ im geführten Ablauf (lib/cockpit.ts merkeFrage, Test 26.11.2026): die Aufgabe, die der Lehrer beim Erklären
+-- laut gefragt hat, je Einheit und Fähigkeit. Keine Übung der Fähigkeit in dieser Einheit stellt sie danach noch einmal, und
+-- „Erklären“ zeigt weiter dieselbe Frage. aufgabe: JSON der Aufgabe (nur für den Lehrer).
+CREATE TABLE IF NOT EXISTS einheit_fragen (
+  unit_id INTEGER NOT NULL REFERENCES units(id) ON DELETE CASCADE,
+  skill_id TEXT NOT NULL,
+  aufgabe TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (unit_id, skill_id)
+);
+
 -- Arbeit fotografieren (lib/papier-einheit.ts): eine auf Papier gelöste Übung, in der laufenden Einheit geprüft und übernommen.
 -- Die Antworten stehen als attempts an der Zuweisung (unit_id gesetzt) wie am Gerät; hier nur, was der Abschluss sagt: welches
 -- Blatt, ob es eine Übung der Einheit war (bekannt) oder ein anderes Blatt, wie gelesen wurde (ki oder hand), die Seiten, richtig

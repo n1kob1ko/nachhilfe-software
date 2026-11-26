@@ -154,9 +154,9 @@ export function einschaetzen(r: UnitReport, frueher: { report: UnitReport; fach:
   const mt = r.minitest;
   const fehlerBei = mt?.falsch.length ? `Fehler bei ${liste(mt.falsch.slice(0, 3))}` : "";
   // nur der Minitest am Gerät: die Zahlen stehen schon im ersten Satz
-  if (mt?.erledigt && mt.erledigt === erledigt.length) saetze.push(`Alles davon im Minitest am Anfang${fehlerBei ? `, ${fehlerBei}` : ""}.`);
+  if (mt?.erledigt && mt.erledigt === erledigt.length) saetze.push(`Alles davon im Kurztest am Anfang${fehlerBei ? `, ${fehlerBei}` : ""}.`);
   else if (mt?.erledigt)
-    saetze.push(`Minitest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}${fehlerBei ? `, ${fehlerBei}` : ""}.`);
+    saetze.push(`Kurztest am Anfang: ${mt.richtig} von ${mt.von} richtig${mt.erledigt < mt.von ? ` (${mt.erledigt} abgegeben)` : ""}${fehlerBei ? `, ${fehlerBei}` : ""}.`);
 
   // Vergleich nur im selben Fach: Deutsch und Mathematik lassen sich nicht an der Quote vergleichen
   const mitDaten = frueher.filter((f) => f.report.tasksDone >= 3 && f.report.successRate !== null);
@@ -231,7 +231,7 @@ export function autoWerte(r: UnitReport, e: Einschaetzung, naechste: string[]): 
   if (e.vergleich?.richtung === "besser") positiv.push(`Besser als zuletzt (${pct(e.vergleich.quoteJetzt)} statt ${pct(e.vergleich.quoteVorher)} richtig).`);
   if (r.development.direction === "besser") positiv.push("Gegen Ende sicherer geworden.");
   if (r.correction.selbst) positiv.push(`${r.correction.selbst} Fehler selbst verbessert.`);
-  if (r.minitest?.erledigt && r.minitest.richtig === r.minitest.von) positiv.push("Minitest ohne Fehler.");
+  if (r.minitest?.erledigt && r.minitest.richtig === r.minitest.von) positiv.push("Kurztest ohne Fehler.");
   const schwierig: string[] = [...schwach, ...unsicher].map((s) => `${s.name}: ${s.correct} von ${s.done} richtig${s.withHelp ? `, ${s.withHelp}× mit Hilfe` : ""}`);
   const typen = (r.errorTypes ?? []).filter((t) => t.type !== "unbekannt").slice(0, 3);
   // a Fehlerart the teacher has not confirmed is only the app's guess: say so

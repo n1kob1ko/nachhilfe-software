@@ -315,7 +315,7 @@ function SendPanel(p: Props & { task: Task; run: (fn: () => Promise<ActionResult
             <Send size={14} aria-hidden /> Senden
           </button>
         </div>
-        <p className="text-[12px] text-ink-3">Kommt als einzelne Aufgabe auf seinen Lernlink.</p>
+        <p className="text-[12px] text-ink-3">Kommt als einzelne Aufgabe in die Schüler-App.</p>
       </div>
       )}
       <div className="grid gap-2">

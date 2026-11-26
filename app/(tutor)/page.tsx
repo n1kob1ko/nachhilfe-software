@@ -259,7 +259,7 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
 
         <Karte
           id="fortschritt"
-          titel="Fortschritt deiner Schüler"
+          titel={fortschritt.alle ? "Fortschritt aller Schüler" : "Fortschritt deiner Schüler"}
           className="md:col-span-2 xl:col-span-3"
           action={
             <Link href="/schueler" className="link text-[14px] font-medium">
@@ -370,7 +370,7 @@ function WochenPlan({ plan, label }: { plan: PlanTag[]; label: string }) {
  * sechs mit Lernstand, Veränderung und der Fähigkeit mit dem größten Plus; der Rest aufgeklappt.
  */
 function Fortschritt({ f }: { f: ReturnType<typeof schuelerFortschritt> }) {
-  if (f.liste.length === 0) return <p className="text-[15px] text-ink-2">Noch keine Schüler.</p>;
+  if (f.liste.length === 0) return <p className="text-[15px] text-ink-2">Du hast noch keine eigenen Schüler. Sobald dir jemand zugeteilt ist oder du eine Einheit hältst, steht der Fortschritt hier.</p>;
   const zeile = (s: SchuelerFortschritt) => (
     <li key={s.id}>
       <Link href={`/schueler/${s.id}?tab=fortschritt`} className="-mx-2 flex min-h-[56px] flex-wrap items-center gap-x-4 gap-y-1.5 rounded-xl px-2 py-2 hover:bg-panel/60">
