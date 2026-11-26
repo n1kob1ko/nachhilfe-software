@@ -28,6 +28,22 @@ docker run -d --name lernheft -p 3000:3000 -v lernheft-daten:/data \
 3. Variablen: `RAILWAY_RUN_UID=0` (Railway hängt Volumes als root ein, das Image läuft sonst als Benutzer `node` und dürfte nicht schreiben), optional `ANTHROPIC_API_KEY`.
 4. Settings → Networking → Domain erzeugen. Replicas auf 1 lassen, Region am besten in Europa (z. B. Amsterdam).
 
+### Updates ohne Unterbrechung im Unterricht
+
+Ein Update startet den Server neu; gut eine Minute antwortet die Seite dann nicht (502), und offene Seiten haben noch
+die alte Version. Zwei Dinge fangen das ab:
+
+- **Warten auf die Pause.** Auf Railway steht als Pre-Deploy-Befehl `node scripts/warte-auf-pause.mjs` (Timeout
+  3600 s). Er fragt den laufenden Server unter `/health/pause` (nur `{"pause": true|false}`) und wartet, solange eine
+  Einheit läuft, in der in den letzten 20 Minuten etwas passiert ist, höchstens 50 Minuten (`DEPLOY_WARTEN_MAX_MIN`).
+  Der alte Server läuft so lange weiter. Sofort live: `[sofort]` in der Commit-Nachricht (beim Squash-Merge im Titel)
+  oder die Variable `DEPLOY_SOFORT=1`. Im Railway-Protokoll stehen die Zeilen mit `[Update]`.
+- **Neu laden nach dem Update.** `/health` meldet die Build-Version (`version`), jede Seite vergleicht sie jede
+  Minute mit ihrer eigenen (`components/NeueVersion.tsx`). Ist sie neu, laden Links ganz neu; Schülerseiten (Tablet,
+  Schüler-App, Laptop) laden nach 30 s ohne Tippen selbst neu, Lehrerseiten beim Zurückkommen zum Tab oder über
+  „Neu laden“. Scheitert ein Klick an einer alten Server Action, lädt die Seite gleich neu. Wer gerade schreibt,
+  wird nie neu geladen.
+
 ### Adresse für das Schüler-Tablet (QR-Code)
 
 Mehr › Schülergeräte zeigt beim Verbinden einen QR-Code auf `<Adresse>/geraet`. Die Adresse kommt aus:
