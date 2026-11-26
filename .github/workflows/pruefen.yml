@@ -1,0 +1,34 @@
+# Automatische Prüfung: bei jedem Pull Request und jedem Push auf main laufen Typen, Tests und Build.
+# Ein roter Haken heißt: nicht mergen. Railway baut unabhängig davon; das Warten auf den Unterricht
+# macht scripts/warte-auf-pause.mjs (docs/betrieb.md).
+name: Prüfen
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: pruefen-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pruefen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      TZ: Europe/Vienna
+      NEXT_TELEMETRY_DISABLED: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Typen
+        run: npx tsc --noEmit
+      - name: Tests
+        run: npm test
+      - name: Build
+        run: npm run build

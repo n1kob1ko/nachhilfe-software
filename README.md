@@ -185,6 +185,7 @@ app/lernen/…        Schüler-Modus
 ```
 
 Tests: `npm test` (prüft u. a., dass jede generierte Aufgabe ihre eigene Lösung akzeptiert und typische Fehler erkennt).
+Automatisch: `.github/workflows/pruefen.yml` lässt bei jedem Pull Request und jedem Push auf main Typen (`tsc`), alle Tests und den Build laufen. Gemergt wird nur mit grünem Haken.
 
 ## Noch offen
 
