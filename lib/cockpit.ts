@@ -615,6 +615,9 @@ export function wechsleFach(unitId: number, roh: string): { ok: true; fach: stri
   db().transaction(() => {
     db().prepare("UPDATE units SET subject = ?, fach_gewaehlt = 1 WHERE id = ?").run(fach, unitId);
     aendere(unitId, (s) => ({ ...s, paket_id: null, skill_id: null, reihenfolge: [], aktuell: null, erledigt: [], uebersprungen: [], wiederholt: {}, nichtVerstanden: {}, antworten: {}, plan: null, takt: null }));
+    // auch der geführte Ablauf (lib/einheit-ablauf.ts) fängt bei „Start“ an: Weg, Themen und Kurztest gehören zum alten Fach
+    // (Test 26.11.2026: nach Deutsch → Chemie stand weiter „übt am Tablet: Erörterung“ da). „Mehr Werkzeuge“ bleibt, wie es ist.
+    db().prepare("UPDATE einheit_ablauf SET weg = NULL, stufe = 'start', skill_ids = '[]', aktuell = NULL, kurztest_fertig = 0, schritt_id = NULL, updated_at = datetime('now') WHERE unit_id = ?").run(unitId);
     eigeneWahl(unitId);
   })();
   return { ok: true, fach, geaendert: true };

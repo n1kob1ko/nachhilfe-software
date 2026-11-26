@@ -285,7 +285,7 @@ export function LiveStatus({ unitId, initial, join, kompakt = false, kiNeu = nul
           )}
         </div>
       ) : (
-        <p className="mt-3 text-[15px] text-ink-2">Noch nichts gesendet. Öffne eine Übung und tippe auf „An {s.student} senden“.</p>
+        <p className="mt-3 text-[15px] text-ink-2">Noch nichts gesendet. Sobald du eine Übung sendest, siehst du hier, wie {s.student} vorankommt.</p>
       )}
       {/* eine offene Vorschau bleibt zum Senden da, auch wenn die KI inzwischen aus ist */}
       {(s.ai.on || kiNeu?.offen) && s.running && <AIHint unitId={unitId} ai={s.ai} kiNeu={kiNeu} />}

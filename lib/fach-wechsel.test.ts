@@ -50,6 +50,27 @@ test("Fach ändern: das Fach der Einheit wird das gewählte, der Ablauf fängt n
   s.units.finishUnit(s.unit.id, "abgebrochen");
 });
 
+test("Fach ändern: auch der geführte Ablauf fängt bei „Start“ an, mit dem alten Thema geht es nicht weiter", async () => {
+  const s = await setup();
+  const ablauf = await import("./einheit-ablauf");
+  const thema = s.repo.listSkills().find((x) => x.subject === "Deutsch")!.id;
+  // Deutsch: neues Thema gewählt, ein Thema steht fest, die Einheit ist schon beim Üben
+  ablauf.waehleWeg(s.unit.id, "neu", [thema]);
+  ablauf.setzeStufe(s.unit.id, "ueben");
+  assert.equal(ablauf.leseAblauf(s.unit.id).stufe, "ueben");
+  s.c.wechsleFach(s.unit.id, "Mathematik");
+  const a = ablauf.leseAblauf(s.unit.id);
+  assert.equal(a.weg, null, "„Was machen wir heute?“ wird im neuen Fach neu gefragt");
+  assert.equal(a.stufe, "start");
+  assert.deepEqual(a.skillIds, [], "das Thema aus Deutsch gilt in Mathematik nicht");
+  assert.equal(a.aktuell, null);
+  // dasselbe Fach noch einmal antippen: nichts fängt neu an
+  ablauf.waehleWeg(s.unit.id, "neu");
+  s.c.wechsleFach(s.unit.id, "Mathematik");
+  assert.equal(ablauf.leseAblauf(s.unit.id).stufe, "stoff");
+  s.units.finishUnit(s.unit.id, "abgebrochen");
+});
+
 test("Fach ändern: das gewählte Fach steht am Ende in der Dokumentation", async () => {
   const s = await setup();
   s.c.wechsleFach(s.unit.id, "Mathematik");

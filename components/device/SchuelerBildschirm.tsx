@@ -259,7 +259,7 @@ export function SchuelerBildschirm({ unitId, student }: { unitId: number; studen
       <button
         type="button"
         onClick={() => aendern({ offen: true })}
-        className="fixed right-4 bottom-4 z-[45] inline-flex min-h-[44px] items-center gap-2 rounded-full bg-ink px-4 text-[14px] font-semibold text-surface shadow-[var(--shadow-card)] hover:bg-ink-2"
+        className="fixed right-4 bottom-[calc(env(safe-area-inset-bottom)+5.25rem)] z-[45] inline-flex min-h-[44px] md:bottom-4 items-center gap-2 rounded-full bg-ink px-4 text-[14px] font-semibold text-surface shadow-[var(--shadow-card)] hover:bg-ink-2"
         data-testid="schuelerbildschirm-oeffnen"
       >
         <MonitorSmartphone size={18} aria-hidden /> Bildschirm von {student}

@@ -39,7 +39,7 @@ import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
 import { textaufgabeTask } from "./textaufgaben";
 import { EXPLAIN } from "./erklaerungen";
 import { VOKABEL_GENERATOREN, istVokabelThema, vokabelFuerSlot, vokabelFuerTyp } from "./vokabeln-themen";
-import { isWortartenSkill, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
+import { isWortartenSkill, saetzeIn, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
 
 type Rng = () => number;
 const pick = <T,>(rng: Rng, arr: readonly T[]): T => arr[Math.floor(rng() * arr.length)];
@@ -1106,11 +1106,26 @@ function figurFuerTyp(figId: string, req: GenerateRequest, rng: Rng): TaskDraft 
   return basis();
 }
 
-/** Generates tasks without AI. Skills without a generator get explanation tasks. */
+/**
+ * Woran man dieselbe Aufgabe erkennt: Art, Text, Daten und richtige Antwort; bei Auswahlaufgaben zählt die Reihenfolge der
+ * Möglichkeiten nicht. Ein Vorrat mit wenigen Aufgaben (z. B. ein Schreibauftrag, wenige Sätze einer Stufe) füllte das Blatt
+ * sonst mit derselben Aufgabe auf: „7 von 7 richtig“ mit zwei verschiedenen Aufgaben (Test 26.11.2026).
+ */
+function ganzGleich(t: TaskDraft): string {
+  const opts = Array.isArray(t.data.options) ? t.data.options.map(String) : null;
+  const richtig = opts && typeof t.answer.correct === "number" ? opts[t.answer.correct] : null;
+  return JSON.stringify([t.type, t.prompt, opts ? { ...t.data, options: [...opts].sort() } : t.data, richtig ?? t.answer]);
+}
+
+/** Generates tasks without AI. Skills without a generator get explanation tasks. Never the same task twice; then fewer tasks. */
 export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
   const rng = req.seed !== undefined ? mulberry32(req.seed) : Math.random;
   const out: TaskDraft[] = [];
   const seen = new Set<string>();
+  // genau dieselbe Aufgabe steht nie zweimal auf einem Blatt, auch wenn es dann kürzer wird (ganzGleich)
+  const gleich = new Set<string>();
+  // Wortarten: die Sätze, die auf diesem Blatt schon vorkommen (lib/wortarten.ts frischZuerst)
+  const saetze = new Set<string>();
   const readingSkill = req.skills.find((s) => s.id.endsWith("reading.comprehension") || s.id === "deutsch.text.verstehen");
   if (req.taskType === "reading" || (readingSkill && req.skills.length === 1)) {
     return readingTasks(rng, req.subject, readingSkill?.id ?? req.skills[0]?.id ?? null, req.difficulty, req.count);
@@ -1147,7 +1162,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
           : null;
     if (isWortartenSkill(skill.id)) {
       const setting = req.wortarten ?? wortartenFor(req.skills.map((s) => s.id), req.grade ?? 5)!;
-      t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: runde + guard }, rng);
+      t = wortartenTask({ skillId: skill.id, setting, difficulty: req.difficulty, category: WORTART_CATEGORY[req.taskType] ?? null, variant: runde + guard, benutzt: saetze }, rng);
     } else if (maths) {
       t = maths;
     } else if (figId && req.taskType !== "free") {
@@ -1178,11 +1193,16 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
     const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) || istEnglischMaturaSkill(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
-    if (seen.has(key) && guard < req.count * 15) {
+    const ganz = ganzGleich(t);
+    // Wortarten: die erste Zeile ist nur die Anweisung („Schreib alle Nomen heraus“), der Satz macht die Aufgabe aus
+    const wortart = isWortartenSkill(skill.id);
+    if (gleich.has(ganz) || (!wortart && seen.has(key) && guard < req.count * 15)) {
       doppelt[k]++;
       continue;
     }
+    gleich.add(ganz);
     seen.add(key);
+    if (wortart) for (const satz of saetzeIn(t)) saetze.add(satz);
     out.push(t);
     anzahl[k]++;
     doppelt[k] = 0;
