@@ -188,3 +188,31 @@ test("textFehler: a text of the unit → photograph, correct, then exercises on 
   assert.deepEqual(mit.map((t) => t.skillId), ["deutsch.recht.sss", "deutsch.recht.dasdass", "deutsch.recht.gross", "deutsch.wortarten.nomen"]);
   assert.equal(mit[1].grund, "noch nicht sicher: 1 Fehler im Text „Mein Wochenende“");
 });
+
+test("„Lieber auf Papier rechnen“: a printed exercise waits for its photo; „Ohne Foto weiter“ lets Üben go on", async () => {
+  const repo = await import("./repo");
+  const units = await import("./units");
+  const ab = await import("./einheit-ablauf");
+  const { sendeAusGenerator } = await import("./cockpit");
+  const teacher = repo.listTeachers()[0];
+  const sid = repo.createStudent({
+    name: "Paul Papier", grade: 5, klasse: 1, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Mathematik"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  const unit = units.startUnit(teacher.id, sid, { subject: "Mathematik" }).unit;
+  assert.equal(ab.gedruckteUebung(unit.id), null);
+  const out = await sendeAusGenerator(unit.id, "mathe.brueche.kuerzen", teacher.id, null, "drucken");
+  assert.ok(!("fehler" in out) && out.assignmentId === 0);
+  assert.equal(ab.gedruckteUebung(unit.id)?.worksheetId, out.worksheetId);
+  assert.equal(ab.uebenStand(unit.id).letzte, null, "nothing to answer at the tablet");
+  // taken in from the photo: an assignment in this unit, then it counts in Üben and waits no more
+  const aid = repo.assignWorksheet(out.worksheetId, sid, "", unit.id);
+  assert.equal(ab.gedruckteUebung(unit.id), null);
+  assert.equal(ab.uebenStand(unit.id).letzte?.assignmentId, aid);
+  // printed again and not photographed: „Ohne Foto weiter“
+  const zwei = await sendeAusGenerator(unit.id, "mathe.brueche.kuerzen", teacher.id, null, "drucken");
+  assert.ok(!("fehler" in zwei));
+  assert.equal(ab.gedruckteUebung(unit.id)?.worksheetId, zwei.worksheetId);
+  assert.deepEqual(ab.papierOhneFoto(unit.id, zwei.worksheetId), { ok: true });
+  assert.equal(ab.gedruckteUebung(unit.id), null);
+});

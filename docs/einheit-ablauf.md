@@ -29,6 +29,8 @@ Start ─┬─ Weiter mit dem Stoff vom letzten Mal → Kurztest → Üben → 
 3. korrigiert: die Fehler je Bereich und „Aufgaben zu den Fehlern im Text senden: …“, eine Fähigkeit nach der anderen (aus dem Generator, nie das Übungsblatt aus dem Stoff). Es zählen die Fehler außer den abgelehnten. Eine Korrektur des Lehrers ohne Fähigkeit bekommt sie aus der Stelle (`skillAusStelle`: Groß/klein, das/dass, s/ss/ß, getrennt/zusammen, Beistrich), sonst gilt die Empfehlung der Korrektur.
 Ohne Text: unter Üben „Text schreiben lassen, am Tablet oder auf Papier“.
 
+**Lieber auf Papier rechnen** (Üben und Erklären, klein unter dem großen Knopf): dieselbe Übung gedruckt (zuerst das Übungsblatt aus dem Stoff). Bis sie fotografiert ist, zeigt Üben „{Name} rechnet auf Papier“ mit „Seite fotografieren“ (`/einheiten/[id]/papier`, die KI liest alle Aufgaben in einem Lauf, die App prüft) und „Ohne Foto weiter“ (`gedruckteUebung`, `papierOhneFoto`).
+
 **Mehr Werkzeuge** schaltet für diese Einheit auf das ganze frühere Cockpit (`einheit_ablauf.ansicht = 'alles'`), „Zurück zum geführten Ablauf“ wieder zurück. Eine Einheit, die schon im Cockpit läuft (etwas gesendet, keine Zeile in `einheit_ablauf`), bleibt dort; „Geführten Ablauf starten“ holt sie herein.
 
 Läuft die Einheit geführt und wurde im Cockpit nie „Weiter“ oder „Überspringen“ getippt, beschreibt der Plan des Cockpits sie nicht: kein „Plan für heute: 1 von 6 Schritten“ und kein „Lernpaket „…“: 0 von 7 Schritten“ im Abschluss (`nurGefuehrt` in lib/cockpit.ts). Was mit dem Lernpaket erklärt wurde, schreibt `dokumentiereGefuehrt` in „Was wurde gemacht?“: „Erklärt mit Präsentation: „Thema“, 3 von 5 Schritten; Fragen: 2 richtig, 1 teilweise.“

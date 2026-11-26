@@ -2,7 +2,9 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Camera, Check, Eye, Loader2, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
 import {
   ansichtAction,
+  papierOhneFotoAction,
   textFehlerAction,
+  uebenPapierAction,
   kurztestFertigAction,
   schrittAction,
   stoffFertigAction,
@@ -31,6 +33,7 @@ import {
   STUFE_LABEL,
   erklaerPaket,
   erklaerSchritte,
+  gedruckteUebung,
   kurztestStand,
   leseAblauf,
   naechsteUebung,
@@ -569,6 +572,7 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
         Verstanden: Übungen ans Tablet senden
       </Gross>
       <Leise>Neue Aufgaben zu {skillName(thema)}, passend zum Lernstand von {name}.</Leise>
+      <PapierKlein unitId={unit.id} skillId={thema} />
       {andere.length > 0 && (
         <div className="flex flex-wrap justify-center gap-x-5">
           {andere.slice(0, 3).map((id) => (
@@ -603,6 +607,7 @@ function PaketErklaeren({ unit, a, name, folien, paket, thema }: { unit: UnitVie
         Verstanden: Übungen ans Tablet senden
       </Gross>
       <Leise>{blatt ? `Das Übungsblatt aus den Fotos, ${repo.listTasks(blatt).length} Aufgaben.` : `Neue Aufgaben, passend zum Lernstand von ${name}.`}</Leise>
+      <PapierKlein unitId={unit.id} skillId={thema} />
     </>
   );
   return (
@@ -677,6 +682,9 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
       </Karte>
     );
   }
+  // „Lieber auf Papier“: gedruckt, noch nicht fotografiert
+  const papier = gedruckteUebung(unit.id);
+  if (papier) return <PapierKarte unit={unit} name={name} papier={papier} />;
   const n = naechsteUebung(a, k?.auswertung ?? null, u.einzeln);
   // Deutsch, Englisch: ein Text von heute geht vor (fotografieren, korrigieren, dann Aufgaben zu seinen Fehlern)
   if (tf && (tf.leer || tf.korrektur !== "fertig" || tf.skills.some((x) => x.offen))) return <TextKarte unit={unit} tf={tf} name={name} n={n} />;
@@ -719,9 +727,12 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
             {sendenText}
           </Gross>
           <Leise>Neue Aufgaben am Tablet, passend zum Lernstand von {name}.</Leise>
-          <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
-            Weiter zur Hausübung
-          </Klein>
+          <div className="flex flex-wrap justify-center gap-x-6">
+            <PapierKlein unitId={unit.id} skillId={n.skillId} />
+            <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
+              Weiter zur Hausübung
+            </Klein>
+          </div>
         </>
       ) : (
         <>
@@ -833,6 +844,36 @@ function TextZeile({ unitId, tf }: { unitId: number; tf: TextFehler | null }) {
         </Link>
       )}
     </div>
+  );
+}
+
+/** „Lieber auf Papier rechnen“: dieselbe Übung gedruckt; danach fotografieren, die KI liest alle Aufgaben auf einmal. */
+function PapierKlein({ unitId, skillId }: { unitId: number; skillId: string }) {
+  return (
+    <Klein action={uebenPapierAction.bind(null, unitId, skillId)} testid="ueben-papier">
+      <Printer size={15} aria-hidden /> Lieber auf Papier rechnen
+    </Klein>
+  );
+}
+
+/** Eine Übung auf Papier: wenn der Schüler fertig ist, die Seite fotografieren (lib/papier-einheit.ts). */
+function PapierKarte({ unit, name, papier }: { unit: UnitView; name: string; papier: { worksheetId: number; titel: string } }) {
+  return (
+    <Karte titel={`${name} rechnet auf Papier`} testid="ablauf-papier">
+      <p className="-mt-2 text-[14.5px] text-ink-2">{papier.titel}</p>
+      <p className="text-[16px] leading-relaxed text-ink-2">Wenn {name} fertig ist: die Seite fotografieren. Die KI liest alle Antworten auf einmal, die App prüft sie, du bestätigst.</p>
+      <Link href={`/einheiten/${unit.id}/papier?uebung=${papier.worksheetId}`} className="btn btn-primary btn-lg w-full !text-[17px]" data-testid="papier-fotografieren">
+        <Camera size={19} aria-hidden /> Seite fotografieren
+      </Link>
+      <div className="flex flex-wrap justify-center gap-x-6">
+        <Link href={`/arbeitsblatt/${papier.worksheetId}?einheit=${unit.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+          <Printer size={15} aria-hidden /> Nochmal drucken
+        </Link>
+        <Klein action={papierOhneFotoAction.bind(null, unit.id, papier.worksheetId)} testid="papier-ohne-foto">
+          Ohne Foto weiter
+        </Klein>
+      </div>
+    </Karte>
   );
 }
 

@@ -211,6 +211,28 @@ export function offenesStoffBlatt(unitId: number): number | null {
   return db().prepare("SELECT 1 FROM assignments WHERE unit_id = ? AND worksheet_id = ?").get(unitId, p.uebung_id) ? null : p.uebung_id;
 }
 
+/**
+ * „Lieber auf Papier“ in Üben: die Übung, die in dieser Einheit gedruckt und noch nicht fotografiert ist (die neueste), sonst null.
+ * „Seite fotografieren“ (lib/papier-einheit.ts) liest alle Antworten in einem Lauf und legt sie an einer Zuweisung dieser Einheit
+ * ab; dann zählt sie in Üben wie am Tablet. Der Kurztest auf Papier hat seine eigene Karte.
+ */
+export function gedruckteUebung(unitId: number): { worksheetId: number; titel: string } | null {
+  const r = db()
+    .prepare(
+      `SELECT w.id, w.title FROM worksheets w WHERE w.gedruckt_unit_id = ? AND w.archived_at IS NULL AND (w.minitest_unit_id IS NULL OR w.minitest_unit_id <> ?)
+         AND NOT EXISTS (SELECT 1 FROM assignments a WHERE a.worksheet_id = w.id AND a.unit_id = ?) ORDER BY w.id DESC LIMIT 1`,
+    )
+    .get(unitId, unitId, unitId) as { id: number; title: string } | undefined;
+  return r ? { worksheetId: r.id, titel: r.title } : null;
+}
+
+/** „Ohne Foto weiter“: die gedruckte Übung hält Üben nicht mehr auf (fotografieren geht weiter unter „Mehr Werkzeuge“). */
+export function papierOhneFoto(unitId: number, worksheetId: number): Ergebnis {
+  if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
+  db().prepare("UPDATE worksheets SET gedruckt_unit_id = NULL, gedruckt_schritt_id = NULL WHERE id = ? AND gedruckt_unit_id = ?").run(worksheetId, unitId);
+  return { ok: true };
+}
+
 /** Anfang der Zeile, die der geführte Ablauf in die Dokumentation schreibt (zum Ersetzen beim zweiten Mal). */
 const ERKLAERT = "Erklärt mit Präsentation: ";
 
