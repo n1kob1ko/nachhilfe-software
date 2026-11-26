@@ -8,6 +8,8 @@ import { SchuelerKarte } from "@/components/heute/SchuelerKarte";
 import { SchuelerWahl } from "@/components/heute/SchuelerWahl";
 import { TodoListe } from "@/components/heute/TodoListe";
 import { Avatar } from "@/components/Art";
+import { BikoBriefing } from "@/components/biko/BikoBriefing";
+import { briefingHeute } from "@/lib/biko";
 import { Restzeit } from "@/components/Elapsed";
 import { Empty, MasteryBar, TrendBadge, formatTime } from "@/components/ui";
 import { requireTeacher } from "@/lib/auth";
@@ -95,6 +97,8 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
   const ueberfaellig = offen.filter((p) => p.zustand === "ueberfaellig").length;
   const woche = meineWoche(teacher.id, now);
   const fortschritt = schuelerFortschritt(teacher.id, now.getTime());
+  // das Tagesbriefing von Biko (lib/biko.ts), nur wenn es für heute fertig ist
+  const biko = briefingHeute(teacher.id, now);
 
   return (
     <>
@@ -223,6 +227,22 @@ export default async function HeutePage({ searchParams }: { searchParams: Promis
             </div>
           )}
         </Karte>
+
+        {biko?.status === "fertig" && (
+          <Karte
+            id="biko"
+            titel="Briefing von Biko"
+            className="md:col-span-2 xl:col-span-3"
+            testid="biko-karte"
+            action={
+              <Link href="/mehr/biko" className="link text-[14px] font-medium">
+                Alles ansehen
+              </Link>
+            }
+          >
+            <BikoBriefing a={biko} kompakt />
+          </Karte>
+        )}
 
         <Karte
           id="woche"

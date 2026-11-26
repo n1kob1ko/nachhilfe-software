@@ -50,7 +50,7 @@ const BeispielSchema = z.object({
   loesung: z.string().describe("die Lösung des Beispiels mit dem Weg in einer Zeile, z. B. „12/18 = 2/3 (durch 6)“"),
 });
 
-const LernzettelSchema = z.object({
+export const LernzettelSchema = z.object({
   titel: z.string().describe("Titel des Lernzettels, kurz, z. B. „Brüche kürzen und erweitern“"),
   einleitung: z.string().describe("ein bis zwei Sätze für den Schüler: worum es geht"),
   abschnitte: z

@@ -58,6 +58,7 @@ function eintraege(admin: boolean, z: ErweitertZahlen): Record<string, Erweitert
     lehrplan: { href: "/mehr/lehrplan", label: "Curriculum / Lehrplan", hint: "Österreich, VS/MS/AHS/HTL/HAK, Quellen, Importe, Lizenzen", icon: "Landmark" },
     statistik: { href: "/mehr/statistik", label: "Statistik", hint: "Schwierige Fähigkeiten, Fehlerarten, Aufgabenqualität", icon: "BarChart3" },
     datenqualitaet: { href: "/mehr/datenqualitaet", label: "Datenqualität", hint: "Fähigkeiten zuordnen, Dubletten, Voraussetzungen korrigieren", icon: "ShieldCheck" },
+    biko: { href: "/mehr/biko", label: "Biko", hint: "Tagesbriefing und Lernzettel aus Dokumenten von Biko-Chef, ohne Schülernamen", icon: "Sparkles" },
     kiKosten: { href: "/mehr/ki-kosten", label: "KI-Kosten", hint: "Aufrufe, Tokens und Kosten pro Tag, Monat, Lehrer und Funktion", icon: "Coins" },
     passwort: { href: "/passwort", label: "Passwort ändern", hint: "Für dein Login", icon: "KeyRound" },
     feedback: {
@@ -81,7 +82,7 @@ export function erweitertGruppen(teacher: { is_admin: number | boolean }, z: Erw
   if (admin)
     return [
       { title: "Arbeit", items: nimm("schueler", "uebungen", "planung", "abrechnung", "woche", "offen", "vorbereitung", "spieleTesten", "phantomVorlage") },
-      { title: "Verwaltung", items: nimm("lehrer", "raeume", "faecher", "lehrplan", "statistik", "datenqualitaet", "kiKosten", "feedback", "export", "import") },
+      { title: "Verwaltung", items: nimm("lehrer", "raeume", "faecher", "lehrplan", "statistik", "datenqualitaet", "kiKosten", "biko", "feedback", "export", "import") },
       { title: "Unterricht und Material", zu: true, items: nimm("blaetter", "einheiten", "diagnose", "bibliothek", "lernpakete", "praesentationen", "material", "referenzen", "geraete", "faehigkeiten") },
       { title: "Konto", items: nimm("passwort") },
     ];
@@ -91,7 +92,7 @@ export function erweitertGruppen(teacher: { is_admin: number | boolean }, z: Erw
     {
       title: "Alles Weitere",
       zu: true,
-      items: nimm("abrechnung", "planung", "einheiten", "diagnose", "bibliothek", "lernpakete", "praesentationen", "material", "referenzen", "faehigkeiten", "faecher", "raeume", "lehrplan", "statistik", "datenqualitaet", "kiKosten"),
+      items: nimm("abrechnung", "planung", "einheiten", "diagnose", "bibliothek", "lernpakete", "praesentationen", "material", "referenzen", "faehigkeiten", "faecher", "raeume", "lehrplan", "statistik", "datenqualitaet", "kiKosten", "biko"),
     },
   ];
 }

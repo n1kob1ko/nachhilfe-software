@@ -1557,6 +1557,33 @@ CREATE TABLE IF NOT EXISTS eigene_test_abgaben (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_eigene_test_abgaben ON eigene_test_abgaben(student_id, test);
+-- Biko-Anbindung (lib/biko.ts, niko 2026-11-26): Aufträge, die Biko-Chef abholt und mit seiner eigenen KI erledigt.
+-- art briefing (eine Lehrkraft, ein Tag) | material (ein Dokument, ein Schüler). anfrage ist genau der Text, der an Biko
+-- geht (ohne Namen, Schüler als S1, S2 …); zuordnung {"S1": student_id} bleibt hier. status offen | abgeholt | fertig |
+-- fehler | verworfen. ergebnis: JSON, wie die App es geprüft hat. uebernommen_id: stoffpakete.id des übernommenen Lernzettels.
+CREATE TABLE IF NOT EXISTS biko_auftraege (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  art TEXT NOT NULL,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE CASCADE,
+  student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+  material_id INTEGER REFERENCES materials(id) ON DELETE CASCADE,
+  datum TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'offen',
+  versuche INTEGER NOT NULL DEFAULT 0,
+  wunsch TEXT NOT NULL DEFAULT '',
+  anfrage TEXT NOT NULL,
+  zuordnung TEXT NOT NULL DEFAULT '{}',
+  ergebnis TEXT,
+  fehler TEXT NOT NULL DEFAULT '',
+  kosten_usd REAL NOT NULL DEFAULT 0,
+  modell TEXT NOT NULL DEFAULT '',
+  uebernommen_id INTEGER REFERENCES stoffpakete(id) ON DELETE SET NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  abgeholt_at TEXT,
+  fertig_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_biko_auftraege ON biko_auftraege(art, teacher_id, datum);
+CREATE INDEX IF NOT EXISTS idx_biko_auftraege_status ON biko_auftraege(status);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

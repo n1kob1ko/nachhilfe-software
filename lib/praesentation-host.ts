@@ -20,7 +20,7 @@ export const DECK_PFAD = "/deck/";
  * feedback that check the session themselves, static files). The same list as the matcher in proxy.ts,
  * which must stay a literal there; lib/praesentationen.test.ts checks that both agree.
  */
-export const OFFENE_PFADE = "login|health|lernen|geraet|mitmachen|material/|feedback/|spiele/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$";
+export const OFFENE_PFADE = "api/biko|login|health|lernen|geraet|mitmachen|material/|feedback/|spiele/|excalidraw-assets|_next/static|_next/image|favicon.ico|icon|.*\\.(?:png|svg|ico|webmanifest)$";
 const OFFEN = new RegExp(`^/(?:${OFFENE_PFADE})`);
 
 /** An http(s) origin from a setting, or null when it is missing or not an address. */
