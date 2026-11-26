@@ -509,3 +509,29 @@ export function nochmalBrett<T extends { key: string }>(karten: T[], falsch: Set
   ).slice(0, Math.max(0, Math.min(4, karten.length) - schwer.length));
   return mischen([...schwer, ...fuell], rng);
 }
+
+/**
+ * Seit wann ein Spiel in der Schüler-App steht (Tag des Merges). Das Schild „Neu“ steht nur in den ersten 14 Tagen
+ * (niko 2026-11-24: „es wird langsam unübersichtlich“). Neue Spiele hier eintragen.
+ */
+export const SPIEL_SEIT: Record<string, string> = {
+  bloecke: "2026-11-13",
+  funkel: "2026-11-16",
+  glas: "2026-11-16",
+  wort: "2026-11-17",
+  tor: "2026-11-17",
+  phantom: "2026-11-19",
+  blatt: "2026-11-22",
+  europa: "2026-11-22",
+  bio: "2026-11-23",
+  biotest: "2026-11-23",
+  oesterreich: "2026-11-24",
+};
+
+/** Steht das Spiel seit höchstens 14 Tagen in der App? `heute` als JJJJ-MM-TT (Wien). */
+export function istNeuesSpiel(spiel: string, heute: string, tage = 14): boolean {
+  const seit = SPIEL_SEIT[spiel];
+  if (!seit) return false;
+  const diff = (Date.parse(`${heute}T12:00:00Z`) - Date.parse(`${seit}T12:00:00Z`)) / 86_400_000;
+  return diff >= 0 && diff < tage;
+}

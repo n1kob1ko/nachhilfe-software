@@ -3,6 +3,7 @@ import { Frisch } from "@/components/Frisch";
 import { ChevronRight, Swords, Trophy } from "lucide-react";
 import { notFound } from "next/navigation";
 import { BestenlisteTafel } from "@/components/lernen/BestenlisteTafel";
+import { Aufklappen } from "@/components/ui";
 import { SeitenKopf } from "@/components/lernen/SeitenKopf";
 import { BioKachel, BioTestKachel, EuropaKachelBild, OesterreichKachel, SpieleListe } from "@/components/lernen/SpieleListe";
 import { meineDuelle } from "@/lib/duelle";
@@ -18,6 +19,9 @@ import { BILDER, erlaubnis, profilVon } from "@/lib/spielprofil";
  * Der Tab „Spiele“ der Schüler-App (niko 2026-11-11: „es sollte übersichtlicher sein, wo Spiele sind, und besser
  * getrennt“). Oben das Spiel, das gerade zum Stoff passt, darunter alle Spiele nach Fach, dann „Gegeneinander“ mit den
  * Duellen. Die Wochenliga steht nur als kleine Zeile da („Ranking muss jetzt nicht sein“).
+ *
+ * niko 2026-11-26 (aufräumen): Spiele mit Punkten als Wischreihe „Spielhalle“, pro Fach nur die 4 passendsten offen,
+ * Test- und Themenspiele ohne Anlass unter „Weitere Spiele“, Bestenlisten zugeklappt, „Neu“ nur 14 Tage.
  */
 export default async function SpieleSeite({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
@@ -113,6 +117,8 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
   // Europa: für alle (lib/europa.ts)
   const eu = europaWahl(student, heute);
   const euSitzt = europaSitzt(student.id);
+  // die Bestenlisten zugeklappt unten; der eigene Platz steht ohnehin auf jeder Kachel der Spielhalle
+  const tafelZahl = [bestenliste && blockArt, torListe && torArt, funkelListe && blockArt, glasListe, wortListe, phantomListe].filter(Boolean).length;
 
   return (
     <>
@@ -164,12 +170,20 @@ export default async function SpieleSeite({ params }: { params: Promise<{ token:
         )}
       </section>
 
-      {bestenliste && blockArt && <BestenlisteTafel liste={bestenliste} spielen={blockLink(blockArt)} arena={`${base}/arena`} />}
-      {torListe && torArt && <BestenlisteTafel liste={torListe} spielen={torLink(torArt)} arena={`${base}/arena`} spiel="Torlauf" />}
-      {funkelListe && blockArt && <BestenlisteTafel liste={funkelListe} spielen={funkelLink(blockArt)} arena={`${base}/arena`} spiel="Funkelfeld" />}
-      {glasListe && <BestenlisteTafel liste={glasListe} spielen={glasLink} arena={`${base}/arena`} spiel="Glasklar" />}
-      {wortListe && <BestenlisteTafel liste={wortListe} spielen={wortLink} arena={`${base}/arena`} spiel="Wortschloss" />}
-      {phantomListe && <BestenlisteTafel liste={phantomListe} spielen={phantomLink} arena={`${base}/arena`} spiel="Phantombild" />}
+      {tafelZahl > 0 && (
+        <section className="mt-9" data-testid="spiele-bestenlisten">
+          <Aufklappen label={tafelZahl === 1 ? "Bestenliste" : `Bestenlisten (${tafelZahl})`} icon={<Trophy size={16} aria-hidden />}>
+            <div className="[&>section:first-child]:mt-0">
+            {bestenliste && blockArt && <BestenlisteTafel liste={bestenliste} spielen={blockLink(blockArt)} arena={`${base}/arena`} />}
+            {torListe && torArt && <BestenlisteTafel liste={torListe} spielen={torLink(torArt)} arena={`${base}/arena`} spiel="Torlauf" />}
+            {funkelListe && blockArt && <BestenlisteTafel liste={funkelListe} spielen={funkelLink(blockArt)} arena={`${base}/arena`} spiel="Funkelfeld" />}
+            {glasListe && <BestenlisteTafel liste={glasListe} spielen={glasLink} arena={`${base}/arena`} spiel="Glasklar" />}
+            {wortListe && <BestenlisteTafel liste={wortListe} spielen={wortLink} arena={`${base}/arena`} spiel="Wortschloss" />}
+            {phantomListe && <BestenlisteTafel liste={phantomListe} spielen={phantomLink} arena={`${base}/arena`} spiel="Phantombild" />}
+            </div>
+          </Aufklappen>
+        </section>
+      )}
     </>
   );
 }
