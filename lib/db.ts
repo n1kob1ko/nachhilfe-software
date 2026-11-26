@@ -1598,6 +1598,25 @@ CREATE TABLE IF NOT EXISTS einheit_ablauf (
   ansicht TEXT NOT NULL DEFAULT 'gefuehrt',
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+
+-- Heft am Tablet (lib/heft.ts, niko 26.11.2026: Mathe mit Stift „frei wie im Heft“, geprüft wird alles auf einmal): eine Übung,
+-- die am Schüler-Tablet als karierte Seite kommt. felder: je Aufgabe die Höhe und die Striche (JSON). status: schreibt | pruefen |
+-- geprueft | fehler. material_ids: die Seiten als Bilder (Material des Schülers), papier_id: die übernommene Papierarbeit.
+CREATE TABLE IF NOT EXISTS hefte (
+  assignment_id INTEGER PRIMARY KEY REFERENCES assignments(id) ON DELETE CASCADE,
+  unit_id INTEGER REFERENCES units(id) ON DELETE CASCADE,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  felder TEXT NOT NULL DEFAULT '[]',
+  version INTEGER NOT NULL DEFAULT 0,
+  status TEXT NOT NULL DEFAULT 'schreibt',
+  grund TEXT NOT NULL DEFAULT '',
+  material_ids TEXT NOT NULL DEFAULT '[]',
+  papier_id INTEGER,
+  abgegeben_at TEXT,
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_hefte_unit ON hefte(unit_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

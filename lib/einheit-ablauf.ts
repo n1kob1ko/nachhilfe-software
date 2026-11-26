@@ -282,7 +282,7 @@ export function zeigtGefuehrt(unitId: number): boolean {
 export type ThemaErgebnis = { skillId: string; name: string; aufgaben: number; fertig: number; richtig: number; falsch: number };
 export type Auswertung = { aufgaben: number; fertig: number; richtig: number; falsch: number; themen: ThemaErgebnis[] };
 
-type Versuch = Pick<repo.Attempt, "task_id" | "skill_id" | "correct" | "final" | "solution_viewed">;
+type Versuch = Pick<repo.Attempt, "task_id" | "skill_id" | "correct" | "final" | "solution_viewed"> & { review?: string | null };
 
 /**
  * Wie es gelaufen ist, aus den Versuchen: je Aufgabe zählt der letzte Versuch. Fertig ist eine Aufgabe, wenn sie richtig ist
@@ -302,7 +302,8 @@ export function auswerten(versuche: Versuch[], alle: { id: number; skillId: stri
       themen.set(t.skillId, t);
     }
     const v = letzter.get(taskId);
-    if (!v || !(v.final || v.correct)) continue;
+    // eine Antwort, die auf den Lehrer wartet (unsicher gelesen, lib/zu-bewerten.ts), zählt noch nicht
+    if (!v || !(v.final || v.correct) || v.review === "offen") continue;
     const richtig = Boolean(v.correct) && !v.solution_viewed;
     out.fertig++;
     out[richtig ? "richtig" : "falsch"]++;
@@ -320,7 +321,7 @@ export function kurztestStand(unitId: number): { worksheetId: number; assignment
   const m = minitestDerEinheit(unitId);
   if (!m) return null;
   const tasks = repo.listTasks(m.worksheet.id).map((t) => ({ id: t.id, skillId: t.skillId ?? null }));
-  const versuche = m.assignment ? (db().prepare("SELECT task_id, skill_id, correct, final, solution_viewed FROM attempts WHERE assignment_id = ? ORDER BY created_at, id").all(m.assignment.id) as Versuch[]) : [];
+  const versuche = m.assignment ? (db().prepare("SELECT task_id, skill_id, correct, final, solution_viewed, review FROM attempts WHERE assignment_id = ? ORDER BY created_at, id").all(m.assignment.id) as Versuch[]) : [];
   const auswertung = auswerten(versuche, tasks);
   const fertig = Boolean(m.assignment?.completed_at) || (auswertung.aufgaben > 0 && auswertung.fertig >= auswertung.aufgaben);
   return { worksheetId: m.worksheet.id, assignmentId: m.assignment?.id ?? null, auswertung, fertig };
@@ -336,7 +337,7 @@ export function uebenStand(unitId: number): { gesamt: Auswertung; einzeln: Auswe
   let letzte: ReturnType<typeof uebenStand>["letzte"] = null;
   for (const z of zuweisungen) {
     const tasks = repo.listTasks(z.worksheet_id).map((t) => ({ id: t.id, skillId: t.skillId ?? null }));
-    const vs = db().prepare("SELECT task_id, skill_id, correct, final, solution_viewed FROM attempts WHERE assignment_id = ? ORDER BY created_at, id").all(z.id) as Versuch[];
+    const vs = db().prepare("SELECT task_id, skill_id, correct, final, solution_viewed, review FROM attempts WHERE assignment_id = ? ORDER BY created_at, id").all(z.id) as Versuch[];
     alle.push(...tasks);
     versuche.push(...vs);
     const auswertung = auswerten(vs, tasks);
