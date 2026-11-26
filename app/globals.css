@@ -9,6 +9,11 @@
   --backdrop: #e6edf6;
   --backdrop-2: #f5f8fc;
   --paper: #f5f8fc;
+  /* Notenverlauf (components/Notenverlauf.tsx): je Fach eine Farbe, geprüft mit dem Palettenprüfer (hell/dunkel) */
+  --nv-1: #257de0;
+  --nv-2: #f47230;
+  --nv-3: #00b894;
+  --nv-4: #f2a600;
   --surface: #ffffff;
   --panel: #eaf1f9;
   --line: #dce5ef;
@@ -108,6 +113,10 @@
 @media screen {
   html[data-theme="dark"] {
     color-scheme: dark;
+    --nv-1: #338ced;
+    --nv-2: #e76624;
+    --nv-3: #00a888;
+    --nv-4: #d28e05;
     --backdrop: #0a1018;
     --backdrop-2: #0f1620;
     --paper: #0f1620;
