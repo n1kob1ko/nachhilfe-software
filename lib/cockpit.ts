@@ -1090,6 +1090,7 @@ export async function druckeImSchritt(unitId: number, schrittId: number, teacher
  */
 export function dokumentiereAblauf(lessonId: number, unitId: number): DokuTexte | null {
   const s = gespeichert(unitId);
+  if (s && nurGefuehrt(unitId, s)) return null;
   const lesson = repo.getLesson(lessonId);
   const a = s ? ablaufVon(mitPapier(unitId, s)) : null;
   if (!s || !a || !lesson) return null;
@@ -1174,7 +1175,17 @@ export function ablaufDesPlans(roh: Pick<Stand, "plan" | "reihenfolge" | "erledi
 /** Der Ablauf einer Einheit für den Abschluss: nur, was gespeichert ist (getippt wurde), nie ein bloßer Vorschlag. */
 export function ablaufDerEinheit(unitId: number): AblaufDerEinheit | null {
   const s = gespeichert(unitId);
-  return s ? ablaufVon(mitPapier(unitId, s)) : null;
+  return s && !nurGefuehrt(unitId, s) ? ablaufVon(mitPapier(unitId, s)) : null;
+}
+
+/**
+ * Lief die Einheit im geführten Ablauf (lib/einheit-ablauf.ts), ohne Lernpaket und ohne dass im Plan des Cockpits je „Weiter“ oder
+ * „Überspringen“ getippt wurde? Dann beschreibt der Plan sie nicht (er wurde nur beim Senden einer Übung festgehalten): kein
+ * „Plan für heute: 1 von 6 Schritten“ und kein „Weiter mit“ aus Schritten, die nie auf dem Schirm waren.
+ */
+function nurGefuehrt(unitId: number, s: Stand): boolean {
+  const r = db().prepare("SELECT weg FROM einheit_ablauf WHERE unit_id = ?").get(unitId) as { weg: string | null } | undefined;
+  return Boolean(r?.weg) && !s.paket_id && !s.erledigt.length && !s.uebersprungen.length;
 }
 
 /**

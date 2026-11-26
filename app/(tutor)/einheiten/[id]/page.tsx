@@ -4,10 +4,13 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { after } from "next/server";
 import QRCode from "qrcode";
-import { BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Play, Plus, Printer, ScanLine } from "lucide-react";
+import { ArrowLeft, BookOpenCheck, BookOpenText, CalendarClock, Camera, CheckCircle2, ChevronDown, ExternalLink, Images, PenLine, Play, Plus, Printer, ScanLine } from "lucide-react";
 import { levelFor } from "@/lib/text-correction-rules";
 import { bestaetigeDokuAction, endUnitAction, resumeUnitAction } from "@/app/session-actions";
 import { EinheitBeenden } from "@/components/EinheitBeenden";
+import { Gefuehrt } from "@/components/einheit/Gefuehrt";
+import { ansichtAction } from "@/app/ablauf-actions";
+import { leseAblauf, zeigtGefuehrt } from "@/lib/einheit-ablauf";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
@@ -86,7 +89,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string; fach?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ablauf?: string; bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string; fach?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -175,6 +178,8 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
     // zwei Schüler zugleich (D26): ein Tippen wechselt in den Unterricht des anderen
     const meine = mayManage ? runningUnits(teacher.id) : [];
     const wechsel = meine.length > 1 && meine.some((u) => u.id === unit.id) ? meine : [];
+    // der geführte Ablauf (lib/einheit-ablauf.ts, niko 26.11.2026): eine Stufe, ein großer Knopf; „Mehr Werkzeuge“ zeigt das ganze Cockpit
+    const gefuehrt = mayManage && area === "unterricht" && zeigtGefuehrt(unit.id);
     return (
       <>
         <AutoRefresh seconds={30} />
@@ -233,8 +238,30 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           {!mayManage && <p className="mt-2 text-[14px] text-ink-2">Diese Einheit gehört {unit.teacher_name}. Du kannst mitlesen, aber nicht beenden.</p>}
         </header>
         {notices}
-        {area === "unterricht" ? (
+        {sp.ablauf && (
+          <p role="alert" className="mb-5 rounded-2xl bg-amber-wash px-4 py-3 text-[15px]" data-testid="ablauf-fehler">
+            {sp.ablauf}
+          </p>
+        )}
+        {area === "unterricht" && gefuehrt ? (
           <>
+            <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={kiNeuImLiveHinweis(unit.id, first(student.name))} />
+            <div className="mt-5">
+              <Gefuehrt unit={unit} student={student} folien={sp.folien ? Number(sp.folien) : null} />
+            </div>
+            <div className="mt-4">
+              <KiKostenZeile unitId={unit.id} admin={Boolean(teacher.is_admin)} />
+            </div>
+          </>
+        ) : area === "unterricht" ? (
+          <>
+            {mayManage && (
+              <form action={ansichtAction.bind(null, unit.id, false)} className="mb-4" data-testid="zurueck-ablauf">
+                <button className="btn btn-secondary">
+                  <ArrowLeft size={16} aria-hidden /> {leseAblauf(unit.id).gespeichert ? "Zurück zum geführten Ablauf" : "Geführten Ablauf starten"}
+                </button>
+              </form>
+            )}
             {mayManage && <ZuHauseZeile z={zuHauseGeuebt(student.id, unit.started_at)} vorname={first(student.name)} kompakt />}
             <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={mayManage ? kiNeuImLiveHinweis(unit.id, first(student.name)) : null} />
             <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} werkzeugeMehr={sp.mehr === "1"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
