@@ -179,4 +179,12 @@ test("textFehler: a text of the unit → photograph, correct, then exercises on 
   const out = await sendeAusGenerator(unit.id, "deutsch.recht.sss", teacher.id);
   assert.ok(!("fehler" in out), JSON.stringify(out));
   assert.deepEqual(ab.textFehler(unit.id)!.skills.map((x) => x.offen), [false, true, true]);
+
+  // the Hausübung: text errors whose skill was not practised come after the results, before „gut verstanden“
+  const { mitTextFehlern } = await import("./hausuebung");
+  const gut = { skillId: "deutsch.wortarten.nomen", name: "Nomen", stand: "gut" as const, grund: "gut verstanden" };
+  const sss = { skillId: "deutsch.recht.sss", name: "s / ss / ß", stand: "teilweise" as const, grund: "noch nicht sicher: 6 von 8 richtig" };
+  const mit = mitTextFehlern(unit.id, [sss, gut]);
+  assert.deepEqual(mit.map((t) => t.skillId), ["deutsch.recht.sss", "deutsch.recht.dasdass", "deutsch.recht.gross", "deutsch.wortarten.nomen"]);
+  assert.equal(mit[1].grund, "noch nicht sicher: 1 Fehler im Text „Mein Wochenende“");
 });
