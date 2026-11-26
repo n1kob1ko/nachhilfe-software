@@ -133,7 +133,9 @@ test("unit_id: the D1 KI call („Einfacher erklären lassen“), any call for t
   s.kiAn();
   const sid = s.schueler("Tara Zuordnung");
   // a briefing in the morning, before the unit (and one test run, and one of yesterday): only today's real one goes to the unit
-  const morgen = new Date(Date.now() - 20 * 60_000).toISOString();
+  // vor 20 Minuten, aber noch heute (Wien): kurz nach Mitternacht wäre es sonst das Briefing von gestern
+  const { wienerMinuten } = await import("./planung/zeit");
+  const morgen = new Date(Date.now() - Math.max(1_000, Math.min(20, wienerMinuten(new Date())) * 60_000)).toISOString();
   const brief = (at: string, test = 0) =>
     s.db().prepare("INSERT INTO ai_calls (created_at, fn, tier, model, provider, status, cost_usd, test, student_id) VALUES (?, 'briefing', 'standard', 'claude-sonnet-5-5', 'anthropic', 'ok', 0.01, ?, ?)").run(at, test, sid).lastInsertRowid;
   const heute = brief(morgen);

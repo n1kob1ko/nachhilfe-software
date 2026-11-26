@@ -31,7 +31,7 @@ async function setup() {
   const hz = await import("./hausuebung-zurueck");
   const ab = await import("./abschluss");
   const { endUnit } = await import("./learning");
-  const { wienerDatum, tagAddieren } = await import("./planung/zeit");
+  const { wienerDatum, wienerMinuten, tagAddieren } = await import("./planung/zeit");
   const router = await import("./ai/router");
   router.resetRouter();
   router.setTransport(null);
@@ -71,7 +71,9 @@ async function setup() {
   const start = (sid: number, at: number) => units.startUnit(teacher.id, sid, { subject: "Mathematik", at }).unit;
   const ende = (unitId: number, at: number) => endUnit(unitId, { byTeacherId: teacher.id, at })!;
   const heute = wienerDatum(new Date());
-  return { db, repo, units, hz, ab, teacher, schueler, aufgabe, hausuebung, antworte, start, ende, heute, tagAddieren, wienerDatum };
+  /** Vor `min` Minuten, aber noch heute (Wien): kurz nach Mitternacht läge „vor 20 Minuten“ am Vortag, und der Test meinte einen anderen Tag. */
+  const heuteVor = (min: number) => Date.now() - Math.max(1_000, Math.min(min, wienerMinuten(new Date())) * 60_000);
+  return { db, repo, units, hz, ab, teacher, schueler, aufgabe, hausuebung, antworte, start, ende, heute, heuteVor, tagAddieren, wienerDatum };
 }
 
 // ---------- Regeln ohne Datenbank ----------
@@ -195,7 +197,7 @@ test("not handed in: never wrong, nothing in the Lernstand; the next unit offers
   const { analyzeStudent } = await import("./service");
   assert.equal(analyzeStudent(sid)!.skills.find((x) => x.skill.id === DIV)?.mastery ?? null, null);
 
-  const unit = s.start(sid, Date.now() - 20 * 60_000);
+  const unit = s.start(sid, s.heuteVor(20));
   const plan = (await import("./stundenplan")).stundenplanFuer(sid, { fach: "Mathematik", platzId: null, unitId: unit.id });
   const schritt = plan.find((x) => x.art === "hausuebung")!;
   assert.ok(schritt, JSON.stringify(plan.map((x) => x.titel)));
@@ -343,7 +345,7 @@ test("one homework, one place: not checked again in the Einstieg, no „Hausübu
   // done on the device: the plan has „Hausübung besprechen“, and the Einstieg does not check the same homework again
   s.antworte(asg, [true, false, "teilweise", false]);
   s.db().prepare("UPDATE assignments SET completed_at = datetime('now') WHERE id = ?").run(asg);
-  const u2 = s.start(sid, Date.now() - 20 * 60_000);
+  const u2 = s.start(sid, s.heuteVor(20));
   const plan = (await import("./stundenplan")).stundenplanFuer(sid, { fach: "Mathematik", platzId: null, unitId: u2.id });
   assert.deepEqual([plan[1].titel, plan[1].hausuebung], ["Hausübung besprechen", hw]);
   const kontrolle = plan.flatMap((x) => [x.titel === "Hausübung kontrollieren" ? x.beschreibung : "", ...(x.beschreibung.match(/Hausübung kontrollieren:[^\n]*/g) ?? [])]).filter(Boolean);
