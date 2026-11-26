@@ -4,6 +4,8 @@ import "./globals.css";
 import { Ankunft, Ursprung } from "@/components/Bewegung";
 import { Meldungen } from "@/components/Meldung";
 import { NavWaechter } from "@/components/Navigation";
+import { NeueVersion } from "@/components/NeueVersion";
+import { appVersion } from "@/lib/app-version";
 
 // Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else. Both are in app/fonts
 // (variable TTFs from github.com/google/fonts, OFL): the build must not need fonts.googleapis.com, whose fetch sometimes fails and then stops the whole build
@@ -35,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Ankunft />
         <NavWaechter />
         <Meldungen />
+        <NeueVersion version={appVersion()} />
       </body>
     </html>
   );
