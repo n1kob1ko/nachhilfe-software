@@ -184,7 +184,7 @@ const MIX_BY_SKILL: [RegExp, string[]][] = [
   [/^mathe\.brueche\./, ["rechenweg", "sachaufgabe", "rechnung", "mc"]],
   // Oberstufe mit eigenen Matura-Aufgaben (lib/mathe-matura.ts): gemischt heißt die vier Antwortformate der Matura
   [
-    /^mathe\.os\.(funktionen\.(quadratisch|scheitel|verschieben)|wachstum\.(exponentiell|halbwertszeit)|log\.(begriff|regeln)|folgen\.(arithmetisch|geometrisch)|diff\.(aenderungsrate|potenzregel|monotonie)|wahrscheinlichkeit\.(binomial-bereiche|mehrstufig)|integral\.stammfunktion)(\.|$)/,
+    /^mathe\.os\.(funktionen\.(quadratisch|scheitel|verschieben)|wachstum\.(exponentiell|halbwertszeit)|log\.(begriff|regeln)|folgen\.(arithmetisch|geometrisch)|diff\.(aenderungsrate|potenzregel|produktregel|quotientenregel|kettenregel|monotonie)|wahrscheinlichkeit\.(binomial-bereiche|mehrstufig)|integral\.stammfunktion)(\.|$)/,
     ["matura-1aus5", "matura-2aus5", "matura-lueckentext", "matura-zuordnung"],
   ],
   // gleichartige Potenzen (lib/mathe-grundlagen.ts): ein Term als Antwort, eine Lücke dafür wäre nur eine Erklärung
