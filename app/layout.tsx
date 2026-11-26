@@ -5,6 +5,7 @@ import { Ankunft, Ursprung } from "@/components/Bewegung";
 import { Meldungen } from "@/components/Meldung";
 import { NavWaechter } from "@/components/Navigation";
 import { NeueVersion } from "@/components/NeueVersion";
+import { UntenFest } from "@/components/UntenFest";
 import { appVersion } from "@/lib/app-version";
 
 // Outfit for headings and big numbers, Plus Jakarta Sans (tabular figures) for everything else. Both are in app/fonts
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NavWaechter />
         <Meldungen />
         <NeueVersion version={appVersion()} />
+        <UntenFest />
       </body>
     </html>
   );

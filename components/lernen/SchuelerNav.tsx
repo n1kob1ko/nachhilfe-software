@@ -63,7 +63,7 @@ export function SchuelerNav({ token, spieleHinweis = 0 }: { token: string; spiel
         })}
       </Gleiter>
       {/* Handy: Leiste unten, über dem Home-Balken (viewport-fit=cover in layout.tsx) */}
-      <Gleiter as="nav" marke="bg-accent-bright" className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Schüler-App" data-testid="schueler-leiste">
+      <Gleiter as="nav" marke="bg-accent-bright" className="no-print fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line bg-surface/95 pb-[max(8px,env(safe-area-inset-bottom))] pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] backdrop-blur md:hidden" aria-label="Schüler-App" data-testid="schueler-leiste" data-unten-fest>
         {SEITEN.map(({ key, label, icon: Icon, vor }) => {
           const active = aktiv === key;
           return (
