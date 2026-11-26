@@ -116,8 +116,8 @@ export function VorgabeKarte({ unit, c }: { unit: UnitView; c: CockpitDaten }) {
               : x.zuordnung === "unklar"
                 ? "→ kurz bestätigen"
                 : x.gruppe === "umfang"
-                  ? "Kapitel"
-                  : "→ keine passende Fähigkeit"}
+                  ? "Umfang, kein eigenes Thema"
+                  : "→ dazu hat die App keine Aufgaben"}
           </span>
         </li>
       ))}

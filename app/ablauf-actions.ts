@@ -15,7 +15,7 @@ import {
   setzeAnsicht,
   setzeSchritt,
   setzeStufe,
-  setzeThemen,
+  stoffFertig,
   stoffpaketDerEinheit,
   stoffUebernehmen,
   waehleWeg,
@@ -28,7 +28,6 @@ import * as repo from "@/lib/repo";
 import { starteStoffpaket, verwirfStoffpaket } from "@/lib/stoffpaket";
 import { zeigeUebung } from "@/lib/tafel-senden";
 import { canManageUnit, getUnit } from "@/lib/units";
-import { vorgabeDerEinheit } from "@/lib/vorgabe";
 
 /**
  * Die Knöpfe des geführten Ablaufs (lib/einheit-ablauf.ts, components/einheit/Gefuehrt.tsx). Jede Aktion gilt für genau diese
@@ -66,11 +65,7 @@ export async function stufeAction(unitId: number, stufe: string) {
 /** Nach den Fotos vom Stoff: die erkannten Themen übernehmen und erklären. */
 export async function stoffFertigAction(unitId: number) {
   await laufend(unitId);
-  const ids = vorgabeDerEinheit(unitId)?.skillIds ?? [];
-  if (!ids.length) weiter(unitId, { fehler: "Es ist noch kein Thema erkannt. Bitte Fotos aufnehmen oder kurz hineinschreiben, was dran ist." });
-  const t = setzeThemen(unitId, ids);
-  if ("fehler" in t) weiter(unitId, t);
-  weiter(unitId, setzeStufe(unitId, "erklaeren"));
+  weiter(unitId, stoffFertig(unitId));
 }
 
 /** „Übernehmen und erklären“: der fertige Stoff (Präsentation, Sprechtext, Fragen, Übungsblatt) wird der Ablauf dieser Einheit. */

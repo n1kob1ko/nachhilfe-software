@@ -349,11 +349,18 @@ const tokens = (text: string) =>
  */
 export const topicTokens = tokens;
 
-/** Splits "Brüche, Prozent und Sachaufgaben" into topics. */
+/**
+ * Splits "Brüche, Prozent und Sachaufgaben" into topics. What stands in brackets stays with its topic („Kurvendiskussion
+ * (Extremstellen, Wendepunkte)“), and so does a hyphenated pair („Tier- und Pflanzenzelle“).
+ */
 export function splitTopics(text: string): string[] {
-  return text
-    .split(/[,;\n•]+|\s+und\s+|\s+\/\s+/)
-    .map((t) => t.trim())
+  // commas and „und“ inside brackets do not separate: mask them for the split
+  const KOMMA = "\u0001";
+  const UND = "\u0002";
+  const maskiert = text.replace(/\([^()\n]*\)/g, (k) => k.replace(/[,;]/g, KOMMA).replace(/\s+und\s+/g, (u) => u.replace("und", UND)));
+  return maskiert
+    .split(/[,;\n•]+|(?<!-)\s+und\s+|\s+\/\s+/)
+    .map((t) => t.replaceAll(KOMMA, ",").replaceAll(UND, "und").trim())
     .filter(Boolean)
     .filter((t, i, all) => all.findIndex((x) => x.toLowerCase() === t.toLowerCase()) === i);
 }
@@ -367,7 +374,7 @@ type Treffer = SkillMatch & {
   /** their weight */
   eigen: number;
 };
-type SkillWoerter = { skill: Skill; own: string[]; area: string[] };
+type SkillWoerter = { skill: Skill; own: string[]; area: string[]; /** name and Suchwörter, each as its words (stems) in a row */ genau: string[] };
 type Woerterbuch = { entries: SkillWoerter[]; gewicht: (word: string) => number };
 
 /** A topic word that is only the start of a skill's word („Bruch“ in „Bruchzahlen“): the whole word beats it. */
@@ -387,6 +394,7 @@ function woerterbuch(pool: Skill[]): Woerterbuch {
     skill: s,
     own: [...new Set(tokens(`${s.name} ${s.subtopic ?? ""} ${(SUCHWOERTER[s.id] ?? []).join(" ")}`))],
     area: bereichWoerter(s),
+    genau: [s.name, ...(SUCHWOERTER[s.id] ?? [])].map((n) => tokens(n).join(" ")).filter(Boolean),
   }));
   const memo = new Map<string, number>();
   const gewicht = (w: string) => {
@@ -413,8 +421,11 @@ function treffer(w: string, words: string[], buch: Woerterbuch): number {
   return best;
 }
 const nachPunkten = (a: SkillMatch, b: SkillMatch) => b.score - a.score || a.skill.sort - b.skill.sort;
+/** Extra points when the topic is exactly a skill's name or Suchwort: enough to be ahead of a skill that only shares the words. */
+const GENAU = 1;
 function bewerten(want: string[], buch: Woerterbuch): Treffer[] {
   const out: Treffer[] = [];
+  const schluessel = want.join(" ");
   const benannt = new Set(buch.entries.filter((e) => want.some((w) => e.area.some((x) => nennt(w, x)))).map((e) => e.skill.area));
   for (const e of buch.entries) {
     let own = 0;
@@ -439,7 +450,9 @@ function bewerten(want: string[], buch: Woerterbuch): Treffer[] {
     // a topic naming the skill itself beats one naming only its Thema; Teilfähigkeiten only on a direct hit
     if (e.skill.parent_id && !own) continue;
     const fremd = benannt.size > 0 && !benannt.has(e.skill.area) ? FREMD : 0;
-    out.push({ skill: e.skill, score: own * 2 + area + (e.skill.parent_id ? 0 : 0.5) - fremd, via: own ? "faehigkeit" : "thema", woerter, eigeneWoerter, eigen });
+    // the topic is the skill's name or one of its Suchwörter, word for word („Adjektive“, „Adjektiv erkennen“): that is the skill meant
+    const genau = e.genau.includes(schluessel) ? GENAU : 0;
+    out.push({ skill: e.skill, score: own * 2 + area + (e.skill.parent_id ? 0 : 0.5) + genau - fremd, via: own ? "faehigkeit" : "thema", woerter, eigeneWoerter, eigen });
   }
   return out.sort(nachPunkten);
 }

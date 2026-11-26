@@ -35,17 +35,20 @@ import {
   STUFE_LABEL,
   erklaerPaket,
   erklaerSchritte,
+  freiesThema,
   gedruckteUebung,
   kurztestStand,
   leseAblauf,
   naechsteUebung,
   offenesStoffBlatt,
+  ohneFaehigkeit,
   stoffpaketDerEinheit,
   stufenFuer,
   textFehler,
   uebenStand,
   type Ablauf,
   type Auswertung,
+  type FreiesThema,
   type Stufe,
   type TextFehler,
 } from "@/lib/einheit-ablauf";
@@ -413,8 +416,12 @@ function StoffKarte({ unit, student, name, hand }: { unit: UnitView; student: re
   }
   const c = cockpit(unit.id, { mitPlan: true });
   const themen = v.skillIds.map(skillName).filter(Boolean);
+  // kein Thema mit Aufgaben der App (Nebenfach ohne KI): das Eingetippte ist selbst das Thema, und es geht weiter
+  const frei = themen.length ? null : freiesThema(unit.id);
+  const zuBestaetigen = v.punkte.some((x) => x.zuordnung === "unklar" && x.vorschlaege.length);
+  const fehlt = themen.length ? ohneFaehigkeit(unit.id) : [];
   return (
-    <Karte titel={themen.length ? `Heute: ${themen.slice(0, 3).join(", ")}${themen.length > 3 ? " …" : ""}` : "Stoff gelesen"} testid="ablauf-stoff">
+    <Karte titel={themen.length ? `Heute: ${themen.slice(0, 3).join(", ")}${themen.length > 3 ? " …" : ""}` : frei ? `Heute: ${frei.titel}` : "Stoff gelesen"} testid="ablauf-stoff">
       <VorgabeKarte unit={unit} c={c} />
       {themen.length ? (
         <>
@@ -422,9 +429,26 @@ function StoffKarte({ unit, student, name, hand }: { unit: UnitView; student: re
             Weiter: {themen[0]} erklären
           </Gross>
           <Leise>Danach Übungen am Tablet zu jedem Thema.</Leise>
+          {fehlt.length > 0 && (
+            <p className="text-center text-[14px] text-ink-2" data-testid="stoff-ohne-aufgaben">
+              Dazu gibt es heute keine Aufgaben am Tablet: {fehlt.slice(0, 4).join(", ")}
+              {fehlt.length > 4 ? " …" : ""}. {zuBestaetigen ? "Oben bestätigen, wenn eines davon gemeint ist." : "Das erklärst und übst du selbst."}
+            </p>
+          )}
+        </>
+      ) : frei ? (
+        <>
+          <p className="text-[16px] leading-relaxed text-ink-2" data-testid="stoff-frei">
+            {zuBestaetigen
+              ? "Oben kurz bestätigen, welches Thema gemeint ist: dann gibt es dazu Aufgaben am Tablet. Du kannst auch ohne weitermachen."
+              : `Zu diesem Stoff hat die App keine eigenen Aufgaben. Die Einheit geht trotzdem weiter: du erklärst mit Buch oder Heft, ${name} übt mit einem Text oder am Whiteboard, und das Thema steht am Ende in der Dokumentation.`}
+          </p>
+          <Gross action={stoffFertigAction.bind(null, unit.id)} icon={<ArrowRight size={19} aria-hidden />} zweit={zuBestaetigen} testid="stoff-fertig">
+            {zuBestaetigen ? "Ohne Aufgaben der App weiter" : "Weiter: erklären"}
+          </Gross>
         </>
       ) : (
-        <p className="text-[15px] text-ink-2">Noch kein Thema sicher erkannt. Oben bestätigen, welches gemeint ist, oder kurz dazuschreiben.</p>
+        <p className="text-[15px] text-ink-2">Noch kein Thema erkannt. Schreib oben unter „Ändern“ kurz dazu, was {name} heute lernen muss.</p>
       )}
     </Karte>
   );
@@ -520,6 +544,8 @@ function erklaerSchritt(c: CockpitDaten, skillId: string): PlanStep | null {
 
 function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; name: string; folien: number | null }) {
   const thema = a.aktuell ?? a.skillIds[0] ?? null;
+  const frei = thema ? null : freiesThema(unit.id);
+  if (frei) return <FreiErklaeren unit={unit} name={name} frei={frei} />;
   if (!thema) {
     return (
       <Karte titel="Zuerst den Stoff" testid="ablauf-erklaeren">
@@ -585,6 +611,82 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
           ))}
         </div>
       )}
+    </Karte>
+  );
+}
+
+/**
+ * „Erklären“ zu einem Thema, zu dem die App keine Fähigkeit kennt (lib/einheit-ablauf.ts `freiesThema`, etwa Biologie ohne KI):
+ * die Karte zeigt, was die Lehrkraft für heute geschrieben und fotografiert hat, und führt weiter zum Üben.
+ */
+function FreiErklaeren({ unit, name, frei }: { unit: UnitView; name: string; frei: FreiesThema }) {
+  return (
+    <Karte titel={`${frei.titel} erklären`} testid="ablauf-erklaeren">
+      <div data-testid="erklaeren-frei">
+        <p className="text-[13px] font-semibold text-ink-2">Das steht heute an</p>
+        {frei.punkte.length ? (
+          <ul className="mt-1 grid list-disc gap-0.5 pl-5 text-[17px] leading-relaxed">
+            {frei.punkte.map((x) => (
+              <li key={x}>{x}</li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-0.5 text-[17px] leading-relaxed whitespace-pre-line">{frei.text || "Der Stoff von den Fotos."}</p>
+        )}
+        {frei.umfang && <p className="mt-1 text-[15px] text-ink-2">{frei.umfang}</p>}
+      </div>
+      {frei.materialIds.length > 0 && (
+        <div className="flex flex-wrap gap-x-5">
+          {frei.materialIds.map((id, i) => (
+            <a key={id} href={`/material/${id}/datei`} target="_blank" rel="noreferrer" className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+              <Eye size={15} aria-hidden /> Foto {i + 1} ansehen
+            </a>
+          ))}
+        </div>
+      )}
+      <p className="text-[15px] leading-relaxed text-ink-2">
+        Dazu hat die App keinen eigenen Erklärtext. Erkläre mit dem Buch oder dem Heft von {name}; am Whiteboard könnt ihr gemeinsam zeichnen und schreiben.
+      </p>
+      <Gross action={stufeAction.bind(null, unit.id, "ueben")} icon={<ArrowRight size={19} aria-hidden />} testid="weiter-ueben">
+        Erklärt: weiter zum Üben
+      </Gross>
+      <div className="flex justify-center">
+        <Link href={`/tafel/${unit.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="frei-tafel">
+          <PenLine size={15} aria-hidden /> Whiteboard öffnen
+        </Link>
+      </div>
+    </Karte>
+  );
+}
+
+/**
+ * „Üben“ zu einem Thema ohne Fähigkeit: die App hat dazu keine Aufgaben, also bietet sie an, was ohne geht. Ein Text am Tablet
+ * oder auf Papier (zusammenfassen in eigenen Worten) ist der große Knopf, daneben das Whiteboard; dann die Hausübung.
+ */
+function FreiUeben({ unit, name, frei, text }: { unit: UnitView; name: string; frei: FreiesThema; text: TextFehler | null }) {
+  const cls = "treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline";
+  return (
+    <Karte titel={`Üben: ${frei.titel}`} testid="ablauf-ueben">
+      <p className="text-[16px] leading-relaxed text-ink-2" data-testid="ueben-frei">
+        Zu diesem Thema hat die App keine eigenen Aufgaben. So kann {name} trotzdem üben: das Gelernte in eigenen Worten aufschreiben, am Tablet oder auf Papier.
+      </p>
+      {text ? (
+        <Link href={`/texte/${text.textId}/korrektur`} className="btn btn-primary btn-lg w-full !text-[17px]" data-testid="frei-text-ansehen">
+          <Eye size={19} aria-hidden /> Text von {name} ansehen: {text.titel}
+        </Link>
+      ) : (
+        <Link href={`/einheiten/${unit.id}/text?thema=${encodeURIComponent(frei.titel)}`} className="btn btn-primary btn-lg w-full !text-[17px]" data-testid="frei-text">
+          <PenLine size={19} aria-hidden /> {name} schreibt eine Zusammenfassung
+        </Link>
+      )}
+      <div className="flex flex-wrap justify-center gap-x-6">
+        <Link href={`/tafel/${unit.id}`} className={cls} data-testid="frei-tafel">
+          Gemeinsam am Whiteboard
+        </Link>
+        <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
+          Fertig geübt: weiter zur Hausübung
+        </Klein>
+      </div>
     </Karte>
   );
 }
@@ -692,6 +794,9 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   const papier = gedruckteUebung(unit.id);
   if (papier) return <PapierKarte unit={unit} name={name} papier={papier} />;
   const n = naechsteUebung(a, k?.auswertung ?? null, u.einzeln);
+  // ein Thema ohne Fähigkeit (Nebenfach ohne KI): keine Aufgaben der App, aber ein Weg weiter
+  const frei = n ? null : freiesThema(unit.id);
+  if (frei && a.weg === "neu") return <FreiUeben unit={unit} name={name} frei={frei} text={textFehler(unit.id)} />;
   // Deutsch, Englisch: ein Text von heute geht vor (fotografieren, korrigieren, dann Aufgaben zu seinen Fehlern)
   if (tf && (tf.leer || tf.korrektur !== "fertig" || tf.skills.some((x) => x.offen))) return <TextKarte unit={unit} tf={tf} name={name} n={n} />;
   // neues Thema mit mehreren Themen: ein Thema, das noch nicht dran war, wird zuerst erklärt
