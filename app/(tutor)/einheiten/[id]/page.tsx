@@ -13,6 +13,8 @@ import { BoardThumbs } from "@/components/BoardThumbs";
 import { Unterricht } from "@/components/cockpit/Ablauf";
 import { AblaufRueckblick } from "@/components/cockpit/Cockpit";
 import { EinheitAktivitaeten } from "@/components/EinheitAktivitaeten";
+import { ZuHauseZeile } from "@/components/ZuHause";
+import { zuHauseGeuebt } from "@/lib/zu-hause";
 import { EinheitKiKosten, KiKostenZeile, kiNeuImLiveHinweis } from "@/components/cockpit/Nachschub";
 import { CopyLink } from "@/components/CopyLink";
 import { Elapsed, Restzeit } from "@/components/Elapsed";
@@ -233,6 +235,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
         {notices}
         {area === "unterricht" ? (
           <>
+            {mayManage && <ZuHauseZeile z={zuHauseGeuebt(student.id, unit.started_at)} vorname={first(student.name)} kompakt />}
             <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={mayManage ? kiNeuImLiveHinweis(unit.id, first(student.name)) : null} />
             <Unterricht unit={unit} student={student} fehler={sp.cockpit} teacherId={teacher.id} werkzeugeOffen={sp.bereich === "cockpit"} werkzeugeMehr={sp.mehr === "1"} ausfuehrlich={sp.ausfuehrlich ? Number(sp.ausfuehrlich) : null} folien={sp.folien ? Number(sp.folien) : null} knopf={sp.knopf ?? null} />
             {mayManage && (
@@ -485,6 +488,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
               )}
               {hatInhalt(notiz) && <SchuelerNotizAnzeige notiz={notiz} name={first(student.name)} />}
               <EinheitAktivitaeten unitId={unit.id} vorname={first(student.name)} />
+              <ZuHauseZeile z={zuHauseGeuebt(student.id, unit.started_at)} vorname={first(student.name)} />
               {lesson && <EinschaetzungKarte e={einschaetzung} lesson={lesson} auto={auto} />}
               {brief && lesson && <BriefSection brief={brief} lesson={lesson} mayManage={mayManage} />}
               {lesson && (
