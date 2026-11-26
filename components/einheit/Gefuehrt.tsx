@@ -1,7 +1,20 @@
 import Link from "next/link";
-import { ArrowRight, Camera, Check, PenLine, Printer, Send, Wrench } from "lucide-react";
-import { ansichtAction, kurztestFertigAction, stoffFertigAction, stufeAction, themaAction, uebenAction, wegAction } from "@/app/ablauf-actions";
+import { ArrowLeft, ArrowRight, Camera, Check, Eye, Loader2, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
+import {
+  ansichtAction,
+  kurztestFertigAction,
+  schrittAction,
+  stoffFertigAction,
+  stoffNochmalAction,
+  stoffUebernehmenAction,
+  stoffVerwerfenAction,
+  stufeAction,
+  themaAction,
+  uebenAction,
+  wegAction,
+} from "@/app/ablauf-actions";
 import { minitestAction } from "@/app/minitest-actions";
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { endUnitAction } from "@/app/session-actions";
 import { LangText, TextSchreibenLink } from "@/components/cockpit/Ablauf";
 import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
@@ -10,9 +23,27 @@ import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
 import { VorgabeForm } from "@/components/cockpit/VorgabeForm";
 import { EinheitBeenden } from "@/components/EinheitBeenden";
 import { FormKnopf } from "@/components/FormKnopf";
+import { StoffpaketForm } from "@/components/StoffpaketForm";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
-import { cockpit, planFuehrung, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
-import { STUFE_LABEL, kurztestStand, leseAblauf, naechsteUebung, stufenFuer, uebenStand, type Ablauf, type Auswertung, type Stufe } from "@/lib/einheit-ablauf";
+import { cockpit, FRAGE_ARTEN, planFuehrung, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
+import {
+  STUFE_LABEL,
+  erklaerPaket,
+  erklaerSchritte,
+  kurztestStand,
+  leseAblauf,
+  naechsteUebung,
+  offenesStoffBlatt,
+  stoffpaketDerEinheit,
+  stufenFuer,
+  uebenStand,
+  type Ablauf,
+  type Auswertung,
+  type Stufe,
+} from "@/lib/einheit-ablauf";
+import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
+import { getPraesEntwurf } from "@/lib/praesentation-ki";
+import { kostenSchaetzung, stoffpaketMoeglich, vorschlagFach, type Stoffpaket } from "@/lib/stoffpaket";
 import { dayOf } from "@/lib/exams";
 import { keinNameBestaetigt } from "@/lib/kein-name";
 import { studentDevice } from "@/lib/live";
@@ -34,7 +65,7 @@ const SCHREIB_FAECHER = new Set(["Deutsch", "Englisch"]);
  *   Start ─┬─ Weiter mit dem Stoff vom letzten Mal → Kurztest → Üben → Hausübung
  *          └─ Neues Thema → Stoff (Fotos) → Erklären (Sprechtext, Präsentation, Fragen) → Üben → Hausübung
  */
-export async function Gefuehrt({ unit, student, folien }: { unit: UnitView; student: repo.Student; folien: number | null }) {
+export async function Gefuehrt({ unit, student, folien, stoffHand = false }: { unit: UnitView; student: repo.Student; folien: number | null; stoffHand?: boolean }) {
   const a = leseAblauf(unit.id);
   const name = first(student.name);
   const stufen = stufenFuer(a.weg);
@@ -71,7 +102,7 @@ export async function Gefuehrt({ unit, student, folien }: { unit: UnitView; stud
 
       {a.stufe === "start" && <StartKarte unit={unit} name={name} />}
       {a.stufe === "kurztest" && <KurztestKarte unit={unit} a={a} name={name} />}
-      {a.stufe === "stoff" && <StoffKarte unit={unit} name={name} />}
+      {a.stufe === "stoff" && <StoffKarte unit={unit} student={student} name={name} hand={stoffHand} />}
       {a.stufe === "erklaeren" && <ErklaerenKarte unit={unit} a={a} name={name} folien={folien} />}
       {a.stufe === "ueben" && <UebenKarte unit={unit} a={a} name={name} />}
       {a.stufe === "schluss" && <SchlussKarte unit={unit} name={name} />}
@@ -294,9 +325,62 @@ function KurztestKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: str
 
 // ---------- Stoff ----------
 
-/** Die Fotos vom Stoff (Stoffzettel, Buch, Heft) über „Was steht heute an?“ (lib/vorgabe.ts); danach die erkannten Themen. */
-function StoffKarte({ unit, name }: { unit: UnitView; name: string }) {
+/** So entsteht im geführten Ablauf alles aus den Fotos: Präsentation mit Sprechtext und Fragen, Übungsblatt, Lernzettel. */
+const STOFF_TEILE_GEFUEHRT = ["praesentation", "uebung", "lernzettel"];
+
+/**
+ * Der Stoff von heute. Mit KI (der Normalfall): Fotos vom Buch, Heft oder Stoffzettel, ein Knopf, und „Stoff vorbereiten“
+ * (lib/stoffpaket.ts) macht daraus in einem Lauf die Präsentation mit Sprechtext und kurzen Fragen zum Mitkommen und ein
+ * Übungsblatt fürs Tablet; danach „Übernehmen und erklären“. Ohne KI, oder wenn der Lehrer nur das Thema eintragen will
+ * (`hand`): „Was steht heute an?“ (lib/vorgabe.ts), dann erklärt die App mit ihrem eigenen Erklärtext.
+ */
+function StoffKarte({ unit, student, name, hand }: { unit: UnitView; student: repo.Student; name: string; hand: boolean }) {
+  const p = stoffpaketDerEinheit(unit.id);
+  if (p && !hand && p.status !== "uebernommen") return <StoffpaketKarte unit={unit} p={p} name={name} />;
+  if (p?.status === "uebernommen" && !hand) {
+    return (
+      <Karte titel={`Heute: ${p.thema || "der Stoff von den Fotos"}`} testid="ablauf-stoff">
+        <p className="text-[16px] leading-relaxed text-ink-2">Präsentation, Sprechtext und Übungsblatt sind fertig.</p>
+        <Gross action={stufeAction.bind(null, unit.id, "erklaeren")} icon={<ArrowRight size={19} aria-hidden />} testid="stoff-fertig">
+          Weiter: erklären
+        </Gross>
+        <Klein action={stoffVerwerfenAction.bind(null, unit.id)} testid="stoff-anderer">
+          <Camera size={15} aria-hidden /> Anderen Stoff fotografieren
+        </Klein>
+      </Karte>
+    );
+  }
+  const geht = stoffpaketMoeglich({ studentId: student.id, dateien: 1 });
   const v = vorgabeDerEinheit(unit.id);
+  // „nur das Thema eintragen“ ist schon geschehen: dann gilt das, nicht noch einmal das Formular für die Fotos
+  if (geht.ok && !hand && !v) {
+    const fach = unit.subject || vorschlagFach(student);
+    return (
+      <Karte titel="Stoff abfotografieren" testid="ablauf-stoff">
+        <p className="text-[16px] leading-relaxed text-ink-2">
+          Buchseiten, Seiten im Heft oder den Stoffzettel. Daraus entsteht eine Präsentation, die das Thema erklärt, mit Sprechtext für dich und kurzen Fragen, ob {name} mitkommt, dazu ein Übungsblatt fürs Tablet.
+        </p>
+        <StoffpaketForm
+          studentId={student.id}
+          unitId={unit.id}
+          faecher={[fach]}
+          fach={fach}
+          keinNameBestaetigt={keinNameBestaetigt(unit)}
+          kosten={kostenSchaetzung()}
+          gesperrt={null}
+          material={materialZurWahl(unit.student_id)
+            .slice(0, 12)
+            .map(({ id, titel, art, datum }) => ({ id, titel, art, datum }))}
+          einfach={{ teile: STOFF_TEILE_GEFUEHRT, knopf: "Präsentation und Übungen erstellen", textTitel: `Oder kurz: was muss ${name} lernen?`, platzhalter: "z. B. Brüche kürzen, Seite 45 bis 48" }}
+        />
+        <div className="flex justify-center">
+          <Link href={`/einheiten/${unit.id}?stoff=hand`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="stoff-hand">
+            Ohne Präsentation: nur das Thema eintragen
+          </Link>
+        </div>
+      </Karte>
+    );
+  }
   if (!v) {
     const heute = dayOf(new Date());
     const tests = repo
@@ -308,6 +392,13 @@ function StoffKarte({ unit, name }: { unit: UnitView; name: string }) {
       <Karte titel="Stoff abfotografieren" testid="ablauf-stoff">
         <p className="text-[16px] leading-relaxed text-ink-2">Stoffzettel, Buchseiten oder Seiten im Heft. Oder kurz hineinschreiben, was {name} lernen muss.</p>
         <VorgabeForm unitId={unit.id} tests={tests} material={material} kiLiest={aiEnabled("stoffzettel") && aiReadsImages("stoffzettel")} keinNameBestaetigt={keinNameBestaetigt(unit)} />
+        {hand && geht.ok && (
+          <div className="flex justify-center">
+            <Link href={`/einheiten/${unit.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+              <Sparkles size={15} aria-hidden /> Doch mit Präsentation aus den Fotos
+            </Link>
+          </div>
+        )}
       </Karte>
     );
   }
@@ -326,6 +417,87 @@ function StoffKarte({ unit, name }: { unit: UnitView; name: string }) {
       ) : (
         <p className="text-[15px] text-ink-2">Noch kein Thema sicher erkannt. Oben bestätigen, welches gemeint ist, oder kurz dazuschreiben.</p>
       )}
+    </Karte>
+  );
+}
+
+/** „Stoff vorbereiten“ in der Einheit: läuft (die Seite lädt sich neu), ging nicht (noch einmal), oder fertig (übernehmen). */
+function StoffpaketKarte({ unit, p, name }: { unit: UnitView; p: Stoffpaket; name: string }) {
+  const ansehen = (
+    <Link href={`/schueler/${p.student_id}/stoff/${p.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="stoff-ansehen">
+      <Eye size={15} aria-hidden /> Alles genau ansehen
+    </Link>
+  );
+  if (p.status === "laeuft") {
+    return (
+      <Karte titel="Präsentation und Übungen werden erstellt" testid="ablauf-stoff">
+        <AutoRefresh seconds={4} />
+        <p className="flex items-center gap-3 text-[17px] font-semibold" aria-live="polite" data-testid="stoff-laeuft">
+          <Loader2 size={20} className="animate-spin text-accent" aria-hidden /> {p.schritt || "Unterlagen lesen"} …
+        </p>
+        <p className="text-[15px] leading-relaxed text-ink-2">Das dauert meist 2 bis 5 Minuten. Inzwischen kann {name} schon im Buch lesen oder du erklärst mit den Fotos. Die Seite zeigt von selbst, wenn es fertig ist.</p>
+      </Karte>
+    );
+  }
+  if (p.status === "fehler") {
+    return (
+      <Karte titel="Das hat nicht geklappt" testid="ablauf-stoff">
+        <p className="text-[16px] text-ink-2">{p.fehler || "Das Erstellen ging nicht."}</p>
+        <Gross action={stoffNochmalAction.bind(null, unit.id)} icon={<RotateCcw size={19} aria-hidden />} testid="stoff-nochmal">
+          Noch einmal mit denselben Fotos
+        </Gross>
+        <div className="flex flex-wrap justify-center gap-x-6">
+          <Klein action={stoffVerwerfenAction.bind(null, unit.id)}>
+            <Camera size={15} aria-hidden /> Andere Fotos
+          </Klein>
+          <Link href={`/einheiten/${unit.id}?stoff=hand`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+            Ohne Präsentation weiter
+          </Link>
+        </div>
+      </Karte>
+    );
+  }
+  const entwurf = p.praes_entwurf_id ? getPraesEntwurf(p.praes_entwurf_id) : null;
+  const folien = entwurf?.deck.folien.length ?? 0;
+  const paket = p.paket_id ? getLernpaket(p.paket_id) : null;
+  const fragen = paket ? erklaerSchritte(paket).filter((s) => s.lehrer_fragt.trim()).length : 0;
+  const aufgaben = p.uebung_id ? repo.listTasks(p.uebung_id).length : 0;
+  const teile = [
+    folien ? `Präsentation mit ${folien} Folien` : null,
+    paket ? `Sprechtext für dich${fragen ? ` und ${fragen} kurze Fragen, ob ${name} mitkommt` : ""}` : null,
+    aufgaben ? `Übungsblatt mit ${aufgaben} Aufgaben fürs Tablet` : null,
+    p.lernzettel ? `Lernzettel in der App von ${name}` : null,
+  ].filter((x): x is string => Boolean(x));
+  return (
+    <Karte titel={`Fertig: ${p.thema || "der Stoff"}`} testid="ablauf-stoff">
+      <ul className="grid gap-1.5 text-[16px]">
+        {teile.map((t) => (
+          <li key={t} className="flex items-start gap-2">
+            <Check size={18} className="mt-0.5 shrink-0 text-green" aria-hidden /> {t}
+          </li>
+        ))}
+      </ul>
+      {(p.unsicher.length > 0 || p.weggelassen.length > 0) && (
+        <div className="grid gap-1 rounded-xl bg-amber-wash px-4 py-3 text-[14.5px]" data-testid="stoff-pruefen">
+          <p className="flex items-center gap-2 font-semibold">
+            <ShieldAlert size={16} aria-hidden /> Kurz prüfen
+          </p>
+          <ul className="grid list-disc gap-0.5 pl-5">
+            {[...p.unsicher, ...p.weggelassen].slice(0, 4).map((u, i) => (
+              <li key={i}>{u}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <Gross action={stoffUebernehmenAction.bind(null, unit.id)} icon={<ArrowRight size={19} aria-hidden />} testid="stoff-uebernehmen">
+        Übernehmen und erklären
+      </Gross>
+      <div className="flex flex-wrap justify-center gap-x-6">
+        {ansehen}
+        <Klein action={stoffVerwerfenAction.bind(null, unit.id)}>
+          <Camera size={15} aria-hidden /> Andere Fotos
+        </Klein>
+      </div>
     </Karte>
   );
 }
@@ -349,6 +521,8 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
       </Karte>
     );
   }
+  const paket = erklaerPaket(unit.id);
+  if (paket) return <PaketErklaeren unit={unit} a={a} name={name} folien={folien} paket={paket} thema={thema} />;
   const c = cockpit(unit.id, { mitPlan: true });
   const schritt = erklaerSchritt(c, thema);
   const f = planFuehrung(unit.id, schritt ?? { id: 0, uebung: null, skillId: thema, art: "erklaeren" });
@@ -405,6 +579,77 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
   );
 }
 
+/**
+ * „Erklären“ mit dem Lernpaket aus den Fotos von heute: ein Schritt nach dem anderen, je Schritt die Folie der Präsentation, „Das
+ * sagst du“ und, wo es eine gibt, die Frage mit der erwarteten Antwort und Richtig / Teilweise / Falsch. „Weiter“ geht zum
+ * nächsten Schritt, am Ende gehen die Übungen ans Tablet (zuerst das Übungsblatt aus dem Stoff).
+ */
+function PaketErklaeren({ unit, a, name, folien, paket, thema }: { unit: UnitView; a: Ablauf; name: string; folien: number | null; paket: LernpaketMitSchritten; thema: string }) {
+  const schritte = erklaerSchritte(paket);
+  const i = Math.max(0, schritte.findIndex((s) => s.id === a.schrittId));
+  const s = schritte[i];
+  const c = cockpit(unit.id);
+  const letzter = i === schritte.length - 1;
+  const frage = s.lehrer_fragt.trim();
+  const antwort = s.erwartete_antwort.trim();
+  const knoepfe = FRAGE_ARTEN.includes(s.art) && Boolean(frage || antwort);
+  const blatt = offenesStoffBlatt(unit.id);
+  const senden = (
+    <>
+      <Gross action={uebenAction.bind(null, unit.id, thema)} icon={<Send size={19} aria-hidden />} testid="ueben-senden">
+        Verstanden: Übungen ans Tablet senden
+      </Gross>
+      <Leise>{blatt ? `Das Übungsblatt aus den Fotos, ${repo.listTasks(blatt).length} Aufgaben.` : `Neue Aufgaben, passend zum Lernstand von ${name}.`}</Leise>
+    </>
+  );
+  return (
+    <Karte titel={`${paket.title} erklären`} testid="ablauf-erklaeren">
+      <p className="-mt-2 text-[14.5px] text-ink-2" data-testid="erklaeren-schritt">
+        Schritt <span className="num">{i + 1}</span> von <span className="num">{schritte.length}</span>: {s.titel}
+      </p>
+      <PraesentationSchritt c={c} unitId={unit.id} schrittId={s.id} folienOffen={folien === s.id} titel="Präsentation" />
+      {s.lehrer_sagt.trim() && (
+        <div>
+          <p className="text-[13px] font-semibold text-ink-2">Das sagst du</p>
+          <div className="mt-0.5">
+            <LangText text={s.lehrer_sagt} />
+          </div>
+        </div>
+      )}
+      {(frage || antwort) && (
+        <div className="rounded-xl bg-accent-wash px-4 py-3" data-testid="abruf-frage">
+          <p className="text-[13px] font-semibold text-accent">Kurz fragen: kommt {name} mit?</p>
+          {frage && <p className="mt-0.5 text-[18px] leading-relaxed whitespace-pre-line">{frage}</p>}
+          {antwort && (
+            <p className="mt-1 text-[15px] whitespace-pre-line text-ink-2">
+              <span className="font-semibold text-green">Erwartet: </span>
+              {antwort}
+            </p>
+          )}
+          {knoepfe && <AntwortKnoepfe unitId={unit.id} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} />}
+        </div>
+      )}
+      {letzter ? (
+        senden
+      ) : (
+        <>
+          <Gross action={schrittAction.bind(null, unit.id, schritte[i + 1].id)} icon={<ArrowRight size={19} aria-hidden />} testid="schritt-weiter">
+            Weiter: {schritte[i + 1].titel}
+          </Gross>
+          <Klein action={uebenAction.bind(null, unit.id, thema)} testid="ueben-senden">
+            <Send size={15} aria-hidden /> Schon verstanden: gleich üben
+          </Klein>
+        </>
+      )}
+      {i > 0 && (
+        <Klein action={schrittAction.bind(null, unit.id, schritte[i - 1].id)} testid="schritt-zurueck">
+          <ArrowLeft size={15} aria-hidden /> Zurück
+        </Klein>
+      )}
+    </Karte>
+  );
+}
+
 // ---------- Üben ----------
 
 function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string }) {
@@ -434,9 +679,10 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   }
   const n = naechsteUebung(a, k?.auswertung ?? null, u.einzeln);
   // neues Thema mit mehreren Themen: ein Thema, das noch nicht dran war, wird zuerst erklärt
-  const erklaeren = a.weg === "neu" && n?.art === "neu" && n.skillId !== a.aktuell;
+  const blatt = offenesStoffBlatt(unit.id);
+  const erklaeren = a.weg === "neu" && n?.art === "neu" && n.skillId !== a.aktuell && !blatt && !erklaerPaket(unit.id);
   const genug = u.gesamt.fertig > 0 && n?.art === "nochmal";
-  const sendenText = !n ? "" : n.art === "fehler" ? `Aufgaben zu den Fehlern bei „${skillName(n.skillId)}“ senden` : n.art === "neu" ? `Übungen zu „${skillName(n.skillId)}“ senden` : `Weitere Übung zu „${skillName(n.skillId)}“ senden`;
+  const sendenText = !n ? "" : blatt && n.art !== "fehler" ? "Übungsblatt aus dem Stoff ans Tablet senden" : n.art === "fehler" ? `Aufgaben zu den Fehlern bei „${skillName(n.skillId)}“ senden` : n.art === "neu" ? `Übungen zu „${skillName(n.skillId)}“ senden` : `Weitere Übung zu „${skillName(n.skillId)}“ senden`;
   return (
     <Karte titel={u.gesamt.aufgaben ? `Üben: ${u.gesamt.richtig} von ${u.gesamt.fertig} richtig` : "Üben am Tablet"} testid="ablauf-ueben">
       {u.gesamt.aufgaben > 0 && <Ergebnis e={u.gesamt} laeuft={false} />}

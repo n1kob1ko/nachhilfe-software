@@ -11,6 +11,7 @@ import { WEAK, STRONG, parseTime } from "./analysis";
 import { localStamp } from "./autodoc";
 import { KRITERIUM_KEYS, KRITERIUM_KURZ } from "./bewertung-kriterien";
 import { dokumentiereAblauf } from "./cockpit";
+import { dokumentiereGefuehrt } from "./einheit-ablauf";
 import { aktivitaetenDerEinheit, aktivitaetZeile, type Aktivitaet } from "./einheit-aktivitaeten";
 import { db, json } from "./db";
 import { autoFelderVon, dokumentiereAutomatisch } from "./einschaetzung";
@@ -433,6 +434,8 @@ export function endUnit(unitId: number, opts: FinishOptions = {}): number | null
   const lessonId = writeLearningDoc(unit, at);
   // the Cockpit's facts: which steps of the Lernpaket were done, skipped or not reached (lib/cockpit.ts)
   dokumentiereAblauf(lessonId, unitId);
+  // the guided flow: which topic was explained with the presentation of today's Stoff, and how the questions went
+  dokumentiereGefuehrt(lessonId, unitId);
   // one KI summary of the whole unit, in the background; pending live analyses are dropped
   onUnitEnd({ unitId, teacherId: unit.teacher_id, lessonId });
   return lessonId;
