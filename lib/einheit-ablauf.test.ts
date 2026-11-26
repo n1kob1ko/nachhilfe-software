@@ -120,3 +120,63 @@ test("the guided flow: new unit starts guided; weiter → Kurztest, neu → Stof
   await sendeAusGenerator(alt.id, "mathe.brueche.kuerzen", teacher.id);
   assert.equal(ab.zeigtGefuehrt(alt.id), false);
 });
+
+test("skillAusStelle: the skill of a teacher's correction from the place itself (Groß/klein, das/dass, s/ss/ß, getrennt/zusammen, Beistrich)", async () => {
+  const { skillAusStelle } = await import("./einheit-ablauf");
+  const r = (quote: string, replacement: string, category = "rechtschreibung") => skillAusStelle({ quote, replacement, category });
+  assert.equal(r("schule", "Schule"), "deutsch.recht.gross");
+  assert.equal(r("das", "dass"), "deutsch.recht.dasdass");
+  assert.equal(r("weis", "weiß"), "deutsch.recht.sss");
+  assert.equal(r("Strasse", "Straße"), "deutsch.recht.sss");
+  assert.equal(r("irgend wann", "irgendwann"), "deutsch.recht.getrennt-zusammen");
+  assert.equal(r("regnet weil", "regnet, weil", "zeichensetzung"), "deutsch.beistrich.nebensatz");
+  assert.equal(r("ging", "gegangen", "grammatik"), null);
+  assert.equal(r("schön", "toll", "ausdruck"), null);
+});
+
+test("textFehler: a text of the unit → photograph, correct, then exercises on its errors, one skill after the other", async () => {
+  const repo = await import("./repo");
+  const units = await import("./units");
+  const ab = await import("./einheit-ablauf");
+  const texts = await import("./texts");
+  const tc = await import("./text-correction");
+  const { docFromText } = await import("./text-doc");
+  const { sendeAusGenerator } = await import("./cockpit");
+  const teacher = repo.listTeachers()[0];
+  const sid = repo.createStudent({
+    name: "Ida Schreiber", grade: 7, klasse: 3, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Deutsch"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  const unit = units.startUnit(teacher.id, sid, { subject: "Deutsch" }).unit;
+  assert.equal(ab.textFehler(unit.id), null);
+
+  // written on paper: nothing in it yet
+  const t = texts.createText({ studentId: sid, teacherId: teacher.id, unitId: unit.id, subject: "Deutsch", topic: "", title: "Mein Wochenende", prompt: "" });
+  assert.deepEqual([ab.textFehler(unit.id)?.leer, ab.textFehler(unit.id)?.korrektur], [true, "keine"]);
+  // taken over from the photos
+  const satz = "Ich weis das es regnet und gehe in die schule.";
+  texts.saveFromPaper(t.id, docFromText(satz));
+  const nachher = ab.textFehler(unit.id)!;
+  assert.deepEqual([nachher.leer, nachher.korrektur], [false, "keine"]);
+  // the correction page was opened, nothing marked yet: still „korrigieren“
+  const c = tc.ensureCorrection(t.id, teacher.id, unit.id);
+  assert.equal(ab.textFehler(unit.id)!.korrektur, "keine");
+  const stelle = (wort: string, neu: string) => {
+    const start = satz.indexOf(wort);
+    const out = tc.addTeacherItem(c.id, { block: 0, start, end: start + wort.length, category: "rechtschreibung", kind: "fehler", replacement: neu, explanation: "" }, teacher.id);
+    assert.ok("item" in out, JSON.stringify(out));
+  };
+  stelle("weis", "weiß");
+  stelle("das", "dass");
+  stelle("schule", "Schule");
+  const f = ab.textFehler(unit.id)!;
+  assert.equal(f.korrektur, "fertig");
+  assert.equal(f.fehler, 3);
+  assert.deepEqual(f.bereiche, [{ label: "Rechtschreibung", anzahl: 3 }]);
+  assert.deepEqual(f.skills.map((x) => [x.skillId, x.offen]), [["deutsch.recht.sss", true], ["deutsch.recht.dasdass", true], ["deutsch.recht.gross", true]]);
+
+  // an exercise on one of them: that one is done, the next is offered
+  const out = await sendeAusGenerator(unit.id, "deutsch.recht.sss", teacher.id);
+  assert.ok(!("fehler" in out), JSON.stringify(out));
+  assert.deepEqual(ab.textFehler(unit.id)!.skills.map((x) => x.offen), [false, true, true]);
+});

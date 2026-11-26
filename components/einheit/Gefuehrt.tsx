@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ArrowRight, Camera, Check, Eye, Loader2, PenLine, Printer, RotateCcw, Send, ShieldAlert, Sparkles, Wrench } from "lucide-react";
 import {
   ansichtAction,
+  textFehlerAction,
   kurztestFertigAction,
   schrittAction,
   stoffFertigAction,
@@ -16,7 +17,7 @@ import {
 import { minitestAction } from "@/app/minitest-actions";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { endUnitAction } from "@/app/session-actions";
-import { LangText, TextSchreibenLink } from "@/components/cockpit/Ablauf";
+import { LangText } from "@/components/cockpit/Ablauf";
 import { PraesentationSchritt } from "@/components/cockpit/PraesentationSchritt";
 import { AntwortKnoepfe } from "@/components/cockpit/Steuerung";
 import { VorgabeKarte } from "@/components/cockpit/Vorgabe";
@@ -36,10 +37,12 @@ import {
   offenesStoffBlatt,
   stoffpaketDerEinheit,
   stufenFuer,
+  textFehler,
   uebenStand,
   type Ablauf,
   type Auswertung,
   type Stufe,
+  type TextFehler,
 } from "@/lib/einheit-ablauf";
 import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
 import { getPraesEntwurf } from "@/lib/praesentation-ki";
@@ -656,11 +659,8 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
   const u = uebenStand(unit.id);
   const k = kurztestStand(unit.id);
   const schreiben = SCHREIB_FAECHER.has(unit.subject ?? "");
-  const textLink = schreiben ? (
-    <div className="flex justify-center">
-      <TextSchreibenLink unitId={unit.id} />
-    </div>
-  ) : null;
+  const tf = schreiben ? textFehler(unit.id) : null;
+  const textLink = schreiben ? <TextZeile unitId={unit.id} tf={tf} /> : null;
   // a running exercise: its progress is the whole card; the next button comes when it is done
   if (u.letzte && !u.letzte.fertig) {
     return (
@@ -678,6 +678,8 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
     );
   }
   const n = naechsteUebung(a, k?.auswertung ?? null, u.einzeln);
+  // Deutsch, Englisch: ein Text von heute geht vor (fotografieren, korrigieren, dann Aufgaben zu seinen Fehlern)
+  if (tf && (tf.leer || tf.korrektur !== "fertig" || tf.skills.some((x) => x.offen))) return <TextKarte unit={unit} tf={tf} name={name} n={n} />;
   // neues Thema mit mehreren Themen: ein Thema, das noch nicht dran war, wird zuerst erklärt
   const blatt = offenesStoffBlatt(unit.id);
   const erklaeren = a.weg === "neu" && n?.art === "neu" && n.skillId !== a.aktuell && !blatt && !erklaerPaket(unit.id);
@@ -731,6 +733,106 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
       )}
       {textLink}
     </Karte>
+  );
+}
+
+/**
+ * Der Text von heute in Deutsch und Englisch, als eigene Karte, solange er etwas braucht (niko, 26.11.2026: „mit der Hand
+ * schreiben, abfotografieren, korrigieren, dann zu den Fehlern die Übungen“): auf Papier geschrieben, dann fotografieren;
+ * dann korrigieren; während die KI korrigiert, warten; dann Aufgaben zu den Fehlern ans Tablet, eine Fähigkeit nach der anderen.
+ */
+function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name: string; n: ReturnType<typeof naechsteUebung> }) {
+  const link = "btn btn-primary btn-lg w-full !text-[17px]";
+  const nebenbei = (
+    <div className="flex flex-wrap justify-center gap-x-6">
+      {n && (
+        <Klein action={uebenAction.bind(null, unit.id, n.skillId)} testid="ueben-senden">
+          Lieber Übungen zu „{skillName(n.skillId)}“
+        </Klein>
+      )}
+      <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
+        Weiter zur Hausübung
+      </Klein>
+    </div>
+  );
+  if (tf.leer) {
+    return (
+      <Karte titel={`Text von heute: ${tf.titel}`} testid="ablauf-text">
+        <p className="text-[16px] leading-relaxed text-ink-2">Schreibt {name} auf Papier: wenn der Text fertig ist, die Seiten fotografieren. Die App liest die Handschrift wörtlich, du prüfst kurz. Am Tablet geschrieben kommt der Text von selbst.</p>
+        <Link href={`/texte/${tf.textId}/papier`} className={link} data-testid="text-fotografieren">
+          <Camera size={19} aria-hidden /> Text fotografieren
+        </Link>
+        {nebenbei}
+      </Karte>
+    );
+  }
+  if (tf.korrektur === "keine") {
+    return (
+      <Karte titel={`Text von heute: ${tf.titel}`} testid="ablauf-text">
+        <p className="text-[16px] leading-relaxed text-ink-2">Wenn {name} fertig ist: korrigieren. Die KI markiert Rechtschreibung, Grammatik, Beistriche und Ausdruck, du entscheidest. Danach kommen hier Aufgaben zu den Fehlern.</p>
+        <Link href={`/texte/${tf.textId}/korrektur`} className={link} data-testid="text-korrigieren">
+          <Check size={19} aria-hidden /> Text korrigieren
+        </Link>
+        {nebenbei}
+      </Karte>
+    );
+  }
+  if (tf.korrektur === "laeuft") {
+    return (
+      <Karte titel="Der Text wird korrigiert" testid="ablauf-text">
+        <AutoRefresh seconds={5} />
+        <p className="flex items-center gap-3 text-[17px] font-semibold" aria-live="polite">
+          <Loader2 size={20} className="animate-spin text-accent" aria-hidden /> {tf.titel} …
+        </p>
+        <p className="text-[15px] text-ink-2">Das dauert ein bis zwei Minuten. Danach kommen hier die Aufgaben zu den Fehlern.</p>
+        {nebenbei}
+      </Karte>
+    );
+  }
+  const offen = tf.skills.find((x) => x.offen)!;
+  return (
+    <Karte titel={`Text von heute: ${tf.fehler} ${tf.fehler === 1 ? "Fehler" : "Fehler"}`} testid="ablauf-text">
+      {tf.bereiche.length > 0 && (
+        <ul className="grid divide-y divide-line border-y border-line" data-testid="text-bereiche">
+          {tf.bereiche.slice(0, 5).map((b) => (
+            <li key={b.label} className="flex justify-between gap-4 py-2 text-[15px]">
+              <span>{b.label}</span>
+              <span className="num font-semibold text-red">{b.anzahl}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Gross action={textFehlerAction.bind(null, unit.id, offen.skillId)} icon={<Send size={19} aria-hidden />} testid="text-fehler-senden">
+        Aufgaben zu den Fehlern im Text senden: {offen.name}
+      </Gross>
+      <Leise>Neue Aufgaben genau dazu, am Tablet, passend zum Lernstand von {name}.</Leise>
+      <div className="flex flex-wrap justify-center gap-x-6">
+        <Link href={`/texte/${tf.textId}/korrektur`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+          <Eye size={15} aria-hidden /> Korrektur ansehen
+        </Link>
+        <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
+          Weiter zur Hausübung
+        </Klein>
+      </div>
+    </Karte>
+  );
+}
+
+/** Unter Üben in Deutsch und Englisch: einen Text schreiben lassen (Tablet oder Papier), oder die Korrektur des Texts von heute. */
+function TextZeile({ unitId, tf }: { unitId: number; tf: TextFehler | null }) {
+  const cls = "treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline";
+  return (
+    <div className="flex justify-center">
+      {tf ? (
+        <Link href={`/texte/${tf.textId}/korrektur`} className={cls}>
+          <Eye size={15} aria-hidden /> Korrektur von „{tf.titel}“
+        </Link>
+      ) : (
+        <Link href={`/einheiten/${unitId}/text`} className={cls} data-testid="text-schreiben">
+          <PenLine size={15} aria-hidden /> Text schreiben lassen, am Tablet oder auf Papier
+        </Link>
+      )}
+    </div>
   );
 }
 
