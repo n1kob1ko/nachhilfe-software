@@ -27,6 +27,7 @@ import { aufgabeSchluessel, ausgeblendet, ohneAusgeblendete } from "./bewertunge
 import { generatorSeed, gleicheFrage, knopfBeispielFragen, skillsDesPlans, skillsNichtVerstanden } from "./cockpit";
 import { DIFFICULTIES, levelOf } from "./curriculum";
 import { db, json } from "./db";
+import { textFehler } from "./einheit-ablauf";
 import { hasBuiltInGenerator } from "./generators";
 import { nachschubTor, schaetzungUsd } from "./ki-nachschub";
 import { alsEntwurf, NUTZBAR_SQL, oberfaehigkeit, passtZurFaehigkeit } from "./material-passt";
@@ -427,6 +428,22 @@ function neuesThema(k: Kontext, env: Umgebung, t: { skillId: string; name: strin
   return { id: t.skillId, skillId: t.skillId, name: t.name, stand: t.stand, grund: t.grund, soll: t.soll, level, aufgaben: kandidaten(env, skill, level, t.soll, schon), weg: [], ki: null };
 }
 
+/**
+ * Deutsch, Englisch: die Fehler im Text von heute (lib/einheit-ablauf.ts `textFehler`), deren Fähigkeit heute nicht geübt wurde,
+ * kommen nach den Ergebnissen dazu („noch nicht sicher: 2 Fehler im Text …“); `auswahl` begrenzt wie immer.
+ */
+export function mitTextFehlern(unitId: number, themen: ThemaErgebnis[]): ThemaErgebnis[] {
+  const tf = textFehler(unitId);
+  if (!tf?.skills.length) return themen;
+  const schon = new Set(themen.map((t) => t.skillId));
+  const dazu = tf.skills
+    .filter((x) => !schon.has(x.skillId))
+    .map((x) => ({ skillId: x.skillId, name: x.name, stand: "teilweise" as const, grund: `${STAND_LABEL.teilweise}: ${x.anzahl} Fehler im Text „${tf.titel}“` }));
+  // vor „gut verstanden“, nach den schwächeren Ergebnissen
+  const gut = themen.findIndex((t) => t.stand === "gut");
+  return gut < 0 ? [...themen, ...dazu] : [...themen.slice(0, gut), ...dazu, ...themen.slice(gut)];
+}
+
 /** Baut den Vorschlag, ohne KI und ohne zu speichern. `ausPlan`: aus den Themen des Plans, wenn noch kein Ergebnis zählt. */
 function baue(k: Kontext, o: { ausPlan?: boolean } = {}): Inhalt {
   const env = umgebung(k.unit.id, k.student, k.tag);
@@ -435,7 +452,7 @@ function baue(k: Kontext, o: { ausPlan?: boolean } = {}): Inhalt {
     ? planThemenVon(k)
         .slice(0, MAX_THEMEN)
         .map((p) => ({ ...p, stand: "plan" as const, grund: STAND_LABEL.plan, soll: ANZAHL.plan }))
-    : auswahl(ergebnisseDerEinheit(k));
+    : auswahl(mitTextFehlern(k.unit.id, ergebnisseDerEinheit(k)));
   const themen = wahl.map((t) => neuesThema(k, env, t, schon));
   const schreiben = schreibThema(k.unit.id, k.fach, k.student);
   if (schreiben) themen.push(schreiben);

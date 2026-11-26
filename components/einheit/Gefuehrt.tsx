@@ -718,7 +718,7 @@ function UebenKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: string
           <Gross action={uebenAction.bind(null, unit.id, n.skillId)} icon={<Send size={19} aria-hidden />} testid="ueben-senden">
             {sendenText}
           </Gross>
-          <Leise>Am Tablet mit verschiedenen Aufgabenarten, passend zum Lernstand von {name}.</Leise>
+          <Leise>Neue Aufgaben am Tablet, passend zum Lernstand von {name}.</Leise>
           <Klein action={stufeAction.bind(null, unit.id, "schluss")} testid="weiter-schluss">
             Weiter zur Hausübung
           </Klein>
@@ -791,7 +791,7 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
   }
   const offen = tf.skills.find((x) => x.offen)!;
   return (
-    <Karte titel={`Text von heute: ${tf.fehler} ${tf.fehler === 1 ? "Fehler" : "Fehler"}`} testid="ablauf-text">
+    <Karte titel={`Text von heute: ${tf.fehler} Fehler`} testid="ablauf-text">
       {tf.bereiche.length > 0 && (
         <ul className="grid divide-y divide-line border-y border-line" data-testid="text-bereiche">
           {tf.bereiche.slice(0, 5).map((b) => (

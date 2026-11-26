@@ -106,7 +106,9 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
   // naht eine Prüfung, steht sie in der Kopfzeile der laufenden Einheit (niko, 21.10.2026)
   const pruefung = running ? pruefungsHinweise(dayOf(new Date()), { studentId: student.id }).get(student.id) : undefined;
 
-  const sent = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
+  // the green line „… ist gesendet“ only until the student has answered something (the page refreshes itself with the same address)
+  const sentWs = sp.gesendet ? repo.getWorksheet(Number(sp.gesendet)) : null;
+  const sent = sentWs && !repo.listAssignmentsForWorksheet(sentWs.id).some((a) => a.unit_id === unit.id && a.done_count > 0) ? sentWs : null;
   const startedText = sp.text ? getText(Number(sp.text)) : null;
   // nach „Arbeit fotografieren“ › „Übernehmen“ (lib/papier-einheit.ts): was übernommen wurde, in einer Zeile
   const papier = sp.papier && running ? papierArbeit(Number(sp.papier), unit.id) : null;
