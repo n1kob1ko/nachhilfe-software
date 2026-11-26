@@ -1602,6 +1602,8 @@ CREATE TABLE IF NOT EXISTS einheit_ablauf (
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */
 const COLUMNS: [table: string, column: string, definition: string][] = [
+  // geführter Ablauf mit Lernpaket aus „Stoff vorbereiten“: der Schritt des Pakets, der in „Erklären“ auf dem Schirm ist
+  ["einheit_ablauf", "schritt_id", "INTEGER"],
   ["students", "klasse", "INTEGER"],
   ["students", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["lessons", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],

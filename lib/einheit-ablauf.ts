@@ -12,9 +12,12 @@
  * bleibt unter „Mehr Werkzeuge“.
  */
 import { db, json } from "./db";
-import { hatBegonnen, leseStand } from "./cockpit";
+import { hatBegonnen, leseStand, mitZeile, planNeu } from "./cockpit";
+import { autoFelderVon } from "./einschaetzung";
+import { getLernpaket, type LernpaketMitSchritten, type LernpaketSchritt, type SchrittArt } from "./lernpakete";
 import { minitestDerEinheit } from "./minitest";
 import * as repo from "./repo";
+import { getStoffpaket, uebernimmStoffpaket, type Stoffpaket } from "./stoffpaket";
 import { getUnit } from "./units";
 
 export type Weg = "weiter" | "neu";
@@ -42,11 +45,13 @@ export type Ablauf = {
   kurztestFertig: boolean;
   /** „Mehr Werkzeuge“: das ganze frühere Cockpit statt der einen Stufe */
   alles: boolean;
+  /** mit Lernpaket aus „Stoff vorbereiten“: der Schritt, der in „Erklären“ auf dem Schirm ist; null = der erste */
+  schrittId: number | null;
   /** schon einmal gespeichert (sonst der Anfang) */
   gespeichert: boolean;
 };
 
-type Zeile = { unit_id: number; weg: string | null; stufe: string; skill_ids: string; aktuell: string | null; kurztest_fertig: number; ansicht: string };
+type Zeile = { unit_id: number; weg: string | null; stufe: string; skill_ids: string; aktuell: string | null; kurztest_fertig: number; ansicht: string; schritt_id: number | null };
 
 export function leseAblauf(unitId: number): Ablauf {
   const r = db().prepare("SELECT * FROM einheit_ablauf WHERE unit_id = ?").get(unitId) as Zeile | undefined;
@@ -61,6 +66,7 @@ export function leseAblauf(unitId: number): Ablauf {
     aktuell: r?.aktuell ?? null,
     kurztestFertig: Boolean(r?.kurztest_fertig),
     alles: r?.ansicht === "alles",
+    schrittId: r?.schritt_id ?? null,
     gespeichert: Boolean(r),
   };
 }
@@ -68,11 +74,11 @@ export function leseAblauf(unitId: number): Ablauf {
 function schreibe(a: Ablauf) {
   db()
     .prepare(
-      `INSERT INTO einheit_ablauf (unit_id, weg, stufe, skill_ids, aktuell, kurztest_fertig, ansicht, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      `INSERT INTO einheit_ablauf (unit_id, weg, stufe, skill_ids, aktuell, kurztest_fertig, ansicht, schritt_id, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
        ON CONFLICT(unit_id) DO UPDATE SET weg = excluded.weg, stufe = excluded.stufe, skill_ids = excluded.skill_ids, aktuell = excluded.aktuell,
-         kurztest_fertig = excluded.kurztest_fertig, ansicht = excluded.ansicht, updated_at = excluded.updated_at`,
+         kurztest_fertig = excluded.kurztest_fertig, ansicht = excluded.ansicht, schritt_id = excluded.schritt_id, updated_at = excluded.updated_at`,
     )
-    .run(a.unitId, a.weg, a.stufe, JSON.stringify(a.skillIds), a.aktuell, a.kurztestFertig ? 1 : 0, a.alles ? "alles" : "gefuehrt");
+    .run(a.unitId, a.weg, a.stufe, JSON.stringify(a.skillIds), a.aktuell, a.kurztestFertig ? 1 : 0, a.alles ? "alles" : "gefuehrt", a.schrittId);
 }
 
 type Ergebnis = { ok: true } | { fehler: string };
@@ -131,6 +137,107 @@ export function setzeAnsicht(unitId: number, alles: boolean): Ergebnis {
   if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
   schreibe({ ...leseAblauf(unitId), alles });
   return { ok: true };
+}
+
+// ---------- Neues Thema mit „Stoff vorbereiten“ (Fotos → Präsentation, Sprechtext, Fragen, Übungsblatt) ----------
+
+/**
+ * Der Stoff dieser Einheit aus „Stoff vorbereiten“ (lib/stoffpaket.ts): der neueste Lauf, der in dieser Einheit gestartet wurde
+ * und nicht verworfen ist. In der Stufe „Stoff“ des neuen Themas startet ihn der große Knopf; er liefert in einem KI-Lauf das
+ * Lernpaket (Sprechtext, Fragen mit erwarteter Antwort), die Präsentation dazu und ein Übungsblatt mit 8 Aufgaben.
+ */
+export function stoffpaketDerEinheit(unitId: number): Stoffpaket | null {
+  const id = db().prepare("SELECT id FROM stoffpakete WHERE unit_id = ? AND status <> 'verworfen' ORDER BY id DESC LIMIT 1").pluck().get(unitId) as number | undefined;
+  return id ? getStoffpaket(id) : null;
+}
+
+/** Diese Schritte eines Lernpakets gehören zu „Erklären“; Übung, Zusatz, Kontrolle und Abschluss macht „Üben“ am Tablet. */
+const ERKLAER_ARTEN: readonly SchrittArt[] = ["einstieg", "erklaerung", "beispiel", "frage", "gefuehrte_uebung"];
+
+/** Die Schritte zum Erklären, in der Reihenfolge des Pakets (hat es keinen davon: alle). */
+export function erklaerSchritte(p: LernpaketMitSchritten): LernpaketSchritt[] {
+  const s = [...p.schritte].sort((a, b) => a.position - b.position);
+  const e = s.filter((x) => ERKLAER_ARTEN.includes(x.art));
+  return e.length ? e : s;
+}
+
+/** Das Lernpaket, mit dem „Erklären“ geht: das des Cockpits, wenn es aus dem Stoff dieser Einheit kommt. */
+export function erklaerPaket(unitId: number): LernpaketMitSchritten | null {
+  const p = stoffpaketDerEinheit(unitId);
+  if (!p?.paket_id || p.status !== "uebernommen" || leseStand(unitId).paket_id !== p.paket_id) return null;
+  const paket = getLernpaket(p.paket_id);
+  return paket && paket.status !== "archiviert" && paket.schritte.length ? paket : null;
+}
+
+/**
+ * „Übernehmen und erklären“: der fertige Stoff wird übernommen (lib/stoffpaket.ts: Lernpaket geprüft, Präsentation gespeichert,
+ * Lernzettel in der Schüler-App), das Lernpaket ist der Ablauf dieser Einheit, seine Themen sind die von heute, und „Erklären“
+ * beginnt beim ersten Schritt.
+ */
+export function stoffUebernehmen(unitId: number, teacherId: number): Ergebnis {
+  if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
+  const p = stoffpaketDerEinheit(unitId);
+  if (!p) return { fehler: "Es ist noch kein Stoff vorbereitet." };
+  const u = uebernimmStoffpaket(p.id, teacherId);
+  if ("fehler" in u) return u;
+  // uebernimmStoffpaket wählt das Paket nur, solange in der Einheit nichts getan ist; im geführten Ablauf gilt es immer
+  if (p.paket_id && leseStand(unitId).paket_id !== p.paket_id) {
+    const n = planNeu(unitId, p.paket_id);
+    if ("fehler" in n) return n;
+  }
+  const a = leseAblauf(unitId);
+  const ids = [...new Set(p.skill_ids.filter((id) => repo.getSkill(id)))];
+  const paket = p.paket_id ? getLernpaket(p.paket_id) : null;
+  schreibe({ ...a, stufe: a.weg ? "erklaeren" : a.stufe, skillIds: ids.length ? ids : a.skillIds, aktuell: ids[0] ?? a.aktuell, schrittId: paket ? (erklaerSchritte(paket)[0]?.id ?? null) : null });
+  return { ok: true };
+}
+
+/** Ein anderer Schritt des Lernpakets in „Erklären“ („Weiter“, „Zurück“). */
+export function setzeSchritt(unitId: number, schrittId: number): Ergebnis {
+  if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
+  const paket = erklaerPaket(unitId);
+  if (!paket || !erklaerSchritte(paket).some((s) => s.id === schrittId)) return { fehler: "Diesen Schritt gibt es hier nicht." };
+  schreibe({ ...leseAblauf(unitId), schrittId });
+  return { ok: true };
+}
+
+/** Das Übungsblatt aus dem Stoff dieser Einheit, solange es in dieser Einheit noch nicht gesendet ist; sonst null. */
+export function offenesStoffBlatt(unitId: number): number | null {
+  const p = stoffpaketDerEinheit(unitId);
+  if (!p || p.status !== "uebernommen" || !p.uebung_id || !repo.getWorksheet(p.uebung_id) || !repo.listTasks(p.uebung_id).length) return null;
+  return db().prepare("SELECT 1 FROM assignments WHERE unit_id = ? AND worksheet_id = ?").get(unitId, p.uebung_id) ? null : p.uebung_id;
+}
+
+/** Anfang der Zeile, die der geführte Ablauf in die Dokumentation schreibt (zum Ersetzen beim zweiten Mal). */
+const ERKLAERT = "Erklärt mit Präsentation: ";
+
+/**
+ * Beim Beenden: lief „Erklären“ mit einem Lernpaket aus dem Stoff dieser Einheit, steht in „Was wurde gemacht?“, welches Thema
+ * mit wie vielen Schritten erklärt wurde und wie die Fragen beantwortet wurden (Richtig / Teilweise / Falsch, wie getippt). Nur
+ * aus dem, was in der Einheit wirklich passiert ist; ein Feld, das der Lehrer selbst geschrieben hat, bleibt.
+ */
+export function dokumentiereGefuehrt(lessonId: number, unitId: number): string | null {
+  const a = leseAblauf(unitId);
+  const lesson = repo.getLesson(lessonId);
+  if (!a.weg || !lesson) return null;
+  const p = stoffpaketDerEinheit(unitId);
+  const paket = p?.paket_id && p.status === "uebernommen" ? getLernpaket(p.paket_id) : null;
+  if (!paket || leseStand(unitId).paket_id !== paket.id) return null;
+  const schritte = erklaerSchritte(paket);
+  const bis = schritte.findIndex((s) => s.id === a.schrittId);
+  const antworten = leseStand(unitId).antworten;
+  const zahl = (w: string) => schritte.filter((s) => antworten[s.id] === w).length;
+  const fragen = [["richtig", zahl("richtig")], ["teilweise", zahl("teilweise")], ["falsch", zahl("falsch")]].filter(([, n]) => Number(n) > 0).map(([w, n]) => `${n} ${w}`);
+  const zeile = `${ERKLAERT}„${p!.thema || paket.title}“, ${Math.max(1, bis + 1)} von ${schritte.length} Schritten${fragen.length ? `; Fragen: ${fragen.join(", ")}` : ""}.`;
+  const auto = autoFelderVon(lesson);
+  const bisher = lesson.activities ?? "";
+  if (bisher.trim() && !auto.has("activities")) return zeile;
+  const wert = mitZeile(bisher, ERKLAERT, zeile);
+  const werte = json<Record<string, unknown>>(lesson.auto_felder, {});
+  werte.activities = wert;
+  repo.saveLesson({ ...lesson, activities: wert }, lesson.id);
+  db().prepare("UPDATE lessons SET auto_felder = ? WHERE id = ?").run(JSON.stringify(werte), lesson.id);
+  return zeile;
 }
 
 /**

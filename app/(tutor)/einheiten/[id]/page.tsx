@@ -89,7 +89,7 @@ function dauerLabel(geplanteDauer: number | null, minutes: number, estimated: bo
  *   und „Dokumentation bestätigen“; die ganze
  *   Dokumentation, automatisch geschrieben (lib/einschaetzung.ts) und änderbar, unter „Mehr Details“ und „Ändern“.
  */
-export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ablauf?: string; bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string; fach?: string }> }) {
+export default async function UnitPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ ablauf?: string; bereits?: string; fremd?: string; bereich?: string; gesendet?: string; text?: string; minitest?: string; cockpit?: string; aendern?: string; details?: string; ausfuehrlich?: string; folien?: string; papier?: string; knopf?: string; hausuebung?: string; fortsetzen?: string; mehr?: string; fach?: string; stoff?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -247,7 +247,7 @@ export default async function UnitPage({ params, searchParams }: { params: Promi
           <>
             <LiveStatus unitId={unit.id} initial={liveSnapshot(unit.id)!} join={await joinInfo()} kompakt kiNeu={kiNeuImLiveHinweis(unit.id, first(student.name))} />
             <div className="mt-5">
-              <Gefuehrt unit={unit} student={student} folien={sp.folien ? Number(sp.folien) : null} />
+              <Gefuehrt unit={unit} student={student} folien={sp.folien ? Number(sp.folien) : null} stoffHand={sp.stoff === "hand"} />
             </div>
             <div className="mt-4">
               <KiKostenZeile unitId={unit.id} admin={Boolean(teacher.is_admin)} />

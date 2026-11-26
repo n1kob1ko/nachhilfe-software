@@ -1179,13 +1179,14 @@ export function ablaufDerEinheit(unitId: number): AblaufDerEinheit | null {
 }
 
 /**
- * Lief die Einheit im geführten Ablauf (lib/einheit-ablauf.ts), ohne Lernpaket und ohne dass im Plan des Cockpits je „Weiter“ oder
- * „Überspringen“ getippt wurde? Dann beschreibt der Plan sie nicht (er wurde nur beim Senden einer Übung festgehalten): kein
- * „Plan für heute: 1 von 6 Schritten“ und kein „Weiter mit“ aus Schritten, die nie auf dem Schirm waren.
+ * Lief die Einheit im geführten Ablauf (lib/einheit-ablauf.ts), ohne dass im Cockpit je „Weiter“ oder „Überspringen“ getippt
+ * wurde? Dann beschreibt der Plan sie nicht (er wurde nur beim Senden einer Übung festgehalten), und ein Lernpaket aus dem Stoff
+ * wurde in „Erklären“ gezeigt, nicht im Cockpit abgehakt: kein „Plan für heute: 1 von 6 Schritten“ und kein „Weiter mit“ aus
+ * Schritten, die nie auf dem Schirm waren. Was erklärt wurde, schreibt `dokumentiereGefuehrt` (lib/einheit-ablauf.ts).
  */
 function nurGefuehrt(unitId: number, s: Stand): boolean {
   const r = db().prepare("SELECT weg FROM einheit_ablauf WHERE unit_id = ?").get(unitId) as { weg: string | null } | undefined;
-  return Boolean(r?.weg) && !s.paket_id && !s.erledigt.length && !s.uebersprungen.length;
+  return Boolean(r?.weg) && !s.erledigt.length && !s.uebersprungen.length;
 }
 
 /**

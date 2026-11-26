@@ -37,6 +37,7 @@ export function StoffpaketForm({
   keinNameBestaetigt = false,
   kosten,
   gesperrt,
+  einfach,
 }: {
   studentId: number;
   unitId: number | null;
@@ -48,11 +49,16 @@ export function StoffpaketForm({
   kosten: string;
   /** warum es gerade nicht geht (KI aus, Budget, Grenze des Schülers), sonst null */
   gesperrt: string | null;
+  /**
+   * Im geführten Ablauf der Einheit (components/einheit/Gefuehrt.tsx): Fach und Teile stehen fest und sind nicht zu sehen,
+   * der Knopf heißt anders, und danach bleibt die Seite die der Einheit (sie zeigt „wird erstellt“).
+   */
+  einfach?: { teile: string[]; knopf: string; textTitel: string; platzhalter: string };
 }) {
   const router = useRouter();
   const [text, setText] = useState("");
   const [fach, setFach] = useState(fachAnfang);
-  const [teile, setTeile] = useState<string[]>(STOFF_TEILE.map((t) => t.key));
+  const [teile, setTeile] = useState<string[]>(einfach?.teile ?? STOFF_TEILE.map((t) => t.key));
   const [dateien, setDateien] = useState<Datei[]>([]);
   const [gewaehlt, setGewaehlt] = useState<number[]>([]);
   const [alle, setAlle] = useState(false);
@@ -125,6 +131,10 @@ export function StoffpaketForm({
         return;
       }
       for (const d of dateien) if (d.url) URL.revokeObjectURL(d.url);
+      if (einfach) {
+        router.refresh();
+        return;
+      }
       router.push(data.url);
     } catch {
       setFehler("Keine Verbindung. Bitte noch einmal versuchen.");
@@ -226,48 +236,52 @@ export function StoffpaketForm({
 
       <label className="grid gap-1.5">
         <span className="text-[14px] font-medium">
-          Was brauchst du? <span className="font-normal text-ink-3">(optional)</span>
+          {einfach?.textTitel ?? "Was brauchst du?"} <span className="font-normal text-ink-3">(optional)</span>
         </span>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
           maxLength={TEXT_MAX}
           rows={3}
-          placeholder="z. B. Test für die Schularbeit am 3.12., nur Seite 45–48. Er verwechselt kürzen und erweitern."
+          placeholder={einfach?.platzhalter ?? "z. B. Test für die Schularbeit am 3.12., nur Seite 45–48. Er verwechselt kürzen und erweitern."}
           className="input min-h-[88px] resize-y"
           data-testid="stoffpaket-text"
         />
       </label>
 
-      <label className="grid max-w-[320px] gap-1.5">
-        <span className="text-[14px] font-medium">Fach</span>
-        <select value={fach} onChange={(e) => setFach(e.target.value)} className="input" data-testid="stoffpaket-fach">
-          {!fach && <option value="">Bitte wählen</option>}
-          {faecher.map((f) => (
-            <option key={f} value={f}>
-              {f}
-            </option>
-          ))}
-        </select>
-      </label>
+      {!einfach && (
+        <label className="grid max-w-[320px] gap-1.5">
+          <span className="text-[14px] font-medium">Fach</span>
+          <select value={fach} onChange={(e) => setFach(e.target.value)} className="input" data-testid="stoffpaket-fach">
+            {!fach && <option value="">Bitte wählen</option>}
+            {faecher.map((f) => (
+              <option key={f} value={f}>
+                {f}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
-      <fieldset className="grid gap-1.5">
-        <legend className="mb-1 text-[14px] font-medium">Was soll entstehen?</legend>
-        {STOFF_TEILE.map((t) => (
-          <label key={t.key} className="flex min-h-[44px] items-center gap-2.5 text-[14px]">
-            <input
-              type="checkbox"
-              checked={teile.includes(t.key)}
-              onChange={(e) => setTeile(e.target.checked ? [...teile, t.key] : teile.filter((x) => x !== t.key))}
-              className="h-[18px] w-[18px] shrink-0 accent-[var(--accent)]"
-              data-testid={`stoffpaket-teil-${t.key}`}
-            />
-            <span>
-              {t.label} <span className="text-ink-3">· {t.hilfe}</span>
-            </span>
-          </label>
-        ))}
-      </fieldset>
+      {!einfach && (
+        <fieldset className="grid gap-1.5">
+          <legend className="mb-1 text-[14px] font-medium">Was soll entstehen?</legend>
+          {STOFF_TEILE.map((t) => (
+            <label key={t.key} className="flex min-h-[44px] items-center gap-2.5 text-[14px]">
+              <input
+                type="checkbox"
+                checked={teile.includes(t.key)}
+                onChange={(e) => setTeile(e.target.checked ? [...teile, t.key] : teile.filter((x) => x !== t.key))}
+                className="h-[18px] w-[18px] shrink-0 accent-[var(--accent)]"
+                data-testid={`stoffpaket-teil-${t.key}`}
+              />
+              <span>
+                {t.label} <span className="text-ink-3">· {t.hilfe}</span>
+              </span>
+            </label>
+          ))}
+        </fieldset>
+      )}
 
       {fehler && (
         <p role="alert" className="text-[13.5px] text-red">
@@ -279,11 +293,18 @@ export function StoffpaketForm({
           {gesperrt}
         </p>
       ) : (
-        <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className="btn btn-primary" onClick={() => void senden()} disabled={busy} data-testid="stoffpaket-start">
-            <Sparkles size={16} aria-hidden /> {busy ? "Wird hochgeladen …" : "Alles erstellen"}
+        <div className={einfach ? "grid gap-1.5" : "flex flex-wrap items-center gap-3"}>
+          <button
+            type="button"
+            className={einfach ? "btn btn-primary btn-lg w-full !text-[17px]" : "btn btn-primary"}
+            style={einfach ? { whiteSpace: "normal", textAlign: "center", paddingBlock: 10 } : undefined}
+            onClick={() => void senden()}
+            disabled={busy}
+            data-testid="stoffpaket-start"
+          >
+            <Sparkles size={einfach ? 19 : 16} aria-hidden /> {busy ? "Wird hochgeladen …" : (einfach?.knopf ?? "Alles erstellen")}
           </button>
-          <span className="text-[12.5px] text-ink-3">{kosten} · dauert 2 bis 5 Minuten</span>
+          <span className={`text-[12.5px] text-ink-3 ${einfach ? "text-center" : ""}`}>{kosten} · dauert 2 bis 5 Minuten</span>
         </div>
       )}
     </div>
