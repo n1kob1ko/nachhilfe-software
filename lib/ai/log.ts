@@ -65,8 +65,12 @@ export function logCall(r: CallRow): number {
   return Number(res.lastInsertRowid);
 }
 
-/** Rows of a budget pool: Anthropic's own, or every other provider's (rows from before the provider column count there). */
-const POOL_WHERE: Record<BudgetPool, string> = { anthropic: "provider = 'anthropic'", allgemein: "provider <> 'anthropic'" };
+/**
+ * Rows of a budget pool: Anthropic's own, or every other provider's (rows from before the provider column count there).
+ * Rows of Biko (lib/biko.ts) belong to neither: Biko pays with its own key and has its own limits; they count for the
+ * student's limit and the totals only.
+ */
+const POOL_WHERE: Record<BudgetPool, string> = { anthropic: "provider = 'anthropic'", allgemein: "provider NOT IN ('anthropic', 'biko')" };
 
 /**
  * Spent this month (test runs do not count), in one budget pool or in all. Read from the table every time:

@@ -25,7 +25,7 @@ docker run -d --name lernheft -p 3000:3000 -v lernheft-daten:/data \
 
 1. New Project → Deploy from GitHub repo → `nachhilfe-software`. Railway erkennt das `Dockerfile`.
 2. Im Dienst: Volume hinzufügen, Mount-Pfad `/data`.
-3. Variablen: `RAILWAY_RUN_UID=0` (Railway hängt Volumes als root ein, das Image läuft sonst als Benutzer `node` und dürfte nicht schreiben), optional `ANTHROPIC_API_KEY`.
+3. Variablen: `RAILWAY_RUN_UID=0` (Railway hängt Volumes als root ein, das Image läuft sonst als Benutzer `node` und dürfte nicht schreiben), optional `ANTHROPIC_API_KEY`, optional `BIKO_TOKEN` für Biko-Chef (docs/biko.md).
 4. Settings → Networking → Domain erzeugen. Replicas auf 1 lassen, Region am besten in Europa (z. B. Amsterdam).
 
 ### Updates ohne Unterbrechung im Unterricht

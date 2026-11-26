@@ -32,5 +32,5 @@ test("Lehrkraft: 10 Kacheln Arbeit (mit Spiele testen und Phantombild-Vorlage), 
   const nurVerwaltung = hrefs(verwaltung).filter((h) => !hrefs(lehrkraft).includes(h)).sort();
   assert.deepEqual(nurVerwaltung, ["/export", "/mehr/import"]);
   assert.deepEqual(hrefs(lehrkraft).filter((h) => !hrefs(verwaltung).includes(h)), []);
-  assert.equal(hrefs(verwaltung).length, 30);
+  assert.equal(hrefs(verwaltung).length, 31);
 });

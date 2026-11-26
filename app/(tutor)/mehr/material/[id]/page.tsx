@@ -1,10 +1,12 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { CheckCircle2, ExternalLink, ShieldCheck, Sparkles, Trash2 } from "lucide-react";
+import { bikoMaterialAction } from "@/app/biko-actions";
 import { analyzeMaterialAction, classifyMaterialAction, deleteMaterialAction, setMaterialSourceAction, takeOverTaskAction } from "@/app/material-actions";
 import { Info } from "@/components/Info";
 import { PageHeader, Pill, Reveal, SectionTitle, formatDate } from "@/components/ui";
 import { aiEnabled } from "@/lib/ai";
+import { BIKO_STATUS_TEXT, bikoAn, listAuftraege, mitNamen } from "@/lib/biko";
 import { requireTeacher } from "@/lib/auth";
 import { DIFFICULTIES } from "@/lib/curriculum";
 import { alleFachNamen, fachNamen } from "@/lib/faecher";
@@ -28,7 +30,7 @@ import { MathText } from "@/components/MathText";
 
 export const metadata = { title: "Material" };
 
-type Params = { fehler?: string; gespeichert?: string; vorhanden?: string; erkannt?: string; uebernommen?: string; vorschlag?: string; einheit?: string };
+type Params = { biko?: string; fehler?: string; gespeichert?: string; vorhanden?: string; erkannt?: string; uebernommen?: string; vorschlag?: string; einheit?: string };
 const chip = "flex min-h-[40px] cursor-pointer items-center gap-1.5 rounded-full border border-line bg-surface px-3 text-[13.5px] has-checked:border-accent has-checked:bg-accent-wash has-checked:text-accent";
 const statusTone = { hochgeladen: "amber", vorschlag: "accent", geprueft: "green" } as const;
 const mb = (n: number) => (n < 1024 * 1024 ? `${Math.max(1, Math.round(n / 1024))} KB` : `${(n / 1024 / 1024).toFixed(1).replace(".", ",")} MB`);
@@ -74,6 +76,7 @@ export default async function MaterialPage({ params, searchParams }: { params: P
   const mime = m.mime ?? "";
   const tooBig = size > (mime === "application/pdf" ? MAX_ANALYSIS_PDF_BYTES : MAX_ANALYSIS_IMAGE_BYTES);
   const fileUrl = `/material/${m.id}/datei`;
+  const bikoJobs = listAuftraege({ materialId: m.id, limit: 5 });
 
   return (
     <>
@@ -337,6 +340,61 @@ export default async function MaterialPage({ params, searchParams }: { params: P
           {a && <Suggestion m={m} names={byId} />}
         </section>
       </div>
+
+      <section id="biko" aria-label="Biko" className="mb-10 max-w-[760px] scroll-mt-24">
+        <SectionTitle>
+          <span>
+            Biko: Lernzettel daraus machen
+            <Info label="Was macht Biko damit?">
+              Biko-Chef liest das Dokument und schreibt eine kurze Zusammenfassung für dich und einen Lernzettel für den Schüler. Er bekommt die Datei, Fach, Klasse und die schwächsten Fähigkeiten des Schülers, aber keinen Namen: Der Schüler heißt S1. Du liest den Lernzettel, bevor er in die Schüler-App kommt.
+            </Info>
+          </span>
+        </SectionTitle>
+        {sp.biko && <p className="mb-3 text-[14px] font-semibold text-green" role="status">An Biko gegeben. Das Ergebnis steht in ein paar Minuten unter Erweitert › Biko.</p>}
+        {bikoJobs.length > 0 && (
+          <ul className="mb-4 grid gap-1.5">
+            {bikoJobs.map((b) => (
+              <li key={b.id}>
+                <Link href={`/mehr/biko/${b.id}`} className="link text-[14px]">
+                  Für {mitNamen("S1", b.zuordnung)} · {BIKO_STATUS_TEXT[b.status]}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+        {!bikoAn() ? (
+          <p className="text-[14px] text-ink-2">Biko ist noch nicht verbunden.</p>
+        ) : tooBig ? (
+          <p className="text-[14px] text-ink-2">Für Biko ist die Datei zu groß (Foto höchstens 5 MB, PDF höchstens 10 MB).</p>
+        ) : (
+          <form action={bikoMaterialAction.bind(null, m.id)} className="grid gap-3">
+            <label className="field">
+              <span className="label">Für</span>
+              <select className="input" name="student_id" defaultValue={m.student_id ?? ""} required>
+                <option value="">Schüler wählen</option>
+                {students.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span className="label">Wunsch (optional)</span>
+              <textarea className="input min-h-[64px]" name="wunsch" maxLength={1000} placeholder="z. B. Nur Seite 2, für die Schularbeit am Freitag" />
+            </label>
+            <label className="flex min-h-[44px] items-start gap-2 text-[14px]">
+              <input type="checkbox" name="keine_namen" value="1" required className="mt-1 accent-[var(--accent)]" />
+              Auf dem Dokument stehen keine Namen, Noten oder anderen persönlichen Angaben.
+            </label>
+            <div>
+              <button className="btn btn-secondary">
+                <Sparkles size={15} aria-hidden /> An Biko geben
+              </button>
+            </div>
+          </form>
+        )}
+      </section>
 
       <section id="uebernehmen" aria-label="Aufgabe in die Bibliothek" className="mb-10 max-w-[760px] scroll-mt-24">
         <SectionTitle>Aufgabe in die Bibliothek</SectionTitle>
