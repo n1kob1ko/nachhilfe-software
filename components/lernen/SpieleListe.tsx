@@ -3,10 +3,14 @@ import "@/components/lernen/torlauf.css";
 import Link from "next/link";
 import { Brain, CalendarDays, ChevronRight, Flame, MapPinned } from "lucide-react";
 import { serie, skillFuerSpiel, spielWoher } from "@/lib/lernspiele";
-import { hatEndlos, torTauglich, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { hatEndlos, istNeuesSpiel, torTauglich, type BestenZeile, SPIEL_ARTEN, SPIEL_DEKO, SPIEL_FACH, SPIEL_KURZ, SPIEL_TITEL, type SpielArt, type SpielVorschlag } from "@/lib/lernspiele-typen";
+import { Aufklappen } from "@/components/ui";
 import type * as repo from "@/lib/repo";
 import { SteinBild } from "./FunkelSteine";
 import { PhantomGesicht } from "./PhantomGesicht";
+
+/** Pro Fach stehen so viele Spiele offen da (die passendsten zuerst), der Rest hinter „Alle … zeigen“. */
+const PRO_FACH = 4;
 
 /** Warum ein Spiel gerade passt, kurz für das Schild auf der Kachel. */
 const SCHILD: Partial<Record<SpielVorschlag["quelle"], string>> = { pruefung: "Schularbeit", stoff: "Dein Stoff", einheit: "Letzte Einheit", lernstand: "Üben lohnt sich" };
@@ -76,17 +80,17 @@ export function SpieleListe({
   const blockArt = vorschlaege.find((v) => hatEndlos(v.art))?.art;
   const torArt = vorschlaege.find((v) => torTauglich(v.art))?.art;
   const faecher = [...new Set(SPIEL_ARTEN.map((a) => SPIEL_FACH[a]))]
-    .map((fach) => ({ fach, spiele: SPIEL_ARTEN.filter((a) => SPIEL_FACH[a] === fach && grundVon.has(a)) }))
+    .map((fach) => ({ fach, spiele: [...new Set(vorschlaege.map((v) => v.art))].filter((a) => SPIEL_FACH[a] === fach) }))
     .filter((f) => f.spiele.length > 0);
   const phantomKachel = phantom && (
-    <Link href={phantom.href} className="sp-block panel mt-3" data-testid="spiele-phantombild">
+    <Link href={phantom.href} className={`sp-block panel ${phantom.grund ? "mt-3" : ""}`} data-testid="spiele-phantombild">
       <span className="sp-phantom-bild" aria-hidden>
         <PhantomGesicht bau={KACHEL_GESICHT} ausschnitt="kopf" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-2">
           <span className="sp-titel">Phantombild</span>
-          <span className="sp-schild">{phantom.grund ? "Dein Stoff" : "Neu"}</span>
+          {(phantom.grund || istNeuesSpiel("phantom", heute)) && <span className="sp-schild">{phantom.grund ? "Dein Stoff" : "Neu"}</span>}
         </span>
         <span className="sp-kurz">Personenbeschreibung: lies die Zeugenaussage, bau die Person und lern deinen Text auswendig.</span>
         {phantom.grund && <span className="mt-1 block text-[13px] font-semibold text-ink-2">{phantom.grund}</span>}
@@ -132,6 +136,37 @@ export function SpieleListe({
       <ChevronRight size={20} className="shrink-0 text-ink-3" aria-hidden />
     </Link>
   );
+  const kachel = (art: SpielArt, fach: string) => {
+    const stand = lernstand.get(skillFuerSpiel(student, art, heute)) ?? null;
+    const schild = SCHILD[grundVon.get(art)!.quelle];
+    return (
+      <li key={art}>
+        <Link href={href(art)} className="sp-kachel panel" data-fach={fach}>
+          <Kaertchen art={art} />
+          <span className="sp-titel">{SPIEL_TITEL[art]}</span>
+          <span className="sp-kurz">{spielWoher(student, art, heute) ?? SPIEL_KURZ[art]}</span>
+          <span className="sp-fuss">
+            {schild ? <span className="sp-schild">{schild}</span> : <span />}
+            {stand === null ? (
+              <span className="text-ink-3">Neu</span>
+            ) : (
+              <span className="sp-stand" aria-label={`Dein Stand: ${Math.round(stand * 100)} Prozent`}>
+                {!schild && (
+                  <span className="sp-balken" aria-hidden>
+                    <i style={{ width: `${Math.max(4, Math.round(stand * 100))}%` }} />
+                  </span>
+                )}
+                <span className="num">{Math.round(stand * 100)} %</span>
+              </span>
+            )}
+          </span>
+        </Link>
+      </li>
+    );
+  };
+  // Spielhalle: die Spiele mit Punkten in einer Reihe zum Wischen; Test- und Themenspiele ohne Anlass aufgeklappt
+  const halle = [bloecke && blockArt, tor && torArt, funkel && blockArt, glas, wort, phantom && !phantom.grund].filter(Boolean).length;
+  const weitere = [biotest && !biotest.grund, bio && !bio.grund, blatt && !blatt.grund, oesterreich && !oesterreich.grund, europa && !europa.grund].filter(Boolean).length;
   return (
     <>
       {/* das Spiel, das gerade am besten passt */}
@@ -165,8 +200,15 @@ export function SpieleListe({
       {europa?.grund && europaKachel}
       {phantom?.grund && phantomKachel}
 
+      {halle > 0 && (
+        <section className="mt-9" aria-labelledby="spiele-halle" data-testid="spiele-halle">
+          <h2 id="spiele-halle" className="mb-3 flex items-baseline gap-2 text-[18px] font-semibold">
+            Spielhalle
+            <span className="text-[14px] font-normal text-ink-3">{halle} Spiele mit Punkten{halle > 1 ? " · wischen" : ""}</span>
+          </h2>
+          <div className="sp-halle">
       {bloecke && blockArt && (
-        <Link href={bloecke(blockArt)} className="sp-block panel mt-3" data-testid="spiele-blockwerk">
+        <Link href={bloecke(blockArt)} className="sp-block panel" data-testid="spiele-blockwerk">
           <span className="sp-block-bild" aria-hidden>
             {[0, 0, 3, 1, 1, 1, 2, 4, 2].map((f, i) => (
               <i key={i} data-f={f} data-leer={[2, 6].includes(i) ? "" : undefined} />
@@ -175,7 +217,7 @@ export function SpieleListe({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="sp-titel">Blockwerk</span>
-              <span className="sp-schild">Neu</span>
+              {istNeuesSpiel("bloecke", heute) && <span className="sp-schild">Neu</span>}
             </span>
             <span className="sp-kurz">Teile legen, Reihen räumen. Neue Teile gibt es für Fragen aus {SPIEL_TITEL[blockArt]}.</span>
             {blockPlatz && (
@@ -189,7 +231,7 @@ export function SpieleListe({
       )}
 
       {tor && torArt && (
-        <Link href={tor(torArt)} className="sp-block panel mt-3" data-testid="spiele-torlauf">
+        <Link href={tor(torArt)} className="sp-block panel" data-testid="spiele-torlauf">
           <span className="sp-tor-bild" aria-hidden>
             <span className="tl-mini">
               <i />
@@ -201,7 +243,7 @@ export function SpieleListe({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="sp-titel">Torlauf</span>
-              <span className="sp-schild">Neu</span>
+              {istNeuesSpiel("tor", heute) && <span className="sp-schild">Neu</span>}
             </span>
             <span className="sp-kurz">Lauf durch das Tor mit der richtigen Antwort. Fragen aus {SPIEL_TITEL[torArt]}.</span>
             {torPlatz && (
@@ -215,7 +257,7 @@ export function SpieleListe({
       )}
 
       {funkel && blockArt && (
-        <Link href={funkel(blockArt)} className="sp-block panel mt-3" data-testid="spiele-funkelfeld">
+        <Link href={funkel(blockArt)} className="sp-block panel" data-testid="spiele-funkelfeld">
           <span className="sp-funkel-bild" aria-hidden>
             {[0, 1, 0, 2, 2, 2, 3, 4, 1].map((f, i) => (
               <span key={i} className="ff-mini-stein" data-f={f} data-an={i >= 3 && i <= 5 ? "" : undefined}>
@@ -226,7 +268,7 @@ export function SpieleListe({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="sp-titel">Funkelfeld</span>
-              <span className="sp-schild">Neu</span>
+              {istNeuesSpiel("funkel", heute) && <span className="sp-schild">Neu</span>}
             </span>
             <span className="sp-kurz">Drei gleiche Steine in eine Linie. Neue Züge gibt es für Fragen aus {SPIEL_TITEL[blockArt]}.</span>
             {funkelPlatz && (
@@ -240,7 +282,7 @@ export function SpieleListe({
       )}
 
       {glas && (
-        <Link href={glas.href} className="sp-block panel mt-3" data-testid="spiele-glasklar">
+        <Link href={glas.href} className="sp-block panel" data-testid="spiele-glasklar">
           <span className="sp-glas-bild" aria-hidden>
             {[
               [0, 1, 0],
@@ -257,7 +299,7 @@ export function SpieleListe({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="sp-titel">Glasklar</span>
-              <span className="sp-schild">Neu</span>
+              {istNeuesSpiel("glas", heute) && <span className="sp-schild">Neu</span>}
             </span>
             <span className="sp-kurz">Sortier die Begriffe in die richtigen Gläser: {glas.thema}.</span>
             {glas.platz && (
@@ -271,7 +313,7 @@ export function SpieleListe({
       )}
 
       {wort && (
-        <Link href={wort.href} className="sp-block panel mt-3" data-testid="spiele-wortschloss">
+        <Link href={wort.href} className="sp-block panel" data-testid="spiele-wortschloss">
           <span className="sp-wort-bild" aria-hidden>
             {(["ja", "nein", "fast", "ja"] as const).map((f, i) => (
               <i key={i} data-f={f}>
@@ -282,7 +324,7 @@ export function SpieleListe({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-2">
               <span className="sp-titel">Wortschloss</span>
-              <span className="sp-schild">Neu</span>
+              {istNeuesSpiel("wort", heute) && <span className="sp-schild">Neu</span>}
             </span>
             <span className="sp-kurz">Errate das Wort zum Hinweis in sechs Versuchen: {wort.thema}.</span>
             {wort.platz && (
@@ -296,11 +338,9 @@ export function SpieleListe({
       )}
 
       {phantom && !phantom.grund && phantomKachel}
-      {biotest && !biotest.grund && <BioTestKachel {...biotest} className="mt-3" />}
-      {bio && !bio.grund && <BioKachel {...bio} className="mt-3" />}
-      {blatt && !blatt.grund && blattKachel}
-      {oesterreich && !oesterreich.grund && <OesterreichKachel {...oesterreich} className="mt-3" />}
-      {europa && !europa.grund && europaKachel}
+          </div>
+        </section>
+      )}
 
       {faecher.map(({ fach, spiele }) => (
         <section key={fach} className="mt-9" aria-labelledby={`spiele-${fach}`}>
@@ -309,37 +349,29 @@ export function SpieleListe({
             <span className="text-[14px] font-normal text-ink-3">{spiele.length === 1 ? "1 Spiel" : `${spiele.length} Spiele`}</span>
           </h2>
           <ul className="staffel grid grid-cols-2 gap-3 md:grid-cols-3" data-testid={`spiele-${fach.toLowerCase()}`}>
-            {spiele.map((art) => {
-              const stand = lernstand.get(skillFuerSpiel(student, art, heute)) ?? null;
-              const schild = SCHILD[grundVon.get(art)!.quelle];
-              return (
-                <li key={art}>
-                  <Link href={href(art)} className="sp-kachel panel" data-fach={fach}>
-                    <Kaertchen art={art} />
-                    <span className="sp-titel">{SPIEL_TITEL[art]}</span>
-                    <span className="sp-kurz">{spielWoher(student, art, heute) ?? SPIEL_KURZ[art]}</span>
-                    <span className="sp-fuss">
-                      {schild ? <span className="sp-schild">{schild}</span> : <span />}
-                      {stand === null ? (
-                        <span className="text-ink-3">Neu</span>
-                      ) : (
-                        <span className="sp-stand" aria-label={`Dein Stand: ${Math.round(stand * 100)} Prozent`}>
-                          {!schild && (
-                            <span className="sp-balken" aria-hidden>
-                              <i style={{ width: `${Math.max(4, Math.round(stand * 100))}%` }} />
-                            </span>
-                          )}
-                          <span className="num">{Math.round(stand * 100)} %</span>
-                        </span>
-                      )}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
+            {spiele.slice(0, PRO_FACH).map((art) => kachel(art, fach))}
           </ul>
+          {spiele.length > PRO_FACH && (
+            <Aufklappen label={`Alle ${spiele.length} zeigen`} className="mt-3" testid={`spiele-${fach.toLowerCase()}-mehr`}>
+              <ul className="grid grid-cols-2 gap-3 md:grid-cols-3">{spiele.slice(PRO_FACH).map((art) => kachel(art, fach))}</ul>
+            </Aufklappen>
+          )}
         </section>
       ))}
+
+      {weitere > 0 && (
+        <section className="mt-9" data-testid="spiele-weitere">
+          <Aufklappen label={`Weitere Spiele (${weitere})`}>
+            <div className="space-y-3">
+              {biotest && !biotest.grund && <BioTestKachel {...biotest} />}
+              {bio && !bio.grund && <BioKachel {...bio} />}
+              {blatt && !blatt.grund && blattKachel}
+              {oesterreich && !oesterreich.grund && <OesterreichKachel {...oesterreich} />}
+              {europa && !europa.grund && europaKachel}
+            </div>
+          </Aufklappen>
+        </section>
+      )}
     </>
   );
 }
