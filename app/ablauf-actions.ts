@@ -3,13 +3,14 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireTeacher } from "@/lib/auth";
-import { sendeAusGenerator } from "@/lib/cockpit";
+import { merkeGedruckt, sendeAusGenerator } from "@/lib/cockpit";
 import {
   isStufe,
   isWeg,
   kurztestFertig,
   leseAblauf,
   offenesStoffBlatt,
+  papierOhneFoto,
   setzeAktuell,
   setzeAnsicht,
   setzeSchritt,
@@ -150,3 +151,35 @@ export async function ansichtAction(unitId: number, alles: boolean) {
   await laufend(unitId);
   weiter(unitId, setzeAnsicht(unitId, alles), alles ? "?bereich=cockpit#werkzeuge" : "");
 }
+
+/**
+ * „Lieber auf Papier rechnen“ (niko, 26.11.2026, Mathe: am Whiteboard „so restriktiv“): dieselbe Übung wie am Tablet (zuerst das
+ * Übungsblatt aus dem Stoff), aber gedruckt. Danach zeigt Üben „Seite fotografieren“; die KI liest alle Aufgaben in einem Lauf.
+ */
+export async function uebenPapierAction(unitId: number, skillId: string) {
+  const { t } = await laufend(unitId);
+  const a = leseAblauf(unitId);
+  if (a.weg) {
+    setzeAktuell(unitId, skillId);
+    if (a.stufe !== "ueben") setzeStufe(unitId, "ueben");
+  }
+  const blatt = offenesStoffBlatt(unitId);
+  let wid: number;
+  if (blatt) {
+    merkeGedruckt(blatt, unitId, 0);
+    wid = blatt;
+  } else {
+    const out = await sendeAusGenerator(unitId, skillId, t.id, null, "drucken");
+    if ("fehler" in out) weiter(unitId, out);
+    wid = out.worksheetId;
+  }
+  revalidatePath(`/einheiten/${unitId}`);
+  redirect(`/arbeitsblatt/${wid}?einheit=${unitId}`);
+}
+
+/** „Ohne Foto weiter“ bei einer gedruckten Übung. */
+export async function papierOhneFotoAction(unitId: number, worksheetId: number) {
+  await laufend(unitId);
+  weiter(unitId, papierOhneFoto(unitId, worksheetId));
+}
+
