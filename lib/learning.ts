@@ -21,6 +21,7 @@ import { bewertungFuerBericht, type BerichtBewertung } from "./text-note";
 import { textsForUnit, type UnitText } from "./texts";
 import { notifyUnitClosed } from "./whiteboard";
 import { finishUnit, getUnit, touchUnit, unitDurationMs, type FinishOptions, type UnitView } from "./units";
+import { zuHauseGeuebt, zuHauseSatz, type ZuHause } from "./zu-hause";
 
 export type HelpLevel = "keine" | "hinweis" | "erklaerung" | "loesung";
 export const HELP_LABEL: Record<HelpLevel, string> = {
@@ -102,6 +103,8 @@ export type UnitReport = {
   tasks: TaskLine[];
   /** Textarbeiten written or continued in the unit (titles and counts only, never the text itself) */
   texts?: ReportText[];
+  /** Seit der vorigen Einheit zu Hause geübt (lib/zu-hause.ts); fehlt in Berichten vor dem 26.11.2026 */
+  zuHause?: ZuHause | null;
   /** Minitest at the start of the unit (lib/minitest.ts): its tasks, handed in, right; skills with a wrong answer. Missing without one. */
   minitest?: { von: number; erledigt: number; richtig: number; falsch: string[] };
   /** Everything the student did, in order, with how long it took (lib/einheit-aktivitaeten.ts); missing in reports written before. */
@@ -297,6 +300,7 @@ export function buildUnitReport(unit: UnitView, now = Date.now()): UnitReport {
     ...(minitest ? { minitest } : {}),
     texts: textsForUnit(unit.id).map((t) => reportText(t, unit.id)),
     aktivitaeten: aktivitaetenDerEinheit(unit.id, now),
+    zuHause: zuHauseGeuebt(unit.student_id, unit.started_at, now),
   };
 }
 
@@ -382,6 +386,9 @@ function activitiesText(r: UnitReport) {
   for (const t of r.texts ?? []) out.push(`${textLine(t)}.`);
   // what has no answers of its own: games, Vokabeln, the whiteboard (lib/einheit-aktivitaeten.ts), with how long it took
   for (const a of ohneAntworten(r)) out.push(`${aktivitaetZeile(a)}.`);
+  // was seit der letzten Einheit zu Hause geübt wurde (lib/zu-hause.ts); alte Berichte haben das Feld nicht
+  const zuHause = zuHauseSatz(r.zuHause);
+  if (zuHause) out.push(zuHause);
   return out.join(" ");
 }
 
