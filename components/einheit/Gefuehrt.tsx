@@ -549,7 +549,7 @@ function ErklaerenKarte({ unit, a, name, folien }: { unit: UnitView; a: Ablauf; 
       )}
       {f.zeigt && (
         <div>
-          <p className="text-[13px] font-semibold text-ink-2">Ein Beispiel zum Vorrechnen</p>
+          <p className="text-[13px] font-semibold text-ink-2">{unit.subject === "Mathematik" ? "Ein Beispiel zum Vorrechnen" : "Ein Beispiel zum Zeigen"}</p>
           <p className="mt-0.5 text-[17px] leading-relaxed whitespace-pre-line">{f.zeigt.aufgabe}</p>
           <p className="mt-1 text-[16px] leading-relaxed whitespace-pre-line">
             <span className="font-semibold text-green">Lösung: </span>
@@ -863,7 +863,7 @@ function AndereWege({ unit, skillId }: { unit: UnitView; skillId: string }) {
           <Keyboard size={15} aria-hidden /> Lieber tippen
         </Klein>
       )}
-      <PapierKlein unitId={unit.id} skillId={skillId} />
+      <PapierKlein unitId={unit.id} skillId={skillId} mathe={unit.subject === "Mathematik"} />
     </>
   );
 }
@@ -927,11 +927,14 @@ function HeftZeile({ unit, heft }: { unit: UnitView; heft: Heft }) {
   );
 }
 
-/** „Lieber auf Papier rechnen“: dieselbe Übung gedruckt; danach fotografieren, die KI liest alle Aufgaben auf einmal. */
-function PapierKlein({ unitId, skillId }: { unitId: number; skillId: string }) {
+/**
+ * „Lieber auf Papier rechnen“ (in anderen Fächern „üben“, dort wird nicht gerechnet): dieselbe Übung gedruckt; danach
+ * fotografieren, die KI liest alle Aufgaben auf einmal.
+ */
+function PapierKlein({ unitId, skillId, mathe }: { unitId: number; skillId: string; mathe: boolean }) {
   return (
     <Klein action={uebenPapierAction.bind(null, unitId, skillId)} testid="ueben-papier">
-      <Printer size={15} aria-hidden /> Lieber auf Papier rechnen
+      <Printer size={15} aria-hidden /> {mathe ? "Lieber auf Papier rechnen" : "Lieber auf Papier üben"}
     </Klein>
   );
 }

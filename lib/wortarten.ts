@@ -358,7 +358,7 @@ function reason(t: Tok, s: Sentence): string | null {
 }
 
 /** known: what the student has learnt by now (Grundeinstellung of the Schulstufe and the chosen ones); relaxed: last try, any sentence length rule but the hardest word. */
-type Ctx = { setting: WortartSetting; lv: number; focus: Wortart; rng: Rng; known: Set<Wortart>; relaxed?: boolean };
+type Ctx = { setting: WortartSetting; lv: number; focus: Wortart; rng: Rng; known: Set<Wortart>; relaxed?: boolean; benutzt?: Set<string> };
 type Made = Omit<TaskDraft, "skillId" | "difficulty"> & { asked: Wortart[] };
 
 /** Words of a sentence the task may ask about: allowed, not too hard, each word only once in the sentence. */
@@ -403,7 +403,15 @@ function findable(s: Sentence, target: Wortart, c: Ctx): Tok[] | null {
 function candidates(c: Ctx, ok: (s: Sentence) => boolean): Sentence[] {
   const fit = shuffle(c.rng, BANK.filter((s) => ok(s)));
   const hard = (s: Sentence) => askable(s, c).some((t) => t.level >= 2);
-  return c.lv >= 2 ? [...fit.filter(hard), ...fit.filter((s) => !hard(s))] : fit;
+  return frischZuerst(c, c.lv >= 2 ? [...fit.filter(hard), ...fit.filter((s) => !hard(s))] : fit);
+}
+/**
+ * Sätze, die auf diesem Blatt schon vorkommen (`benutzt`), kommen zuletzt dran: sonst nimmt „mittel“ und „schwer“ bei
+ * wenigen Sätzen mit schwierigen Wörtern immer denselben Satz, und das Blatt stellt dieselbe Aufgabe mehrmals.
+ */
+function frischZuerst(c: Ctx, list: Sentence[]): Sentence[] {
+  const schon = c.benutzt;
+  return schon?.size ? [...list.filter((s) => !schon.has(s.text)), ...list.filter((s) => schon.has(s.text))] : list;
 }
 function hintsFor(ws: Wortart[]): string[] {
   const uniq = WORTARTEN.filter((w) => ws.includes(w));
@@ -515,7 +523,7 @@ function unterart(c: Ctx): Made | null {
 function finden(c: Ctx): Made | null {
   const fits = candidates(c, (x) => fitsLength(x, c) || (c.lv >= 2 && words(x) <= LEVELS.maxWords[c.lv]));
   const two = (x: Sentence) => (findable(x, c.focus, c)?.length ?? 0) >= 2;
-  for (const s of [...fits.filter(two), ...fits.filter((x) => !two(x))]) {
+  for (const s of frischZuerst(c, [...fits.filter(two), ...fits.filter((x) => !two(x))])) {
     const hits = findable(s, c.focus, c);
     if (!hits || hits.length > 5) continue;
     const many = hits.length > 1;
@@ -719,12 +727,12 @@ const CLOZE_KINDS: Kind[] = ["zuordnen", "finden", "sortieren"];
  * A Wortarten task for one slot of the builder, without AI. Every task asks for real words; only
  * „Freie Antwort“ (offen, schreiben) gives an explanation task, and that one has a concrete sample.
  */
-export function wortartenTask(o: { skillId: string; setting: WortartSetting; difficulty: Difficulty; category: string | null; variant: number }, rng: Rng = Math.random): TaskDraft {
+export function wortartenTask(o: { skillId: string; setting: WortartSetting; difficulty: Difficulty; category: string | null; variant: number; benutzt?: Set<string> }, rng: Rng = Math.random): TaskDraft {
   const { setting } = o;
   const lv = lvOf(o.difficulty);
   const own = wortartOfSkill(o.skillId);
   const focus = own && setting.allowed.includes(own) ? own : setting.allowed[o.variant % setting.allowed.length];
-  const c: Ctx = { setting, lv, focus, rng, known: new Set([...defaultWortarten(setting.grade).allowed, ...setting.allowed]) };
+  const c: Ctx = { setting, lv, focus, rng, known: new Set([...defaultWortarten(setting.grade).allowed, ...setting.allowed]), benutzt: o.benutzt };
   const cat = o.category ?? "wortarten";
   // the kinds of the task type in turn; when one does not fit, the others of the same answer format
   // (the builder's task types take turns with the same counter: every second slot is „Wortarten“, so the
@@ -759,6 +767,12 @@ export function wortartenTask(o: { skillId: string; setting: WortartSetting; dif
   const subs = setting.nomenOnly ? [] : [...new Set(asked)].map(wortartSkill);
   const parent = o.skillId === NOMEN_SKILL ? [] : [WORTARTEN_SKILL];
   return { ...task, skillId: o.skillId, skillIds: [...new Set([o.skillId, ...parent, ...subs])], difficulty: o.difficulty, sourceType: "eigen" };
+}
+
+/** Die Sätze der Satzbank, die in einer Wortarten-Aufgabe vorkommen: für `benutzt` beim nächsten `wortartenTask` desselben Blatts. */
+export function saetzeIn(t: Pick<TaskDraft, "prompt" | "solution" | "data" | "answer">): string[] {
+  const blob = [t.prompt, t.solution, JSON.stringify(t.data), JSON.stringify(t.answer)].join("\n");
+  return BANK.filter((s) => blob.includes(s.text)).map((s) => s.text);
 }
 
 // ---------- checking AI tasks (any provider) ----------

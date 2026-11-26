@@ -5,7 +5,8 @@ import { SUBJECTS } from "@/lib/curriculum";
 import { alleFachNamen, fachNamen } from "@/lib/faecher";
 import { listTeachers, type Student } from "@/lib/repo";
 
-export function StudentForm({ student }: { student?: Student }) {
+/** `lehrerId`: wer den Schüler anlegt; steht er in der Liste, ist er als Lehrer vorgewählt (sonst wie bisher der erste). */
+export function StudentForm({ student, lehrerId }: { student?: Student; lehrerId?: number }) {
   const teachers = listTeachers();
   const eigene = student?.subjects ?? [];
   // Fächer im Profil aus der Fächerliste (Mehr › Fächer): die Hauptfächer und die des Schülers offen, der Rest
@@ -30,7 +31,7 @@ export function StudentForm({ student }: { student?: Student }) {
         </label>
         <label className="field">
           <span className="label">Lehrer</span>
-          <select className="input" name="teacher_id" defaultValue={student?.teacher_id ?? teachers[0]?.id ?? ""}>
+          <select className="input" name="teacher_id" defaultValue={student?.teacher_id ?? (teachers.some((t) => t.id === lehrerId) ? lehrerId : teachers[0]?.id) ?? ""}>
             <option value="">noch offen</option>
             {teachers.map((t) => (
               <option key={t.id} value={t.id}>

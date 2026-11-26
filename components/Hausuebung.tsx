@@ -96,7 +96,8 @@ function Vorschlagen({ v, name, eigenerKnopf }: { v: Vorschlag; name: string; ei
   if (v.ohneErgebnisse)
     return (
       <div className="grid gap-2" data-testid="hausuebung-ohne">
-        <h2 className="text-[17px] font-semibold">Hausübung vorbereitet</h2>
+        {/* nichts vorbereitet: die Überschrift verspricht es auch nicht */}
+        <h2 className="text-[17px] font-semibold">Hausübung</h2>
         <p className="text-[15px] text-ink-2">
           {v.offen
             ? `Noch alles offen: ${antwortenText(v.offen)} ${v.offen === 1 ? "wartet" : "warten"} auf deine Bewertung. Danach steht hier der Vorschlag.`

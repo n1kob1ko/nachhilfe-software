@@ -14,7 +14,8 @@ export function FachWechsel({ unitId, fach, eigene }: { unitId: number; fach: st
   const action = wechsleFachAction.bind(null, unitId);
   return (
     // on a phone the panel hangs from the whole (sticky) header, so it never reaches past the screen
-    <details className="schwebend group sm:relative" data-testid="fach-wechsel">
+    // key: nach dem Wechsel entsteht das Menü neu und ist damit zu (sonst blieb es offen über der Bestätigung liegen)
+    <details key={fach} className="schwebend group sm:relative" data-testid="fach-wechsel">
       <summary className="inline-flex min-h-[44px] cursor-pointer list-none items-center gap-1 rounded-full border border-line-strong bg-surface px-3 text-[14px] font-semibold text-ink-2 hover:text-ink [&::-webkit-details-marker]:hidden">
         {fach ? "Fach ändern" : "Fach wählen"}
         <ChevronDown size={15} className="transition-transform group-open:rotate-180" aria-hidden />
