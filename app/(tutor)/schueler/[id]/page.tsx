@@ -59,6 +59,8 @@ import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
 import { hausuebungErgebnis, hausuebungOffen, HU_STATUS_LABEL, statusDetail, type HuStatus } from "@/lib/hausuebung-zurueck";
 import { Gleiter } from "@/components/Bewegung";
+import { NotenverlaufKarte } from "@/components/Notenverlauf";
+import { notenverlauf } from "@/lib/notenverlauf";
 
 /** Vier Bereiche statt sechs: Stoff und Prüfungen teilen sich einen Tab, Übungen und Lernverlauf auch. */
 const TABS = [
@@ -177,6 +179,18 @@ export default async function StudentPage({ params, searchParams }: { params: Pr
           <section aria-labelledby="schule-titel">
             <h2 id="schule-titel" className="gruppe-titel mb-4">Prüfungen und Hausübungen</h2>
             <School student={student} />
+          </section>
+          {/* niko 2026-11-26: Notenverlauf und Monatsbericht für die Eltern (lib/notenverlauf.ts, lib/monatsbericht.ts) */}
+          <section aria-labelledby="noten-titel" data-testid="profil-notenverlauf">
+            <div className="mb-4 flex flex-wrap items-baseline justify-between gap-3">
+              <h2 id="noten-titel" className="gruppe-titel">Notenverlauf</h2>
+              <Link href={`/schueler/${student.id}/bericht`} className="btn btn-secondary btn-sm" data-testid="monatsbericht-link">
+                <FileText size={15} aria-hidden /> Monatsbericht für Eltern
+              </Link>
+            </div>
+            <div className="panel px-5 py-5">
+              <NotenverlaufKarte v={notenverlauf(student.id)} />
+            </div>
           </section>
         </div>
       )}

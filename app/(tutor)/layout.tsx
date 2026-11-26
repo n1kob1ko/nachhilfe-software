@@ -49,7 +49,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
     </Link>
   );
   return (
-    <div className="min-h-screen bg-paper md:grid md:grid-cols-[236px_minmax(0,1fr)] print:bg-white">
+    <div className="min-h-screen bg-paper md:grid md:grid-cols-[236px_minmax(0,1fr)] print:block print:bg-white">
       <header className="no-print flex items-center justify-between gap-3 border-b border-line bg-paper px-4 py-2.5 md:hidden">
         <Brand />
         <div className="flex min-w-0 items-center gap-2">
@@ -74,7 +74,7 @@ export default async function TutorLayout({ children }: { children: React.ReactN
           </div>
         </div>
       </aside>
-      <main className="min-w-0 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 lg:px-10">
+      <main className="min-w-0 px-4 pt-5 pb-[calc(7rem+env(safe-area-inset-bottom))] md:px-8 md:py-8 lg:px-10 print:p-0">
         <div className="mx-auto max-w-[1120px]">
           <RunningUnits units={running} />
           <SeitenRahmen>{children}</SeitenRahmen>

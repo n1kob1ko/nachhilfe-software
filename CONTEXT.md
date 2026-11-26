@@ -73,6 +73,24 @@ dazu die Textarbeiten und die Seiten des Whiteboards. Nichts wird gespeichert, d
 PDF macht der Druckdialog des Browsers.
 _Avoid_: Mappe als Ordner von Materialien, Portfolio
 
+**Monatsbericht**:
+Ein Monat eines **Schülers** auf einer Seite für die Eltern (`lib/monatsbericht.ts`): **Einheiten** mit Datum,
+Fach, Thema und Dauer, Themen mit Lernstand vorher → jetzt, Schularbeiten und Tests mit Note, **Zu Hause geübt**
+und der **Notenverlauf**. Der Lehrer öffnet ihn im Profil unter „Stoff & Prüfungen“ („Monatsbericht für Eltern“,
+`/schueler/[id]/bericht`), druckt ihn als PDF oder kopiert den Link, den die Familie über die **Schüler-App**
+öffnet (`/lernen/[token]/bericht`). Ohne KI, nichts wird gespeichert, keine Notizen des Lehrers.
+_Avoid_: Elternbrief, Zeugnis
+
+**Notenverlauf**:
+Die Noten aus Schularbeiten und Tests über die Zeit, je Fach, mit dem Schnitt vor und seit dem Beginn der
+Nachhilfe (erste abgeschlossene Stunde; `lib/notenverlauf.ts`). Im Profil unter „Stoff & Prüfungen“ und im
+**Monatsbericht**.
+
+**Zu Hause geübt**:
+Was ein **Schüler** seit der letzten **Einheit** außerhalb des Unterrichts geübt hat: Lernspiele, Vokabeln und
+Übungen, mit Tagen, Minuten und Quote (`lib/zu-hause.ts`). Steht oben in der laufenden Einheit, in „Mehr Details“
+und als Satz in „Was wurde gemacht“.
+
 **Minitest**:
 Ein paar Aufgaben (5, 6 oder 8) über den Stoff der letzten **Einheit**, am Anfang
 der Einheit wie eine kleine Schularbeit: ohne Tipps, ein Versuch je Aufgabe, richtig
