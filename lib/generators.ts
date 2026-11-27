@@ -39,6 +39,8 @@ import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
 import { ohneReihenfolge } from "./math-text";
 import { textaufgabeTask } from "./textaufgaben";
 import { EXPLAIN } from "./erklaerungen";
+import { quizKartenZur } from "./lernspiele-quiz";
+import type { EigeneKarte } from "./spielkarten-text";
 import { typischeFehler } from "./themen";
 import { VOKABEL_GENERATOREN, istVokabelThema, vokabelFuerSlot, vokabelFuerTyp } from "./vokabeln-themen";
 import { isWortartenSkill, saetzeIn, wortartenFor, wortartenTask, type WortartSetting } from "./wortarten";
@@ -598,6 +600,34 @@ function freeTask(skillId: string, skillName: string, diff: Difficulty, variant 
     hints: ["Schreib die Schritte der Reihe nach auf.", "Ein eigenes Beispiel zeigt, dass du es verstanden hast."],
     errorMap: [],
   };
+}
+
+// ---------- Aufgaben aus dem Quiz des Fachs ----------
+/** Ein Denkanstoß, der nichts verrät (das „Merke“ der Karte nennt oft das Ergebnis und steht deshalb erst in der Lösung). */
+const tippenHinweis = (skillId: string, frage: string) =>
+  skillId.startsWith("mathe.") ? "Schreib dir einen Zwischenschritt auf und rechne dann weiter." : frage.includes(GAP) ? "Lies den Satz noch einmal ganz und achte auf die Stelle mit der Lücke." : "Lies die Frage und alle Antworten noch einmal genau.";
+
+/**
+ * Zu einer Fähigkeit ohne eigenen Generator: eine Aufgabe aus dem Quiz des Fachs (lib/lernspiele-quiz.ts, dieselben Fragen wie
+ * im Lernspiel), statt einer allgemeinen Vorlage wie „Erfinde eine eigene Aufgabe zu …“ (Simulation 27.11.2026: in einer
+ * Volksschul-Einheit ohne KI kam zu „Halbschriftlich multiplizieren“ genau diese eine Aufgabe; von 602 Fähigkeiten hatten 423 ohne KI nur
+ * die Vorlagen, 405 davon haben Quizfragen). Leicht nimmt die leichten Karten, schwer die schweren. Eine Zahl als Lücke wird getippt
+ * (bei „Gemischt“ jede zweite), sonst wird gewählt. Null ohne Quizfragen oder für ein Format, das eine Quizfrage nicht hergibt.
+ */
+function quizAufgabe(skillId: string, taskType: GenerateRequest["taskType"], diff: Difficulty, rng: Rng): TaskDraft | null {
+  if (taskType !== "mixed" && taskType !== "mc" && taskType !== "cloze" && taskType !== "calc" && taskType !== "grammar") return null;
+  const alle = quizKartenZur(skillId).filter((k): k is { karte: Extract<EigeneKarte, { art: "wahl" }>; stufe: Stufe } => k.karte.art === "wahl" && k.karte.falsch.length > 0);
+  if (!alle.length) return null;
+  const stufe = diff === "leicht" ? 1 : diff === "schwer" ? 2 : null;
+  const passend = stufe ? alle.filter((k) => k.stufe === stufe) : alle;
+  const k = pick(rng, passend.length ? passend : alle).karte;
+  const merke = k.merke.trim();
+  const zahlLuecke = k.frage.includes(GAP) && /^\d+(,\d+)?$/.test(k.richtig.trim());
+  const tippen = zahlLuecke && (taskType === "mixed" ? rng() < 0.5 : taskType !== "mc");
+  const basis = { skillId, difficulty: diff, prompt: k.frage, solution: merke ? `${k.richtig}. ${merke}` : k.richtig, hints: [tippenHinweis(skillId, k.frage)], errorMap: [] };
+  if (tippen) return { ...basis, type: "cloze", data: {}, answer: { blanks: [[k.richtig.trim()]], mode: "text" } };
+  const options = shuffle(rng, [k.richtig, ...k.falsch.slice(0, 3)]);
+  return { ...basis, type: "mc", data: { options }, answer: { correct: options.indexOf(k.richtig) } };
 }
 
 // ---------- Fehler korrigieren, more gap texts ----------
@@ -1169,6 +1199,7 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     const skill = skills[k];
     const runde = versuche[k]++;
     let t: TaskDraft;
+    let quiz: TaskDraft | null = null;
     const figId = figurFaehigkeit(skill.id);
     // Rechenweg und Sachaufgabe: zuerst mit Bild (wenn es das für die Fähigkeit gibt), sonst lib/generators-mathe.ts
     const fuerSkill = (f: TaskDraft | null): TaskDraft | null => (f ? { ...f, skillId: skill.id, skillIds: [...new Set([skill.id, ...(f.skillIds ?? [])])] } : null);
@@ -1186,6 +1217,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
     } else if (figId && req.taskType !== "free") {
       // Aufgaben mit Bild: die Fähigkeit der Aufgabe ist die gewählte (auch eine Teilfähigkeit)
       t = fuerSkill(figurFuerTyp(figId, req, rng))!;
+    } else if (!GEN[skill.id] && (quiz = quizAufgabe(skill.id, req.taskType, req.difficulty, rng))) {
+      t = quiz;
     } else if (req.taskType === "free" || req.taskType === "rechenweg" || req.taskType === "sachaufgabe" || !GEN[skill.id]) {
       t = freeTask(skill.id, skill.name, req.difficulty, runde);
       if (seen.has(t.prompt.split("\n")[0])) {
