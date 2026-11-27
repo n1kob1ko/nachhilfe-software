@@ -21,9 +21,11 @@ import { wertePaketAus as kiAuswertung } from "./ai/uebungspaket";
 import { AUTO, createDraft, parseSettings, studentContext } from "./builder";
 import { db } from "./db";
 import { ERROR_TYPES, type ErrorType } from "./error-types";
-import { listErkenntnisse, setzeErkenntnisStatus, speichereErkenntnisse, type Erkenntnis } from "./erkenntnisse";
+import { belegeVon, listErkenntnisse, setzeErkenntnisStatus, speichereErkenntnisse, type Erkenntnis } from "./erkenntnisse";
+import { expectedFixes } from "./fix-text";
 import { skillsForPrompt } from "./lehrplan";
 import * as repo from "./repo";
+import type { TaskDraft } from "./tasks";
 
 export const PAKET_ANZAHL = [8, 12, 16] as const;
 export const PAKET_STANDARD = 12;
@@ -71,22 +73,93 @@ export function paketVorschlag(studentId: number, fach?: string) {
   };
 }
 
+/** Sprachen, in denen ein Fehlermuster meist aus einem geschriebenen Text kommt (Aufsatz, Schularbeit). */
+const istTextFach = (fach: string) => /deutsch|englisch|english/i.test(fach);
+
+/** Ein Fehlermuster ohne das Beispiel in Klammern und ohne die Aufgabennummern, für Hinweis und Lösung. */
+export function musterKurz(text: string): string {
+  return text.replace(/\s+–\s+Aufgabe.*$/, "").replace(/\s*\([^)]*\)\s*$/, "").trim().slice(0, 120);
+}
+
 /**
  * Der Auftrag an die KI: jedes Fehlermuster wörtlich, wie die Aufgaben es herausfordern sollen, was nicht mehr kommt und
- * was schon sicher ist. Der Builder legt ihn als „Besonderer Wunsch der Lehrkraft“ in die Anfrage.
+ * was schon sicher ist. Der Builder legt ihn als „Besonderer Wunsch der Lehrkraft“ in die Anfrage. Bei Fehlern aus einem
+ * Aufsatz (Deutsch, Englisch) gehen die Stellen aus der Arbeit mit, und die Aufgaben wenden die Regel an neuen, ähnlichen
+ * Sätzen an; Fehler beim Argumentieren werden mit Schreibaufgaben geübt (niko, 27.11.2026).
  */
-export function paketAuftrag(o: { nr: number; muster: Pick<Erkenntnis, "text" | "skill_id">[]; nichtMehr: string; staerken: string[] }): string {
+export function paketAuftrag(o: { nr: number; fach?: string; muster: (Pick<Erkenntnis, "text" | "skill_id"> & { belege?: string | null })[]; nichtMehr: string; staerken: string[] }): string {
   const name = (id: string | null) => (id ? repo.getSkill(id)?.name : null);
-  const zeilen = o.muster.map((m, i) => `${i + 1}. ${m.text}${name(m.skill_id) ? ` (${name(m.skill_id)})` : ""}`);
+  const zeilen = o.muster.flatMap((m, i) => {
+    const belege = belegeVon(m);
+    return [
+      `${i + 1}. ${m.text}${name(m.skill_id) ? ` (${name(m.skill_id)})` : ""}`,
+      ...(belege.length ? [`   Stellen aus seiner Arbeit: ${belege.map((b) => `„${b.falsch}“ → „${b.richtig}“`).join("; ")}`] : []),
+    ];
+  });
+  const text = o.fach ? istTextFach(o.fach) : false;
   return [
     `Gezieltes Übungspaket ${o.nr} gegen diese Fehlermuster des Schülers. Jede Aufgabe trainiert genau eines davon, ungefähr gleich viele je Muster, von leicht zu schwer. Die Aufgaben sollen den Fehler gezielt herausfordern (z. B. Sätze, in denen die falsche Strategie in die Irre führt), und die Lösung nennt kurz die richtige Strategie.`,
     ...zeilen,
+    text
+      ? [
+          "Die Fehler stammen aus einem Text, den der Schüler geschrieben hat. Jede Aufgabe lässt ihn die Regel an neuen Sätzen anwenden, die den Stellen aus seiner Arbeit ähneln (dieselbe Präposition, derselbe Satzbau, dasselbe Wortfeld), zum Thema seiner Arbeit oder aus seinem Alltag, auf dem Niveau seiner Klasse. Die Stellen selbst übt er schon in eigenen Aufgaben: nicht wortgleich wiederholen.",
+          "Keine Fragen nach der Regel oder nach typischen Fehlern (nicht: Erkläre, wie man … vorgeht), sondern Sätze, an denen er die Regel anwendet.",
+          "Grammatik und Rechtschreibung: Lückentext, Fehler korrigieren, Satz verbessern, mit mehreren Stellen je Aufgabe. Ausdruck und Stil: umgangssprachliche, ungenaue oder an den Leser gerichtete Sätze sachlich umschreiben.",
+          "Inhalt und Argumentation: Schreibaufgaben (Freie Antwort), z. B. zu einer Behauptung Begründung und konkretes Beispiel ergänzen, ein unvollständiges oder unlogisches Argument zu Ende führen, einen Absatz nach Behauptung, Begründung, Beispiel und Rückbezug schreiben, für ein neues Thema in 5 Minuten eine Gliederung machen. Die Lösung bringt eine Musterlösung und woran man die Antwort bewertet.",
+        ].join(" ")
+      : "",
     o.nichtMehr.trim() ? `Nicht üben, kommt nicht mehr: ${o.nichtMehr.trim()}` : "",
     o.staerken.length ? `Schon sicher, nicht üben: ${o.staerken.join("; ")}` : "",
   ]
     .filter(Boolean)
     .join("\n")
-    .slice(0, 2400);
+    .slice(0, 5000);
+}
+
+/**
+ * Sätze aus der eigenen Arbeit verbessern: aus den Belegen der Muster, ohne KI, je Beleg eine Aufgabe „Fehler korrigieren“
+ * (die Verbesserung der Lehrkraft ist die Lösung, die Lehrkraft kann nachbewerten). Nur kurze Verbesserungen (1 bis 3
+ * geänderte Stellen); ein ganz umgeschriebener Satz ist kein eindeutiger Korrigier-Satz und geht nur der KI als Vorbild.
+ * Abwechselnd aus den Mustern, höchstens `max`.
+ */
+export function eigeneSaetze(muster: (Pick<Erkenntnis, "text" | "skill_id" | "error_type"> & { belege?: string | null })[], max: number): TaskDraft[] {
+  // Inhalt und Argumentation: eine Stelle ist dort keine Verbesserung mit eindeutiger Lösung
+  const jeMuster = muster.map((m) =>
+    m.error_type === "inhalt" ? [] :
+    belegeVon(m)
+      .filter((b) => b.falsch.length >= 12 && b.falsch.split(" ").length >= 3)
+      .map((b) => ({ b, fixes: expectedFixes(b.falsch, b.richtig) }))
+      .filter((x) => x.fixes.length >= 1 && x.fixes.length <= 3)
+      .map((x) => ({ m, ...x })),
+  );
+  const out: TaskDraft[] = [];
+  for (let runde = 0; out.length < max && jeMuster.some((l) => l.length > runde); runde++) {
+    for (const l of jeMuster) {
+      const x = l[runde];
+      if (!x || out.length >= max) continue;
+      const kurz = musterKurz(x.m.text);
+      const n = x.fixes.length;
+      out.push({
+        type: "fix",
+        skillId: x.m.skill_id,
+        skillIds: x.m.skill_id ? [x.m.skill_id] : [],
+        category: "korrigieren",
+        difficulty: "mittel",
+        prompt: `Diese Stelle stammt aus deiner Schularbeit. ${n === 1 ? "Darin steckt ein Fehler" : `Darin stecken ${n} Fehler`}. Schreib sie richtig.`,
+        data: { faulty: x.b.falsch },
+        answer: {
+          accepted: [x.b.richtig],
+          mode: "exact",
+          fixes: x.fixes.map((f) => ({ ...f, label: kurz, errorType: x.m.error_type ?? null })),
+          criteria: [n === 1 ? "Der Fehler ist verbessert." : `Alle ${n} Fehler sind verbessert.`, "Richtiges wurde nicht verändert."],
+        },
+        solution: `${x.b.richtig}\n→ ${kurz}`,
+        hints: [`Worauf du achten musst: ${kurz}.`],
+        errorMap: [],
+      });
+    }
+  }
+  return out;
 }
 
 /** Erstellt das Paket als Entwurf (Vorschau unter /uebungen/[id]). Wirft einen Fehler mit einem Satz für die Lehrkraft. */
@@ -104,6 +177,8 @@ export async function erstellePaket(o: { studentId: number; teacherId: number | 
   const anzahl = (PAKET_ANZAHL as readonly number[]).includes(o.anzahl) ? o.anzahl : PAKET_STANDARD;
   const nichtMehr = o.nichtMehr.replace(/\s+/g, " ").trim().slice(0, 300);
   const paket: PaketInfo = { nr: v.nr, fach: v.fach, erkenntnisIds: muster.map((e) => e.id), nichtMehr };
+  // ein Drittel des Pakets: die eigenen Sätze aus der Arbeit verbessern (nur wenn das Einlesen Stellen gefunden hat)
+  const eigene = eigeneSaetze(muster, Math.round(anzahl / 3));
   const out = await createDraft(
     {
       studentId: student.id,
@@ -112,14 +187,17 @@ export async function erstellePaket(o: { studentId: number; teacherId: number | 
       klasse: ctx?.klasse ?? student.klasse ?? 1,
       skillIds,
       difficulty: AUTO,
-      count: anzahl,
+      count: anzahl - eigene.length,
       categories: [],
-      focus: paketAuftrag({ nr: v.nr, muster, nichtMehr, staerken: v.staerken.map((s) => s.text) }),
+      // Fehler beim Argumentieren oder Planen: freie Schreibaufgaben (Argument zu Ende führen, Gliederung), keine Auswahlfragen
+      kategorienJeFaehigkeit: Object.fromEntries(muster.filter((m) => m.error_type === "inhalt" && m.skill_id && istTextFach(v.fach)).map((m) => [m.skill_id!, ["offen"]])),
+      focus: paketAuftrag({ nr: v.nr, fach: v.fach, muster, nichtMehr, staerken: v.staerken.map((s) => s.text) }),
       useAI: true,
       title: `${student.name.split(" ")[0]} – Übungspaket ${v.nr}`,
       paket,
     },
     o.teacherId,
+    { vorab: eigene },
   );
   return { worksheetId: out.id, aiError: out.aiError };
 }

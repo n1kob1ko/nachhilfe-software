@@ -27,7 +27,7 @@ import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
 import { erreichtVon, istBewertung, MAX_ERKENNTNISSE, MAX_SEITEN, MAX_ZEILEN, type BlattErkenntnis, type Bewertung, type BlattVorschlag, type BlattZeile } from "./blatt-regeln";
 import { ERROR_TYPES } from "./error-types";
-import { speichereErkenntnisse } from "./erkenntnisse";
+import { sauberBelege, speichereErkenntnisse } from "./erkenntnisse";
 
 export * from "./blatt-regeln";
 
@@ -111,6 +111,7 @@ export function erkenntnisseAusGelesen(g: Pick<BlattGelesen, "muster" | "staerke
     out.push(e);
   };
   for (const m of g.muster ?? []) {
+    const belege = sauberBelege(m.belege);
     const nrs = (m.aufgaben ?? []).map((n) => eineZeile(n, 8)).filter(Boolean).slice(0, 8);
     const text = eineZeile(m.text, 220);
     dazu({
@@ -118,6 +119,7 @@ export function erkenntnisseAusGelesen(g: Pick<BlattGelesen, "muster" | "staerke
       text: text && nrs.length && !/\bAufgabe/.test(text) ? `${text} – Aufgabe ${nrs.join(", ")}` : text,
       skillId: m.faehigkeit && erlaubt.has(m.faehigkeit) ? m.faehigkeit : null,
       fehlerart: ERROR_TYPES.some((t) => t.key === m.fehlerart) ? m.fehlerart : null,
+      ...(belege.length ? { belege } : {}),
     }, text);
   }
   for (const s of (g.staerken ?? []).slice(0, 3)) dazu({ art: "staerke", text: eineZeile(s, 200), skillId: null, fehlerart: null });
@@ -342,6 +344,7 @@ export function speichereBlatt(e: BlattEingabe): { worksheetId: number; assignme
         text: k.text,
         skillId: skill(k.skillId),
         fehlerart: ERROR_TYPES.find((t) => t.key === k.fehlerart)?.key ?? null,
+        belege: sauberBelege(k.belege),
       })),
     });
     return { worksheetId, assignmentId, testId };

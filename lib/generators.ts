@@ -562,6 +562,13 @@ const FREE_PROMPTS = [
 ];
 /** Deutsch and Englisch: writing own sentences instead of solving a made-up task. */
 const LANG_PROMPT = (n: string) => `Schreibe drei eigene Sätze zu „${n}“. Erkläre bei einem Satz, warum er so richtig ist.`;
+/**
+ * Ob eine Aufgabe eine dieser allgemeinen Vorlagen ist (gleich für jede Fähigkeit). Ein Übungspaket gegen konkrete
+ * Fehlermuster lässt sie weg (lib/builder.ts).
+ */
+export function istErklaerVorlage(prompt: string): boolean {
+  return /^(Erkläre in eigenen Worten, wie man bei „.*“ vorgeht|Welcher Fehler passiert bei „.*“ besonders oft\?|Erfinde eine eigene Aufgabe zu „.*“ und löse sie|Schreibe drei eigene Sätze zu „.*“\.)/.test(prompt);
+}
 
 function freeTask(skillId: string, skillName: string, diff: Difficulty, variant = 0): TaskDraft {
   const v = variant % FREE_PROMPTS.length;

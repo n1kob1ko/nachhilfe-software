@@ -42,7 +42,8 @@ export type BlattZeile = {
  * Eine **Erkenntnis** aus einem gelesenen Blatt (lib/erkenntnisse.ts): ein Fehlermuster über mehrere Aufgaben („Bestimmt den
  * Fall über den Begleiter statt über die Frage“) oder eine Stärke. Die Lehrkraft prüft sie in der Vorschau.
  */
-export type BlattErkenntnis = { art: "fehler" | "staerke"; text: string; skillId: string | null; fehlerart: string | null };
+/** belege: Stellen aus der Arbeit, „falsch“ → „richtig“ (lib/erkenntnisse.ts `Beleg`), nur bei einem Aufsatz */
+export type BlattErkenntnis = { art: "fehler" | "staerke"; text: string; skillId: string | null; fehlerart: string | null; belege?: { falsch: string; richtig: string }[] };
 /** So viele Erkenntnisse übernimmt ein Blatt höchstens. */
 export const MAX_ERKENNTNISSE = 10;
 
