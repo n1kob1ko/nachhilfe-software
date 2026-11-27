@@ -54,6 +54,7 @@ import { nachtragenHref } from "@/lib/heute";
 import { listenVon } from "@/lib/vokabellisten";
 import { saetzeVon } from "@/lib/spielkarten";
 import { fehlerStand } from "@/lib/fehlerprotokoll";
+import { eigeneLernwoerter, lernwortStand } from "@/lib/lernwoerter";
 import { textsForStudent, wordsLabel } from "@/lib/texts";
 import { ZuBewertenListe } from "@/components/ZuBewerten";
 import { zuBewerten, zuBewertenTitel } from "@/lib/zu-bewerten";
@@ -1258,6 +1259,29 @@ function FehlerprotokollPanel({ student, first }: { student: repo.Student; first
   );
 }
 
+/** Lernwörter (lib/lernwoerter.ts): die Liste der Klasse, gespielt als „Lernwörter“ (vorlesen und schreiben). */
+function LernwoerterPanel({ student, first }: { student: repo.Student; first: string }) {
+  const eigene = eigeneLernwoerter(student.id);
+  // in der Volksschule immer; sonst nur, wenn schon eine Liste da ist
+  if (!eigene.length && !(student.school_type === "Volksschule" || student.grade <= 4)) return null;
+  const sitzt = eigene.length ? lernwortStand(student.id, eigene).filter((e) => e.sitzt).length : 0;
+  return (
+    <div className="panel flex flex-wrap items-center gap-x-4 gap-y-3 px-5 py-4" data-testid="lernwoerter-profil">
+      <div className="min-w-0 flex-1">
+        <p className="font-semibold">Lernwörter</p>
+        <p className="text-[13px] text-ink-2">
+          {eigene.length
+            ? `${eigene.length} ${eigene.length === 1 ? "Wort" : "Wörter"}, ${sitzt} ${sitzt === 1 ? "sitzt" : "sitzen"} · im Spiel „Lernwörter“`
+            : `Die Lernwörter der Klasse von ${first}: das Spiel liest jedes Wort vor, ${first} schreibt es.`}
+        </p>
+      </div>
+      <Link href={`/schueler/${student.id}/lernwoerter`} className="btn btn-secondary btn-sm">
+        {eigene.length ? "Liste ansehen" : "Liste anlegen"}
+      </Link>
+    </div>
+  );
+}
+
 /** Audit 2026-11-07: die letzten fünf Übungen, ältere hinter „Ältere Übungen“. */
 const UEBUNGEN_SICHTBAR = 5;
 
@@ -1324,6 +1348,7 @@ function Exercises({ student }: { student: repo.Student }) {
       <Vokabellisten student={student} first={first} />
       <SpielkartenPanel student={student} first={first} />
       <FehlerprotokollPanel student={student} first={first} />
+      <LernwoerterPanel student={student} first={first} />
       {(() => {
         const drafts = repo.listWorksheets().filter((w) => w.student_id === student.id && w.status === "entwurf");
         if (!drafts.length) return null;

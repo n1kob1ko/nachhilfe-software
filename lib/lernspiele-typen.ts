@@ -56,7 +56,7 @@ import type { BioDaten } from "./biolabor";
 import type { BiotestDaten } from "./biotest";
 import type { OeDaten } from "./oesterreich";
 
-export const SPIEL_ARTEN = ["artikel", "wortarten", "konjugieren", "gross", "satzglieder", "nomen", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
+export const SPIEL_ARTEN = ["artikel", "wortarten", "konjugieren", "gross", "satzglieder", "nomen", "lernwoerter", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -67,7 +67,7 @@ export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" 
 export const EIGENES_FELD: SpielArt[] = ["glas", "wort", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"];
 /** Spiele für ein Duell: „Dein Stoff“ und „Meine Fehler“ hat nur dieser Schüler, Glasklar ist ein Puzzle für einen. */
 /** Spiele mit eigenem Feld gehen nicht als Duell, außer Europa: dafür gibt es eigene Duell-Karten im Kachelfeld (lib/europa.ts). */
-const duellTauglich = (a: SpielArt) => a !== "stoff" && a !== "fehler" && (!EIGENES_FELD.includes(a) || a === "europa");
+const duellTauglich = (a: SpielArt) => a !== "stoff" && a !== "fehler" && a !== "lernwoerter" && (!EIGENES_FELD.includes(a) || a === "europa");
 export const DUELL_ARTEN: SpielArt[] = SPIEL_ARTEN.filter(duellTauglich);
 export const istDuellArt = (x: unknown): x is SpielArt => istSpielArt(x) && duellTauglich(x);
 
@@ -75,6 +75,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
   wortarten: "Wortarten",
   konjugieren: "ich gehe, du gehst",
+  lernwoerter: "Lernwörter",
   nomen: "Nomen bestimmen",
   satzglieder: "Satzglieder",
   gross: "Groß oder klein?",
@@ -115,6 +116,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   artikel: "Deutsch",
   wortarten: "Deutsch",
   konjugieren: "Deutsch",
+  lernwoerter: "Deutsch",
   nomen: "Deutsch",
   satzglieder: "Deutsch",
   gross: "Deutsch",
@@ -164,6 +166,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   artikel: "Jedes Nomen zu seinem Artikel",
   wortarten: "Nomen, Verb oder Adjektiv? Bestimm das markierte Wort",
   konjugieren: "ich gehe, du gehst, wir gehen: die richtige Form",
+  lernwoerter: "Anschauen, anhören, schreiben: Fahrrad, vielleicht, Straße",
   nomen: "Geschlecht, Zahl und Fall: der Hund, männlich, Einzahl, 1. Fall",
   satzglieder: "Subjekt, Prädikat, Objekt: Bestimm das markierte Satzglied",
   gross: "beim Spielen oder wir spielen: groß oder klein?",
@@ -204,6 +207,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   artikel: ["die", "das", "der"],
   wortarten: ["Nomen", "Verb", "Adjektiv"],
   konjugieren: ["gehe", "gehst", "geht"],
+  lernwoerter: ["Fahrrad", "wieder", "Straße"],
   nomen: ["männlich", "Einzahl", "3. Fall"],
   satzglieder: ["Subjekt", "Prädikat", "Objekt"],
   gross: ["Beim", "Spielen", "spielen"],
@@ -244,6 +248,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",
   wortarten: "Ist das markierte Wort ein Nomen, ein Verb oder ein Adjektiv?",
   konjugieren: "Welche Form des Verbs passt zur Person?",
+  lernwoerter: "Schau dir das Wort an, hör es dir an und schreib es richtig.",
   nomen: "Bestimm das markierte Nomen: Geschlecht, Zahl und Fall.",
   satzglieder: "Welches Satzglied ist markiert?",
   gross: "Schreibt man das Wort in der Lücke groß oder klein?",
@@ -284,7 +289,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
  * am Zahlenstrahl treffen, das Ergebnis eintippen, ein Wort aus Buchstaben legen, die Karte nach links oder rechts
  * wischen oder die passende Antwort-Kachel in die Lücke tippen.
  */
-export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "kacheln" | "schreiben";
+export type SpielForm = "paar" | "reihe" | "strahl" | "tippen" | "legen" | "wischen" | "kacheln" | "schreiben" | "lernwort";
 /**
  * Die Form eines Spiels, wenn alle seine Karten so beantwortet werden. „Kopfrechnen“, „English Tenses“ und „English
  * Grammar“ fehlen: dort hängt es am Thema (Zahlen werden getippt, ja oder nein wird gewischt, drei Formen stehen am
@@ -305,6 +310,7 @@ export const SPIEL_FORM: Partial<Record<SpielArt, SpielForm>> = {
   stilmittel: "kacheln",
   wortarten: "kacheln",
   konjugieren: "kacheln",
+  lernwoerter: "lernwort",
   satzglieder: "kacheln",
   gross: "wischen",
   fehler: "wischen",
@@ -385,6 +391,8 @@ export type SpielKarte = {
   biotest?: BiotestDaten;
   /** Nur „Österreich erobern“ (lib/oesterreich.ts): Eintrag, Level, wie gefragt wird */
   oe?: OeDaten;
+  /** Nur „Lernwörter“ (lib/lernwoerter.ts): `zeigen` – das Wort steht zuerst zum Anschauen da, sonst wird es nur vorgelesen */
+  lernwort?: { zeigen: boolean };
 };
 
 /**
@@ -428,8 +436,8 @@ export type SpielStart = { rundeId: number; karten: SpielKarte[]; endlos?: numbe
 
 /** Spiele mit Endlos-Modus: alle außer „Vokabel-Paare“ (dort liegen alle Karten einer Runde auf einmal am Brett). */
 export const hatEndlos = (art: SpielArt) => art !== "vokabeln";
-/** Torlauf (lib/torlauf.ts) braucht Antworten zum Wählen: kein Satzbau, kein Zahlenstrahl, keine eigenen Spiele (Glasklar, Wortschloss). */
-export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau" && art !== "strahl" && !EIGENES_FELD.includes(art);
+/** Torlauf (lib/torlauf.ts) braucht Antworten zum Wählen: kein Satzbau, kein Zahlenstrahl, keine Lernwörter (geschrieben), keine eigenen Spiele (Glasklar, Wortschloss). */
+export const torTauglich = (art: SpielArt) => hatEndlos(art) && art !== "satzbau" && art !== "strahl" && art !== "lernwoerter" && !EIGENES_FELD.includes(art);
 /** So viele Fehler verzeiht ein Endlos-Spiel. */
 export const ENDLOS_HERZEN = 3;
 
@@ -543,6 +551,10 @@ export const SPIEL_SEIT: Record<string, string> = {
   bio: "2026-11-23",
   biotest: "2026-11-23",
   oesterreich: "2026-11-24",
+  gross: "2026-11-27",
+  satzglieder: "2026-11-27",
+  nomen: "2026-11-27",
+  lernwoerter: "2026-11-27",
 };
 
 /** Steht das Spiel seit höchstens 14 Tagen in der App? `heute` als JJJJ-MM-TT (Wien). */

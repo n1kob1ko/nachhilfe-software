@@ -457,7 +457,7 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = nomenKandidaten();
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
-  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {
+  } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "lernwoerter" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {
     // kein fester Vorrat: Vokabel-Paare nehmen die Listen des Schülers, die Themenspiele die Karten ihres Themas
     // (lib/lernspiele.ts gibt sie als `pool` mit), „Stilmittel“ die Karten der Schulstufe (lib/stilmittel.ts)
     out = [];

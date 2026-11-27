@@ -1035,6 +1035,31 @@ niko 2026-11-27, derselbe Stoffzettel: „Geschlecht-, Zahl- und Fallbestimmunge
 - **Lernstand**: deutsch.wortarten.nomen; im Stoff bringen deutsch.wortarten.nomen und deutsch.vs.sprache.mehrzahl
   das Spiel. Zum Üben in der Volksschule ab der 3. Schulstufe, nach den Personalformen.
 
+## Lernwörter (Volksschule)
+
+niko 2026-11-27, derselbe Stoffzettel: „Lernwörter, das Wort wird vorgelesen und das Kind schreibt es; ich trage die
+Liste der Klasse ein“. Spiel `lernwoerter` (lib/lernwoerter.ts, Text in lib/lernwoerter-text.ts, Feld
+components/lernen/LernwortFeld.tsx), ohne KI:
+
+- **Liste beim Schüler**: Profil › „Lernwörter“ (/schueler/[id]/lernwoerter), ein Wort pro Zeile, optional
+  `Wort: Satz mit dem Wort.` Steht das Wort nicht genau so im Satz (Hund in „Hunde“), kommt es ohne Satz (Hinweis in der
+  Vorschau). Tabelle `lernwoerter` (ein Text je Schüler, wie das Fehlerprotokoll). Ohne Liste übt das Spiel
+  `GRUNDWORTSCHATZ` (rund 85 häufige Wörter der 3./4. Klasse mit Satz).
+- **Eine Karte** (`form: "lernwort"`): 1. Anschauen: das Wort groß, im Satz markiert, wird vorgelesen
+  (`speechSynthesis`, deutsche Stimme, de-AT wenn da), „Gemerkt, jetzt schreiben“. 2. Schreiben: Satz mit Lücke, 🔊
+  noch einmal, Textfeld. Geprüft wird **jeder Buchstabe, auch groß und klein** (`lernwortStimmt`; nur Leerzeichen und
+  ein Satzzeichen am Ende zählen nicht). Falsch: das richtige Wort mit den falschen Buchstaben rot
+  (`lernwortVergleich`) und „Achte auf: …“ (`lernwortRegel`: groß am Anfang, ie, ß, ck, tz, Doppelbuchstaben,
+  Dehnungs-h, ä/äu, v); weiter erst, wenn es richtig abgeschrieben ist, die Karte kommt später noch einmal.
+- **Steigern je Wort** (erster Versuch in den beendeten Runden, `lernwortStand`): neu oder zuletzt falsch → anschauen
+  und schreiben (`lernwort.zeigen`); zuletzt richtig → nur hören und schreiben, wie beim Diktat („Zeig es mir“ hilft);
+  3× hintereinander richtig → sitzt, kommt erst, wenn die anderen nicht reichen. Ohne deutsche Stimme im Gerät wird
+  jedes Wort gezeigt. 8 Karten je Runde.
+- **Wo**: „Deine Lernwörter“ ganz vorne, sobald eine Liste da ist (in jeder Schulstufe); sonst zum Üben in der
+  Volksschule ab der 3. Schulstufe. Im Stoff bringen deutsch.vs.recht.dehnung und deutsch.vs.recht.ableiten das Spiel.
+  Endlos und Blockwerk ja (das Wort kommt auf eigenem Bildschirm), Torlauf und Duelle nein (dort wird gewählt).
+- **Lernstand**: zählt für keine Fähigkeit (`stoff.lernwoerter`); der Stand je Wort steht auf der Seite der Liste.
+
 ## Meine Fehler (Fehlerprotokoll)
 
 niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers

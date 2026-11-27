@@ -38,6 +38,7 @@ import { EIGENE_VOKABELN } from "./vokabeln-pruefen";
 import { BILDER, darfMitspielen, erlaubnis, profilVon, sorgeFuerProfil, spielName } from "./spielprofil";
 import { istFrisch, satzKandidaten, satzSkill, spielSatz, EIGENER_STOFF } from "./spielkarten";
 import { FEHLER_SKILL, fehlerKandidaten, offeneFehlerZahl } from "./fehlerprotokoll";
+import { eigeneLernwoerter, LERNWORT_SKILL, lernwortRunde, lernwortStand } from "./lernwoerter";
 import { listenVon, vokabelQuelle } from "./vokabellisten";
 import { stufeFuer, type GlasThemaInfo } from "./glasklar";
 import { GLAS_THEMEN, glasKandidaten, glasStufen, glasThema, sortenVon, STOFF_THEMA, stoffKandidaten, themaVonKey, waehleGlasKarten, type GlasKandidat } from "./glasklar-themen";
@@ -66,6 +67,8 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   // Volksschule: Nomen, Verb, Adjektiv (lib/wortarten-spiel.ts) und die Personalformen der Verben (lib/verben-beugen.ts)
   wortarten: WORTARTEN_SKILL,
   konjugieren: KONJUGIEREN_SKILL,
+  // Lernwörter (lib/lernwoerter.ts): die Liste der Klasse, zählt für keine Fähigkeit im Lernstand
+  lernwoerter: LERNWORT_SKILL,
   nomen: NOMEN_SKILL,
   satzglieder: "deutsch.satz.satzglieder",
   gross: GROSS_SKILL,
@@ -117,7 +120,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, wortarten: 2, konjugieren: 2, nomen: 3, gross: 3, satzglieder: 3, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99, oesterreich: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, wortarten: 2, konjugieren: 2, lernwoerter: 3, nomen: 3, gross: 3, satzglieder: 3, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99, oesterreich: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -166,6 +169,9 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.vs.sprache.mehrzahl": ["nomen", "quizdeutsch"],
   [KONJUGIEREN_SKILL]: ["konjugieren", "quizdeutsch"],
   "deutsch.vs.sprache.verbformen": ["konjugieren", "praeteritum", "perfekt"],
+  // Rechtschreibung der Volksschule: die Lernwörter (ie, Dehnungs-h, Doppelbuchstaben, d am Ende …)
+  "deutsch.vs.recht.dehnung": ["lernwoerter"],
+  "deutsch.vs.recht.ableiten": ["lernwoerter"],
 };
 
 export const spieleZuSkills = (ids: string[]): SpielArt[] => [
@@ -196,16 +202,18 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
   for (const q of stoffQuellen(student, o.heute)) add(spieleZuSkills(q.ids), q.grund, q.quelle);
   // eine eigene Vokabelliste ist aktueller Stoff: die Lehrkraft hat sie für genau diese Wörter angelegt
   if (eigeneVokabeln(student.id).length >= PAARE_MIN) add(["vokabeln"], "Deine Vokabelliste", "stoff");
+  // die Lernwörter der Klasse (lib/lernwoerter.ts): die Lehrkraft hat sie eingetragen, also gerade Stoff
+  if (eigeneLernwoerter(student.id).length) add(["lernwoerter"], "Deine Lernwörter", "stoff");
 
   for (const art of Object.keys(SPIEL_SKILL) as SpielArt[]) {
-    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || art === "biotest" || art === "oesterreich" || istQuiz(art)) continue;
+    if (art === "glas" || art === "wort" || art === "fehler" || art === "phantom" || art === "vorlage" || art === "blatt" || art === "europa" || art === "bio" || art === "biotest" || art === "oesterreich" || art === "lernwoerter" || istQuiz(art)) continue;
     const m = o.lernstand?.get(art === "satzbau" || art === "satzglieder" ? satzbauSkill(student) : art === "stilmittel" ? stilPlan(student, o.heute).skillId : SPIEL_SKILL[art]);
     if (m != null && m < UNSICHER) add([art], "Da bist du noch unsicher", "lernstand");
   }
 
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const reihe: SpielArt[] = student.grade <= 4 ? ["wortarten", "konjugieren", "nomen", "gross", "satzglieder", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "stilmittel", "perfekt", "praeteritum", "wortschatz", "artikel"];
+    const reihe: SpielArt[] = student.grade <= 4 ? ["wortarten", "konjugieren", "nomen", "gross", "satzglieder", "lernwoerter", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "stilmittel", "perfekt", "praeteritum", "wortschatz", "artikel"];
     // ab der Oberstufe ist die Grammatik der Unterstufe kein Stoff mehr: das Quiz mit den Themen der Schulstufe und die
     // Stilmittel (Textanalyse, Interpretation) zuerst
     if (student.grade >= 9) add(["quizdeutsch", "stilmittel"], "Zum Üben", "fach");
@@ -371,6 +379,7 @@ export function wortfeldPlan(student: repo.Student, art: SpielArt, heute: string
 export function spielWoher(student: repo.Student, art: SpielArt, heute: string): string | undefined {
   if (art === "vokabeln") return vokabelPlan(student, heute).titel;
   if (art === "stoff") return spielSatz(student.id)?.titel;
+  if (art === "lernwoerter") return eigeneLernwoerter(student.id).length ? "Deine Lernwörter" : "Wörter für die Volksschule";
   if (art === "fehler") {
     const n = offeneFehlerZahl(student.id);
     return n === 1 ? "Noch 1 Fehler offen" : `Noch ${n} Fehler offen`;
@@ -1073,6 +1082,9 @@ export function starteRunde(
     karten = satz
       ? waehleKarten(art, { pool: satzKandidaten(satz), stufen: [1], wiederholen: mitVorgezogen(offeneFehler(student.id, art)), zuletzt: zuletztGespielt(student.id, art), rng: o.rng })
       : [];
+  } else if (art === "lernwoerter") {
+    // Lernwörter: die Liste der Klasse (sonst der Grundwortschatz); zuletzt falsche zuerst, was sitzt, zuletzt
+    karten = lernwortRunde(lernwortStand(student.id), { rng: o.rng });
   } else if (art === "fehler") {
     // Meine Fehler: nur die, die noch nicht zweimal hintereinander richtig waren
     karten = waehleKarten(art, { pool: fehlerKandidaten(student.id), stufen: [1], wiederholen: mitVorgezogen(offeneFehler(student.id, art)), zuletzt: zuletztGespielt(student.id, art), rng: o.rng });
