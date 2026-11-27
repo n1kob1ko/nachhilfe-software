@@ -150,6 +150,9 @@ export function startUnit(teacherId: number, studentId: number, opts: { at?: num
       .prepare("INSERT INTO units (teacher_id, student_id, subject, status, started_at, last_activity_at) VALUES (?, ?, ?, 'gestartet', ?, ?)")
       .run(teacherId, studentId, opts.subject ?? "", iso(at), iso(at));
     const unit = getUnit(Number(res.lastInsertRowid))!;
+    // jede neue Einheit beginnt im geführten Ablauf (lib/einheit-ablauf.ts), auch wenn zuerst etwas von einer Übungsseite
+    // hinausgeht; vorher fiel sie dann in den früheren Unterricht mit elf Schritten zurück (Simulation 27.11.2026)
+    db().prepare("INSERT OR IGNORE INTO einheit_ablauf (unit_id) VALUES (?)").run(unit.id);
     // D17: die Einheit nimmt sich ihren heutigen Platz im Wochenplan, wenn es einen gibt (den der Karte, wenn genannt)
     verknuepfeMitHeutigemPlatz(unit, at, opts.platzId ?? null);
     // KI-Budget je Einheit: das Briefing, das heute für diesen Schüler lief (meist im Hintergrund auf Heute), zählt zu ihr

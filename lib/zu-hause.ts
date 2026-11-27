@@ -7,6 +7,7 @@
  * mindestens einer Karte, eine Runde zählt höchstens 30 Minuten. Klicks, Geräte oder Uhrzeiten werden nicht gezeigt.
  */
 import { parseTime } from "./analysis";
+import { PAPIER_ANTWORT } from "./blatt-regeln";
 import { db } from "./db";
 import { RUNDE_MAX_MS } from "./einheit-aktivitaeten";
 import { istSpielArt, SPIEL_TITEL } from "./lernspiele-typen";
@@ -82,10 +83,13 @@ export function geuebtZwischen(studentId: number, von: number, bis: number): Geu
     .all(studentId, a, b) as { anzahl: number; richtig: number; created_at: string; beendet_at: string }[];
   for (const r of vok) dazu(parseTime(r.created_at), parseTime(r.beendet_at), "Vokabeln", r.anzahl, r.richtig);
 
-  // Übungen und Hausübungen: abgeschlossene Aufgaben ohne Einheit, Zeit = die gemessene Bearbeitungszeit
+  // Übungen und Hausübungen: abgeschlossene Aufgaben ohne Einheit, Zeit = die gemessene Bearbeitungszeit. Nicht ein auf
+  // Papier gelöstes Blatt, das der Lehrer eingelesen hat (Schularbeit, Test): das ist nicht zu Hause geübt (Simulation 27.11.2026)
   const versuche = db()
-    .prepare("SELECT time_ms, correct, created_at FROM attempts WHERE student_id = ? AND final = 1 AND unit_id IS NULL AND created_at >= ? AND created_at < ?")
-    .all(studentId, a, b) as { time_ms: number; correct: number; created_at: string }[];
+    .prepare(
+      "SELECT time_ms, correct, created_at FROM attempts WHERE student_id = ? AND final = 1 AND unit_id IS NULL AND created_at >= ? AND created_at < ? AND NOT EXISTS (SELECT 1 FROM assignments x WHERE x.id = attempts.assignment_id AND x.note = ?)",
+    )
+    .all(studentId, a, b, PAPIER_ANTWORT) as { time_ms: number; correct: number; created_at: string }[];
   for (const v of versuche) {
     const t = parseTime(v.created_at);
     dazu(t, t, "Übungen", 1, v.correct ? 1 : 0, Math.min(Math.max(0, v.time_ms), 10 * 60_000));

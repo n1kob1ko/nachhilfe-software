@@ -78,15 +78,21 @@ export function getText(id: number): TextView | null {
 
 export const textDoc = (t: Pick<TextRow, "body">): TextDoc => parseDoc(t.body);
 
-export type NewText = { studentId: number; teacherId: number | null; unitId: number | null; subject: string; topic: string; title: string; prompt: string; at?: number };
+export type NewText = { studentId: number; teacherId: number | null; unitId: number | null; subject: string; topic: string; title: string; prompt: string; at?: number; aufPapier?: boolean };
+
+/**
+ * Ein Text, der auf Papier geschrieben wird und noch nicht vom Foto übernommen ist: am Tablet und am Laptop des Schülers steht
+ * er nicht zum Schreiben (Simulation 27.11.2026: „Schreiben“ am Tablet, während die Lehrkraft das Blatt fotografiert).
+ */
+export const nochAufPapier = (t: { auf_papier?: number | null; von_papier?: string | null }) => Boolean(t.auf_papier) && !t.von_papier;
 
 export function createText(n: NewText): TextView {
   const at = iso(n.at);
   const conn = db();
   const id = conn.transaction(() => {
     const res = conn
-      .prepare("INSERT INTO texts (student_id, teacher_id, unit_id, subject, topic, title, prompt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")
-      .run(n.studentId, n.teacherId, n.unitId, n.subject.trim(), n.topic.trim(), n.title.trim() || "Text", n.prompt.trim(), at, at);
+      .prepare("INSERT INTO texts (student_id, teacher_id, unit_id, subject, topic, title, prompt, created_at, updated_at, auf_papier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)")
+      .run(n.studentId, n.teacherId, n.unitId, n.subject.trim(), n.topic.trim(), n.title.trim() || "Text", n.prompt.trim(), at, at, n.aufPapier ? 1 : 0);
     const textId = Number(res.lastInsertRowid);
     if (n.unitId) noteTextInUnit(textId, n.unitId, n.at);
     return textId;
@@ -207,7 +213,8 @@ export function saveFromPaper(textId: number, doc: TextDoc, at = Date.now()): Sa
   })();
 }
 
-export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "status" | "words" | "updated_at" | "archived_at"> & {
+export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "status" | "words" | "updated_at" | "archived_at" | "von_papier"> & {
+  auf_papier: number;
   words_before: number;
   words_after: number;
   /** started in this unit (else continued) */
@@ -224,7 +231,7 @@ export type UnitText = Pick<TextRow, "id" | "title" | "topic" | "subject" | "sta
 export function textsForUnit(unitId: number): UnitText[] {
   return db()
     .prepare(
-      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, x.archived_at, tu.words_before, tu.words_after, tu.first_at, tu.last_at,
+      `SELECT x.id, x.title, x.topic, x.subject, x.status, x.words, x.updated_at, x.archived_at, x.von_papier, x.auf_papier, tu.words_before, tu.words_after, tu.first_at, tu.last_at,
         (x.unit_id IS ? ) AS started_here
        FROM text_units tu JOIN texts x ON x.id = tu.text_id WHERE tu.unit_id = ? ORDER BY tu.first_at, x.id`,
     )

@@ -31,6 +31,8 @@ import { aiEnabled } from "@/lib/ai";
 import { type Analysis, pct } from "@/lib/analysis";
 import { weitereFaecher } from "@/lib/faecher";
 import * as repo from "@/lib/repo";
+import { BLATT_TITEL } from "@/lib/blatt-einlesen";
+import { getMaterial } from "@/lib/materials";
 import { klassenLabel } from "@/lib/school";
 import { analyzeStudent } from "@/lib/service";
 import { dayOf, daysUntil, examReminders, reminderStage, STAGE_LABEL, STAGE_TONE } from "@/lib/exams";
@@ -943,10 +945,12 @@ function Lessons({ student, filter }: { student: repo.Student; filter?: string }
 }
 
 /** The Stoffzettel of a Schularbeit (photo or PDF), opened in a new tab. */
+/** Das Blatt zur Prüfung: der Stoffzettel, oder bei einer eingelesenen Arbeit das gelöste Blatt (Simulation 27.11.2026: hieß auch „Stoffzettel“). */
 function StoffzettelLink({ id }: { id: number }) {
+  const gelesen = getMaterial(id)?.title.startsWith(BLATT_TITEL) ?? false;
   return (
     <a href={`/material/${id}/datei`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-semibold text-accent hover:underline">
-      <FileText size={13} aria-hidden /> Stoffzettel
+      <FileText size={13} aria-hidden /> {gelesen ? "Fotos der Arbeit" : "Stoffzettel"}
     </a>
   );
 }

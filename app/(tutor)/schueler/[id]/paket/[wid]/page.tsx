@@ -28,12 +28,13 @@ export default async function PaketAuswerten({ params, searchParams }: { params:
   if (!p) notFound();
   const { aufgaben, beantwortet, richtig } = paketErgebnis(p.id);
   const a = p.paket.auswertung;
+  const unbewertet = aufgaben.filter((x) => x.bewertung === "offen").length;
   const skills = skillsForPrompt(student, p.paket.fach).map((s) => ({ id: s.id, name: s.name, area: s.area }));
   return (
     <>
       <PageHeader title={p.title} subtitle={`${p.paket.fach} · ${beantwortet ? `${richtig} von ${aufgaben.length} richtig` : "noch nicht gelöst"}`} back={{ href: `/schueler/${student.id}?tab=fortschritt`, label: student.name }} />
       {fehler && <p className="mb-4 rounded-xl bg-red-wash px-4 py-3 text-[14px] text-red">{fehler}</p>}
-      <div className="grid max-w-[860px] gap-8">
+      <div className="grid max-w-[860px] grid-cols-[minmax(0,1fr)] gap-8">
         <section>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <h2 className="gruppe-titel">Aufgaben</h2>
@@ -41,7 +42,7 @@ export default async function PaketAuswerten({ params, searchParams }: { params:
               Übung öffnen (drucken, aufs Tablet)
             </Link>
           </div>
-          <ol className="grid gap-1 text-[14px]" data-testid="paket-aufgaben">
+          <ol className="grid grid-cols-[minmax(0,1fr)] gap-1 text-[14px]" data-testid="paket-aufgaben">
             {aufgaben.map((x) => (
               <li key={x.taskId} className="flex gap-2">
                 <span className="num w-6 shrink-0 text-ink-3">{x.nr}</span>
@@ -66,6 +67,15 @@ export default async function PaketAuswerten({ params, searchParams }: { params:
               <input type="hidden" name="student_id" value={student.id} />
               <input type="hidden" name="worksheet_id" value={p.id} />
               <p className="text-[14px] text-ink-2">Prüft je Fehler, ob er behoben ist, und sucht neue Fehlermuster in den Antworten.</p>
+              {unbewertet > 0 && (
+                <p className="rounded-xl bg-amber-wash px-4 py-3 text-[14px] text-amber" data-testid="paket-unbewertet">
+                  {unbewertet === 1 ? "1 freie Antwort ist" : `${unbewertet} freie Antworten sind`} noch nicht bewertet (?).{" "}
+                  <Link href={`/schueler/${student.id}#zu-bewerten`} className="underline">
+                    Zuerst bewerten
+                  </Link>
+                  , sonst zählt die Auswertung sie als offen.
+                </p>
+              )}
             </PaketFormular>
           )
         ) : (

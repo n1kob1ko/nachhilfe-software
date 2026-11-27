@@ -15,16 +15,27 @@ export function jsonSchemaOf(schema: z.ZodType) {
   return s;
 }
 
-/** The JSON object in a reply, also when the model wraps it in a code fence or adds a sentence. */
+/**
+ * The JSON in a reply, also when the model wraps it in a code fence or adds a sentence: an object, or an array when the
+ * answer's shape is a list (lib/ai/banken.ts). The wider span is tried first, so an array of objects stays an array and
+ * a „[1]“ in a sentence does not hide the object (Simulation 27.11.2026: a list
+ * of bank entries was cut down to its first object, or to nothing, and every such call failed and was paid for).
+ */
 export function jsonIn(text: string): unknown {
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end <= start) return null;
-  try {
-    return JSON.parse(text.slice(start, end + 1));
-  } catch {
-    return null;
+  const spans: [number, number][] = [];
+  for (const [open, close] of [["{", "}"], ["[", "]"]]) {
+    const start = text.indexOf(open);
+    const end = text.lastIndexOf(close);
+    if (start >= 0 && end > start) spans.push([start, end]);
   }
+  for (const [start, end] of spans.sort((a, b) => b[1] - b[0] - (a[1] - a[0]))) {
+    try {
+      return JSON.parse(text.slice(start, end + 1));
+    } catch {
+      // the other bracket may hold it
+    }
+  }
+  return null;
 }
 
 /** Properties that may hold more than one type (a nullable field is one), counted through the whole schema. */
@@ -41,5 +52,6 @@ export const ANTHROPIC_MAX_UNIONS = 16;
 
 /** The instructions with the answer's shape spelled out, for a request that does not send it as structured output. */
 export function withSchemaInstruction(system: string, schema: z.ZodType) {
-  return `${system}\n\nAntworte ausschließlich mit einem JSON-Objekt nach diesem JSON-Schema:\n${JSON.stringify(jsonSchemaOf(schema))}`;
+  const json = jsonSchemaOf(schema);
+  return `${system}\n\nAntworte ausschließlich mit ${json.type === "array" ? "einem JSON-Array" : "einem JSON-Objekt"} nach diesem JSON-Schema:\n${JSON.stringify(json)}`;
 }

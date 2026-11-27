@@ -1,6 +1,6 @@
 "use server";
 
-import { pushLive } from "@/lib/live";
+import { einheitenMit, nachLoeschen, pushLive } from "@/lib/live";
 import { deliverIfRunning } from "@/lib/tafel-senden";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -246,13 +246,17 @@ export async function assignWorksheetAction(formData: FormData) {
 // (components/Meldung.tsx, WegForm mit `danach`).
 export async function deleteWorksheetAction(id: number) {
   await requireTeacher();
+  const einheiten = einheitenMit({ worksheetId: id });
   repo.deleteWorksheet(id);
+  nachLoeschen(einheiten);
   revalidatePath("/", "layout");
 }
 
 export async function deleteAssignmentAction(id: number) {
   await requireTeacher();
+  const einheiten = einheitenMit({ assignmentId: id });
   repo.deleteAssignment(id);
+  nachLoeschen(einheiten);
   revalidatePath("/", "layout");
 }
 

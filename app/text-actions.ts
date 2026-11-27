@@ -29,7 +29,7 @@ export async function startTextAction(unitId: number, _prev: StartTextState, f: 
   if (unit.status !== "gestartet") return { error: "Diese Einheit ist schon beendet." };
   const title = str(f, "title", 140);
   if (!title) return { error: "Bitte einen Titel eingeben." };
-  const text = createText({ studentId: unit.student_id, teacherId: t.id, unitId: unit.id, subject: str(f, "subject", 60), topic: str(f, "topic", 80), title, prompt: str(f, "prompt", 4000) });
+  const text = createText({ studentId: unit.student_id, teacherId: t.id, unitId: unit.id, subject: str(f, "subject", 60), topic: str(f, "topic", 80), title, prompt: str(f, "prompt", 4000), aufPapier: f.get("wo") === "papier" });
   // Angabe / Textvorlage (wahlweise): nur für die Lehrkraft und „Aufgabe erfüllt?“, nie am Schülergerät
   if (String(f.get("angabe") ?? "").trim()) speichereAngabe(text.id, String(f.get("angabe")), t.id);
   noteActivity(unit.student_id);

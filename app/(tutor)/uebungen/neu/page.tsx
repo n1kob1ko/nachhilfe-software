@@ -22,7 +22,10 @@ export default async function NewWorksheet({ searchParams }: { searchParams: Pro
   const ctx = studentId ? studentContext(studentId) : null;
   // ?skill=… (one) or ?skills=a,b (e.g. from the exam preparation), optional ?anzahl=
   const preSkills = [...(sp.skill ? [sp.skill] : []), ...(sp.skills ?? "").split(",")].map((id) => (id ? getSkill(id.trim()) : null)).filter((x): x is NonNullable<typeof x> => Boolean(x));
-  const preCount = Math.max(1, Math.min(30, Number(sp.anzahl) || 0)) || undefined;
+  // ohne „anzahl“ in der Adresse die übliche Zahl des Baukastens (vorher 1: „Eigene Übung im Baukasten erstellen“ aus der
+  // Korrektur machte eine Übung mit einer Aufgabe, Simulation 27.11.2026)
+  const anzahl = Math.round(Number(sp.anzahl));
+  const preCount = anzahl > 0 ? Math.min(30, anzahl) : undefined;
   // ?stoff=<id>: opened from an Aktueller-Stoff card, so that material is preselected (not another subject's)
   const material = sp.stoff ? getMaterial(Number(sp.stoff)) : null;
   const stoff = material && material.student_id === studentId ? material : null;

@@ -25,7 +25,7 @@ import { matchSkills, skillsForPrompt } from "./lehrplan";
 import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, MAX_ANALYSIS_PDF_BYTES, sniffType } from "./materials";
 import { PRUEFUNGSARTEN } from "./pruefungsarten";
 import * as repo from "./repo";
-import { erreichtVon, istBewertung, MAX_ERKENNTNISSE, MAX_SEITEN, MAX_ZEILEN, type BlattErkenntnis, type Bewertung, type BlattVorschlag, type BlattZeile } from "./blatt-regeln";
+import { erreichtVon, istBewertung, MAX_ERKENNTNISSE, MAX_SEITEN, MAX_ZEILEN, PAPIER_ANTWORT, type BlattErkenntnis, type Bewertung, type BlattVorschlag, type BlattZeile } from "./blatt-regeln";
 import { ERROR_TYPES } from "./error-types";
 import { sauberBelege, speichereErkenntnisse } from "./erkenntnisse";
 
@@ -33,7 +33,6 @@ export * from "./blatt-regeln";
 
 /** Titel eines frisch hochgeladenen Blatts; beim Übernehmen bekommt es den Namen des Tests. */
 export const BLATT_TITEL = "Gelöstes Blatt";
-export const PAPIER_ANTWORT = "Auf Papier gelöst";
 
 /** Ob ein Blatt jetzt gelesen werden kann; sonst der Grund, in Worten für den Lehrer. */
 export function blattLesbar(): { ok: true } | { ok: false; grund: string } {

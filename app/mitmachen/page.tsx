@@ -22,7 +22,7 @@ import { clientTasks } from "@/lib/solver-tasks";
 import { storyForEditor } from "@/lib/picture-story";
 import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
 import { auftragFor, fuerSchueler } from "@/lib/schreibauftrag-store";
-import { textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
+import { nochAufPapier, textDoc, textsForStudent, textsForUnit, wordsLabel } from "@/lib/texts";
 
 const first = (n: string) => n.split(" ")[0];
 
@@ -116,7 +116,7 @@ export default async function LaptopPage({ searchParams }: { searchParams: Promi
   const list = unitAssignments(unit.id);
   const unitTexts = textsForUnit(unit.id);
   // archived texts are not offered any more; their local copies are still handed in on leaving
-  const texts = unitTexts.filter((t) => !t.archived_at);
+  const texts = unitTexts.filter((t) => !t.archived_at && !nochAufPapier(t));
   const view = parseView(unit.device_view);
   const current = view.kind === "aufgabe" ? list.find((a) => a.id === view.assignmentId) : undefined;
   const text = view.kind === "text" ? unitText(unit, view.textId) : null;

@@ -111,6 +111,19 @@ export function setzeStufe(unitId: number, stufe: Stufe): Ergebnis {
   return { ok: true };
 }
 
+/**
+ * In dieser Einheit wird schon geübt, ohne dass am Start gewählt wurde (der Text von heute, Übungen von der Korrektur oder von
+ * einer Übungsseite): der geführte Ablauf geht zu „Üben“, damit die Karte zeigt, was läuft (Simulation 27.11.2026: die Karte blieb
+ * bei „Was machen wir heute? Neues Thema“, während die Übung am Tablet lief). Kurztest, Üben und Abschluss bleiben, wie sie sind.
+ */
+export function zumUeben(unitId: number): Ergebnis {
+  if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
+  const a = leseAblauf(unitId);
+  if (!a.gespeichert || a.alles || a.stufe === "kurztest" || a.stufe === "ueben" || a.stufe === "schluss") return { ok: true };
+  schreibe({ ...a, weg: a.weg ?? "neu", stufe: "ueben" });
+  return { ok: true };
+}
+
 /** Die Themen von heute setzen (nach den Fotos vom Stoff); das erste wird das aktuelle. */
 export function setzeThemen(unitId: number, skillIds: string[]): Ergebnis {
   if (!laeuft(unitId)) return { fehler: "Diese Einheit läuft nicht mehr." };
@@ -350,9 +363,9 @@ export function dokumentiereGefuehrt(lessonId: number, unitId: number): string |
 }
 
 /**
- * Zeigt die Einheit den geführten Ablauf? Nicht nach „Mehr Werkzeuge“; sonst ja, sobald er einmal benutzt wurde, und bei jeder
- * neuen Einheit, in der noch nichts getan ist. Eine Einheit, die schon im früheren Unterricht läuft (etwa beim Update mitten
- * in der Stunde), bleibt dort, bis der Lehrer „Geführter Ablauf“ tippt.
+ * Zeigt die Einheit den geführten Ablauf? Nicht nach „Mehr Werkzeuge“; sonst ja: jede neue Einheit bekommt ihre Zeile beim Start
+ * (lib/units.ts). Eine Einheit ohne Zeile lief schon vor dem geführten Ablauf (etwa beim Update mitten in der Stunde): mit
+ * gesendeten Übungen bleibt sie im früheren Unterricht, bis der Lehrer „Geführter Ablauf“ tippt.
  */
 export function zeigtGefuehrt(unitId: number): boolean {
   const a = leseAblauf(unitId);

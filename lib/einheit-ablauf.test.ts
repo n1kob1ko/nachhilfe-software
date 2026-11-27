@@ -75,7 +75,8 @@ test("the guided flow: new unit starts guided; weiter → Kurztest, neu → Stof
   // a fresh unit shows the guided flow at the start, without a path
   assert.equal(ab.zeigtGefuehrt(unit.id), true);
   const a0 = ab.leseAblauf(unit.id);
-  assert.deepEqual([a0.weg, a0.stufe, a0.gespeichert], [null, "start", false]);
+  // the row is written at the start (Simulation 27.11.2026), so an exercise sent from elsewhere keeps the unit guided
+  assert.deepEqual([a0.weg, a0.stufe, a0.gespeichert], [null, "start", true]);
   assert.deepEqual(ab.stufenFuer(null), ["start", "stoff", "erklaeren", "ueben", "schluss"]);
   assert.ok("fehler" in ab.setzeStufe(unit.id, "ueben"), "no stage before the start question is answered");
 
@@ -111,12 +112,14 @@ test("the guided flow: new unit starts guided; weiter → Kurztest, neu → Stof
   assert.equal(ab.zeigtGefuehrt(unit.id), true);
   assert.equal(ab.leseAblauf(unit.id).stufe, "erklaeren", "switching the view keeps the stage");
 
-  // a unit already running in the old cockpit (an exercise sent, no guided row) stays there
+  // a unit already running in the old cockpit (an exercise sent, no guided row from before) stays there
   const sid2 = repo.createStudent({
     name: "Tom Alt", grade: 5, klasse: 1, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Mathematik"],
     current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
   });
   const alt = units.startUnit(teacher.id, sid2, { subject: "Mathematik" }).unit;
+  const { db } = await import("./db");
+  db().prepare("DELETE FROM einheit_ablauf WHERE unit_id = ?").run(alt.id);
   await sendeAusGenerator(alt.id, "mathe.brueche.kuerzen", teacher.id);
   assert.equal(ab.zeigtGefuehrt(alt.id), false);
 });

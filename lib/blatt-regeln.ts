@@ -4,6 +4,9 @@
  */
 
 /** So viele Seiten liest die KI auf einmal. */
+/** Antwort und Notiz der Zuweisung eines auf Papier gelösten Blatts (Profil oder Einheit, lib/blatt-einlesen.ts). */
+export const PAPIER_ANTWORT = "Auf Papier gelöst";
+
 export const MAX_SEITEN = 10;
 /** So viele Aufgaben hat ein Blatt höchstens. */
 export const MAX_ZEILEN = 40;
