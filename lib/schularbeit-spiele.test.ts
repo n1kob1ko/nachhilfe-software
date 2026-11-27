@@ -108,3 +108,65 @@ test("Steigern: genug Karten im Deutsch-Quiz, mit Grund-, Mehr- und Meiststufe",
   assert.ok(zeilen.length >= 50, `${zeilen.length} Karten`);
   for (const w of ["Grundstufe", "Mehrstufe", "Meiststufe"]) assert.ok(text.includes(w), w);
 });
+
+test("Satzglieder: jeder Satz liest sich, je Satz ein Subjekt und ein Prädikat, genug Karten je Satzglied und Stufe", async () => {
+  const g = await import("./satzglieder-spiel");
+  const fehler: string[] = [];
+  const texte = new Set<string>();
+  for (const src of g.SATZGLIED_SAETZE) {
+    const s = g.leseSatzgliedSatz(src);
+    if (texte.has(s.text)) fehler.push(`doppelt: ${s.text}`);
+    texte.add(s.text);
+    if (/[[\]]/.test(s.text)) fehler.push(`Klammer übrig: ${s.text}`);
+    if (!/^[A-ZÄÖÜ]/.test(s.text) || !/[.!?]$/.test(s.text)) fehler.push(`Satzanfang oder -ende: ${s.text}`);
+    const n = (e: string) => s.teile.filter((t) => t.etikett === e).length;
+    if (n("s") !== 1 || n("p") !== 1) fehler.push(`Subjekt und Prädikat je einmal: ${s.text}`);
+    if (n("d") > 1 || n("a") > 1) fehler.push(`Objekt doppelt: ${s.text}`);
+    for (const t of s.teile) {
+      if (`${t.vor}${t.mitte}${t.nach}` !== s.text) fehler.push(`Stelle von „${t.mitte}“ in ${s.text}`);
+      if (t.etikett === "p" && /\s/.test(t.mitte)) fehler.push(`Prädikat ein Wort: ${s.text}`);
+    }
+    // Prädikat an zweiter Stelle: davor steht genau ein Satzglied
+    const p = s.teile.find((t) => t.etikett === "p")!;
+    if (!p.vor.trim()) fehler.push(`Prädikat vorne: ${s.text}`);
+  }
+  const karten = g.satzgliedKandidaten();
+  if (new Set(karten.map((k) => k.karte.key)).size !== karten.length) fehler.push("doppelte Keys");
+  for (const gl of g.SATZGLIED_FAECHER) if (karten.filter((k) => k.karte.richtig === gl).length < 30) fehler.push(`${gl}: zu wenige`);
+  for (const s of [0, 1, 2, 3]) if (karten.filter((k) => k.stufe === s).length < 12) fehler.push(`Stufe ${s}: zu wenige`);
+  for (const { karte } of karten) if (!karte.regel.includes(karte.mitte!.slice(1)) && karte.richtig !== "Prädikat") fehler.push(`${karte.loesung}: Regel ohne das Satzglied`);
+  assert.deepEqual(fehler, []);
+});
+
+test("Satzglieder: Regeln fragen mit dem Prädikat des Satzes", async () => {
+  const g = await import("./satzglieder-spiel");
+  const karte = (text: string, teil: string) => g.satzgliedKandidaten().find((k) => k.karte.key === g.satzgliedKey(text, teil))!;
+  assert.match(karte("Der kleine Hund jagt die Katze.", "Der kleine Hund").karte.regel, /^Frag: Wer oder was jagt\? Der kleine Hund\./);
+  assert.match(karte("Lisa hilft ihrer Oma.", "ihrer Oma").karte.regel, /^Frag: Wem hilft Lisa\? Ihrer Oma\. .*3\. Fall/);
+  assert.match(karte("Mama schenkt der Oma Blumen.", "Blumen").karte.regel, /^Frag: Wen oder was schenkt Mama\? Blumen\..*4\. Fall/);
+  assert.match(karte("Unsere Klasse besucht den Zoo.", "den Zoo").karte.regel, /Wen oder was besucht unsere Klasse\?/);
+  assert.equal(karte("Den Ball wirft Tom.", "Den Ball").stufe, 3);
+  assert.equal(karte("Am Morgen trinkt Opa einen Kaffee.", "Opa").stufe, 2);
+  assert.equal(karte("Der Hund frisst einen Knochen.", "frisst").stufe, 0);
+  const k = karte("Lisa hilft ihrer Oma.", "ihrer Oma").karte;
+  assert.equal(k.form, "kacheln");
+  assert.deepEqual(k.faecher, ["Subjekt", "Prädikat", "Objekt 3. Fall", "Objekt 4. Fall"]);
+});
+
+test("Satzglieder: Stoff bringt das Spiel zuerst, Lernstand Volksschule und Unterstufe", async () => {
+  const { sp, student } = await setup({ grade: 4 });
+  assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.sprache.satzglieder"]).slice(0, 2), ["satzglieder", "satzbau"]);
+  assert.equal(sp.spieleZuSkills(["deutsch.satz.objekte"])[0], "satzglieder");
+  assert.ok(sp.spielVorschlaege(student, { heute: HEUTE }).some((v) => v.art === "satzglieder"));
+  assert.equal(sp.skillFuerSpiel(student, "satzglieder", HEUTE), "deutsch.vs.sprache.satzglieder");
+  const r = sp.starteRunde(student, "satzglieder", { heute: HEUTE, rng: rng(5) });
+  assert.equal(r.karten.length, 12);
+  assert.equal(new Set(r.karten.map((k) => k.key.split("|")[0])).size, 12);
+  assert.ok(r.karten.every((k) => k.form === "kacheln" && k.mitte));
+  const e = sp.beendeRunde(student.id, r.rundeId, r.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  assert.equal(e?.richtig, 12);
+  const gross = await setup({ grade: 6 });
+  const repo = gross.repo;
+  repo.updateStudent(gross.student.id, { ...gross.student, school_type: "AHS" });
+  assert.equal(gross.sp.skillFuerSpiel(repo.getStudent(gross.student.id)!, "satzglieder", HEUTE), "deutsch.satz.satzglieder");
+});

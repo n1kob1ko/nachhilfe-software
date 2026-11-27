@@ -26,6 +26,7 @@ import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-type
 import { beugenKandidaten } from "./verben-beugen";
 import { wortartKandidaten } from "./wortarten-spiel";
 import { grossKandidaten } from "./gross-klein-spiel";
+import { satzgliedKandidaten } from "./satzglieder-spiel";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
 type Rng = () => number;
@@ -448,6 +449,8 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = beugenKandidaten();
   } else if (art === "gross") {
     out = grossKandidaten();
+  } else if (art === "satzglieder") {
+    out = satzgliedKandidaten();
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
   } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {

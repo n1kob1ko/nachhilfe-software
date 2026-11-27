@@ -995,6 +995,25 @@ Dazu hat das Deutsch-Quiz beim Thema „Adjektive steigern“ jetzt 54 Karten st
 (Grundstufe, Mehrstufe, Meiststufe; die Fachwörter Positiv, Komparativ, Superlativ in den schweren Karten).
 Test: lib/schularbeit-spiele.test.ts.
 
+## Satzglieder bestimmen (Volksschule)
+
+niko 2026-11-27, derselbe Stoffzettel: „Satzglieder bestimmen (Subjekt, Prädikat, Objekte im 3. und im 4. Fall)“.
+Spiel `satzglieder` (lib/satzglieder-spiel.ts), ohne KI:
+
+- **Karte**: ein Satz, ein Satzglied ist markiert (`mitte`), darunter immer dieselben vier Kacheln Subjekt, Prädikat,
+  Objekt 3. Fall, Objekt 4. Fall (`form: "kacheln"` auf der Karte, weil `kachelbar` Karten mit `mitte` ausschließt).
+- **Sätze** in `SATZGLIED_SAETZE` (rund 85), jedes fragbare Satzglied in Klammern mit Etikett: `[Der Hund]s
+  [frisst]p [einen Knochen]a`, `d` für den 3. Fall. Das Prädikat ist immer ein Wort (kein „ruft … an“, kein „hat …
+  gefeiert“). Orts- und Zeitangaben stehen ohne Klammern und werden nie gefragt. Zwei Glieder aus demselben Satz
+  kommen nie in dieselbe Runde.
+- **Regel nach einem Fehler**: die Frage mit dem Prädikat des Satzes („Frag: Wem hilft Lisa? Ihrer Oma. Das ist das
+  Objekt im 3. Fall (Wem-Fall).“), beim Prädikat „das Verb, im Aussagesatz an zweiter Stelle“.
+- **Stufen**: 0 Subjekt, Prädikat, Objekt im 4. Fall; 1 mit Objekt im 3. Fall; 2 der Satz beginnt nicht mit dem
+  Subjekt („Am Morgen trinkt Opa …“); 3 ein Objekt steht vorne („Den Ball wirft Tom.“).
+- **Lernstand** wie beim Satzbau: Volksschule deutsch.vs.sprache.satzglieder, sonst deutsch.satz.satzglieder. Im Stoff
+  bringen beide und deutsch.satz.objekte das Spiel vor „Satzbau“ und dem Quiz. Zum Üben in der Volksschule ab der 3.
+  Schulstufe.
+
 ## Meine Fehler (Fehlerprotokoll)
 
 niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers

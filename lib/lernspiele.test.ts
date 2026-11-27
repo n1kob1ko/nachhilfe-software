@@ -180,12 +180,12 @@ test("Vorschlag: Prüfung vor Stoff vor Lernstand; ohne passendes Fach kein Spie
   // Stoff führt zu den passenden Spielen, auch über eine Unterfähigkeit
   assert.deepEqual(sp.spieleZuSkills(["deutsch.grammatik.zeiten"]), ["perfekt", "praeteritum"]);
   assert.deepEqual(sp.spieleZuSkills(["deutsch.recht.dasdass.ersatzprobe", "deutsch.satz.satzreihe-gefuege"]), ["dasdass", "satzteile", "satzbau"]);
-  assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.sprache.satzglieder"]), ["satzbau"]);
+  assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.sprache.satzglieder"]), ["satzglieder", "satzbau"]);
   assert.deepEqual(sp.spieleZuSkills(["mathe.brueche.kuerzen"]), ["rechnen"]);
   assert.deepEqual(sp.spieleZuSkills(["mathe.geometrie.dreieck"]), []);
   // Volksschule: keine Fälle, kein das/dass, keine Satzlehre zum Weiterüben, Wortarten und Personalformen zuerst
   const klein = await setup({ grade: 4 });
-  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["wortarten", "konjugieren", "gross", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz", "quizdeutsch"]);
+  assert.deepEqual(klein.sp.spielVorschlaege(klein.student, { heute }).map((x) => x.art), ["wortarten", "konjugieren", "gross", "satzglieder", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz", "quizdeutsch"]);
   const erste = await setup({ grade: 2 });
   assert.deepEqual(erste.sp.spielVorschlaege(erste.student, { heute }).map((x) => x.art), ["wortarten", "konjugieren", "artikel", "quizdeutsch"]);
 
