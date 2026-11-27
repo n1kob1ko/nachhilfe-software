@@ -164,7 +164,7 @@ export function legeAnzeige(wort: string, karte: SpielKarte): string {
 // ---------- Wischen und Kacheln ----------
 
 /** Spiele mit zwei Antworten: die Karte wird gewischt. */
-const WISCH_SPIELE = new Set<SpielArt>(["dasdass", "perfekt", "satzteile"]);
+const WISCH_SPIELE = new Set<SpielArt>(["dasdass", "perfekt", "satzteile", "gross"]);
 /** Spiele mit drei bis sechs Antworten in einer Lücke: die Kacheln. */
 const KACHEL_SPIELE = new Set<SpielArt>(["praepositionen", "deklination", "zeiten", "grammatik", "wortschatz", "konjugieren"]);
 /** So viele Kacheln passen unter den Satz. */
