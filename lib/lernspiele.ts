@@ -57,6 +57,7 @@ import { STANDARD_VORLAGE, unbekannte, VORLAGE_GESCHAFFT, VORLAGE_MAX, VORLAGE_S
 import { WORTARTEN_SKILL } from "./wortarten";
 import { KONJUGIEREN_SKILL } from "./verben-beugen";
 import { GROSS_SKILL } from "./gross-klein-spiel";
+import { NOMEN_SKILL } from "./nomen-bestimmen";
 import { STIL_GRUPPEN, STIL_OBERSTUFE_AB, STIL_SKILLS, STIL_UNTERSTUFE, STILMITTEL, stilmittelBis, stilmittelKandidaten, stilmittelVonKarte, type StilGruppe, type StilmittelId } from "./stilmittel";
 
 /** Die Fähigkeit, die ein Spiel übt, und welche Fähigkeiten im Stoff zu ihm führen. */
@@ -65,6 +66,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   // Volksschule: Nomen, Verb, Adjektiv (lib/wortarten-spiel.ts) und die Personalformen der Verben (lib/verben-beugen.ts)
   wortarten: WORTARTEN_SKILL,
   konjugieren: KONJUGIEREN_SKILL,
+  nomen: NOMEN_SKILL,
   satzglieder: "deutsch.satz.satzglieder",
   gross: GROSS_SKILL,
   praepositionen: "deutsch.grammatik.praepositionen",
@@ -115,7 +117,7 @@ export const SPIEL_SKILL: Record<SpielArt, string> = {
   fehler: FEHLER_SKILL,
 };
 /** Ab welcher Schulstufe ein Spiel zum Weiterüben angeboten wird (der Stoff selbst kann es früher bringen). */
-const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, wortarten: 2, konjugieren: 2, gross: 3, satzglieder: 3, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99, oesterreich: 99 };
+const SPIEL_AB: Record<SpielArt, number> = { artikel: 1, wortarten: 2, konjugieren: 2, nomen: 3, gross: 3, satzglieder: 3, praepositionen: 3, deklination: 5, faelle: 5, dasdass: 5, satzteile: 5, perfekt: 4, praeteritum: 4, satzbau: 3, wortschatz: 3, vokabeln: 3, irregular: 6, zeiten: 5, grammatik: 5, rechnen: 1, strahl: 1, stoff: 1, glas: 99, wort: 99, quizmathe: 1, quizdeutsch: 1, quizenglisch: 3, stilmittel: 6, fehler: 99, phantom: 99, vorlage: 99, blatt: 99, europa: 99, bio: 99, biotest: 99, oesterreich: 99 };
 /** Fähigkeiten im Stoff und die Spiele dazu, das passendste zuerst. Unterfähigkeiten („….ersatzprobe“) zählen mit. */
 const FUEHRT_ZU: Record<string, SpielArt[]> = {
   "deutsch.grammatik.artikel": ["artikel"],
@@ -155,11 +157,13 @@ const FUEHRT_ZU: Record<string, SpielArt[]> = {
   ...Object.fromEntries(STIL_SKILLS.map((id) => [id, ["stilmittel", "quizdeutsch"] as SpielArt[]])),
   // Volksschule: Wortarten bestimmen und die Personalformen; nach den Quiz-Themen, damit das eigene Spiel vorne steht
   [WORTARTEN_SKILL]: ["wortarten", "quizdeutsch"],
-  "deutsch.wortarten.nomen": ["wortarten", "gross", "artikel"],
   // Groß oder klein (lib/gross-klein-spiel.ts): Verben als Nomen nach zum, beim, vom, das
   [GROSS_SKILL]: ["gross"],
   // Objekte im 3. und 4. Fall: das Satzglieder-Spiel vor den Quiz-Karten (steht nach den Themenspielen, sonst gälte nur das Quiz)
   "deutsch.satz.objekte": ["satzglieder", "quizdeutsch"],
+  // Nomen bestimmen (lib/nomen-bestimmen.ts): Geschlecht, Zahl und Fall in einer Kette
+  [NOMEN_SKILL]: ["nomen", "wortarten", "gross", "artikel"],
+  "deutsch.vs.sprache.mehrzahl": ["nomen", "quizdeutsch"],
   [KONJUGIEREN_SKILL]: ["konjugieren", "quizdeutsch"],
   "deutsch.vs.sprache.verbformen": ["konjugieren", "praeteritum", "perfekt"],
 };
@@ -201,7 +205,7 @@ export function spielVorschlaege(student: repo.Student, o: { heute: string; lern
 
   if (student.subjects.includes("Deutsch") || out.some((v) => SPIEL_FACH[v.art] === "Deutsch")) {
     // die übrigen zum Weiterüben; Artikel für die Kleinen zuerst, Endungen erst ab der Unterstufe
-    const reihe: SpielArt[] = student.grade <= 4 ? ["wortarten", "konjugieren", "gross", "satzglieder", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "stilmittel", "perfekt", "praeteritum", "wortschatz", "artikel"];
+    const reihe: SpielArt[] = student.grade <= 4 ? ["wortarten", "konjugieren", "nomen", "gross", "satzglieder", "artikel", "satzbau", "praepositionen", "perfekt", "praeteritum", "wortschatz"] : ["praepositionen", "deklination", "faelle", "dasdass", "satzteile", "satzbau", "stilmittel", "perfekt", "praeteritum", "wortschatz", "artikel"];
     // ab der Oberstufe ist die Grammatik der Unterstufe kein Stoff mehr: das Quiz mit den Themen der Schulstufe und die
     // Stilmittel (Textanalyse, Interpretation) zuerst
     if (student.grade >= 9) add(["quizdeutsch", "stilmittel"], "Zum Üben", "fach");

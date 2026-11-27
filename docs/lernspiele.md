@@ -1014,6 +1014,27 @@ Spiel `satzglieder` (lib/satzglieder-spiel.ts), ohne KI:
   bringen beide und deutsch.satz.objekte das Spiel vor „Satzbau“ und dem Quiz. Zum Üben in der Volksschule ab der 3.
   Schulstufe.
 
+## Nomen bestimmen (Volksschule)
+
+niko 2026-11-27, derselbe Stoffzettel: „Geschlecht-, Zahl- und Fallbestimmungen von Nomen“. Spiel `nomen`
+(lib/nomen-bestimmen.ts), ohne KI:
+
+- **Drei Fragen hintereinander** zu einem markierten Nomen (mit Begleiter, „dem Opa“), wie in der Schularbeit:
+  Geschlecht (Kacheln männlich, weiblich, sächlich), Zahl (Einzahl oder Mehrzahl, gewischt), Fall (Kacheln 1. bis 4.
+  Fall). Die Frage steht als `auftrag` über der Karte.
+- **Ketten**: ein Kandidat kann `folge` haben (lib/lernspiele-karten.ts): Karten, die gleich nach ihm kommen. Ketten
+  bleiben beim Mischen zusammen; eine Runde hat vier Nomen mit je drei Karten. Eine falsche Karte aus der Kette holt
+  in der nächsten Runde das ganze Nomen wieder. Alle anderen Spiele haben keine Kette und wählen wie bisher.
+- **Sätze** in `NOMEN_SAETZE` (rund 65): `Lisa hilft [dem Opa]{m,ez,3,der Opa}.` mit Geschlecht, Zahl, Fall und der
+  Grundform mit Artikel, wenn sie nicht schon so dasteht. Der Test prüft, dass der Artikel der Grundform zum
+  Geschlecht passt.
+- **Regeln**: Geschlecht mit der Grundform („Mit „der“ ist das Nomen männlich“; Mehrzahl: „In der Mehrzahl heißt es
+  immer „die“ … Einzahl: „das Kind“, also sächlich“), Zahl mit der Einzahl, Fall mit der Frage („antwortet auf
+  „Wem?“: 3. Fall (Wem-Fall)“, nach einer Präposition dazu „Nach „mit“ steht hier der 3. Fall“).
+- **Stufen**: 0 Einzahl im 1. und 4. Fall; 1 3. Fall und Mehrzahl; 2 nach einer Präposition; 3 der 2. Fall.
+- **Lernstand**: deutsch.wortarten.nomen; im Stoff bringen deutsch.wortarten.nomen und deutsch.vs.sprache.mehrzahl
+  das Spiel. Zum Üben in der Volksschule ab der 3. Schulstufe, nach den Personalformen.
+
 ## Meine Fehler (Fehlerprotokoll)
 
 niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers

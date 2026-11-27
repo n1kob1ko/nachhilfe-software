@@ -170,3 +170,75 @@ test("Satzglieder: Stoff bringt das Spiel zuerst, Lernstand Volksschule und Unte
   repo.updateStudent(gross.student.id, { ...gross.student, school_type: "AHS" });
   assert.equal(gross.sp.skillFuerSpiel(repo.getStudent(gross.student.id)!, "satzglieder", HEUTE), "deutsch.satz.satzglieder");
 });
+
+test("Nomen bestimmen: jeder Satz liest sich, Grundform mit Artikel, genug Nomen je Stufe, Geschlecht und Fall", async () => {
+  const n = await import("./nomen-bestimmen");
+  const fehler: string[] = [];
+  const texte = new Set<string>();
+  const ART = { m: "der", w: "die", s: "das" } as const;
+  for (const src of n.NOMEN_SAETZE) {
+    const { text, teile } = n.leseNomenSatz(src);
+    if (texte.has(text)) fehler.push(`doppelt: ${text}`);
+    texte.add(text);
+    if (/[[\]{}]/.test(text) || !teile.length) fehler.push(`Klammern: ${src}`);
+    if (!/^[A-ZÄÖÜ]/.test(text) || !/[.!?]$/.test(text)) fehler.push(`Satzanfang oder -ende: ${text}`);
+    for (const t of teile) {
+      if (`${t.vor}${t.mitte}${t.nach}` !== text) fehler.push(`Stelle von „${t.mitte}“`);
+      if (!t.grund.startsWith(`${ART[t.g]} `)) fehler.push(`Grundform „${t.grund}“ passt nicht zum Geschlecht (${text})`);
+      // das Nomen selbst ist groß, der Begleiter davor gehört dazu
+      if (!/[A-ZÄÖÜ]\p{L}*$/u.test(t.mitte)) fehler.push(`kein Nomen am Ende: ${t.mitte}`);
+      // Einzahl im 1. Fall mit bestimmtem Artikel: steht genau so da wie die Grundform
+      if (!t.mz && t.fall === 1 && /^(der|die|das) /i.test(t.mitte) && t.mitte.toLowerCase() !== t.grund.toLowerCase()) fehler.push(`Grundform ${t.grund} ≠ ${t.mitte}`);
+      if (t.mz && /^(der|das|den|dem|des) /i.test(t.mitte) && t.fall !== 2 && t.fall !== 3) fehler.push(`Mehrzahl mit Einzahl-Artikel: ${t.mitte}`);
+    }
+  }
+  const k = n.nomenKandidaten();
+  for (const s of [0, 1, 2, 3]) if (k.filter((x) => x.stufe === s).length < 6) fehler.push(`Stufe ${s}: zu wenige`);
+  for (const g of n.GESCHLECHT_FAECHER) if (k.filter((x) => x.karte.richtig === g).length < 12) fehler.push(`${g}: zu wenige`);
+  for (const f of [1, 3, 4]) if (k.filter((x) => x.folge[1].richtig === `${f}. Fall`).length < 10) fehler.push(`${f}. Fall: zu wenige`);
+  if (k.filter((x) => x.folge[0].richtig === "Mehrzahl").length < 15) fehler.push("Mehrzahl: zu wenige");
+  const keys = k.flatMap((x) => [x.karte, ...x.folge].map((c) => c.key));
+  if (new Set(keys).size !== keys.length) fehler.push("doppelte Keys");
+  assert.deepEqual(fehler, []);
+});
+
+test("Nomen bestimmen: drei Fragen hintereinander, Regeln", async () => {
+  const n = await import("./nomen-bestimmen");
+  const k = n.nomenKandidaten().find((x) => x.karte.key === n.nomenKey("Oma erzählt den Kindern eine Geschichte.", "den Kindern", "g"))!;
+  assert.deepEqual([k.karte.richtig, k.folge[0].richtig, k.folge[1].richtig], ["sächlich", "Mehrzahl", "3. Fall"]);
+  assert.deepEqual([k.karte.form, k.folge[0].form, k.folge[1].form], ["kacheln", "wischen", "kacheln"]);
+  assert.match(k.karte.regel, /Einzahl: „das Kind“, also sächlich/);
+  assert.match(k.folge[0].regel, /Einzahl: das Kind/);
+  assert.match(k.folge[1].regel, /„Wem\?“: 3\. Fall/);
+  const p = n.nomenKandidaten().find((x) => x.karte.key === n.nomenKey("Tom spielt mit dem Ball.", "dem Ball", "g"))!;
+  assert.equal(p.stufe, 2);
+  assert.match(p.folge[1].regel, /Nach „mit“ steht hier der 3\. Fall/);
+  assert.equal(n.nomenKandidaten().find((x) => x.karte.mitte === "des Hasen")!.stufe, 3);
+});
+
+test("Nomen bestimmen: eine Runde hat vier Nomen mit je drei Karten in Reihe, eine falsche holt das ganze Nomen wieder", async () => {
+  const { sp, student } = await setup({ grade: 4 });
+  assert.ok(sp.spielVorschlaege(student, { heute: HEUTE }).some((v) => v.art === "nomen"));
+  assert.equal(sp.spieleZuSkills(["deutsch.wortarten.nomen"])[0], "nomen");
+  const r = sp.starteRunde(student, "nomen", { heute: HEUTE, rng: rng(9) });
+  assert.equal(r.karten.length, 12);
+  for (let i = 0; i < 12; i += 3) {
+    const teil = r.karten[i].key.replace(/#g$/, "");
+    assert.deepEqual(r.karten.slice(i, i + 3).map((k) => k.key), [`${teil}#g`, `${teil}#z`, `${teil}#f`]);
+  }
+  // die Fall-Karte des ersten Nomens falsch: in der nächsten Runde kommt das Nomen mit allen drei Fragen wieder
+  const falsch = r.karten[2];
+  sp.beendeRunde(student.id, r.rundeId, r.karten.map((k) => ({ key: k.key, wahl: k === falsch ? "4. Fall" === k.richtig ? "1. Fall" : "4. Fall" : k.richtig })));
+  const s = sp.starteRunde(student, "nomen", { heute: HEUTE, rng: rng(10) });
+  const i = s.karten.findIndex((k) => k.key === falsch.key);
+  assert.ok(i >= 2, s.karten.map((k) => k.key).join("\n"));
+  assert.equal(s.karten[i - 2].key, r.karten[0].key);
+  assert.equal(sp.skillFuerSpiel(student, "nomen", HEUTE), "deutsch.wortarten.nomen");
+});
+
+test("Ketten: Spiele ohne Kette wählen wie bisher", async () => {
+  const kk = await import("./lernspiele-karten");
+  const a = kk.waehleKarten("satzglieder", { stufen: [0, 1], rng: rng(2) });
+  assert.equal(a.length, 12);
+  assert.equal(new Set(a.map((k) => k.key)).size, 12);
+});
