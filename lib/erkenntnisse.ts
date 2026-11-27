@@ -25,9 +25,43 @@ export type Erkenntnis = {
   status: ErkenntnisStatus;
   created_at: string;
   erledigt_at: string | null;
+  /** JSON der Stellen aus der Arbeit (`Beleg[]`), nur bei Fehlern aus einem eingelesenen Aufsatz; lesen mit `belegeVon` */
+  belege?: string | null;
 };
 
-export type NeueErkenntnis = { art: ErkenntnisArt; text: string; skillId?: string | null; fehlerart?: ErrorType | null };
+/**
+ * Eine Stelle aus der Arbeit des Schülers zu einem Fehlermuster (2026-11-27, Erörterung 2. Klasse HTL): wie er sie
+ * geschrieben hat und verbessert, z. B. „im Gegensatz zu einem Mensch“ → „im Gegensatz zu einem Menschen“. Das Übungspaket
+ * lässt die kurzen davon verbessern und gibt alle der KI als Vorbild für neue, ähnliche Sätze.
+ */
+export type Beleg = { falsch: string; richtig: string };
+export const MAX_BELEGE = 5;
+
+/** Die Belege bereinigt: beide Teile da, verschieden, nicht zu lang, ohne Doppelte, höchstens `MAX_BELEGE`. */
+export function sauberBelege(roh: unknown): Beleg[] {
+  if (!Array.isArray(roh)) return [];
+  const out: Beleg[] = [];
+  for (const b of roh) {
+    const falsch = String((b as Beleg | null)?.falsch ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
+    const richtig = String((b as Beleg | null)?.richtig ?? "").replace(/\s+/g, " ").trim().slice(0, 300);
+    if (!falsch || !richtig || falsch === richtig || out.some((x) => x.falsch === falsch)) continue;
+    out.push({ falsch, richtig });
+    if (out.length >= MAX_BELEGE) break;
+  }
+  return out;
+}
+
+/** Die Belege einer gespeicherten Erkenntnis. */
+export function belegeVon(e: Pick<Erkenntnis, "belege">): Beleg[] {
+  if (!e.belege) return [];
+  try {
+    return sauberBelege(JSON.parse(e.belege));
+  } catch {
+    return [];
+  }
+}
+
+export type NeueErkenntnis = { art: ErkenntnisArt; text: string; skillId?: string | null; fehlerart?: ErrorType | null; belege?: Beleg[] };
 
 /** Speichert die Erkenntnisse einer Quelle; leere und doppelte Zeilen fallen weg. Gibt die Anzahl zurück. */
 export function speichereErkenntnisse(o: {
@@ -41,8 +75,8 @@ export function speichereErkenntnisse(o: {
   zeilen: NeueErkenntnis[];
 }): number {
   const insert = db().prepare(
-    `INSERT INTO erkenntnisse (student_id, subject, art, text, skill_id, error_type, quelle, lesson_id, worksheet_id, test_id, teacher_id)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO erkenntnisse (student_id, subject, art, text, skill_id, error_type, quelle, lesson_id, worksheet_id, test_id, teacher_id, belege)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
   );
   const gesehen = new Set<string>();
   let n = 0;
@@ -52,7 +86,8 @@ export function speichereErkenntnisse(o: {
       const key = `${z.art}|${text.toLowerCase()}`;
       if (!text || gesehen.has(key)) continue;
       gesehen.add(key);
-      insert.run(o.studentId, o.subject, z.art, text, z.skillId ?? null, z.art === "fehler" ? (z.fehlerart ?? null) : null, o.quelle, o.lessonId ?? null, o.worksheetId ?? null, o.testId ?? null, o.teacherId);
+      const belege = z.art === "fehler" ? sauberBelege(z.belege) : [];
+      insert.run(o.studentId, o.subject, z.art, text, z.skillId ?? null, z.art === "fehler" ? (z.fehlerart ?? null) : null, o.quelle, o.lessonId ?? null, o.worksheetId ?? null, o.testId ?? null, o.teacherId, belege.length ? JSON.stringify(belege) : null);
       n++;
     }
   })();

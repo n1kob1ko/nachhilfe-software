@@ -33,7 +33,7 @@ import { wordRange } from "@/lib/textinterpretation";
 import { shortNames } from "@/lib/vornamen";
 import { ownBoardFor, runningBoardsFor } from "@/lib/whiteboard";
 
-export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string; archiv?: string; fehler?: string; zeilen?: string; aufgaben?: string; ersetzt?: string; ki?: string }> }) {
+export default async function WorksheetPage({ params, searchParams }: { params: Promise<{ id: string }>; searchParams: Promise<{ loesungen?: string; hinweis?: string; gesendet?: string; ausgelassen?: string; anzahl?: string; archiv?: string; fehler?: string; zeilen?: string; aufgaben?: string; ersetzt?: string; ki?: string; grund?: string }> }) {
   const { id } = await params;
   const sp = await searchParams;
   const teacher = await requireTeacher();
@@ -151,7 +151,10 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         </p>
       )}
       {sp.hinweis === "ki" && (
-        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber">Die KI war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren.</p>
+        <p className="no-print mb-6 rounded-2xl bg-amber-wash px-4 py-3 text-[14px] text-amber" data-testid="hinweis-ki">
+          {/* Übungspaket: der genaue Grund (lib/uebungspaket.ts), z. B. welche Aufgaben fehlen */}
+          {sp.grund ? `Nicht alles kam von der KI: ${sp.grund.slice(0, 400)}` : "Die KI war nicht erreichbar. Die Aufgaben stammen aus den eingebauten Generatoren."}
+        </p>
       )}
       {sp.hinweis === "stoff" &&
         (() => {

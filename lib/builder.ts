@@ -8,7 +8,7 @@ import type { BankId } from "./banks";
 import { aufgabeSchluessel, ausgeblendet, rueckmeldungZeile, vorbildZeilen } from "./bewertungen";
 import { DIFFICULTIES, categoriesFor, difficultyFor, mixFor, type Category, type Difficulty, type TaskType } from "./curriculum";
 import { aufgabenSchluessel, leseFigur } from "./figur";
-import { generateForSlot } from "./generators";
+import { generateForSlot, istErklaerVorlage } from "./generators";
 import { expectedFixes } from "./fix-text";
 import { checkOwnSolution } from "./math-task";
 import { regenerateReadingQuestion } from "./lesen-draft";
@@ -68,6 +68,8 @@ export type BuilderSettings = {
   vokabelListen?: number[];
   /** Übungspaket aus Erkenntnissen (lib/uebungspaket.ts): Nummer, Fach, die Erkenntnisse, was nicht mehr kommt, die Auswertung. */
   paket?: import("./uebungspaket").PaketInfo;
+  /** Aufgabentypen je Fähigkeit, vor `categories` (Übungspaket: Fehler beim Argumentieren als freie Schreibaufgabe). */
+  kategorienJeFaehigkeit?: Record<string, string[]>;
 };
 
 export function settingsFromForm(f: FormData): BuilderSettings {
@@ -280,7 +282,7 @@ export function contextForAI(ctx: StudentContext, skillIds: string[]): string {
 // ---------- generating ----------
 type ResolvedSkill = { skill: repo.Skill; parent: repo.Skill | null; difficulty: Difficulty };
 
-function resolveSkills(s: BuilderSettings, ctx: StudentContext | null): ResolvedSkill[] {
+export function resolveSkills(s: BuilderSettings, ctx: StudentContext | null): ResolvedSkill[] {
   const all = repo.listSkills();
   return s.skillIds
     .map((id) => all.find((x) => x.id === id))
@@ -299,12 +301,15 @@ export type PlanSlot = { skill: ResolvedSkill; category: string | null };
  * (no type chosen) takes the types that fit each skill in turn (lib/curriculum.ts mixFor), so the
  * exercise gets gap texts, corrections and free answers instead of mostly multiple choice.
  */
-export function planSlots(subject: string, skills: ResolvedSkill[], cats: Category[], count: number): PlanSlot[] {
+export function planSlots(subject: string, skills: ResolvedSkill[], cats: Category[], count: number, jeFaehigkeit: Record<string, string[]> = {}): PlanSlot[] {
   return Array.from({ length: count }, (_, i) => {
     const skill = skills[i % skills.length];
     // the types rotate across the tasks and across the skills, so every type comes about equally often
     // and every skill gets different types
     const turn = Math.floor(i / skills.length) + (i % skills.length);
+    // eigene Typen für diese Fähigkeit (Übungspaket: Fehler beim Argumentieren als Schreibaufgabe)
+    const eigene = jeFaehigkeit[skill.skill.id]?.filter((k) => categoriesFor(subject).some((c) => c.key === k)) ?? [];
+    if (eigene.length) return { skill, category: eigene[turn % eigene.length] };
     if (cats.length) return { skill, category: cats[turn % cats.length].key };
     const mix = mixFor(subject, skill.skill.id);
     return { skill, category: mix[turn % mix.length] ?? null };
@@ -371,7 +376,7 @@ export async function generateTasks(
   const count = Math.max(1, Math.min(30, o.count ?? settings.count));
   const cats: Category[] = categoriesFor(settings.subject).filter((c) => settings.categories.includes(c.key));
   // Schreibaufträge: every part of a Textsorte once, the rest of the exercise as planned
-  const plan = planSlots(settings.subject, skills, cats, count).filter((p, i, all) => {
+  const plan = planSlots(settings.subject, skills, cats, count, settings.kategorienJeFaehigkeit).filter((p, i, all) => {
     const sorte = sorteOfSkill(p.skill.skill.id);
     return !sorte || all.slice(0, i).filter((q) => sorteOfSkill(q.skill.skill.id) === sorte).length < maxTeiluebungen(sorte);
   });
@@ -524,10 +529,17 @@ export async function generateTasks(
     if (category && t!.category !== category && !englischGleichwertig(category, t!.category)) missedType++;
     slots[i] = t;
   }
+  // Übungspaket (lib/uebungspaket.ts): keine Erklär-Vorlagen („Erkläre in eigenen Worten, wie man bei … vorgeht“). Sie
+  // füllten das Paket aus einer Deutsch-Schularbeit, als die KI nichts lieferte (niko, 27.11.2026); lieber weniger Aufgaben
+  // und ein klarer Hinweis.
+  const vorlagen = s.paket ? slots.filter((t) => t && istErklaerVorlage(t.prompt)).length : 0;
+  if (vorlagen) for (let i = 0; i < slots.length; i++) if (slots[i] && istErklaerVorlage(slots[i]!.prompt)) slots[i] = null;
+  const kept = slots.filter((t): t is TaskDraft => t !== null);
   // parents count too, so the progress of "Dividieren" also moves when "Kehrwert" is practised
-  const tasks = slots.map((t) => ({ ...t!, skillIds: [...new Set([...(t!.skillIds ?? []), ...(t!.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
+  const tasks = kept.map((t) => ({ ...t!, skillIds: [...new Set([...(t!.skillIds ?? []), ...(t!.skillIds ?? []).map((id) => skills.find((r) => r.skill.id === id)?.parent?.id).filter((x): x is string => Boolean(x))])] }));
   const notes = [
     aiError,
+    vorlagen ? `${vorlagen} ${vorlagen === 1 ? "Aufgabe fehlt" : "Aufgaben fehlen"}, weil ${settings.useAI && aiEnabled() ? "die KI sie nicht geliefert hat" : "es dazu ohne KI keine passende Aufgabe gibt"}.` : "",
     fromAI && fromAI < aiCount ? `${aiCount - fromAI} ${aiCount - fromAI === 1 ? "Aufgabe kam" : "Aufgaben kamen"} von der KI nicht im gewünschten Typ und ${aiCount - fromAI === 1 ? "wurde" : "wurden"} ohne KI erstellt.` : "",
   ].filter(Boolean);
   // Kein KI-Fehler: Den gewählten Typ gibt es ohne KI für diese Fähigkeit nicht (Seite: ?hinweis=typ).
@@ -545,7 +557,7 @@ function autoTitle(s: BuilderSettings, ctx: StudentContext | null) {
 }
 
 /** Generates tasks and stores them as a draft exercise for the preview. */
-export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; auftragTextId?: number } = {}): Promise<{ id: number; aiError?: string; typFehlt?: number }> {
+export async function createDraft(s: BuilderSettings, teacherId: number | null, o: { empty?: boolean; auftragTextId?: number; vorab?: TaskDraft[] } = {}): Promise<{ id: number; aiError?: string; typFehlt?: number }> {
   const ctx = s.studentId ? studentContext(s.studentId) : null;
   const all = repo.listSkills();
   const chosen = all.filter((x) => s.skillIds.includes(x.id));
@@ -561,6 +573,9 @@ export async function createDraft(s: BuilderSettings, teacherId: number | null, 
     aiError = out.aiError;
     typFehlt = out.typFehlt;
   }
+  // fertige Aufgaben vorne (Übungspaket: Sätze aus der eigenen Schularbeit verbessern, lib/uebungspaket.ts)
+  if (o.vorab?.length) tasks = [...o.vorab, ...tasks];
+  if (s.paket && !o.empty && !tasks.length) throw new Error(`${aiError ?? "Die KI hat keine Aufgaben geliefert."} Es wurde kein Paket angelegt. Bitte nochmal versuchen.`);
   const id = repo.createWorksheet(
     {
       title: s.title || autoTitle(s, ctx),

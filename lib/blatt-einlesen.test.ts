@@ -48,9 +48,9 @@ const gelesen = (skillId: string): BlattGelesen => ({
   titel: "Probeschularbeit Potenzen",
   unsicher: ["Aufgabe 2b schwer lesbar"],
   muster: [
-    { text: "Kürzt nicht ganz (12/18 → 6/9)", faehigkeit: skillId, fehlerart: "bruch", aufgaben: ["2a"] },
-    { text: "Kürzt nicht ganz", faehigkeit: "gibt-es-nicht", fehlerart: null, aufgaben: [] },
-    { text: "  ", faehigkeit: null, fehlerart: null, aufgaben: [] },
+    { text: "Kürzt nicht ganz (12/18 → 6/9)", faehigkeit: skillId, fehlerart: "bruch", aufgaben: ["2a"], belege: [] },
+    { text: "Kürzt nicht ganz", faehigkeit: "gibt-es-nicht", fehlerart: null, aufgaben: [], belege: [] },
+    { text: "  ", faehigkeit: null, fehlerart: null, aufgaben: [], belege: [] },
   ],
   staerken: ["Potenzregeln sicher"],
 });
@@ -205,4 +205,37 @@ test("a real Schularbeit gets its grade and points; wrong input is refused", asy
   const fremd = repo.createStudent({ name: "Leo Beispiel", grade: 8, klasse: 4, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Mathematik"], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "" });
   const fremdTest = repo.addTest({ student_id: fremd, date: GESTERN, subject: "Mathematik", kind: "Test", topic: "", grade: null, points: null, max_points: null, notes: "", skill_ids: [], title: "", topics: [], status: "geplant", teacher_id: teacher.id, material_id: null });
   assert.match(fehler({ testId: fremdTest })!, /anderen Schüler/);
+});
+
+test("an essay: the places of each pattern come through cleaned, and the prompt asks for one rule per pattern", async () => {
+  const { erkenntnisseAusGelesen } = await import("./blatt-einlesen");
+  const { BLATT_SYSTEM } = await import("./ai/features");
+  const out = erkenntnisseAusGelesen(
+    {
+      muster: [
+        {
+          text: "Fall nach Präposition (zu einem Mensch)",
+          faehigkeit: null,
+          fehlerart: "grammatik",
+          aufgaben: ["2"],
+          belege: [
+            { falsch: "im Gegensatz zu einem Mensch", richtig: "im Gegensatz zu einem Menschen" },
+            { falsch: " zur  Unterricht ", richtig: "zum Unterricht" },
+            { falsch: "gleich", richtig: "gleich" },
+          ],
+        },
+        { text: "Argument ohne Beispiel", faehigkeit: null, fehlerart: "inhalt", aufgaben: [], belege: [] },
+      ],
+      staerken: [],
+    },
+    new Set(),
+  );
+  assert.deepEqual(out[0].belege, [
+    { falsch: "im Gegensatz zu einem Mensch", richtig: "im Gegensatz zu einem Menschen" },
+    { falsch: "zur Unterricht", richtig: "zum Unterricht" },
+  ]);
+  assert.equal(out[1].fehlerart, "inhalt", "the new kind for content");
+  assert.equal(out[1].belege, undefined);
+  assert.match(BLATT_SYSTEM, /nie mehrere zusammen/);
+  assert.match(BLATT_SYSTEM, /GF = Grammatik/);
 });

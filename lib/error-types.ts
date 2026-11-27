@@ -24,6 +24,10 @@ export const ERROR_TYPES = [
   { key: "grammatik", label: "Grammatikfehler" },
   { key: "rechtschreibung", label: "Rechtschreibfehler" },
   { key: "wortschatz", label: "Wortschatzproblem" },
+  // Aufsätze (Schularbeit Deutsch/Englisch, lib/blatt-einlesen.ts): was am Rand mit A oder Stil angestrichen ist, und was am
+  // Inhalt fehlt (Argument ohne Begründung oder Beispiel, unklare Logik, Aufbau)
+  { key: "ausdruck", label: "Ausdruck und Stil" },
+  { key: "inhalt", label: "Inhalt und Argumentation" },
   { key: "unbekannt", label: "Unbekannt" },
 ] as const;
 export type ErrorType = (typeof ERROR_TYPES)[number]["key"];

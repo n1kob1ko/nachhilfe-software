@@ -58,7 +58,11 @@ test("a package is a draft exercise with its patterns; the next one counts on an
   assert.equal(w.status, "entwurf");
   assert.equal(w.title, "Lorenz – Übungspaket 1");
   assert.deepEqual(w.skill_ids, [ARTIKEL], "the skills come from the patterns");
-  assert.equal(repo.listTasks(w.id).length, 8);
+  // without KI: the generator's tasks for the article; its general explanation templates do not come into a package
+  const { istErklaerVorlage } = await import("./generators");
+  const aufgaben = repo.listTasks(w.id);
+  assert.equal(aufgaben.length, 6);
+  assert.ok(aufgaben.every((t) => !istErklaerVorlage(t.prompt)), "no „Erkläre in eigenen Worten …“");
   const s = JSON.parse(w.settings!);
   assert.match(s.focus, /Kennt den Artikel bei die Wand/);
   assert.match(s.focus, /Liest Aufgabenstellungen nicht genau/);
@@ -92,7 +96,7 @@ test("without KI the package is evaluated per skill; taking it over closes fixed
   await assert.rejects(wertePaketAus(worksheetId, sid, teacher.id), /noch keine bewerteten Antworten/);
   await loese(worksheetId, sid, () => true);
   const e = paketErgebnis(worksheetId);
-  assert.deepEqual([e.beantwortet, e.richtig], [8, 8]);
+  assert.deepEqual([e.beantwortet, e.richtig], [6, 6]);
 
   const a = await wertePaketAus(worksheetId, sid, teacher.id);
   assert.equal(a.ohneKi, true);
@@ -142,4 +146,96 @@ test("with KI the patterns of the package and the graded tasks go along, without
   } finally {
     router.setTransport(null);
   }
+});
+
+// ---------- Aufsatz (niko, 27.11.2026: Erörterung 2. Klasse HTL, das Paket kam mit „Erkläre in eigenen Worten …“) ----------
+
+test("the places from the essay are stored with the pattern and become own sentences to correct; content patterns do not", async () => {
+  const { repo, teacher, sid } = await setup();
+  const { speichereErkenntnisse, listErkenntnisse, belegeVon } = await import("./erkenntnisse");
+  const { eigeneSaetze, paketAuftrag, musterKurz } = await import("./uebungspaket");
+  const ARGUMENT = "deutsch.argumentieren.argument";
+  assert.ok(repo.getSkill(ARGUMENT), "the skill exists");
+  speichereErkenntnisse({
+    studentId: sid,
+    subject: "Deutsch",
+    teacherId: teacher.id,
+    quelle: "blatt",
+    zeilen: [
+      {
+        art: "fehler",
+        text: "Fall nach Präposition falsch (zu einem Mensch) – Aufgabe 2, 4",
+        skillId: ARTIKEL,
+        fehlerart: "grammatik",
+        belege: [
+          { falsch: "Im Gegensatz zu einem Mensch kann die KI sich alles merken.", richtig: "Im Gegensatz zu einem Menschen kann die KI sich alles merken." },
+          { falsch: "Jedoch führt dies zu einer Risiko.", richtig: "Jedoch führt dies zu einem Risiko." },
+          { falsch: "gleich", richtig: "gleich" },
+          { falsch: "Ganz anders geschrieben hier steht etwas", richtig: "Ein völlig neuer Satz, der mit dem alten nichts mehr gemein hat und länger ist." },
+        ],
+      },
+      { art: "fehler", text: "Argument ohne Begründung und Beispiel", skillId: ARGUMENT, fehlerart: "inhalt", belege: [{ falsch: "Dadurch sind sie immer anwesend.", richtig: "Roboter werden nicht krank, daher fällt kein Unterricht aus." }] },
+      { art: "staerke", text: "Klarer Aufbau", belege: [{ falsch: "a b c", richtig: "a b d" }] },
+    ],
+  });
+  const [fall, argument] = listErkenntnisse(sid, { art: "fehler" }).filter((e) => e.text !== "Kennt den Artikel bei die Wand, das Gemüse nicht" && e.text !== "Liest Aufgabenstellungen nicht genau").reverse();
+  assert.equal(belegeVon(fall).length, 3, "an unchanged place is dropped");
+  assert.equal(belegeVon(listErkenntnisse(sid, { art: "staerke" })[0]).length, 0, "a strength has no places");
+  assert.equal(musterKurz(fall.text), "Fall nach Präposition falsch");
+
+  const eigene = eigeneSaetze([fall, argument], 4);
+  assert.deepEqual(eigene.map((t) => t.data.faulty), ["Im Gegensatz zu einem Mensch kann die KI sich alles merken.", "Jedoch führt dies zu einer Risiko."], "only short corrections, no rewritten sentence, nothing from the content pattern");
+  const [eins] = eigene;
+  assert.equal(eins.type, "fix");
+  assert.equal(eins.skillId, ARTIKEL);
+  assert.match(eins.prompt, /aus deiner Schularbeit/);
+  assert.deepEqual(eins.answer.accepted, ["Im Gegensatz zu einem Menschen kann die KI sich alles merken."]);
+  assert.deepEqual(eins.answer.fixes?.map((f) => [f.wrong, f.right, f.label]), [["Mensch", "Menschen", "Fall nach Präposition falsch"]]);
+  assert.equal(eigeneSaetze([fall], 1).length, 1, "at most max");
+
+  const auftrag = paketAuftrag({ nr: 1, fach: "Deutsch", muster: [fall, argument], nichtMehr: "", staerken: [] });
+  assert.match(auftrag, /Stellen aus seiner Arbeit: „Im Gegensatz zu einem Mensch kann die KI sich alles merken\.“ → „Im Gegensatz zu einem Menschen/);
+  assert.match(auftrag, /Keine Fragen nach der Regel/);
+  assert.match(auftrag, /Behauptung, Begründung, Beispiel und Rückbezug/);
+  assert.doesNotMatch(paketAuftrag({ nr: 1, fach: "Mathematik", muster: [{ text: "Kürzt nicht", skill_id: null }], nichtMehr: "", staerken: [] }), /Text, den der Schüler geschrieben hat/, "only for languages");
+});
+
+test("a package from an essay starts with the own sentences and asks for writing tasks on content patterns", async () => {
+  const { repo, teacher, sid } = await setup();
+  const { speichereErkenntnisse, listErkenntnisse } = await import("./erkenntnisse");
+  const { erstellePaket } = await import("./uebungspaket");
+  const ARGUMENT = "deutsch.argumentieren.argument";
+  speichereErkenntnisse({
+    studentId: sid,
+    subject: "Deutsch",
+    teacherId: teacher.id,
+    quelle: "blatt",
+    zeilen: [
+      { art: "fehler", text: "Fall nach Präposition", skillId: ARTIKEL, fehlerart: "grammatik", belege: [{ falsch: "Er kommt zu spät zur Unterricht.", richtig: "Er kommt zu spät zum Unterricht." }] },
+      { art: "fehler", text: "Argument ohne Beispiel", skillId: ARGUMENT, fehlerart: "inhalt" },
+    ],
+  });
+  const ids = listErkenntnisse(sid, { art: "fehler" }).filter((e) => e.quelle === "blatt" && (e.skill_id === ARTIKEL || e.skill_id === ARGUMENT) && e.text !== "Kennt den Artikel bei die Wand, das Gemüse nicht").map((e) => e.id);
+  const out = await erstellePaket({ studentId: sid, teacherId: teacher.id, fach: "Deutsch", erkenntnisIds: ids, nichtMehr: "", anzahl: 8 });
+  const w = repo.getWorksheet(out.worksheetId)!;
+  const [erste] = repo.listTasks(w.id);
+  assert.equal(erste.data.faulty, "Er kommt zu spät zur Unterricht.", "the own sentence comes first");
+  const s = JSON.parse(w.settings!);
+  assert.deepEqual(s.kategorienJeFaehigkeit, { [ARGUMENT]: ["offen"] });
+  assert.equal(s.count, 7, "the own sentence counts towards the number");
+  const { planSlots, resolveSkills } = await import("./builder");
+  const plan = planSlots("Deutsch", resolveSkills({ ...s, skillIds: [ARGUMENT] }, null), [], 3, s.kategorienJeFaehigkeit);
+  assert.deepEqual(plan.map((p) => p.category), ["offen", "offen", "offen"]);
+});
+
+test("a package without any usable task is not created", async () => {
+  const { teacher, sid, lesen } = await setup();
+  const { erstellePaket } = await import("./uebungspaket");
+  const { db } = await import("./db");
+  // only a pattern whose skill has nothing but the general templates without KI
+  const vorlageSkill = (db().prepare("SELECT id FROM skills WHERE id = 'deutsch.argumentieren.argument'").get() as { id: string }).id;
+  db().prepare("UPDATE erkenntnisse SET skill_id = ? WHERE id = ?").run(vorlageSkill, lesen.id);
+  const vorher = (db().prepare("SELECT COUNT(*) AS n FROM worksheets").get() as { n: number }).n;
+  await assert.rejects(erstellePaket({ studentId: sid, teacherId: teacher.id, fach: "Deutsch", erkenntnisIds: [lesen.id], nichtMehr: "", anzahl: 8 }), /kein Paket angelegt/);
+  assert.equal((db().prepare("SELECT COUNT(*) AS n FROM worksheets").get() as { n: number }).n, vorher);
 });

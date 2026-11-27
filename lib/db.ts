@@ -1647,6 +1647,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   ["lessons", "teacher_id", "INTEGER REFERENCES teachers(id) ON DELETE SET NULL"],
   ["lessons", "kind", "TEXT NOT NULL DEFAULT 'stunde'"],
   ["lessons", "assignment_id", "INTEGER REFERENCES assignments(id) ON DELETE CASCADE"],
+  // Erkenntnisse aus einem Aufsatz (2026-11-27): die Stellen aus der Arbeit, JSON [{ falsch, richtig }]; das Übungspaket übt sie
+  ["erkenntnisse", "belege", "TEXT"],
   ["worksheets", "school_type", "TEXT NOT NULL DEFAULT ''"],
   ["worksheets", "klasse", "INTEGER"],
   // teacher accounts

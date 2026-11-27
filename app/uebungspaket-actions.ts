@@ -22,7 +22,7 @@ export async function paketErstellenAction(_prev: PaketStand, fd: FormData): Pro
       nichtMehr: String(fd.get("nicht_mehr") ?? ""),
       anzahl: Number(fd.get("anzahl")),
     });
-    ziel = `/uebungen/${out.worksheetId}${out.aiError ? "?hinweis=ki" : ""}`;
+    ziel = `/uebungen/${out.worksheetId}${out.aiError ? `?hinweis=ki&grund=${encodeURIComponent(out.aiError.slice(0, 400))}` : ""}`;
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Das hat nicht geklappt." };
   }

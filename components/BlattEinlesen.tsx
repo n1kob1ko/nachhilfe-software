@@ -944,6 +944,21 @@ function ErkenntnisListe({ liste, skills, setze }: { liste: (BlattErkenntnis & {
                   </option>
                 ))}
               </select>
+              {e.belege?.length ? (
+                // Stellen aus dem Aufsatz: das Übungspaket lässt sie verbessern; eine falsch gelesene Stelle hier entfernen
+                <ul className="col-span-2 grid gap-1 sm:col-span-3 sm:col-start-2" aria-label="Stellen aus der Arbeit" data-testid="blatt-belege">
+                  {e.belege.map((b, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-[13px] text-ink-2">
+                      <span className="min-w-0 flex-1">
+                        <span className="text-red line-through decoration-1">{b.falsch}</span> → <span className="text-green">{b.richtig}</span>
+                      </span>
+                      <button type="button" className="btn btn-ghost btn-sm -my-1" aria-label={`Stelle „${b.falsch}“ entfernen`} onClick={() => aendere(e.k, { belege: e.belege!.filter((_, j) => j !== i) })}>
+                        <X size={14} aria-hidden />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </>
           ) : null}
         </div>

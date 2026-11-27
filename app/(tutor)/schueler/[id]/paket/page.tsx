@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { paketErstellenAction } from "@/app/uebungspaket-actions";
 import { PaketFormular } from "@/components/PaketKnopf";
 import { PageHeader } from "@/components/ui";
+import { belegeVon } from "@/lib/erkenntnisse";
 import { errorTypeLabel } from "@/lib/error-types";
 import { getSkill, getStudent } from "@/lib/repo";
 import { PAKET_ANZAHL, PAKET_STANDARD, paketVorschlag } from "@/lib/uebungspaket";
@@ -48,7 +49,7 @@ export default async function PaketNeu({ params, searchParams }: { params: Promi
                     <input type="checkbox" name="erkenntnis" value={e.id} defaultChecked className="mt-1 h-4 w-4 shrink-0 accent-[var(--accent)]" />
                     <span className="min-w-0">
                       <span className="block text-[14px]">{e.text}</span>
-                      <span className="block text-[12px] text-ink-3">{[e.skill_id ? getSkill(e.skill_id)?.name : "ohne Fähigkeit", e.error_type ? errorTypeLabel(e.error_type) : null].filter(Boolean).join(" · ")}</span>
+                      <span className="block text-[12px] text-ink-3">{[e.skill_id ? getSkill(e.skill_id)?.name : "ohne Fähigkeit", e.error_type ? errorTypeLabel(e.error_type) : null, belegeVon(e).length ? `${belegeVon(e).length} ${belegeVon(e).length === 1 ? "Stelle" : "Stellen"} aus der Arbeit` : null].filter(Boolean).join(" · ")}</span>
                     </span>
                   </label>
                 ))}
