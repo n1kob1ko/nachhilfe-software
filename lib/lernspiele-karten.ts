@@ -25,6 +25,7 @@ import { mitAntwortForm } from "./lernspiele-antwort";
 import { REIHE_TRENNER, type SpielArt, type SpielKarte } from "./lernspiele-typen";
 import { beugenKandidaten } from "./verben-beugen";
 import { wortartKandidaten } from "./wortarten-spiel";
+import { grossKandidaten } from "./gross-klein-spiel";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
 type Rng = () => number;
@@ -445,6 +446,8 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = wortartKandidaten();
   } else if (art === "konjugieren") {
     out = beugenKandidaten();
+  } else if (art === "gross") {
+    out = grossKandidaten();
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
   } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {
@@ -532,11 +535,13 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
   // bei nur zwei Kisten wären genau sechs und sechs zu durchschaubar: bis zu sieben von einer
   const zweiKisten = alle.length > 0 && alle.every((k) => k.karte.faecher.length === 2);
   const grenze = zweiKisten ? Math.ceil(anzahl * 0.58) : Math.ceil(anzahl / 2);
+  // „Groß oder klein?“: die Kacheln heißen je Karte anders („Spielen“, „spielen“), gezählt wird groß gegen klein
+  const antwortVon = (karte: SpielKarte) => (art === "gross" ? (karte.marke ?? karte.richtig) : karte.richtig);
   const nimm = (k: Kandidat) => {
     gewaehlt.push(k.karte);
     genommen.add(k.karte.key);
     if (k.gruppe) gruppen.add(k.gruppe);
-    proAntwort.set(k.karte.richtig, (proAntwort.get(k.karte.richtig) ?? 0) + 1);
+    proAntwort.set(antwortVon(k.karte), (proAntwort.get(antwortVon(k.karte)) ?? 0) + 1);
   };
 
   for (const key of o.wiederholen ?? []) {
@@ -556,7 +561,7 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
       const pool = ohneZuletzt ? passend : passend.sort((a, b) => (alter.get(b.karte.key) ?? 1e9) - (alter.get(a.karte.key) ?? 1e9));
       for (const k of pool) {
         if (gewaehlt.length >= anzahl) break;
-        if ((proAntwort.get(k.karte.richtig) ?? 0) >= grenze) continue;
+        if ((proAntwort.get(antwortVon(k.karte)) ?? 0) >= grenze) continue;
         if (k.gruppe && gruppen.has(k.gruppe)) continue;
         nimm(k);
       }

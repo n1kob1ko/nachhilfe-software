@@ -973,6 +973,28 @@ sowas wie du gehst ich gehe wir gehen usw“. Zwei Spiele mit Kacheln, ohne KI, 
 Beide ab der 2. Schulstufe „zum Üben“, in der Volksschule als erste Deutsch-Spiele vor „der, die, das“. Wie jedes
 Spiel mit Kacheln auch als Endlos, Blockwerk, Funkelfeld, Torlauf und im Duell. Test: lib/volksschul-spiele.test.ts.
 
+## Groß oder klein? (Volksschule)
+
+niko 2026-11-27, Stoffzettel der 2. Deutschschularbeit einer 4. Klasse: „Nominalisierung von Verben nach zum, beim,
+vom und das“. Spiel `gross` (lib/gross-klein-spiel.ts), ohne KI, alle Sätze von Hand:
+
+- **Karte**: ein Satz mit Lücke, darunter dasselbe Wort zweimal, links groß, rechts klein („Spielen“, „spielen“). Die
+  Karte wird gewischt (`form: "wischen"`), die Kacheln lassen sich auch antippen.
+- **Sätze** in `GROSS_SAETZE` (rund 130), das Wort in eckigen Klammern so, wie es richtig ist: „Beim [Spielen] …“,
+  „Wir wollen heute [spielen].“ Nie am Satzanfang (dort wäre es immer groß). Groß nur mit Signalwort davor (zum, beim,
+  vom, das; auch mit einem Adjektiv dazwischen), klein nie mit einem; der Test prüft das.
+- **Regel nach einem Fehler**: das Signalwort („Vor „Zuhören“ steht „das“ …“), das Adjektiv dazwischen („beim
+  schnellen Laufen“), „zu“ gegen „zum“ („Nach „zu“ bleibt das Verb klein … zum Lesen“), sonst „hier ist es ein Verb“.
+- **Stufen**: 0 beim, zum und kurze Sätze mit dem Verb; 1 vom, das, „zu“; 2 Adjektiv dazwischen und längere Sätze.
+- **Groß gegen klein etwa gleich oft**: in einer Runde zählt `waehleKarten` hier `marke` („groß“/„klein“) statt der
+  Antwort, weil die Kacheln je Karte anders heißen.
+- **Lernstand**: deutsch.recht.gross; im Stoff bringen deutsch.recht.gross und deutsch.wortarten.nomen das Spiel.
+  Zum Üben ab der 3. Schulstufe in der Volksschule (Unterstufe nur über den Stoff).
+
+Dazu hat das Deutsch-Quiz beim Thema „Adjektive steigern“ jetzt 54 Karten statt 15, mit den Namen der Volksschule
+(Grundstufe, Mehrstufe, Meiststufe; die Fachwörter Positiv, Komparativ, Superlativ in den schweren Karten).
+Test: lib/schularbeit-spiele.test.ts.
+
 ## Meine Fehler (Fehlerprotokoll)
 
 niko 2026-11-17, Punkt 5 des Plans zur Textinterpretation: das Fehlerprotokoll aus den eigenen Texten eines Schülers
