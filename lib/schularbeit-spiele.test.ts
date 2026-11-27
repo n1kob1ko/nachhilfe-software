@@ -242,3 +242,78 @@ test("Ketten: Spiele ohne Kette wählen wie bisher", async () => {
   assert.equal(a.length, 12);
   assert.equal(new Set(a.map((k) => k.key)).size, 12);
 });
+
+test("Lernwörter: Liste lesen, Satz mit Lücke, Regeln, Vergleich und strenge Prüfung", async () => {
+  const t = await import("./lernwoerter-text");
+  const g = t.leseLernwoerter("Fahrrad: Ich fahre mit dem Fahrrad zur Schule.\n# Kommentar\n\nvielleicht\nHund: Die Hunde bellen.\nFahrrad\nzu123\n");
+  assert.deepEqual(g.eintraege.map((e) => [e.wort, e.satz]), [["Fahrrad", "Ich fahre mit dem Fahrrad zur Schule."], ["vielleicht", ""], ["Hund", ""]]);
+  assert.equal(g.hinweise.length, 2, "Hund nicht als ganzes Wort im Satz, Fahrrad doppelt");
+  assert.equal(g.fehler.length, 1, "Ziffer");
+  const k = t.lernwortKarte(g.eintraege[0], { skill: "x", zeigen: true });
+  assert.equal(k.form, "lernwort");
+  assert.equal(`${k.vor}|${k.nach}`, "Ich fahre mit dem | zur Schule.");
+  assert.equal(k.richtig, "Fahrrad");
+  // groß und klein zählen, Satzzeichen am Ende und Leerzeichen nicht
+  assert.ok(t.lernwortStimmt(" Fahrrad. ", "Fahrrad"));
+  assert.ok(!t.lernwortStimmt("fahrrad", "Fahrrad"));
+  assert.ok(!t.lernwortStimmt("Farrad", "Fahrrad"));
+  assert.ok(!t.lernwortStimmt("", "Fahrrad"));
+  assert.equal(t.lernwortRegel("Fahrrad"), "Achte auf: groß am Anfang, rr, h.");
+  assert.equal(t.lernwortRegel("vielleicht"), "Achte auf: ie, ll, v.");
+  assert.equal(t.lernwortRegel("Straße"), "Achte auf: groß am Anfang, ß.");
+  assert.equal(t.lernwortRegel("und"), "Schau dir jeden Buchstaben genau an.");
+  const markiert = (w: string, e: string) => t.lernwortVergleich(w, e).map((b) => (b.falsch ? `[${b.z}]` : b.z)).join("");
+  assert.equal(markiert("Fahrrad", "Farrad"), "Fa[h]rrad");
+  assert.equal(markiert("Fahrrad", "fahrrad"), "[F]ahrrad");
+  assert.equal(markiert("wieder", "wider"), "wi[e]der");
+  assert.equal(markiert("Straße", "Strasse"), "Stra[ß]e");
+});
+
+test("Lernwörter: der Grundwortschatz hat zu jedem Wort einen Satz mit dem Wort, ohne Hinweise", async () => {
+  const lw = await import("./lernwoerter");
+  const t = await import("./lernwoerter-text");
+  const g = t.leseLernwoerter(lw.GRUNDWORTSCHATZ);
+  assert.deepEqual([...g.fehler, ...g.hinweise], []);
+  assert.ok(g.eintraege.length >= 80, String(g.eintraege.length));
+  for (const e of g.eintraege) {
+    assert.ok(e.satz && /^[A-ZÄÖÜ]/.test(e.satz) && /[.!?]$/.test(e.satz), e.satz);
+    assert.ok(t.stelleImSatz(e.satz, e.wort) >= 0, e.wort);
+  }
+});
+
+test("Lernwörter: Vorschlag, Runde ohne KI, steigert sich je Wort: anschauen, dann nur hören, dann sitzt es", async () => {
+  const { sp, student } = await setup({ grade: 4 });
+  const lw = await import("./lernwoerter");
+  const typen = await import("./lernspiele-typen");
+  assert.ok(!typen.istDuellArt("lernwoerter") && !typen.torTauglich("lernwoerter") && typen.hatEndlos("lernwoerter"));
+  // ohne Liste: zum Üben mit dem Grundwortschatz
+  const ohne = sp.spielVorschlaege(student, { heute: HEUTE }).find((v) => v.art === "lernwoerter");
+  assert.equal(ohne?.quelle, "fach");
+  assert.equal(sp.spielWoher(student, "lernwoerter", HEUTE), "Wörter für die Volksschule");
+  assert.deepEqual(sp.spieleZuSkills(["deutsch.vs.recht.dehnung"]), ["lernwoerter"]);
+
+  // mit Liste: „Deine Lernwörter“ weit vorne
+  assert.deepEqual(lw.speichereLernwoerter(student.id, null, "Fahrrad: Ich fahre mit dem Fahrrad.\nvielleicht\nwieder\nStraße\nzu 1"), { ok: false, fehler: ["Zeile 5: „zu 1“ hat eine Ziffer. Lernwörter sind Wörter."] });
+  assert.deepEqual(lw.speichereLernwoerter(student.id, null, "Fahrrad: Ich fahre mit dem Fahrrad.\nvielleicht\nwieder\nStraße"), { ok: true });
+  const v = sp.spielVorschlaege(student, { heute: HEUTE });
+  assert.deepEqual([v[0].art, v[0].grund, v[0].quelle], ["lernwoerter", "Deine Lernwörter", "stoff"]);
+
+  const r = sp.starteRunde(student, "lernwoerter", { heute: HEUTE, rng: rng(3) });
+  assert.ok(!("fehler" in r));
+  assert.equal(r.karten.length, 4);
+  assert.ok(r.karten.every((k) => k.form === "lernwort" && k.lernwort?.zeigen === true && k.faecher.length === 0));
+  // Fahrrad falsch, die anderen richtig
+  sp.beendeRunde(student.id, r.rundeId, r.karten.map((k) => ({ key: k.key, wahl: k.richtig === "Fahrrad" ? "Farrad" : k.richtig })));
+  const s = sp.starteRunde(student, "lernwoerter", { heute: HEUTE, rng: rng(4) });
+  const zeigen = Object.fromEntries(s.karten.map((k) => [k.richtig, k.lernwort?.zeigen]));
+  assert.deepEqual(zeigen, { Fahrrad: true, vielleicht: false, wieder: false, Straße: false });
+  sp.beendeRunde(student.id, s.rundeId, s.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  const u = sp.starteRunde(student, "lernwoerter", { heute: HEUTE, rng: rng(5) });
+  sp.beendeRunde(student.id, u.rundeId, u.karten.map((k) => ({ key: k.key, wahl: k.richtig })));
+  const stand = Object.fromEntries(lw.lernwortStand(student.id).map((e) => [e.wort, [e.folge, e.sitzt]]));
+  assert.deepEqual(stand, { Fahrrad: [2, false], vielleicht: [3, true], wieder: [3, true], Straße: [3, true] });
+  // was sitzt, kommt zuletzt: bei zwei Karten je Runde zuerst Fahrrad
+  const knapp = lw.lernwortRunde(lw.lernwortStand(student.id), { anzahl: 1, rng: rng(6) });
+  assert.equal(knapp[0].richtig, "Fahrrad");
+  assert.equal(sp.skillFuerSpiel(student, "lernwoerter", HEUTE), lw.LERNWORT_SKILL);
+});

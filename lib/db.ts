@@ -1547,6 +1547,14 @@ CREATE TABLE IF NOT EXISTS fehlerprotokolle (
   text TEXT NOT NULL DEFAULT '',
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
+-- Lernwörter je Schüler (lib/lernwoerter.ts): die Liste der Klasse, ein Wort pro Zeile, optional „Wort: Satz“.
+-- Gespielt als „Lernwörter“; wie es mit jedem Wort steht, steht in den Runden (art = 'lernwoerter').
+CREATE TABLE IF NOT EXISTS lernwoerter (
+  student_id INTEGER PRIMARY KEY REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER REFERENCES teachers(id) ON DELETE SET NULL,
+  text TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
 -- Eigene Tests (lib/eigene-tests.ts): ein fertiger Test aus lib/eigene-tests/, je Schüler von der Lehrkraft freigeschaltet.
 -- Eine Abgabe hält die Antworten (JSON); die Punkte rechnet die App daraus. selbst / lehrer: Punkte der offenen Fragen
 -- {Frage: Punkte}, die der Lehrkraft gelten vor denen des Schülers.
