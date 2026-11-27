@@ -115,3 +115,74 @@ test("neues Thema mit Fotos: Stoff vorbereiten in der Einheit → übernehmen �
   assert.equal(lesson.next_steps.includes("Weiter mit „"), false);
   router.setTransport(null);
 });
+
+test("Test mit echter KI (27.11.2026): Fragen in jedem Schritt bewertbar (KI4), Präsentation zählt zum Schüler (KI5), Beispielnamen nie echte (KI7), Datum in Wien (KI10)", async () => {
+  const { resetForTests, db } = await import("./db");
+  resetForTests();
+  const router = await import("./ai/router");
+  router.resetRouter();
+  const gefragt: AIRequest[] = [];
+  const antwort = () => {
+    const a = ANTWORT();
+    // wie die echte KI: auch der Erklär-Schritt fragt nach, nicht nur die „Verständnisfrage“
+    a.unterricht.schritte[1] = schritt("erklaerung", "Kürzen", { lehrer_fragt: "Was bleibt beim Kürzen gleich?", erwartete_antwort: "Der Wert des Bruchs." });
+    return a;
+  };
+  router.setTransport(async (req: AIRequest) => {
+    gefragt.push(req);
+    return { parsed: req.fn === "praesentation" ? DECK : antwort(), refusal: false, model: req.model, usage: { input: 20_000, output: 12_000, cacheWrite: 0, cacheRead: 0, reasoning: 0 } };
+  });
+  try {
+    const repo = await import("./repo");
+    const units = await import("./units");
+    const ab = await import("./einheit-ablauf");
+    const sp = await import("./stoffpaket");
+    const cockpit = await import("./cockpit");
+    const { saveUpload } = await import("./materials");
+    const { materialZurWahl } = await import("./vorgabe");
+    const teacher = repo.listTeachers()[0];
+    const neu = (name: string) => repo.createStudent({ name, grade: 6, klasse: 2, teacher_id: teacher.id, school: "", school_type: "Mittelschule", subjects: ["Mathematik"], current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "" });
+    const sid = neu("Jonas Fotomann");
+    neu("Mia Anders");
+    const unit = units.startUnit(teacher.id, sid, { at: Date.now() - 30 * 60_000, subject: "Mathematik" }).unit;
+    ab.waehleWeg(unit.id, "neu");
+    // kurz nach Mitternacht in Wien fotografiert: in UTC ist noch der Vortag
+    const foto = saveUpload({ name: "buch.jpg", data: Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.from("erfundenes Foto 2")]) }, { title: "Stoff vorbereiten", subject: "Mathematik", studentId: sid, teacherId: teacher.id, at: new Date("2026-11-26T23:30:00Z") }).id;
+    assert.equal(materialZurWahl(sid).find((m) => m.id === foto)?.datum, "2026-11-27", "KI10: der Kalendertag in Wien");
+
+    const r = sp.starteStoffpaket({ studentId: sid, teacherId: teacher.id, unitId: unit.id, fach: "Mathematik", anweisung: "", materialIds: [foto], teile: ["praesentation", "uebung", "lernzettel"], keinName: true });
+    assert.ok("id" in r, JSON.stringify(r));
+    await sp.warteAuf(r.id);
+    assert.equal(sp.getStoffpaket(r.id)!.status, "fertig", sp.getStoffpaket(r.id)!.fehler);
+
+    // KI7: beide Anfragen geben Beispielnamen vor, und keiner gehört jemandem aus der App
+    assert.deepEqual(gefragt.map((g) => g.fn), ["stoffpaket", "praesentation"]);
+    for (const g of gefragt) {
+      const text = JSON.stringify(g.content);
+      const zeile = /nimm nur einen von diesen: ([^.]+)\./.exec(text);
+      assert.ok(zeile, `${g.fn}: die Zeile mit den Beispielnamen fehlt`);
+      const namen = zeile[1].split(", ");
+      assert.equal(namen.length, 4);
+      assert.ok(!namen.some((n) => ["Jonas", "Mia", "Fotomann", "Anders", ...teacher.name.split(" ")].includes(n)), `${g.fn}: ${namen.join(", ")}`);
+      assert.ok(!/Fotomann|Anders/.test(text), "kein Name aus der App verlässt sie");
+    }
+
+    // KI5: die Präsentation zählt zum Schüler und zur Einheit, wie der Rest des Laufs
+    const calls = db().prepare("SELECT fn, student_id, unit_id FROM ai_calls ORDER BY id").all() as { fn: string; student_id: number | null; unit_id: number | null }[];
+    assert.deepEqual(calls, [{ fn: "stoffpaket", student_id: sid, unit_id: unit.id }, { fn: "praesentation", student_id: sid, unit_id: unit.id }]);
+
+    // KI4: „Richtig / Teilweise / Falsch“ bei jedem Schritt, der eine Frage hat; ohne Frage nicht
+    assert.deepEqual(ab.stoffUebernehmen(unit.id, teacher.id), { ok: true });
+    const schritte = ab.erklaerSchritte(ab.erklaerPaket(unit.id)!);
+    assert.deepEqual(schritte.map((s) => [s.art, cockpit.schrittFragt(s)]), [["einstieg", false], ["erklaerung", true], ["frage", true]]);
+    assert.equal(cockpit.setzeAntwort(unit.id, schritte[0].id, "richtig"), false, "ohne Frage gibt es nichts zu bewerten");
+    assert.equal(cockpit.setzeAntwort(unit.id, schritte[1].id, "teilweise"), true);
+    assert.equal(cockpit.setzeAntwort(unit.id, schritte[2].id, "richtig"), true);
+    ab.setzeSchritt(unit.id, schritte[2].id);
+    const { endUnit } = await import("./learning");
+    const lesson = repo.getLesson(endUnit(unit.id)!)!;
+    assert.match(lesson.activities, /3 von 3 Schritten; Fragen: 1 richtig, 1 teilweise\./);
+  } finally {
+    router.setTransport(null);
+  }
+});

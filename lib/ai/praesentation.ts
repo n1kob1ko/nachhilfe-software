@@ -9,6 +9,7 @@
 import { z } from "zod";
 import { NOTIZ_MAX } from "../praesentationen";
 import { maskText, namePattern } from "../text-correction-core";
+import { beispielNamenZeile } from "./beispielnamen";
 
 /** The kinds of blocks a slide can have; lib/praesentation-html.ts draws each one. */
 export const BLOCK_ARTEN = {
@@ -70,7 +71,18 @@ export type PraesSchritt = { nr: number; art: string; titel: string; minuten: nu
  * What the KI is asked to build: the package's data, never a student's. `schritt`: one step of a unit (lib/praesentation-unterricht.ts),
  * not a whole package.
  */
-export type PraesAuftrag = { titel: string; fach: string; stufe: string; thema: string; ziel: string; dauer: number; schritte: PraesSchritt[]; schritt?: boolean };
+export type PraesAuftrag = {
+  titel: string;
+  fach: string;
+  stufe: string;
+  thema: string;
+  ziel: string;
+  dauer: number;
+  schritte: PraesSchritt[];
+  schritt?: boolean;
+  /** first names for examples, none of them of a person in the app (lib/ai/beispielnamen.ts) */
+  beispielNamen?: string[];
+};
 
 const einzeilig = (s: string, n: number) => {
   const t = s.replace(/\s+/g, " ").trim();
@@ -89,6 +101,7 @@ export function praesentationAnfrage(a: PraesAuftrag, namen: string[] = []): { s
   if (a.thema) z.push(`Thema: ${m(a.thema, 120)}`);
   if (a.ziel) z.push(`Ziel: ${m(a.ziel, 1000)}`);
   z.push(`Dauer: ${a.dauer} Minuten`);
+  if (a.beispielNamen?.length) z.push(beispielNamenZeile(a.beispielNamen));
   z.push("", a.schritt ? "Der Schritt:" : "Schritte des Pakets:");
   for (const s of a.schritte) {
     z.push("", `Schritt ${s.nr} · ${s.art} · ${s.minuten} min · ${m(s.titel, 120)}${s.folie ? ` (zeigt bisher Folie ${s.folie})` : ""}`);

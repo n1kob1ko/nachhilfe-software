@@ -35,8 +35,10 @@ const ANDERES = "anders";
  * in der laufenden Einheit: welche Blätter, welches vorgewählt, was das Lesen etwa kostet, je Zahl der Seiten (Index; null: ohne KI). `unitId` null: eine
  * Probeschularbeit ohne Einheit, von der Prüfungskarte (Gemeinsame Bewertung, C3); dann gibt es „Ein anderes Blatt“ nicht.
  * `keinName`: „kein Name“ ist für diese Einheit schon bestätigt (lib/kein-name.ts); statt des Häkchens steht eine Zeile.
+ * `gelesen`: dieses Blatt ist schon gelesen und noch nicht übernommen (lib/papier-einheit.ts `offeneLesung`): nach dem Neuladen
+ * der Seite stehen Ergebnis und Seiten wieder da, ohne zweite Anfrage.
  */
-type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string[] | null; fach: string; keinName?: boolean };
+type Einheit = { unitId: number | null; blaetter: PapierWahl[]; vorwahl: string; kosten: string[] | null; fach: string; keinName?: boolean; gelesen?: { blatt: string; vorschlag: BlattVorschlag; materialIds: number[] } | null };
 type Skill = { id: string; name: string; area: string };
 type Seite = { file: File; url: string | null };
 /** a row of the preview; pText/mText keep what is typed („2,“) until it is a number */
@@ -145,6 +147,17 @@ export function BlattEinlesen({
     setZeilen(bekannt ? zeilenOhneLesung(bekannt.aufgaben).map((z) => ({ ...z, k: naechster++ })) : [leereZeile(1)]);
     setGelesenVon("hand");
   }, [kiGrund, zeilen, bekannt]);
+  // schon gelesen, noch nicht übernommen (die Seite wurde neu geladen): dieselbe Vorschau wieder, mit ihren gespeicherten Seiten
+  const wiederDa = useRef(false);
+  useEffect(() => {
+    const g = einheit?.gelesen;
+    if (wiederDa.current || !g || g.blatt !== blattWahl) return;
+    wiederDa.current = true;
+    setZeilen(g.vorschlag.zeilen.map((z) => ({ ...z, k: naechster++ })));
+    setHinweise(["Schon gelesen: das Ergebnis vom letzten Mal steht wieder da. Übernommen ist noch nichts.", ...g.vorschlag.hinweise]);
+    setGespeichert(g.materialIds);
+    setGelesenVon("ki");
+  }, [einheit, blattWahl]);
   useEffect(() => () => seiten.forEach((s) => s.url && URL.revokeObjectURL(s.url)), [seiten]);
   useEffect(() => {
     if (busy !== "lesen") return;

@@ -14,6 +14,7 @@
 import { kiKosten } from "./lernpaket-ki";
 import { budget, costOf, isLocalModel, routeFor } from "./ai/config";
 import { jsonSchemaOf } from "./ai/providers/schema";
+import { beispielNamen } from "./ai/beispielnamen";
 import { deckAusAntwort, folieJeSchritt, notizenAus, PRAESENTATION_SYSTEM, PraesentationKiSchema, praesentationAnfrage, type Deck, type PraesAuftrag, type PraesSchritt } from "./ai/praesentation";
 import { aiEnabled, budgetUsedUp, runAI } from "./ai/router";
 import { db, json } from "./db";
@@ -127,9 +128,10 @@ const laufend = ((globalThis as unknown as { __praesKiLaufend?: Map<number, Prom
 /**
  * Asks the KI for the slides of a checked package and stores them as a proposal. Never throws: without KI, with an
  * empty budget, on a timeout or an unusable answer a message comes back and nothing is stored. An older open
- * proposal of the package is set aside (verworfen), so there is only ever one to look at.
+ * proposal of the package is set aside (verworfen), so there is only ever one to look at. `studentId`, `unitId`: whom the
+ * request is for (cost per student and per unit); without them it belongs to nobody.
  */
-export async function erstellePraesEntwurf(paketId: number, teacherId: number | null, o: { auchUngeprueft?: boolean } = {}): Promise<PraesKiErgebnis> {
+export async function erstellePraesEntwurf(paketId: number, teacherId: number | null, o: { auchUngeprueft?: boolean; studentId?: number | null; unitId?: number | null } = {}): Promise<PraesKiErgebnis> {
   const running = laufend.get(paketId);
   if (running) return running;
   const job = (async (): Promise<PraesKiErgebnis> => {
@@ -141,10 +143,13 @@ export async function erstellePraesEntwurf(paketId: number, teacherId: number | 
       if (!p.schritte.length) return { ok: false, error: "Das Lernpaket hat noch keine Schritte." };
       const aus = praesKiAusGrund();
       if (aus) return { ok: false, error: aus };
-      const a = auftragAus(p);
-      const { system, prompt } = praesentationAnfrage(a, bekannteNamen());
-      // no student and no unit: the router adds no KI-Hinweise, and the per-student cap does not apply
-      const out = await runAI("praesentation", PraesentationKiSchema, system, prompt, { meta: { teacherId, trigger: "praesentation" } });
+      const namen = bekannteNamen();
+      const a = { ...auftragAus(p), beispielNamen: beispielNamen(namen, paketId) };
+      const { system, prompt } = praesentationAnfrage(a, namen);
+      // from a package alone (Mehr › Lernpakete): no student and no unit, so the router adds no KI-Hinweise and the per-student cap
+      // does not apply. From „Stoff vorbereiten“ (lib/stoffpaket.ts) the deck is made for one student, often in a running unit: then
+      // its cost counts for both, like the rest of that run (test with the real KI, 27.11.2026: 3.5 Cent were counted nowhere).
+      const out = await runAI("praesentation", PraesentationKiSchema, system, prompt, { meta: { teacherId, studentId: o.studentId ?? null, unitId: o.unitId ?? null, trigger: "praesentation" } });
       if (!out.ok) return { ok: false, error: out.message };
       const gezahlt = kiKosten(out.callId);
       const kosten = gezahlt?.usd ? ` Die Anfrage hat ${gezahlt.cent} Cent gekostet.` : "";

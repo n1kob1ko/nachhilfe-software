@@ -90,7 +90,21 @@ export const unsichereZuerst = <T extends Pick<BlattZeile, "pruefen">>(zeilen: T
  * mehr offen ist). `offen` (Gemeinsame Bewertung, lib/zu-bewerten.ts): so viele Antworten warten noch auf die Lehrkraft; sie zählen
  * weder als richtig noch als falsch.
  */
-export type PapierErgebnis = { titel: string; von: number; richtig: number; teilweise: number; punkte: number | null; max: number | null; unsicher: number; offen?: number; assignmentId?: number };
+export type PapierErgebnis = {
+  titel: string;
+  von: number;
+  richtig: number;
+  teilweise: number;
+  punkte: number | null;
+  max: number | null;
+  unsicher: number;
+  offen?: number;
+  assignmentId?: number;
+  /** im Heft am Tablet geschrieben (lib/heft.ts), nicht auf Papier */
+  heft?: boolean;
+  /** Heft: so viele Aufgaben blieben leer; sie zählen weder als richtig noch als falsch und stehen nicht in `von` */
+  leer?: number;
+};
 
 export function papierErgebnis(titel: string, zeilen: (Pick<BlattZeile, "bewertung" | "punkte" | "max" | "warUnsicher"> & { offen?: boolean })[]): PapierErgebnis {
   const gezaehlt = zeilen.filter((z) => !z.offen);
@@ -119,9 +133,10 @@ export const zeilenOhneLesung = (aufgaben: PapierAufgabe[]): BlattZeile[] =>
 
 /**
  * Die Zeile im Abschluss: „Auf Papier: Übung „Brüche“ 7 von 10 Punkten, 2 unsicher geprüft“; solange Antworten offen sind ohne
- * Punkte und mit „1 noch zu bewerten“ (die offenen zählen weder als richtig noch als falsch).
+ * Punkte und mit „1 noch zu bewerten“ (die offenen zählen weder als richtig noch als falsch). Ein Heft am Tablet heißt auch so,
+ * und leere Aufgaben stehen als „nicht bearbeitet“ da.
  */
 export function papierZeile(p: PapierErgebnis): string {
   const wie = p.punkte != null && p.max && !p.offen ? `${zahlText(p.punkte)} von ${zahlText(p.max)} Punkten` : `${p.richtig} von ${p.von} richtig${p.teilweise ? `, ${p.teilweise} teilweise` : ""}`;
-  return `Auf Papier: Übung „${p.titel}“ ${wie}${p.unsicher ? `, ${p.unsicher} unsicher geprüft` : ""}${p.offen ? `, ${p.offen} noch zu bewerten` : ""}`;
+  return `${p.heft ? "Im Heft am Tablet" : "Auf Papier"}: Übung „${p.titel}“ ${wie}${p.leer ? `, ${p.leer} nicht bearbeitet` : ""}${p.unsicher ? `, ${p.unsicher} unsicher geprüft` : ""}${p.offen ? `, ${p.offen} noch zu bewerten` : ""}`;
 }

@@ -39,6 +39,8 @@ export type Aktivitaet = {
   /** die Dauer ist nur ungefähr (Whiteboard, Textarbeit): „ca.“ */
   ungefaehr?: boolean;
   assignmentId?: number;
+  /** art „papier“: im Heft am Tablet geschrieben (lib/heft.ts), nicht auf Papier */
+  heft?: boolean;
   /** Aufgaben der Übung insgesamt und davon bearbeitet */
   aufgaben?: number;
   bearbeitet?: number;
@@ -69,7 +71,7 @@ export function dauerText(ms: number): string {
 const zahl = (n: number, eins: string, viele: string) => `${n} ${n === 1 ? eins : viele}`;
 
 /** Wie die Tätigkeit heißt: „Übung „Brüche kürzen““, „Lernspiel Wortschatz (Endlos)“, „Minitest“. */
-export function aktivitaetName(a: Pick<Aktivitaet, "art" | "titel" | "endlos">): string {
+export function aktivitaetName(a: Pick<Aktivitaet, "art" | "titel" | "endlos" | "heft">): string {
   const q = a.titel ? ` „${a.titel}“` : "";
   switch (a.art) {
     case "uebung":
@@ -81,7 +83,7 @@ export function aktivitaetName(a: Pick<Aktivitaet, "art" | "titel" | "endlos">):
     case "probe":
       return `Probeschularbeit${q}`;
     case "papier":
-      return `Auf Papier${q}`;
+      return `${a.heft ? "Im Heft am Tablet" : "Auf Papier"}${q}`;
     case "whiteboard":
       return a.titel ? `Am Whiteboard${q}` : "Whiteboard";
     case "spiel":
@@ -154,6 +156,7 @@ export function aktivitaetenDerEinheit(unitId: number, now = Date.now()): Aktivi
     .prepare("SELECT assignment_id, task_id, answer, correct, final, time_ms, created_at, review, review_at FROM attempts WHERE unit_id = ? ORDER BY created_at, id")
     .all(unitId) as Versuch[];
   const papier = new Set(db().prepare("SELECT assignment_id FROM papier_arbeiten WHERE unit_id = ?").pluck().all(unitId) as number[]);
+  const hefte = new Set(db().prepare("SELECT assignment_id FROM hefte WHERE unit_id = ?").pluck().all(unitId) as number[]);
   const gruppen = new Map<string, Versuch[]>();
   for (const v of versuche) {
     // an der Tafel bewertet (nicht eine Antwort am Gerät, die die Lehrkraft dort nachbewertet hat)
@@ -210,7 +213,7 @@ export function aktivitaetenDerEinheit(unitId: number, now = Date.now()): Aktivi
           : isMinitest(assignment.mode)
             ? "minitest"
             : "uebung";
-    out.push({ ...basis, art, start, ende, dauerMs: art === "papier" || summe <= 0 ? null : summe, aufgaben: repo.listTasks(ws.id).length, bearbeitet: fertig.length });
+    out.push({ ...basis, art, ...(art === "papier" && hefte.has(assignment.id) ? { heft: true } : {}), start, ende, dauerMs: art === "papier" || summe <= 0 ? null : summe, aufgaben: repo.listTasks(ws.id).length, bearbeitet: fertig.length });
   }
 
   // Whiteboard ohne an der Tafel bewertete Aufgaben: wie viele Seiten beschrieben wurden (von wem, weiß die App nicht)

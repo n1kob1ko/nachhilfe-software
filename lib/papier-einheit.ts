@@ -313,15 +313,23 @@ export function appUrteil(task: Pick<TaskDraft, "type" | "data" | "answer" | "er
  * die eigene Prüfung der App, der Vorschlag und warum eine Zeile gelb ist. Unsichere Zeilen zuerst.
  */
 export function vorschlagMitAufgaben(g: BlattMitAufgabenGelesen, blatt: Pick<PapierBlatt, "titel" | "aufgaben">, tasks: Map<number, Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">>): BlattVorschlag {
+  const fremd = g.aufgaben.some((x) => !(Math.round(x.nr) >= 1 && Math.round(x.nr) <= blatt.aufgaben.length));
+  return vorschlagAusLesung(lesungZeilen(g, blatt), g.anderes_blatt, blatt, tasks, fremd);
+}
+
+/**
+ * Dasselbe aus der gespeicherten Lesung (je Aufgabe, `LesungZeile`): beim Lesen und, ohne neue Anfrage, wenn die Seite neu geladen
+ * wird (`offeneLesung`). `fremd`: die Lesung nannte Aufgaben, die nicht auf dem Blatt stehen (das weiß nur die frische Lesung).
+ */
+function vorschlagAusLesung(gelesen: LesungZeile[], anderesBlatt: boolean, blatt: Pick<PapierBlatt, "titel" | "aufgaben">, tasks: Map<number, Pick<TaskDraft, "type" | "data" | "answer" | "errorMap">>, fremd = false): BlattVorschlag {
   const hinweise: string[] = [];
-  const gelesen = lesungZeilen(g, blatt);
-  const zeilen: BlattZeile[] = blatt.aufgaben.map((a, i) => {
+  const zeilen: BlattZeile[] = blatt.aufgaben.map((a) => {
     const basis = { nr: a.nr, aufgabe: a.aufgabe, punkte: null, max: a.max, skillId: a.skillId, taskId: a.taskId, loesung: a.loesung };
-    const z = urteilAusLesung(gelesen[i], tasks.get(a.taskId), g.anderes_blatt);
+    const z = urteilAusLesung(gelesen.find((l) => l.taskId === a.taskId), tasks.get(a.taskId), anderesBlatt);
     return { ...basis, antwort: z.antwort, bewertung: z.bewertung, pruefen: z.pruefen, offen: z.offen, warUnsicher: z.warUnsicher, grund: z.pruefen ? z.grund : "", fehler: !z.pruefen && z.bewertung !== "richtig" ? (z.grund ?? "") : "" };
   });
-  if (g.anderes_blatt) hinweise.push("Die Fotos zeigen vielleicht ein anderes Blatt. Bitte jede Zeile prüfen.");
-  if (g.aufgaben.some((x) => !(Math.round(x.nr) >= 1 && Math.round(x.nr) <= blatt.aufgaben.length))) hinweise.push("Die Lesung nannte Aufgaben, die nicht auf diesem Blatt stehen. Sie sind weggelassen.");
+  if (anderesBlatt) hinweise.push("Die Fotos zeigen vielleicht ein anderes Blatt. Bitte jede Zeile prüfen.");
+  if (fremd) hinweise.push("Die Lesung nannte Aufgaben, die nicht auf diesem Blatt stehen. Sie sind weggelassen.");
   const gelb = zeilen.filter((z) => z.pruefen).length;
   if (gelb) hinweise.push(gelb === 1 ? "Eine Zeile ist unsicher und steht oben. Bitte prüfen, dann zählt sie." : `${gelb} Zeilen sind unsicher und stehen oben. Bitte prüfen, dann zählen sie.`);
   return { titel: blatt.titel, zeilen: unsichereZuerst(zeilen), gesamt: null, gesamtMax: null, note: null, hinweise };
@@ -427,14 +435,30 @@ export async function liesPapier(o: { unitId: number | null; studentId?: number;
  * Die gespeicherte Lesung zu diesem Blatt, die noch nicht übernommen ist: die neueste dieser Einheit (seit ihrem Start), ohne
  * Einheit die neueste der letzten 24 Stunden. Der Browser kann sie weder wählen noch weglassen.
  */
-function gespeicherteLesung(studentId: number, worksheetId: number, unit: UnitView | null): { id: number; anderes: boolean; zeilen: LesungZeile[] } | null {
+function gespeicherteLesung(studentId: number, worksheetId: number, unit: UnitView | null): { id: number; anderes: boolean; zeilen: LesungZeile[]; materialIds: number[] } | null {
   const r = db()
     .prepare(
-      `SELECT id, anderes_blatt, zeilen FROM papier_lesungen WHERE student_id = ? AND worksheet_id = ? AND unit_id IS ? AND uebernommen_at IS NULL
+      `SELECT id, anderes_blatt, zeilen, material_ids FROM papier_lesungen WHERE student_id = ? AND worksheet_id = ? AND unit_id IS ? AND uebernommen_at IS NULL
          AND datetime(created_at) >= datetime(?) ORDER BY id DESC LIMIT 1`,
     )
-    .get(studentId, worksheetId, unit?.id ?? null, unit ? unit.started_at : new Date(Date.now() - 86_400_000).toISOString()) as { id: number; anderes_blatt: number; zeilen: string } | undefined;
-  return r ? { id: r.id, anderes: Boolean(r.anderes_blatt), zeilen: json<LesungZeile[]>(r.zeilen, []) } : null;
+    .get(studentId, worksheetId, unit?.id ?? null, unit ? unit.started_at : new Date(Date.now() - 86_400_000).toISOString()) as { id: number; anderes_blatt: number; zeilen: string; material_ids: string } | undefined;
+  return r ? { id: r.id, anderes: Boolean(r.anderes_blatt), zeilen: json<LesungZeile[]>(r.zeilen, []), materialIds: json<number[]>(r.material_ids, []) } : null;
+}
+
+/**
+ * Für das Neuladen von „Arbeit fotografieren“ (Test mit echter KI, 27.11.2026: nach dem Neuladen waren Fotos und Ergebnis weg): die
+ * Lesung dieses Blatts, die noch nicht übernommen ist, als dieselbe Vorschau wie direkt nach dem Lesen, mit ihren Seiten. Keine
+ * Anfrage an die KI, nichts wird gespeichert. null: nichts gelesen, schon übernommen, oder das Blatt gehört nicht hierher.
+ */
+export function offeneLesung(o: { unitId: number | null; studentId?: number; blattKey: string }): { vorschlag: BlattVorschlag; materialIds: number[] } | null {
+  const r = rahmen(o);
+  if ("error" in r) return null;
+  const blatt = r.blaetter.find((b) => b.key === o.blattKey);
+  if (!blatt) return null;
+  const lesung = gespeicherteLesung(r.student.id, blatt.worksheetId, r.unit);
+  if (!lesung) return null;
+  const tasks = new Map(repo.listTasks(blatt.worksheetId).map((t) => [t.id, t] as const));
+  return { vorschlag: { ...vorschlagAusLesung(lesung.zeilen, lesung.anderes, blatt, tasks), lesungId: lesung.id }, materialIds: nurEigene(lesung.materialIds, r.student.id) };
 }
 
 // ---------- Übernehmen ----------
@@ -453,6 +477,11 @@ export type PapierEingabe = {
   /** nur bei „Ein anderes Blatt“: Fach und Titel wie bei „Gelöstes Blatt einlesen“ */
   fach?: string;
   titel?: string;
+  /**
+   * Heft am Tablet (lib/heft.ts): eine nicht bearbeitete Aufgabe („leer“) bekommt keine Antwort und zählt nirgends, weder als richtig
+   * noch als falsch; die Zuweisung ist trotzdem abgeschlossen. Auf Papier (Probeschularbeit, Übung) zählt „leer“ weiter als falsch.
+   */
+  leerZaehltNicht?: boolean;
 };
 
 const nurEigene = (ids: number[], studentId: number) =>
@@ -551,6 +580,7 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
       fehler: z.bewertung === "richtig" ? "" : eineZeile(z.fehler, 200),
       entschieden,
       info,
+      ausgelassen: Boolean(e.leerZaehltNicht) && entschieden && z.bewertung === "leer",
       offen: !entschieden,
       warUnsicher: Boolean(server?.pruefen) || widerspruch,
     };
@@ -567,6 +597,7 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
     repo.markAssignmentStarted(assignmentId);
     const vorher = repo.listAttemptsForAssignment(assignmentId);
     for (const z of geprueft) {
+      if (z.ausgelassen) continue;
       const t = tasks.get(z.taskId!)!;
       const review = z.bewertung === "leer" ? "falsch" : z.bewertung;
       const attemptId = repo.recordAttempt({
@@ -594,10 +625,13 @@ export function speicherePapier(e: PapierEingabe): { assignmentId: number; papie
       else db().prepare("UPDATE attempts SET offen_info = ? WHERE id = ?").run(JSON.stringify(z.info), attemptId);
     }
     repo.completeAssignmentIfDone(assignmentId);
+    // nicht bearbeitete Aufgaben eines Hefts haben keine Antwort: abgegeben ist es trotzdem
+    if (geprueft.some((z) => z.ausgelassen)) db().prepare("UPDATE assignments SET completed_at = COALESCE(completed_at, datetime('now')) WHERE id = ?").run(assignmentId);
     if (lesung) db().prepare("UPDATE papier_lesungen SET uebernommen_at = datetime('now') WHERE id = ?").run(lesung.id);
+    const gezaehlt = geprueft.filter((z) => !z.ausgelassen);
     const papierId = merke(
-      { unit, studentId: student.id, assignmentId, teacherId: e.teacherId, bekannt: true, gelesen: lesung ? "ki" : "hand", taskIds: geprueft.map((z) => z.taskId!), lesungId: lesung?.id ?? null, homeworkId: blatt.homeworkId ?? null },
-      papierErgebnis(blatt.titel, geprueft),
+      { unit, studentId: student.id, assignmentId, teacherId: e.teacherId, bekannt: true, gelesen: lesung ? "ki" : "hand", taskIds: gezaehlt.map((z) => z.taskId!), lesungId: lesung?.id ?? null, homeworkId: blatt.homeworkId ?? null },
+      papierErgebnis(blatt.titel, gezaehlt),
       materialIds,
     );
     return { assignmentId, papierId };
@@ -617,17 +651,20 @@ type PapierRow = { id: number; assignment_id: number; titel: string; von: number
  */
 function ergebnisVon(r: PapierRow): PapierErgebnis {
   const ids = json<number[]>(r.task_ids ?? "", []);
-  if (!ids.length) return { titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher, assignmentId: r.assignment_id };
   const a = repo.getAssignment(r.assignment_id);
   const w = a ? repo.getWorksheet(a.worksheet_id) : null;
-  const punkte = w ? punkteVon(w, repo.listTasks(w.id)) : new Map<number, number | null>();
+  const tasks = w ? repo.listTasks(w.id) : [];
+  // ein Heft am Tablet (lib/heft.ts): heißt im Abschluss so, und was leer blieb, steht als „nicht bearbeitet“ da
+  const heft = db().prepare("SELECT 1 FROM hefte WHERE papier_id = ?").get(r.id) ? { heft: true, ...(tasks.length > ids.length ? { leer: tasks.length - ids.length } : {}) } : {};
+  if (!ids.length) return { titel: r.titel, von: r.von, richtig: r.richtig, teilweise: r.teilweise, punkte: r.punkte, max: r.max_punkte, unsicher: r.unsicher, assignmentId: r.assignment_id, ...heft };
+  const punkte = w ? punkteVon(w, tasks) : new Map<number, number | null>();
   const finals = repo.listAttemptsForAssignment(r.assignment_id).filter((x) => x.final);
   const zeilen = ids.map((id) => {
     const f = [...finals].reverse().find((x) => x.task_id === id);
     const bewertung: Bewertung = f?.review === "teilweise" ? "teilweise" : f && f.review !== "offen" && f.correct ? "richtig" : "falsch";
     return { bewertung, punkte: null, max: punkte.get(id) ?? null, offen: !f || f.review === "offen" };
   });
-  return { ...papierErgebnis(r.titel, zeilen), unsicher: r.unsicher, assignmentId: r.assignment_id };
+  return { ...papierErgebnis(r.titel, zeilen), unsicher: r.unsicher, assignmentId: r.assignment_id, ...heft };
 }
 
 const PAPIER_SPALTEN = "id, assignment_id, titel, von, richtig, teilweise, punkte, max_punkte, unsicher, task_ids";

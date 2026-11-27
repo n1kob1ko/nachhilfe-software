@@ -1,15 +1,46 @@
+import { Fragment } from "react";
 import { Check, ShieldAlert, X } from "lucide-react";
 import { uebernimmPraesVorschlagAction, verwirfPraesVorschlagAction } from "@/app/praesentation-actions";
 import { folieJeSchritt, type Block, type Folie } from "@/lib/ai/praesentation";
 import type { KiKosten } from "@/lib/lernpaket-ki";
+import { folienTeile } from "@/lib/math-text";
 import type { PraesEntwurf } from "@/lib/praesentation-ki";
 
-/** **fett** as <strong>; everything else stays text (React escapes it). */
+/** Fractions with a bar, like on the slide itself (lib/praesentation-html.ts `inline`). */
+function Brueche({ text }: { text: string }) {
+  return (
+    <>
+      {folienTeile(text).map((p, i) =>
+        typeof p === "string" ? (
+          <Fragment key={i}>{p}</Fragment>
+        ) : (
+          <Fragment key={i}>
+            {p.minus && "−"}
+            <span className="frac" role="math">
+              <span className="frac-num">{p.num}</span>
+              <span className="frac-den">{p.den}</span>
+            </span>
+          </Fragment>
+        ),
+      )}
+    </>
+  );
+}
+
+/** **fett** as <strong> and fractions with a bar; everything else stays text (React escapes it). */
 export function Fett({ text }: { text: string }) {
   const teile = text.split(/\*\*([^*\n]+?)\*\*/);
   return (
     <>
-      {teile.map((t, i) => (i % 2 ? <strong key={i}>{t}</strong> : t))}
+      {teile.map((t, i) =>
+        i % 2 ? (
+          <strong key={i}>
+            <Brueche text={t} />
+          </strong>
+        ) : (
+          <Brueche key={i} text={t} />
+        ),
+      )}
     </>
   );
 }

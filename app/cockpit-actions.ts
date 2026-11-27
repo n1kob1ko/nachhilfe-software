@@ -53,6 +53,7 @@ import { sendeAngepasst } from "@/lib/steuerung";
 import { MIT_AUFGABE, type Option } from "@/lib/steuerung-regeln";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { entferneVorschlag, VORAUS_TAGE, vorschlagErlauben } from "@/lib/vorbereitung-auto";
+import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
 /**
  * Das Cockpit der laufenden Einheit (lib/cockpit.ts). Jede Aktion gilt für genau diese Einheit: auch mit zwei
@@ -167,7 +168,7 @@ export async function druckeSchrittAction(unitId: number, schrittId: number) {
   const out = await druckeImSchritt(unitId, schrittId, t.id);
   if ("fehler" in out) return zurueck(unitId, out.fehler);
   revalidatePath(`/einheiten/${unitId}`);
-  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
+  redirect(druckLinkZumFotografieren(out.worksheetId, unitId));
 }
 
 /**
@@ -350,7 +351,7 @@ export async function nachschubDruckenAction(unitId: number, id: number) {
   const out = await druckeNachschub(unitId, id, t.id);
   if ("fehler" in out) nachKnopf(unitId, out.fehler);
   revalidatePath(`/einheiten/${unitId}`);
-  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
+  redirect(druckLinkZumFotografieren(out.worksheetId, unitId));
 }
 
 /** „Verwerfen“: die Vorschau weg, nichts geht zum Schüler; neue Aufgaben gibt es dann nur auf Tippen. */
@@ -442,7 +443,7 @@ export async function schwererKiDruckenAction(unitId: number, schrittId: number,
   const out = await druckeSchwererKi(unitId, schrittId, id, t.id);
   if ("fehler" in out) nachKnopf(unitId, out.fehler);
   revalidatePath(`/einheiten/${unitId}`);
-  redirect(`/arbeitsblatt/${out.worksheetId}?einheit=${unitId}`);
+  redirect(druckLinkZumFotografieren(out.worksheetId, unitId));
 }
 
 /** „Thema verstanden“: der Rest des Themas fällt weg, die kurze Lernkontrolle bleibt. */

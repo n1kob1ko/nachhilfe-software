@@ -4,6 +4,7 @@ import { minitestAction } from "@/app/minitest-actions";
 import { MINITEST_ANZAHL, MINITEST_STANDARD, stoffDatum, stoffThemen, type Stoff } from "@/lib/minitest";
 import type * as repo from "@/lib/repo";
 import { Gleiter } from "@/components/Bewegung";
+import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
 type Geraet = "tablet" | "laptop" | null;
 
@@ -25,7 +26,7 @@ export function MinitestKarte({ unitId, name, geraet, stoff, gedruckt }: { unitI
           <span className="font-semibold">Kurztest gedruckt</span>
           <span className="num text-ink-2"> · {gedruckt.tasks} Aufgaben</span>
         </p>
-        <Link href={`/arbeitsblatt/${gedruckt.worksheet.id}?einheit=${unitId}`} className="btn btn-secondary">
+        <Link href={druckLinkZumFotografieren(gedruckt.worksheet.id, unitId)} className="btn btn-secondary">
           <Printer size={16} aria-hidden /> Drucken
         </Link>
         <form action={minitestAction}>

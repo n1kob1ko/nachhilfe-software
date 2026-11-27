@@ -281,7 +281,8 @@ export default async function StoffpaketSeite({ params, searchParams }: { params
                   {entwurf.deck.folien.map((f, i) => (
                     <div key={i} className="grid gap-1.5">
                       <FolieVorschau f={f} nr={i + 1} />
-                      {f.notiz && <p className="text-[13px] text-ink-2">Du sagst: {f.notiz}</p>}
+                      {/* der Vortragstext mischt Sprechtext und Regie („der Schüler arbeitet 10 Minuten allein“): darum nicht „Du sagst“ */}
+                      {f.notiz && <p className="text-[13px] text-ink-2">Hinweis für dich: {f.notiz}</p>}
                     </div>
                   ))}
                 </div>

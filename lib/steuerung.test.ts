@@ -400,12 +400,12 @@ test("„Richtig / Teilweise / Falsch“ per question step: stored, „Falsch“
   assert.ok("id" in imp);
   const p = lp.getLernpaket(imp.id)!;
   const frage = p.schritte.find((x) => x.art === "frage")!;
-  const andere = p.schritte.find((x) => x.art === "erklaerung" || x.art === "einstieg")!;
+  const andere = p.schritte.find((x) => !x.lehrer_fragt.trim() && x.art !== "frage" && x.art !== "kontrolle")!; // KI4: was zählt, ist die Frage im Schritt, nicht seine Art
   const sid = s.schueler("Lia Frage");
   const unit = s.units.startUnit(s.teacher.id, sid, { subject: "Deutsch" }).unit;
   assert.ok("ok" in s.c.waehlePaket(unit.id, p.id));
 
-  assert.equal(s.c.setzeAntwort(unit.id, andere.id, "richtig"), false, "only questions and checks");
+  assert.equal(s.c.setzeAntwort(unit.id, andere.id, "richtig"), false, "only steps that ask something");
   assert.equal(s.c.setzeAntwort(unit.id, frage.id, "falsch"), true);
   let st = s.c.cockpit(unit.id).stand;
   assert.equal(st.antworten[frage.id], "falsch");

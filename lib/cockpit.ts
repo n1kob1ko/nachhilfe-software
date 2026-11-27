@@ -744,7 +744,16 @@ export const merkeSchritt = (unitId: number, schrittId: number, was: Merke) =>
 export const FRAGE_ARTEN: readonly LernpaketSchritt["art"][] = ["frage", "kontrolle"];
 
 /**
- * „Richtig / Teilweise / Falsch“ bei einer Frage oder Kontrolle des Lernpakets, im Plan auch bei Erklären, Grundlage und
+ * Hat dieser Schritt eines Lernpakets eine Frage, die die Lehrkraft mit „Richtig / Teilweise / Falsch“ bewerten kann? Jeder Schritt,
+ * in dem sie etwas fragt („Lehrer fragt“), und eine Frage oder Kontrolle mit erwarteter Antwort. Die KI stellt in fast jedem
+ * Erklär-Schritt eine kurze Frage; früher ließ sich nur die „Verständnisfrage“ bewerten (Test mit echter KI, 27.11.2026: „4 kurze
+ * Fragen“ versprochen, eine bewertbar).
+ */
+export const schrittFragt = (s: Pick<LernpaketSchritt, "art" | "lehrer_fragt" | "erwartete_antwort">): boolean =>
+  Boolean(s.lehrer_fragt.trim()) || (FRAGE_ARTEN.includes(s.art) && Boolean(s.erwartete_antwort.trim()));
+
+/**
+ * „Richtig / Teilweise / Falsch“ bei jedem Schritt des Lernpakets mit einer Frage (schrittFragt), im Plan auch bei Erklären, Grundlage und
  * Lernkontrolle: was der Lehrer gehört hat (null nimmt es zurück). „Falsch“ ist ein Zeichen für die Anpassung im
  * Unterricht; Richtig und Teilweise nehmen es zurück. Nur Beobachtungen, der Lernstand bleibt unberührt; der Abschluss
  * kann sie als Beleg lesen (`antwortenDerEinheit`).
@@ -753,8 +762,10 @@ export function setzeAntwort(unitId: number, schrittId: number, wert: Beobachtun
   const s = leseStand(unitId);
   const p = s.paket_id ? getLernpaket(s.paket_id) : null;
   const ps = p ? null : (s.plan ?? (schrittId < 0 ? planDerEinheit(unitId) : [])).find((x) => x.id === schrittId);
-  const art = p ? (p.schritte.find((x) => x.id === schrittId)?.art ?? null) : ps ? frageArtVon(ps) : null;
-  if (!art || !FRAGE_ARTEN.includes(art)) return false;
+  const schritt = p ? (p.schritte.find((x) => x.id === schrittId) ?? null) : null;
+  const art = p ? (schritt?.art ?? null) : ps ? frageArtVon(ps) : null;
+  // im Lernpaket: jeder Schritt mit einer Frage (schrittFragt); im Plan wie bisher nach der Art des Schritts
+  if (schritt ? !schrittFragt(schritt) && !FRAGE_ARTEN.includes(schritt.art) : !art || !FRAGE_ARTEN.includes(art)) return false;
   return mitSchritt(unitId, schrittId, (cur) => {
     const antworten = { ...cur.antworten };
     if (wert) antworten[schrittId] = wert;

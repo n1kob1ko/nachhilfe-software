@@ -71,7 +71,7 @@ import {
   ergebnis,
   ersteSaetze,
   ersteUebung,
-  FRAGE_ARTEN,
+  schrittFragt,
   frageText,
   gedrucktImSchritt,
   haltBereit,
@@ -739,7 +739,7 @@ function SchrittKarte({
   const folie = s.folie && paket.praesentation_id ? s.folie : null;
   const leer = !s.lehrer_sagt.trim() && !s.lehrer_fragt.trim() && !s.erwartete_antwort.trim() && !folie;
   // bei Fragen und Kontrollen: „Richtig / Teilweise / Falsch“, was der Lehrer gehört hat
-  const frage = FRAGE_ARTEN.includes(s.art) && Boolean(s.lehrer_fragt.trim() || s.erwartete_antwort.trim());
+  const frage = schrittFragt(s);
   const antwort = frage ? <AntwortKnoepfe unitId={unitId} schrittId={s.id} wert={c.stand.antworten[s.id] ?? null} /> : null;
   // a writing step: „Schreibauftrag starten“ is the main action until a text of that kind runs in this unit
   const schreiben = schreibStartFuer(unit, schreibSkillDesSchritts(s, paket));

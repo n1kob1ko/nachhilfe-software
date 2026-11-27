@@ -54,3 +54,38 @@ function splitTight(text: string): MathPart[] {
   if (last < text.length) out.push(text.slice(last));
   return out;
 }
+
+/**
+ * „3/10 + 3/4“ und „3/4 + 3/10“ sind dieselbe Rechnung (Test mit echter KI, 27.11.2026: beide standen im selben Heft). Für den
+ * Vergleich zweier Aufgaben: die Zahlen einer reinen Summe oder eines reinen Produkts am Ende der Zeile (nach dem letzten
+ * Doppelpunkt) in fester Reihenfolge. Alles andere bleibt, wie es ist: Minus und Geteilt sind nicht vertauschbar, gemischte
+ * Rechnungen und Sätze werden nicht angefasst.
+ */
+export function ohneReihenfolge(zeile: string): string {
+  const at = zeile.lastIndexOf(": ");
+  const [kopf, rechnung] = at >= 0 ? [zeile.slice(0, at + 2), zeile.slice(at + 2)] : ["", zeile];
+  for (const op of [" + ", " · "]) {
+    const teile = rechnung.split(op).map((t) => t.trim());
+    if (teile.length > 1 && teile.every((t) => /^\d[\d.,/ ]*$/.test(t))) return kopf + [...teile].sort().join(op);
+  }
+  return zeile;
+}
+
+// „S. 86/87“, „Seite 12/13“, „Nr. 3/4“ und „Schuljahr 2026/27“ sind keine Brüche
+const KEIN_BRUCH = /\b(?:S\.|Seiten?|Nr\.)\s*\d+\/\d+|(?<!\d)\d{4}\/\d{2,4}(?!\d)/gi;
+
+/**
+ * Brüche in einem Text einer Folie (lib/praesentation-html.ts, Vorschau): wie `splitFractions`, aber Folien gibt es in jedem
+ * Fach, darum bleiben Seitenangaben und Schuljahre Text.
+ */
+export function folienTeile(text: string): MathPart[] {
+  const out: MathPart[] = [];
+  let last = 0;
+  for (const m of text.matchAll(KEIN_BRUCH)) {
+    const at = m.index ?? 0;
+    out.push(...splitFractions(text.slice(last, at)), m[0]);
+    last = at + m[0].length;
+  }
+  out.push(...splitFractions(text.slice(last)));
+  return out;
+}
