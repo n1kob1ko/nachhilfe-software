@@ -12,6 +12,7 @@ import { isMinitest } from "./quick-round";
 import * as repo from "./repo";
 import { triesFor, triesForTask } from "./service";
 import { runningUnitForStudent } from "./units";
+import { abschnitte, auftragVon, heftInfo, ohneAuftrag } from "./uebungsheft-ansicht";
 
 /**
  * The tasks of an assignment as the student sees them: no answers, no solutions until a task is
@@ -31,13 +32,19 @@ export function clientTasks(assignment: repo.Assignment): ClientTask[] {
   // ein Minitest ist wie eine kleine Schularbeit: keine Tipps und keine freigegebenen Lösungen
   const test = isMinitest(assignment.mode);
   const freigabe = test ? "nichts" : freigabeVon(assignment);
+  // Übungsheft zu den Fehlern: Teile, Merke und Übungen vor ihren Aufgaben; die Anweisung steht im Kopf der Übung
+  const heft = heftInfo(w.settings);
+  const kopf = abschnitte(heft, list.map((t) => t.data.heft));
   return list.map((t, i) => {
     const tries = attempts.filter((a) => a.task_id === t.id);
     const fin = tries.find((a) => a.final);
     return {
       id: t.id,
       type: t.type,
-      prompt: t.prompt,
+      prompt: heft ? ohneAuftrag(t.prompt, auftragVon(heft, t.data.heft)) : t.prompt,
+      ...(heft ? { abschnitt: kopf[i] } : {}),
+      ...(heft && i === 0 && heft.vorweg ? { heftVorweg: heft.vorweg } : {}),
+      ...(heft && i === list.length - 1 && heft.kontrolle.length ? { heftKontrolle: heft.kontrolle } : {}),
       options: t.data.options ?? null,
       // Matura-Formate (lib/matura-formate.ts): wie viele anzukreuzen sind, die Satzteile je Lücke, die Aussagen
       // und Antworten der Zuordnung. Nie correctAll, pairs oder die Werte in blanks: die sind die Lösung.

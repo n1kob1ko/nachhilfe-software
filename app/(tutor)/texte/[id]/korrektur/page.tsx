@@ -2,7 +2,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AlertTriangle, ArrowLeft, History, ListChecks, PenLine, Send, SpellCheck } from "lucide-react";
 import { startManualCorrectionAction } from "@/app/correction-actions";
-import { textFehlerAlleAction, textFehlerAction } from "@/app/ablauf-actions";
+import { textFehlerAlleAction, textFehlerAction, uebungsheftAction } from "@/app/ablauf-actions";
+import { heftLaufZumText, heftMoeglich } from "@/lib/uebungsheft";
 import { FormKnopf } from "@/components/FormKnopf";
 import { textFehler } from "@/lib/einheit-ablauf";
 import { laufendeEinheitDesTexts, textUebungPlan } from "@/lib/text-uebung";
@@ -27,7 +28,7 @@ const first = (n: string) => n.split(" ")[0];
 const when = (iso: string) => `${formatDate(iso, { day: "numeric", month: "short" })}, ${formatTime(iso)}`;
 const VIEWS: View[] = ["original", "korrekturen", "endfassung"];
 
-type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; ansicht?: string; teil?: string }> };
+type Params = { params: Promise<{ id: string }>; searchParams: Promise<{ k?: string; ansicht?: string; teil?: string; heft?: string }> };
 
 /**
  * Korrektur of a Textarbeit in two parts: „Sprache“ (the text in three views: Original, Korrekturen, Endfassung) and
@@ -81,17 +82,37 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
   const einheit = laufendeEinheitDesTexts(text.id);
   const plan = einheit ? textUebungPlan(einheit) : null;
   const naechster = einheit && !plan ? textFehler(einheit)?.skills.find((x) => x.offen) : null;
+  const heftLauf = einheit ? heftLaufZumText(text.id) : null;
+  const heftGeht = einheit ? heftMoeglich(text.student_id).ok : false;
   const einheitSenden = einheit ? (
     <div className="grid gap-1" data-testid="korrektur-einheit">
+      {/* Übungsheft zu den Fehlern (lib/uebungsheft.ts): erstellt wird hier, gesendet in der Einheit */}
+      {heftLauf?.status === "laeuft" ? (
+        <p className="text-[14px] font-semibold text-ink-2" data-testid="korrektur-heft-laeuft">
+          <AutoRefresh seconds={6} />
+          Das Übungsheft wird erstellt …
+        </p>
+      ) : heftLauf?.status === "fertig" ? (
+        <Link href={`/einheiten/${einheit}`} className="btn btn-primary w-full" data-testid="korrektur-heft-fertig">
+          <Send size={16} aria-hidden /> Übungsheft fertig: in der Einheit senden
+        </Link>
+      ) : heftGeht && (plan || naechster) ? (
+        <form action={uebungsheftAction.bind(null, einheit, text.id, "korrektur")}>
+          <FormKnopf className="btn btn-primary w-full" icon={<SpellCheck size={16} aria-hidden />} data-testid="korrektur-heft-erstellen">
+            Übungsheft zu den Fehlern erstellen
+          </FormKnopf>
+        </form>
+      ) : null}
+      {sp.heft && <p className="text-[13px] text-red">{sp.heft.slice(0, 200)}</p>}
       {plan ? (
         <form action={textFehlerAlleAction.bind(null, einheit)}>
-          <FormKnopf className="btn btn-primary w-full" icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
+          <FormKnopf className={`btn ${heftGeht ? "btn-secondary" : "btn-primary"} w-full`} icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
             Übungen zu allen Fehlern ans Tablet senden
           </FormKnopf>
         </form>
       ) : naechster ? (
         <form action={textFehlerAction.bind(null, einheit, naechster.skillId)}>
-          <FormKnopf className="btn btn-primary w-full" icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
+          <FormKnopf className={`btn ${heftGeht ? "btn-secondary" : "btn-primary"} w-full`} icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
             Aufgaben zu „{naechster.name}“ ans Tablet senden
           </FormKnopf>
         </form>

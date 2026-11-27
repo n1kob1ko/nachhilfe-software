@@ -357,7 +357,7 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
   } else if (current && getHeft(current.id)) {
     // Heft am Tablet (lib/heft.ts): frei mit dem Stift rechnen, beim „Fertig“ wird alles auf einmal geprüft
     const h = getHeft(current.id)!;
-    content = <Heft key={`heft-${h.assignmentId}`} assignmentId={h.assignmentId} titel={h.titel} status={h.status} aufgaben={h.aufgaben} felder={h.felder} homeHref="/geraet/ansicht?zu=start" />;
+    content = <Heft key={`heft-${h.assignmentId}`} assignmentId={h.assignmentId} titel={h.titel} status={h.status} aufgaben={h.aufgaben} felder={h.felder} homeHref="/geraet/ansicht?zu=start" linien={h.linien} vorweg={h.vorweg} kontrolle={h.kontrolle} />;
   } else if (current) {
     // Schnellrunde (lib/quick-round.ts): derselbe Abgabeweg wie sonst, nur der Ablauf ist ein anderer
     const tasks = clientTasks(current);

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowDown, ArrowUp, BookOpenText, Check, CheckCircle2, ChevronLeft, ChevronRight, CircleDashed, ClipboardCheck, CloudOff, Lightbulb, ListChecks, RotateCcw, X, XCircle } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { submitAnswerAction } from "@/app/actions";
 import { recordHintAction } from "@/app/builder-actions";
 import { deviceRecordHintAction, deviceSubmitAnswerAction } from "@/app/device-actions";
@@ -22,11 +22,17 @@ import { MemorizeTextBox } from "./MemorizeText";
 import { UmlautBar, type TextTarget } from "./UmlautBar";
 import { isMemorizeLevel, type MemorizeLevel } from "@/lib/memorize";
 import { Gleiter } from "@/components/Bewegung";
+import { HeftAbschnitt, HeftKontrolle, HeftVorweg } from "@/components/HeftAbschnitt";
+import type { Abschnitt } from "@/lib/uebungsheft-ansicht";
 
 export type ClientTask = {
   id: number;
   type: string;
   prompt: string;
+  /** Übungsheft zu den Fehlern (lib/uebungsheft-ansicht.ts): Teil und Übung, die vor dieser Aufgabe beginnen; oben das Vorweg, unten die Kontroll-Liste */
+  abschnitt?: Abschnitt | null;
+  heftVorweg?: string;
+  heftKontrolle?: string[];
   options: string[] | null;
   passage: string | null;
   /** Leseverständnis: the shared text, on the first question only; every question is about it (lib/lesen.ts). */
@@ -601,10 +607,13 @@ function BlattAnsicht({
         </nav>
       </div>
 
+      {tasks[0]?.heftVorweg && <HeftVorweg text={tasks[0].heftVorweg} />}
       <div className="rounded-2xl border border-line bg-surface px-5 py-2 shadow-[var(--shadow-card)] md:px-8">
         {tasks.map((t, i) => {
           const c = tone(t);
           return (
+            <Fragment key={t.id}>
+            {t.abschnitt && (t.abschnitt.teil || t.abschnitt.uebung) && <HeftAbschnitt a={t.abschnitt} />}
             <section
               key={t.id}
               id={`blatt-aufgabe-${i + 1}`}
@@ -635,9 +644,11 @@ function BlattAnsicht({
                 blatt={{ aktuell: i === aktuell, melde: test ? melde : undefined }}
               />
             </section>
+            </Fragment>
           );
         })}
       </div>
+      {tasks.at(-1)?.heftKontrolle && <HeftKontrolle punkte={tasks.at(-1)!.heftKontrolle!} />}
 
       <div className="mt-6 rounded-2xl border border-line bg-surface px-5 py-5 md:px-8" data-testid="blatt-ende">
         {test ? (
@@ -1100,11 +1111,11 @@ function TaskCard({
               </span>
             ))}
           </p>
-        ) : (
+        ) : task.prompt ? (
           <p className={`${reading || en ? "text-[19px] leading-snug" : "text-[21px] leading-snug"} font-medium whitespace-pre-line`} lang={en ? "en" : undefined}>
             {reading || en ? task.prompt : <MathText text={task.prompt} />}
           </p>
-        )}
+        ) : null}
         {/* Aufgabe mit Bild: das Bild unter der Frage (bei Lücken ohne eigene Fragezeile darüber) */}
         {task.figur && !bildKopf && <FigurBild svg={task.figur} groesser={1.2} />}
         {task.quelle && <p className="mt-2 text-[12px] text-ink-3">Quelle: {task.quelle}</p>}
