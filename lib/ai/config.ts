@@ -94,6 +94,7 @@ export type AIFunction =
   | "vokabelfoto"
   | "einheit_text"
   | "paket_auswertung"
+  | "uebungsheft"
   | "blatt"
   | "whiteboard"
   | "druckblatt"
@@ -189,6 +190,10 @@ export const FUNCTIONS: Record<AIFunction, FunctionSpec> = {
   // Übungspaket auswerten (lib/uebungspaket.ts): only on the teacher's click; the package's Erkenntnisse and the graded tasks
   // (no names, no free notes) go along; the answer says which Fehlermuster are fixed and which new ones show
   paket_auswertung: { label: "Übungspaket auswerten", area: "ANALYSIS", tier: "standard", maxTokens: 6_000, timeoutMs: 90_000, thinking: "aus", effort: "low", realtime: false, reuseMs: 24 * 60 * MIN, cache: "aus" },
+  // Übungsheft zu den Fehlern (lib/uebungsheft.ts): only on the teacher's click; the student's corrected text (his name replaced) or
+  // the Fehlermuster of a read-in Schularbeit with their places. One lean answer (Teile, Merke, about 50 short tasks with solutions);
+  // thinking on, because every solution must be right. Each click is a new Heft
+  uebungsheft: { label: "Übungsheft zu den Fehlern", area: "EXERCISE", tier: "standard", maxTokens: 16_000, timeoutMs: 240_000, thinking: "adaptiv", effort: "low", realtime: false, reuseMs: 0, cache: "aus" },
   // KI prüfen am Whiteboard (lib/whiteboard-check.ts): only on the teacher's click; the picture of one task with the
   // handwriting under it and the task's solution; the answer is a suggestion the teacher confirms. Thinking on, because
   // reading handwritten maths wrongly would mark a right answer wrong; the same picture is not paid for twice

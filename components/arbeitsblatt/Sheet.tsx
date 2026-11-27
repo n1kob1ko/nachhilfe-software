@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import { HeftAbschnitt, HeftKontrolle, HeftVorweg } from "@/components/HeftAbschnitt";
 import {
   shortAnswer,
   type SheetDoc,
@@ -730,9 +731,11 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
       <Header doc={doc} o={o} teacher={teacher} />
       {doc.reading && <ReadingPassage title={doc.reading.title} text={doc.reading.text} teacher={teacher} zeilen={doc.reading.zeilen} leerzeilen={doc.reading.leerzeilen} />}
       {doc.reading && <h2 className="ab-lese-fragen">Fragen zum Text</h2>}
+      {doc.heft && <HeftVorweg text={doc.heft.vorweg} druck />}
       <div className="ab-tasks">
         {doc.tasks.map((t) => (
           <Fragment key={t.n}>
+            {doc.heft?.abschnitte[t.n - 1] && <HeftAbschnitt a={doc.heft.abschnitte[t.n - 1]!} druck />}
             <TaskPassage t={t} teacher={teacher} />
             {teacher ? (
               <TeacherTask t={t} o={o} punkte={doc.probe?.punkte[t.n - 1]} />
@@ -742,6 +745,7 @@ export function Sheet({ doc, o }: { doc: SheetDoc; o: SheetOptions }) {
           </Fragment>
         ))}
       </div>
+      {doc.heft && <HeftKontrolle punkte={doc.heft.kontrolle} druck />}
       {doc.probe && <Bewertung probe={doc.probe} teacher={teacher} />}
       {!teacher && o.solutions === "seite" && <SolutionPage doc={doc} o={o} />}
     </article>
