@@ -21,6 +21,7 @@ import { activeLaptop } from "./laptop";
 import { liesPapier, papierTor, speicherePapier } from "./papier-einheit";
 import * as repo from "./repo";
 import { getUnit } from "./units";
+import { abschnitte, auftragVon, heftInfo, ohneAuftrag, type Abschnitt } from "./uebungsheft-ansicht";
 
 /** Breite einer Heftseite in Heft-Einheiten; Höhen und Striche zählen in derselben Einheit. */
 export const HEFT_BREITE = 1000;
@@ -28,6 +29,8 @@ export const HEFT_BREITE = 1000;
 export const HEFT_HOEHE = 520;
 export const HEFT_MEHR = 360;
 export const HEFT_MAX_HOEHE = 2600;
+/** So klein darf ein Feld sein (ein Wort im Übungsheft, liniert). */
+export const HEFT_MIN_HOEHE = 160;
 /** Zahlen (x und y) höchstens je Strich und je Heft: ein voll geschriebenes Heft bleibt weit darunter. */
 const MAX_JE_STRICH = 6000;
 const MAX_ZAHLEN = 400_000;
@@ -40,7 +43,8 @@ export type Strich = number[];
 export type HeftFeld = { taskId: number; hoehe: number; striche: Strich[] };
 export type HeftStatus = "schreibt" | "pruefen" | "geprueft" | "fehler";
 export type HeftUrteil = "richtig" | "teilweise" | "falsch" | "offen";
-export type HeftAufgabe = { taskId: number; nr: string; text: string; urteil: HeftUrteil | null };
+/** `abschnitt`: beim Übungsheft zu den Fehlern (lib/uebungsheft.ts) der Teil (Merke) und die Übung vor ihrer ersten Aufgabe. */
+export type HeftAufgabe = { taskId: number; nr: string; text: string; urteil: HeftUrteil | null; abschnitt?: Abschnitt | null };
 export type Heft = {
   assignmentId: number;
   unitId: number | null;
@@ -52,6 +56,11 @@ export type Heft = {
   felder: HeftFeld[];
   aufgaben: HeftAufgabe[];
   materialIds: number[];
+  /** liniert (Deutsch, Englisch …) statt kariert (Mathe) */
+  linien: boolean;
+  /** Übungsheft zu den Fehlern: was oben steht, und die Kontroll-Liste unten */
+  vorweg: string;
+  kontrolle: string[];
 };
 
 type Row = { assignment_id: number; unit_id: number | null; student_id: number; felder: string; version: number; status: HeftStatus; grund: string; material_ids: string };
@@ -65,7 +74,32 @@ export function heftMoeglich(studentId: number): boolean {
  * Mathe am Tablet geht als Heft (beim Senden aus dem geführten Ablauf): nur mit KI, die Bilder liest, und nicht, wenn der Schüler
  * am eigenen Laptop arbeitet (dort gibt es keinen Stift). „Lieber tippen“ sendet dieselbe Übung mit Antwortfeldern.
  */
-export const gehtAlsHeft = (unit: { id: number; student_id: number; subject: string | null }) => unit.subject === "Mathematik" && !activeLaptop(unit.id) && heftMoeglich(unit.student_id);
+export const gehtAlsHeft = (unit: { id: number; student_id: number; subject: string | null }) => unit.subject === "Mathematik" && stiftGeht(unit);
+
+/**
+ * Ob der Schüler gerade mit dem Stift am Tablet schreiben kann (KI liest Bilder, kein eigener Laptop). Das Übungsheft zu den Fehlern
+ * (lib/uebungsheft.ts) geht in jedem Fach so, mit Linien statt Kästchen; „Lieber tippen“ sendet es mit Antwortfeldern.
+ */
+export const stiftGeht = (unit: { id: number; student_id: number }) => !activeLaptop(unit.id) && heftMoeglich(unit.student_id);
+
+/**
+ * Die Angabe im Übungsheft: ohne die Anweisung (sie steht über der Übung) und der Satz mit Fehlern ohne „ “ darum, denn er hat oft
+ * selbst eine direkte Rede („„Wo bist du?“ fragte Ben.“ wäre verwirrend).
+ */
+function heftText(t: repo.Task, auftrag: string | undefined): string {
+  const angabe = ohneAuftrag(t.prompt, auftrag);
+  const faulty = t.data.faulty?.trim();
+  return frageText({ ...t, prompt: faulty ? [angabe, faulty].filter(Boolean).join("\n") : angabe, data: { ...t.data, faulty: undefined } });
+}
+
+/** Wie viel Platz eine Aufgabe zuerst bekommt: Mathe immer gleich viel zum Rechnen; sonst nach der Art (Wort, Satz, Absatz, Text). */
+function startHoehe(type: string, linien: boolean): number {
+  if (!linien) return HEFT_HOEHE;
+  if (type === "cloze" || type === "mc") return 200;
+  if (type === "fix") return 380;
+  if (type === "free") return 720;
+  return 270;
+}
 
 /** Eine gesendete Übung wird ein Heft (vor dem ersten Anzeigen am Tablet). */
 export function alsHeft(assignmentId: number) {
@@ -97,7 +131,18 @@ export function getHeft(assignmentId: number): Heft | null {
   const w = a ? repo.getWorksheet(a.worksheet_id) : null;
   if (!r || !a || !w) return null;
   const versuche = repo.listAttemptsForAssignment(a.id);
-  const aufgaben = repo.listTasks(w.id).map((t, i) => ({ taskId: t.id, nr: t.data.nummer?.trim() || String(i + 1), text: frageText(t), urteil: urteilVon(versuche, t.id) }));
+  const tasks = repo.listTasks(w.id);
+  const info = heftInfo(w.settings);
+  const kopf = abschnitte(info, tasks.map((t) => t.data.heft));
+  const linien = w.subject !== "Mathematik";
+  const aufgaben: HeftAufgabe[] = tasks.map((t, i) => ({
+    taskId: t.id,
+    nr: t.data.nummer?.trim() || String(i + 1),
+    // im Übungsheft steht die Anweisung einmal über der Übung, nicht über jeder Aufgabe
+    text: info ? heftText(t, auftragVon(info, t.data.heft)) : frageText(t),
+    urteil: urteilVon(versuche, t.id),
+    ...(info ? { abschnitt: kopf[i] } : {}),
+  }));
   const felder = json<HeftFeld[]>(r.felder, []);
   return {
     assignmentId: a.id,
@@ -108,9 +153,12 @@ export function getHeft(assignmentId: number): Heft | null {
     grund: r.grund,
     version: r.version,
     // je Aufgabe ein Feld, in der Reihenfolge des Blatts
-    felder: aufgaben.map((x) => felder.find((f) => f.taskId === x.taskId) ?? { taskId: x.taskId, hoehe: HEFT_HOEHE, striche: [] }),
+    felder: aufgaben.map((x, i) => felder.find((f) => f.taskId === x.taskId) ?? { taskId: x.taskId, hoehe: startHoehe(tasks[i].type, linien), striche: [] }),
     aufgaben,
     materialIds: json<number[]>(r.material_ids, []),
+    linien,
+    vorweg: info?.vorweg ?? "",
+    kontrolle: info?.kontrolle ?? [],
   };
 }
 
@@ -123,7 +171,7 @@ export function bereinige(roh: unknown, taskIds: number[]): HeftFeld[] | null {
   const out: HeftFeld[] = [];
   for (const id of taskIds) {
     const f = roh.find((x) => x && typeof x === "object" && (x as HeftFeld).taskId === id) as Partial<HeftFeld> | undefined;
-    const hoehe = Math.min(HEFT_MAX_HOEHE, Math.max(HEFT_HOEHE, Math.round(Number(f?.hoehe) || HEFT_HOEHE)));
+    const hoehe = Math.min(HEFT_MAX_HOEHE, Math.max(HEFT_MIN_HOEHE, Math.round(Number(f?.hoehe) || HEFT_HOEHE)));
     const striche: Strich[] = [];
     for (const s of Array.isArray(f?.striche) ? f.striche : []) {
       if (!Array.isArray(s) || s.length < 2) continue;

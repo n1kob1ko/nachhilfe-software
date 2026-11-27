@@ -29,6 +29,8 @@ import { isSorte, SORTEN, type SorteKey } from "@/lib/schreibauftrag";
 import { requireTeacher } from "@/lib/auth";
 import { klassenLabel, stufeLabel } from "@/lib/school";
 import { GAP } from "@/lib/tasks";
+import { heftInfo } from "@/lib/uebungsheft-ansicht";
+import { HeftAbschnitt, HeftKontrolle, HeftVorweg } from "@/components/HeftAbschnitt";
 import { wordRange } from "@/lib/textinterpretation";
 import { shortNames } from "@/lib/vornamen";
 import { ownBoardFor, runningBoardsFor } from "@/lib/whiteboard";
@@ -47,6 +49,7 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
   const skills = repo.listSkills().filter((s) => s.subject === w.subject);
   const students = repo.listStudents().map(({ id, name }) => ({ id, name }));
   const draft = w.status === "entwurf";
+  const heft = heftInfo(w.settings);
   const editable = repo.worksheetAttemptCount(w.id) === 0;
   // drafts are checked with solutions in view; printed sheets usually without
   const showSolutions = sp.loesungen ? sp.loesungen !== "0" : true;
@@ -209,6 +212,23 @@ export default async function WorksheetPage({ params, searchParams }: { params: 
         </p>
       )}
 
+      {heft && (
+        // Übungsheft zu den Fehlern (lib/uebungsheft.ts): Teile und Merke stehen am Tablet und im Ausdruck vor ihren Aufgaben
+        <section className="no-print mb-6 rounded-2xl border border-line bg-surface px-5 py-4" data-testid="uebungsheft-vorschau">
+          <p className="text-[15px] font-semibold">
+            Übungsheft zu den Fehlern: {heft.teile.length} {heft.teile.length === 1 ? "Teil" : "Teile"}, {tasks.length} Aufgaben
+          </p>
+          <p className="mt-0.5 text-[14px] text-ink-2">{heft.teile.map((t, i) => `${String.fromCharCode(65 + i)} ${t.titel}`).join(" · ")}</p>
+          {heft.pruefen.length > 0 && <p className="mt-2 rounded-xl bg-amber-wash px-3 py-2 text-[14px] text-amber">Bitte prüfen: {heft.pruefen.join(" · ")}</p>}
+          <Reveal label="Merke-Kästen ansehen" className="mt-2">
+            <HeftVorweg text={heft.vorweg} />
+            {heft.teile.map((t, i) => (
+              <HeftAbschnitt key={i} a={{ teil: { buchstabe: String.fromCharCode(65 + i), titel: t.titel, merke: t.merke, beispiele: t.beispiele } }} />
+            ))}
+            <HeftKontrolle punkte={heft.kontrolle} />
+          </Reveal>
+        </section>
+      )}
       <FlowSteps current={draft ? 2 : !mainAssignment ? 3 : 4} />
       <section className="no-print mb-10 rounded-[24px] bg-accent-wash px-5 py-5 md:px-6" aria-label="Nächster Schritt">
         {draft ? (
