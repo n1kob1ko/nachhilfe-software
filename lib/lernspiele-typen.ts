@@ -56,7 +56,7 @@ import type { BioDaten } from "./biolabor";
 import type { BiotestDaten } from "./biotest";
 import type { OeDaten } from "./oesterreich";
 
-export const SPIEL_ARTEN = ["artikel", "wortarten", "konjugieren", "gross", "satzglieder", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
+export const SPIEL_ARTEN = ["artikel", "wortarten", "konjugieren", "gross", "satzglieder", "nomen", "praepositionen", "deklination", "faelle", "dasdass", "satzteile", "perfekt", "praeteritum", "satzbau", "wortschatz", "vokabeln", "irregular", "zeiten", "grammatik", "rechnen", "strahl", "stoff", "glas", "wort", "quizmathe", "quizdeutsch", "quizenglisch", "stilmittel", "fehler", "phantom", "vorlage", "blatt", "europa", "bio", "biotest", "oesterreich"] as const;
 export type SpielArt = (typeof SPIEL_ARTEN)[number];
 
 export const istSpielArt = (x: unknown): x is SpielArt => typeof x === "string" && (SPIEL_ARTEN as readonly string[]).includes(x);
@@ -75,6 +75,7 @@ export const SPIEL_TITEL: Record<SpielArt, string> = {
   artikel: "der, die, das",
   wortarten: "Wortarten",
   konjugieren: "ich gehe, du gehst",
+  nomen: "Nomen bestimmen",
   satzglieder: "Satzglieder",
   gross: "Groß oder klein?",
   praepositionen: "Präposition und Fall",
@@ -114,6 +115,7 @@ export const SPIEL_FACH: Record<SpielArt, "Deutsch" | "Englisch" | "Mathematik" 
   artikel: "Deutsch",
   wortarten: "Deutsch",
   konjugieren: "Deutsch",
+  nomen: "Deutsch",
   satzglieder: "Deutsch",
   gross: "Deutsch",
   praepositionen: "Deutsch",
@@ -162,6 +164,7 @@ export const SPIEL_KURZ: Record<SpielArt, string> = {
   artikel: "Jedes Nomen zu seinem Artikel",
   wortarten: "Nomen, Verb oder Adjektiv? Bestimm das markierte Wort",
   konjugieren: "ich gehe, du gehst, wir gehen: die richtige Form",
+  nomen: "Geschlecht, Zahl und Fall: der Hund, männlich, Einzahl, 1. Fall",
   satzglieder: "Subjekt, Prädikat, Objekt: Bestimm das markierte Satzglied",
   gross: "beim Spielen oder wir spielen: groß oder klein?",
   praepositionen: "mit dem, für den: der richtige Fall",
@@ -201,6 +204,7 @@ export const SPIEL_DEKO: Record<SpielArt, string[]> = {
   artikel: ["die", "das", "der"],
   wortarten: ["Nomen", "Verb", "Adjektiv"],
   konjugieren: ["gehe", "gehst", "geht"],
+  nomen: ["männlich", "Einzahl", "3. Fall"],
   satzglieder: ["Subjekt", "Prädikat", "Objekt"],
   gross: ["Beim", "Spielen", "spielen"],
   praepositionen: ["dem", "den", "der"],
@@ -240,6 +244,7 @@ export const SPIEL_AUFGABE: Record<SpielArt, string> = {
   artikel: "Wirf jedes Wort in die Kiste mit seinem Artikel.",
   wortarten: "Ist das markierte Wort ein Nomen, ein Verb oder ein Adjektiv?",
   konjugieren: "Welche Form des Verbs passt zur Person?",
+  nomen: "Bestimm das markierte Nomen: Geschlecht, Zahl und Fall.",
   satzglieder: "Welches Satzglied ist markiert?",
   gross: "Schreibt man das Wort in der Lücke groß oder klein?",
   praepositionen: "Welcher Artikel passt nach der Präposition?",

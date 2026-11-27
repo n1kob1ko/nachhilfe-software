@@ -2004,6 +2004,7 @@ const VORSCHAU: Record<SpielArt, string[]> = {
   artikel: ["der", "die", "das"],
   wortarten: ["Nomen", "Verb", "Adjektiv"],
   konjugieren: ["gehe", "gehst", "geht"],
+  nomen: ["männlich", "Mehrzahl", "3. Fall"],
   satzglieder: ["Subjekt", "Prädikat", "Objekt 3. Fall", "Objekt 4. Fall"],
   gross: ["Spielen", "spielen"],
   praepositionen: ["der", "die", "das", "dem", "den"],

@@ -27,6 +27,7 @@ import { beugenKandidaten } from "./verben-beugen";
 import { wortartKandidaten } from "./wortarten-spiel";
 import { grossKandidaten } from "./gross-klein-spiel";
 import { satzgliedKandidaten } from "./satzglieder-spiel";
+import { nomenKandidaten } from "./nomen-bestimmen";
 import { SATZBAU, SATZBAU_MARKE, SATZBAU_REGEL, type SatzbauGruppe } from "./satzbau-saetze";
 
 type Rng = () => number;
@@ -413,7 +414,8 @@ function satzbauKandidaten(): Kandidat[] {
  * Ein Eintrag, der im Spiel taugt: nur eine richtige Antwort, keine Beanstandung der Regeln. Karten mit derselben
  * `gruppe` (die zwei Teile eines Satzes) kommen nicht zusammen in eine Runde.
  */
-export type Kandidat = { karte: SpielKarte; stufe: Stufe; gruppe?: string };
+/** `folge`: Karten, die gleich nach dieser kommen, in dieser Reihenfolge (Nomen bestimmen: Geschlecht, Zahl, Fall) */
+export type Kandidat = { karte: SpielKarte; stufe: Stufe; gruppe?: string; folge?: SpielKarte[] };
 
 const cache = new Map<SpielArt, Kandidat[]>();
 
@@ -451,6 +453,8 @@ export function kandidaten(art: SpielArt): Kandidat[] {
     out = grossKandidaten();
   } else if (art === "satzglieder") {
     out = satzgliedKandidaten();
+  } else if (art === "nomen") {
+    out = nomenKandidaten();
   } else if (art === "satzbau") {
     out = satzbauKandidaten();
   } else if (art === "vokabeln" || art === "zeiten" || art === "grammatik" || art === "rechnen" || art === "strahl" || art === "wortschatz" || art === "stoff" || art === "fehler" || art === "glas" || art === "stilmittel" || art.startsWith("quiz")) {
@@ -530,8 +534,11 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
   const anzahl = o.anzahl ?? KARTEN_JE_RUNDE;
   // `pool`: die Karten eines Themas (Englisch-Themenspiele) statt des festen Vorrats der Art
   const alle = o.pool ?? kandidaten(art);
-  const byKey = new Map(alle.map((k) => [k.karte.key, k]));
-  const gewaehlt: SpielKarte[] = [];
+  // eine Karte aus einer Kette führt zu ihrem Anfang (eine falsche Fall-Karte holt das ganze Nomen wieder)
+  const byKey = new Map(alle.flatMap((k) => [k.karte, ...(k.folge ?? [])].map((karte) => [karte.key, k] as const)));
+  // Ketten bleiben beim Mischen zusammen
+  const ketten: SpielKarte[][] = [];
+  const gewaehlt = () => ketten.reduce((n, kette) => n + kette.length, 0);
   const genommen = new Set<string>();
   const proAntwort = new Map<string, number>();
   const gruppen = new Set<string>();
@@ -541,7 +548,7 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
   // „Groß oder klein?“: die Kacheln heißen je Karte anders („Spielen“, „spielen“), gezählt wird groß gegen klein
   const antwortVon = (karte: SpielKarte) => (art === "gross" ? (karte.marke ?? karte.richtig) : karte.richtig);
   const nimm = (k: Kandidat) => {
-    gewaehlt.push(k.karte);
+    ketten.push([k.karte, ...(k.folge ?? [])]);
     genommen.add(k.karte.key);
     if (k.gruppe) gruppen.add(k.gruppe);
     proAntwort.set(antwortVon(k.karte), (proAntwort.get(antwortVon(k.karte)) ?? 0) + 1);
@@ -549,7 +556,7 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
 
   for (const key of o.wiederholen ?? []) {
     const k = byKey.get(key);
-    if (k && !genommen.has(key) && !(k.gruppe && gruppen.has(k.gruppe)) && gewaehlt.length < Math.min(WIEDERHOLUNGEN_MAX, anzahl)) nimm(k);
+    if (k && !genommen.has(k.karte.key) && !(k.gruppe && gruppen.has(k.gruppe)) && gewaehlt() < Math.min(WIEDERHOLUNGEN_MAX, anzahl)) nimm(k);
   }
 
   // `zuletzt`: die neueste zuerst. Erst Karten, die nicht darin stehen; dann die, die am längsten her sind.
@@ -563,15 +570,15 @@ export function waehleKarten(art: SpielArt, o: { stufen: Stufe[]; wiederholen?: 
       );
       const pool = ohneZuletzt ? passend : passend.sort((a, b) => (alter.get(b.karte.key) ?? 1e9) - (alter.get(a.karte.key) ?? 1e9));
       for (const k of pool) {
-        if (gewaehlt.length >= anzahl) break;
+        if (gewaehlt() >= anzahl) break;
         if ((proAntwort.get(antwortVon(k.karte)) ?? 0) >= grenze) continue;
         if (k.gruppe && gruppen.has(k.gruppe)) continue;
         nimm(k);
       }
-      if (gewaehlt.length >= anzahl) break;
+      if (gewaehlt() >= anzahl) break;
     }
-    if (gewaehlt.length >= anzahl) break;
+    if (gewaehlt() >= anzahl) break;
   }
   // die Wiederholungen nicht alle vorne: gemischt, aber nie zwei gleiche Wörter nacheinander (gibt es nicht)
-  return mitAntwortForm(art, mischen(gewaehlt, rng));
+  return mitAntwortForm(art, mischen(ketten, rng).flat());
 }
