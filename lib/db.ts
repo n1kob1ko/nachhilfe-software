@@ -1898,6 +1898,8 @@ const COLUMNS: [table: string, column: string, definition: string][] = [
   // Handgeschriebenen Text einlesen (lib/handschrift.ts, 2026-10-23): wann der Text zuletzt von Papier übernommen wurde
   // (vom Foto oder abgetippt); nur für den Lehrer („von Papier übernommen“), Schülerseiten zeigen es nicht. null = am Gerät geschrieben
   ["texts", "von_papier", "TEXT"],
+  // auf Papier begonnen (Textarbeit „Auf Papier“, Simulation 27.11.2026): bis zur Übernahme vom Foto steht der Text nicht am Schülergerät
+  ["texts", "auf_papier", "INTEGER NOT NULL DEFAULT 0"],
   // „Aufgabe erfüllt?“ (lib/schreibauftrag-bewertung.ts, 2026-10-23): die Prüfung je Arbeitsauftrag, für jede Textarbeit. auftraege:
   // JSON des geprüften Ergebnisses (Zitate von der App geprüft); pruefung_status keine/laeuft/fertig/fehler, damit die Prüfung im
   // Hintergrund läuft und einzeln wiederholt werden kann; pruefung_namen: die Namen, die die Lehrkraft in der Freigabe verbergen ließ

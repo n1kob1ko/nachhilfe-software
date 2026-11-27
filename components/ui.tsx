@@ -54,7 +54,7 @@ export function TrendBadge({ trend, delta, compact }: { trend: Trend; delta?: nu
     <span className={`inline-flex items-center gap-1 text-[13px] font-medium ${t.cls}`} title={`Fortschritt ${t.text}`}>
       <Icon size={16} strokeWidth={2} aria-hidden />
       {!compact && <span>{t.text}</span>}
-      {delta != null && trend !== "none" && (
+      {delta != null && delta !== 0 && trend !== "none" && (
         <span className="num">
           ({delta > 0 ? "+" : ""}
           {delta})

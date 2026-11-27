@@ -43,3 +43,33 @@ test("zu Hause geübt: zählt Spiele und Vokabeln zwischen den Einheiten, nicht 
   assert.equal(leer.tage, 0);
   assert.equal(zuHauseSatz(leer), "Zu Hause seit der letzten Einheit: nicht geübt.");
 });
+
+/** Simulation 27.11.2026: eine eingelesene Schularbeit stand in der Einheit als „zu Hause … an 1 Tag geübt, 0 % richtig“. */
+test("zu Hause geübt: ein auf Papier gelöstes, eingelesenes Blatt zählt nicht, eine Hausübung schon", async () => {
+  const { resetForTests } = await import("./db");
+  resetForTests();
+  const repo = await import("./repo");
+  const units = await import("./units");
+  const { PAPIER_ANTWORT } = await import("./blatt-regeln");
+  const { zuHauseGeuebt } = await import("./zu-hause");
+  const niko = repo.listTeachers().find((t) => t.name === "Niko")!;
+  const id = repo.createStudent({
+    name: "Tom Papier", grade: 10, klasse: 2, teacher_id: niko.id, school: "", school_type: "HTL", subjects: ["Deutsch"],
+    current_topics: "", strengths_note: "", weaknesses_note: "", goals: "", notes: "",
+  });
+  const t0 = Date.parse("2026-11-16T15:00:00Z");
+  const ws = repo.createWorksheet(
+    { title: "Schularbeit", subject: "Deutsch", grade: 10, school_type: "HTL", klasse: 2, topic: "Erörterung", difficulty: "mittel", task_type: "free", kind: "uebung", source: "manuell", skill_ids: [], status: "freigegeben" },
+    [{ type: "free", skillId: null, difficulty: "mittel", prompt: "Erörtere.", data: {}, answer: { criteria: ["x"] }, solution: "", hints: [], errorMap: [] }],
+  );
+  const antwort = (asg: number, at: number, correct: number) => {
+    const task = repo.listTasks(ws)[0];
+    repo.recordAttempt({ assignment_id: asg, task_id: task.id, student_id: id, skill_id: null, attempt_no: 1, answer: "a", correct, final: 1, time_ms: 60_000, hints_used: 0, solution_viewed: 0, error_label: null, feedback: "", created_at: sql(at) });
+  };
+  antwort(repo.assignWorksheet(ws, id, PAPIER_ANTWORT, null, "test"), t0 + 86_400_000, 0);
+  antwort(repo.assignWorksheet(ws, id, "Hausübung"), t0 + 2 * 86_400_000, 1);
+  units.startUnit(niko.id, id, { subject: "Deutsch" });
+  const z = zuHauseGeuebt(id, new Date(t0 + 7 * 86_400_000).toISOString())!;
+  assert.equal(z.anzahl, 1);
+  assert.equal(z.richtig, 1);
+});

@@ -6,7 +6,7 @@
  */
 import { generatorAufgabenZur } from "./cockpit";
 import { db } from "./db";
-import { skillAusStelle, textFehler } from "./einheit-ablauf";
+import { skillAusStelle, textFehler, zumUeben } from "./einheit-ablauf";
 import { expectedFixes } from "./fix-text";
 import * as repo from "./repo";
 import { schulstufe } from "./school";
@@ -192,6 +192,8 @@ export function sendeZuDenTextFehlern(unitId: number, teacherId: number | null):
     return { fehler: "Die Übung konnte nicht erstellt werden." };
   }
   const assignmentId = repo.assignWorksheet(worksheetId, student.id, "", unit.id);
+  // auch von der Korrektur-Seite aus: die Einheit zeigt danach „Üben“ mit dem Stand der Übung, nicht den Start
+  zumUeben(unit.id);
   return { worksheetId, assignmentId };
 }
 

@@ -20,6 +20,7 @@ import {
   stoffpaketDerEinheit,
   stoffUebernehmen,
   waehleWeg,
+  zumUeben,
 } from "@/lib/einheit-ablauf";
 import { alsHeft, gehtAlsHeft, getHeft, pruefeHeft, stiftGeht } from "@/lib/heft";
 import { noteActivity } from "@/lib/learning";
@@ -58,6 +59,12 @@ export async function wegAction(unitId: number, weg: string) {
   if (!isWeg(weg)) weiter(unitId, { fehler: "Unbekannte Wahl." });
   const skills = weg === "weiter" ? (letzterStoff(unit.student_id, unit.id)?.faehigkeiten.map((f) => f.id).slice(0, 3) ?? []) : [];
   weiter(unitId, waehleWeg(unitId, weg, skills));
+}
+
+/** Am Start: mit dem Text von heute oder der schon gesendeten Übung weiter, ohne Weg zu wählen. */
+export async function zumUebenAction(unitId: number) {
+  await laufend(unitId);
+  weiter(unitId, zumUeben(unitId));
 }
 
 /** Eine Stufe oben antippen oder „Weiter: …“. */

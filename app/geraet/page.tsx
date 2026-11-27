@@ -40,7 +40,7 @@ import { StudentCorrection } from "@/components/text/correction/StudentCorrectio
 import { storyForEditor } from "@/lib/picture-story";
 import { freigegebeneErwartung } from "@/lib/schreibauftrag-bewertung";
 import { auftragFor, fuerSchueler } from "@/lib/schreibauftrag-store";
-import { textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
+import { nochAufPapier, textDoc, textsForUnit, wordsLabel } from "@/lib/texts";
 import { runningUnits } from "@/lib/units";
 import { shortNames } from "@/lib/vornamen";
 import { ensureBoardForUnit } from "@/lib/whiteboard";
@@ -389,7 +389,7 @@ export default async function DevicePage({ searchParams }: { searchParams: Promi
     );
   } else {
     const open = list.filter((a) => !a.completed_at);
-    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig" && !t.archived_at);
+    const texts = textsForUnit(unit.id).filter((t) => t.status !== "fertig" && !t.archived_at && !nochAufPapier(t));
     content = open.length || texts.length ? (
       <ul className="staffel space-y-3">
         {texts.map((t) => (

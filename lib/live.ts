@@ -173,6 +173,33 @@ export function notifyUnitTablets(unit: Pick<UnitView, "id" | "teacher_id">, rea
   for (const d of devicesOfUnit(unit)) notifyDevice(d.id, reason);
 }
 
+/** Die Einheiten, in denen eine Übung oder eine Zuweisung liegt; vor dem Löschen gelesen, für `nachLoeschen`. */
+export function einheitenMit(o: { worksheetId?: number; assignmentId?: number }): number[] {
+  const rows = (
+    o.worksheetId != null
+      ? db().prepare("SELECT DISTINCT unit_id FROM assignments WHERE worksheet_id = ? AND unit_id IS NOT NULL").all(o.worksheetId)
+      : db().prepare("SELECT DISTINCT unit_id FROM assignments WHERE id = ? AND unit_id IS NOT NULL").all(o.assignmentId ?? 0)
+  ) as { unit_id: number }[];
+  return rows.map((r) => r.unit_id);
+}
+
+/**
+ * Eine Übung oder Zuweisung ist gelöscht: die Geräte der laufenden Einheiten, in denen sie lag, laden neu, und eines, das gerade
+ * genau sie zeigte, geht zum Start (Simulation 27.11.2026: nach „Übung löschen“ stand am Tablet weiter „Aufgabe 11 von 21“).
+ */
+export function nachLoeschen(unitIds: number[]) {
+  for (const id of new Set(unitIds)) {
+    const unit = getUnit(id);
+    if (!unit || unit.status !== "gestartet") continue;
+    const v = parseView(unit.device_view);
+    if (v.kind === "aufgabe" && !repo.getAssignment(v.assignmentId)) showOnTablet(unit, { kind: "start" });
+    else {
+      notifyStudent(unit, "geloescht");
+      pushLive(unit.id);
+    }
+  }
+}
+
 /** One tablet loads again (also a just disconnected one, which then finds its cookie no longer valid). */
 export function notifyDevice(deviceId: number, reason: string) {
   publish(deviceChannel(deviceId), { type: "refresh", reason });

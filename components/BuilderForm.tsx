@@ -127,7 +127,7 @@ export function BuilderForm({
   const labelOf = (s: Skill) => (s.id === EIGENE_VOKABELN && listTitles.length ? `Vokabeln: ${listTitles.join(", ")}` : s.parent_id ? `${byId.get(s.parent_id)?.name} › ${s.name}` : s.name);
   const levelText = klassenLabel(level.type, level.klasse);
   const request = chosen.length
-    ? `Erstelle ${count} Übungen${ctx ? ` für ${ctx.first}` : ""}, ${levelText}, ${subject}: ${chosen.map(labelOf).join(", ")}.`
+    ? `Erstelle ${count} ${count === 1 ? "Aufgabe" : "Aufgaben"}${ctx ? ` für ${ctx.first}` : ""}, ${levelText}, ${subject}: ${chosen.map(labelOf).join(", ")}.`
     : null;
 
   // Audit 2026-11-07: der schnelle Weg (Schüler → Vorschlag → Anzahl → Erstellen) steht offen; Fach, Thema und Fähigkeit,

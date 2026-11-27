@@ -21,6 +21,7 @@ import {
   themaAction,
   uebenAction,
   wegAction,
+  zumUebenAction,
 } from "@/app/ablauf-actions";
 import { wechsleFachAction } from "@/app/cockpit-actions";
 import { minitestAction } from "@/app/minitest-actions";
@@ -216,6 +217,11 @@ function Ergebnis({ e, laeuft }: { e: Auswertung; laeuft: boolean }) {
 /** „Was machen wir heute?“: weiter mit dem Stoff vom letzten Mal (zuerst ein Kurztest) oder neues Thema. */
 function StartKarte({ unit, name, faecher }: { unit: UnitView; name: string; faecher: string[] }) {
   const stoff = letzterStoff(unit.student_id, unit.id);
+  // heute schon begonnen, ohne hier zu wählen: der Text von heute (fotografiert, korrigiert) oder eine Übung, die schon am Tablet
+  // ist (von der Korrektur oder einer Übungsseite). Dann geht es zuerst damit weiter (Simulation 27.11.2026).
+  const tf = SCHREIB_FAECHER.has(unit.subject ?? "") ? textFehler(unit.id) : null;
+  const letzte = uebenStand(unit.id).letzte;
+  const schon = tf ? `Text von heute: „${tf.titel}“, ${tf.leer ? "noch nicht fotografiert" : tf.korrektur === "fertig" ? `${tf.fehler} Fehler markiert` : tf.korrektur === "laeuft" ? "die KI korrigiert gerade" : "noch nicht korrigiert"}.` : letzte ? `Schon am Tablet: „${letzte.titel}“, ${letzte.fertig ? `fertig, ${letzte.auswertung.richtig} von ${letzte.auswertung.aufgaben} richtig` : `${letzte.auswertung.fertig} von ${letzte.auswertung.aufgaben} gemacht`}.` : null;
   // die anderen Fächer des Schülers, ein Tippen (Test 26.11.2026, M2: sonst nur über „Fach ändern“ oben zu finden)
   const andere = [...new Set(faecher)].filter((f) => f && f !== unit.subject).slice(0, 4);
   return (
@@ -235,12 +241,22 @@ function StartKarte({ unit, name, faecher }: { unit: UnitView; name: string; fae
           ))}
         </div>
       )}
+      {schon && (
+        <>
+          <p className="text-[16px] leading-relaxed text-ink" data-testid="start-schon">
+            {schon}
+          </p>
+          <Gross action={zumUebenAction.bind(null, unit.id)} icon={<ArrowRight size={19} aria-hidden />} testid="start-zum-ueben">
+            {tf ? "Mit dem Text weitermachen" : "Weiter beim Üben"}
+          </Gross>
+        </>
+      )}
       {stoff ? (
         <>
           <p className="text-[16px] leading-relaxed text-ink-2">
             Letztes Mal (<span className="num">{stoffDatum(stoff)}</span>): <span className="font-semibold text-ink">{stoffInhalt(stoff)}</span>. {letztesErgebnis(stoff)}
           </p>
-          <Gross action={wegAction.bind(null, unit.id, "weiter")} icon={<ArrowRight size={19} aria-hidden />} testid="weg-weiter">
+          <Gross action={wegAction.bind(null, unit.id, "weiter")} icon={<ArrowRight size={19} aria-hidden />} zweit={Boolean(schon)} testid="weg-weiter">
             Weiter mit „{stoffKurz(stoff)}“
           </Gross>
           <Leise>Zuerst ein Kurztest am Tablet, danach Übungen passend zum Ergebnis.</Leise>
@@ -251,8 +267,8 @@ function StartKarte({ unit, name, faecher }: { unit: UnitView; name: string; fae
         </>
       ) : (
         <>
-          <p className="text-[16px] leading-relaxed text-ink-2">Vom letzten Mal gibt es keine Aufgaben am Tablet. Darum beginnt die Einheit mit dem Stoff von heute.</p>
-          <Gross action={wegAction.bind(null, unit.id, "neu")} icon={<Camera size={19} aria-hidden />} testid="weg-neu">
+          {!schon && <p className="text-[16px] leading-relaxed text-ink-2">Vom letzten Mal gibt es keine Aufgaben am Tablet. Darum beginnt die Einheit mit dem Stoff von heute.</p>}
+          <Gross action={wegAction.bind(null, unit.id, "neu")} icon={<Camera size={19} aria-hidden />} zweit={Boolean(schon)} testid="weg-neu">
             Neues Thema
           </Gross>
           <Leise>{name} zeigt den Stoff, du fotografierst ihn ab.</Leise>
