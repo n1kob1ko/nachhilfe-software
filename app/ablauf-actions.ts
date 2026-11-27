@@ -28,6 +28,7 @@ import { letzterStoff } from "@/lib/minitest";
 import * as repo from "@/lib/repo";
 import { starteStoffpaket, verwirfStoffpaket } from "@/lib/stoffpaket";
 import { zeigeUebung } from "@/lib/tafel-senden";
+import { sendeZuDenTextFehlern } from "@/lib/text-uebung";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
@@ -132,6 +133,19 @@ export async function textFehlerAction(unitId: number, skillId: string) {
   await sende(unitId, skillId, false);
 }
 
+/**
+ * „Übungen zu allen Fehlern senden“ (Text von heute, auch auf der Korrektur-Seite): EINE Übung zu allen offenen Fehlerbereichen
+ * des Texts, der häufigste zuerst, am Ende Sätze aus dem eigenen Text zum Verbessern (lib/text-uebung.ts).
+ */
+export async function textFehlerAlleAction(unitId: number) {
+  const { t, unit } = await laufend(unitId);
+  const a = leseAblauf(unitId);
+  if (a.weg && a.stufe !== "ueben") setzeStufe(unitId, "ueben");
+  const out = sendeZuDenTextFehlern(unitId, t.id);
+  if ("fehler" in out) weiter(unitId, out);
+  ausgeben(unit, out);
+}
+
 async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean, heft = true) {
   const { t, unit } = await laufend(unitId);
   const a = leseAblauf(unitId);
@@ -142,12 +156,17 @@ async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean, he
   const blatt = mitStoffBlatt ? offenesStoffBlatt(unitId) : null;
   const out = blatt ? { worksheetId: blatt, assignmentId: repo.assignWorksheet(blatt, unit.student_id, "", unit.id) } : await sendeAusGenerator(unitId, skillId, t.id);
   if ("fehler" in out) weiter(unitId, out);
+  ausgeben(unit, out, heft);
+}
+
+/** Die gesendete Übung aufs Gerät des Schülers, dann zurück zur Einheit. */
+function ausgeben(unit: NonNullable<ReturnType<typeof getUnit>>, out: { worksheetId: number; assignmentId: number }, heft = true): never {
   if (heft && gehtAlsHeft(unit)) alsHeft(out.assignmentId);
   noteActivity(unit.student_id);
   zeigeUebung(unit, out.assignmentId);
   pushLive(unit.id);
   revalidatePath("/", "layout");
-  redirect(`/einheiten/${unitId}?gesendet=${out.worksheetId}`);
+  redirect(`/einheiten/${unit.id}?gesendet=${out.worksheetId}`);
 }
 
 /** „Mehr Werkzeuge“ öffnet das ganze frühere Cockpit (`alles`), „Zurück zum Ablauf“ wieder die eine Stufe. */

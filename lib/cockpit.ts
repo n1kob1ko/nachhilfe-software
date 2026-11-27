@@ -1330,6 +1330,21 @@ function generatorAufgabenVon(a: Auftrag): TaskDraft[] {
   return (rest.length ? rest : alle).slice(0, a.count);
 }
 
+/**
+ * Aufgaben aus den Generatoren zu einer Fähigkeit, für den Schüler dieser Einheit und passend zu seinem Lernstand, wie „Übungen
+ * senden“ sie baut (höchstens `anzahl`); für eine gemischte Übung aus mehreren Fähigkeiten (lib/text-uebung.ts). Null, wenn die
+ * Fähigkeit nicht aus den Generatoren kommt (Textsorte, eigene Vokabeln).
+ */
+export function generatorAufgabenZur(unitId: number, skillId: string, anzahl?: number): { aufgaben: TaskDraft[]; difficulty: Difficulty; count: number } | null {
+  const unit = getUnit(unitId);
+  const student = unit ? repo.getStudent(unit.student_id) : null;
+  const skill = repo.getSkill(skillId);
+  if (!unit || !student || !skill || !ausDemGenerator(skill.id)) return null;
+  const a = auftragFuer(unit.id, student, skill, false);
+  const count = anzahl ? Math.max(1, Math.min(a.count, anzahl)) : a.count;
+  return { aufgaben: generatorAufgabenVon({ ...a, count }), difficulty: a.difficulty, count: a.count };
+}
+
 /** Woraus eine bereite Übung gebaut ist; ändert sich etwas davon (Plan, Stufe, Anzahl, Beispiel), passt sie nicht mehr. */
 const schluesselVon = (schrittId: number, a: Auftrag) => JSON.stringify([schrittId, a.skill.id, a.kontrolle, a.difficulty, a.count, a.kind, a.seed, ...(a.ohne.length ? [a.ohne] : [])]);
 

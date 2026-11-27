@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { AlertTriangle, History, ListChecks, PenLine, SpellCheck } from "lucide-react";
+import { AlertTriangle, ArrowLeft, History, ListChecks, PenLine, Send, SpellCheck } from "lucide-react";
 import { startManualCorrectionAction } from "@/app/correction-actions";
+import { textFehlerAlleAction, textFehlerAction } from "@/app/ablauf-actions";
+import { FormKnopf } from "@/components/FormKnopf";
+import { textFehler } from "@/lib/einheit-ablauf";
+import { laufendeEinheitDesTexts, textUebungPlan } from "@/lib/text-uebung";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { AufgabeTeil, aufgabeKurz } from "@/components/text/bewertung/AufgabeTeil";
 import { AIStartButton } from "@/components/text/correction/AIStartButton";
@@ -72,6 +76,37 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
       )}
     </div>
   );
+
+  // der Text von heute einer laufenden Einheit: von hier gehen die Übungen zu den Fehlern direkt ans Tablet (niko, 27.11.2026)
+  const einheit = laufendeEinheitDesTexts(text.id);
+  const plan = einheit ? textUebungPlan(einheit) : null;
+  const naechster = einheit && !plan ? textFehler(einheit)?.skills.find((x) => x.offen) : null;
+  const einheitSenden = einheit ? (
+    <div className="grid gap-1" data-testid="korrektur-einheit">
+      {plan ? (
+        <form action={textFehlerAlleAction.bind(null, einheit)}>
+          <FormKnopf className="btn btn-primary w-full" icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
+            Übungen zu allen Fehlern ans Tablet senden
+          </FormKnopf>
+        </form>
+      ) : naechster ? (
+        <form action={textFehlerAction.bind(null, einheit, naechster.skillId)}>
+          <FormKnopf className="btn btn-primary w-full" icon={<Send size={16} aria-hidden />} data-testid="korrektur-fehler-senden">
+            Aufgaben zu „{naechster.name}“ ans Tablet senden
+          </FormKnopf>
+        </form>
+      ) : null}
+      {plan && (
+        <p className="text-[13px] text-ink-2">
+          Eine Übung: {plan.bereiche.map((b) => b.name).join(", ")}
+          {plan.eigene.length > 0 && `, dazu ${plan.eigene.length === 1 ? "ein Satz" : `${plan.eigene.length} Sätze`} aus dem Text`}.
+        </p>
+      )}
+      <Link href={`/einheiten/${einheit}`} className="inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-accent hover:underline">
+        <ArrowLeft size={15} aria-hidden /> Zurück zur Einheit
+      </Link>
+    </div>
+  ) : undefined;
 
   const korrigieren = <AIStartButton textId={text.id} preview={preview} label="Korrigieren" aufgabe={aufgabe} />;
   const start = (
@@ -212,6 +247,7 @@ export default async function CorrectionPage({ params, searchParams }: Params) {
         heading={heading}
         initialView={view}
         retry={retry === "pruefung" ? retryButton : undefined}
+        einheitSenden={c.id === (current ?? all[0])?.id ? einheitSenden : undefined}
         aiStart={
           mayRunAI ? (
             <AIStartButton textId={text.id} preview={preview} label={state === "fehler" ? "Nochmal mit KI versuchen" : "Zusätzlich mit KI prüfen"} variant="secondary" aufgabe={aufgabe} />
