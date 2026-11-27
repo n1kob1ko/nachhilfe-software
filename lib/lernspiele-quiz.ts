@@ -78,6 +78,18 @@ const SKILLS = new Map<string, QuizArt>(QUIZ_ARTEN.flatMap((art) => Object.keys(
 export const hatQuiz = (skill: string) => SKILLS.has(skill);
 export const quizArtVon = (skill: string): QuizArt | undefined => SKILLS.get(skill);
 
+const karten = new Map<string, { karte: EigeneKarte; stufe: Stufe }[]>();
+/** Die Karten eines Themas, wie sie im Text stehen (für Übungen ohne KI, lib/generators.ts `quizAufgabe`); leer ohne Quiz. */
+export function quizKartenZur(skill: string): { karte: EigeneKarte; stufe: Stufe }[] {
+  let k = karten.get(skill);
+  if (!k) {
+    const art = SKILLS.get(skill);
+    const e = art ? BANKEN[art][skill] : undefined;
+    karten.set(skill, (k = e ? quizKarten(e, skill) : []));
+  }
+  return k;
+}
+
 const cache = new Map<string, Kandidat[]>();
 /** Alle Karten eines Themas für das Lernspiel (Mathe gesetzt wie in den Übungen). */
 export function quizKandidaten(skill: string): Kandidat[] {

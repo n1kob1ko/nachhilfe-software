@@ -301,9 +301,9 @@ test("„Anderes Thema“ with a chosen Lernpaket: the package becomes a topic o
 // ---------- 4. „Schwerere Aufgaben“ through the KI, always as a preview; 5. „Drucken“ in the preview ----------
 
 /** Eine Einheit zu Runden (kein Generator, nichts im Bestand): „Schwerere Aufgaben“ hat ohne KI nichts. */
-async function rundenEinheit(s: Awaited<ReturnType<typeof setup>>, name: string) {
+async function rundenEinheit(s: Awaited<ReturnType<typeof setup>>, name: string, skill = RUNDEN) {
   const sid = s.schueler(name);
-  const e = s.einheit(sid, [[RUNDEN, 40]], 15);
+  const e = s.einheit(sid, [[skill, 40]], 15);
   const ueben = e.plan.find((x) => x.art === "ueben")!.id;
   return { sid, ...e, ueben };
 }
@@ -389,7 +389,8 @@ test("„Drucken“ in the preview: exactly these tasks on A4, not sent, marked 
   const s = await setup();
   const papier = await import("./papier-einheit");
   s.kiAn();
-  const { sid, unit, ueben } = await rundenEinheit(s, "Ida Papierweg");
+  // a skill with neither generator nor Quizfragen (since 27.11.2026 the Rechengesetze have Quizfragen without KI)
+  const { sid, unit, ueben } = await rundenEinheit(s, "Ida Papierweg", "mathe.vs.addsub.zr1000");
   // in the step: fewer than three tasks without KI, new ones from the KI as a preview (lib/ki-nachschub.ts)
   const c = s.c.cockpit(unit.id, { mitPlan: true });
   const schritt = c.plan.find((x) => x.id === ueben)!;

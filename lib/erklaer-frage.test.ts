@@ -61,7 +61,7 @@ test("Fähigkeit ohne eingebaute Aufgaben: die erwartete Antwort passt zur Frage
   const { typischeFehler } = await import("./themen");
   const skill = repo.listSkills().find((x) => x.subject === "Mathematik" && !hasBuiltInGenerator(x.id) && EXPLAIN[x.id] && typischeFehler(x.id).length > 0);
   assert.ok(skill, "eine Mathe-Fähigkeit ohne Generator, mit Erklärung und typischen Fehlern");
-  const aufgaben = generateBuiltIn({ subject: "Mathematik", skills: [{ id: skill!.id, name: skill!.name }], difficulty: "mittel", count: 3, taskType: "mixed", seed: 1 });
+  const aufgaben = generateBuiltIn({ subject: "Mathematik", skills: [{ id: skill!.id, name: skill!.name }], difficulty: "mittel", count: 3, taskType: "free", seed: 1 });
   const erklaere = aufgaben.find((t) => /^Erkläre in eigenen Worten/.test(t.prompt))!;
   const fehler = aufgaben.find((t) => /^Welcher Fehler/.test(t.prompt))!;
   const erfinde = aufgaben.find((t) => /^Erfinde eine eigene Aufgabe/.test(t.prompt))!;
