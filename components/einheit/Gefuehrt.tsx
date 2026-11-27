@@ -5,6 +5,7 @@ import {
   ansichtAction,
   papierOhneFotoAction,
   textFehlerAction,
+  textFehlerAlleAction,
   uebenPapierAction,
   uebenTippenAction,
   heftNochmalAction,
@@ -55,6 +56,7 @@ import {
   type TextFehler,
 } from "@/lib/einheit-ablauf";
 import { gehtAlsHeft, heftDerEinheit, type Heft } from "@/lib/heft";
+import { textUebungPlan } from "@/lib/text-uebung";
 import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
 import { getPraesEntwurf } from "@/lib/praesentation-ki";
 import { kostenSchaetzung, stoffpaketMoeglich, vorschlagFach, type Stoffpaket } from "@/lib/stoffpaket";
@@ -948,6 +950,9 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
     );
   }
   const offen = tf.skills.find((x) => x.offen)!;
+  // alle offenen Fehlerbereiche in EINER Übung (niko, 27.11.2026: „konnte nur eine Übung weitersenden“)
+  const plan = textUebungPlan(unit.id);
+  const alle = plan && (plan.bereiche.length > 1 || plan.eigene.length > 0);
   return (
     <Karte titel={`Text von heute: ${tf.fehler} Fehler`} testid="ablauf-text">
       {tf.bereiche.length > 0 && (
@@ -960,10 +965,24 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
           ))}
         </ul>
       )}
-      <Gross action={textFehlerAction.bind(null, unit.id, offen.skillId)} icon={<Send size={19} aria-hidden />} testid="text-fehler-senden">
-        Aufgaben zu den Fehlern im Text senden: {offen.name}
-      </Gross>
-      <Leise>Neue Aufgaben genau dazu, am Tablet, passend zum Lernstand von {name}.</Leise>
+      {alle && plan ? (
+        <>
+          <Gross action={textFehlerAlleAction.bind(null, unit.id)} icon={<Send size={19} aria-hidden />} testid="text-fehler-alle">
+            Übungen zu allen Fehlern senden
+          </Gross>
+          <Leise>
+            Eine Übung am Tablet, nacheinander: {plan.bereiche.map((b) => `${b.name} (${b.aufgaben})`).join(", ")}
+            {plan.eigene.length > 0 && `, dann ${plan.eigene.length === 1 ? "ein Satz" : `${plan.eigene.length} Sätze`} aus dem eigenen Text zum Verbessern`}.
+          </Leise>
+        </>
+      ) : (
+        <>
+          <Gross action={textFehlerAction.bind(null, unit.id, offen.skillId)} icon={<Send size={19} aria-hidden />} testid="text-fehler-senden">
+            Aufgaben zu den Fehlern im Text senden: {offen.name}
+          </Gross>
+          <Leise>Neue Aufgaben genau dazu, am Tablet, passend zum Lernstand von {name}.</Leise>
+        </>
+      )}
       <div className="flex flex-wrap justify-center gap-x-6">
         <Link href={`/texte/${tf.textId}/korrektur`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
           <Eye size={15} aria-hidden /> Korrektur ansehen

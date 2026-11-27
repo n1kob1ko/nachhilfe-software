@@ -51,6 +51,8 @@ type Props = {
   aiStart?: React.ReactNode;
   /** „Erneut versuchen“ of the failed second check */
   retry?: React.ReactNode;
+  /** Der Text ist der Text von heute einer laufenden Einheit: der Knopf, der die Übungen zu den Fehlern ans Tablet sendet. */
+  einheitSenden?: React.ReactNode;
 };
 
 const CAT = new Map<string, (typeof TEXT_CATEGORIES)[number]>(TEXT_CATEGORIES.map((c) => [c.key, c]));
@@ -849,11 +851,18 @@ export function CorrectionWorkspace(p: Props) {
               <p className="text-[14px]">
                 <span className="text-ink-2">Empfehlung:</span> <b>{rec.text}</b>
               </p>
-              <Link href={`/uebungen/neu?schueler=${p.studentId}${rec.skillId ? `&skill=${encodeURIComponent(rec.skillId)}` : ""}`} className="btn btn-primary mt-2 w-full">
-                <Dumbbell size={16} aria-hidden /> Passende Übung erstellen
-              </Link>
+              {p.einheitSenden ? (
+                <Link href={`/uebungen/neu?schueler=${p.studentId}${rec.skillId ? `&skill=${encodeURIComponent(rec.skillId)}` : ""}`} className="mt-1 inline-flex min-h-[44px] items-center gap-1.5 text-[14px] font-medium text-accent hover:underline">
+                  <Dumbbell size={15} aria-hidden /> Eigene Übung im Baukasten erstellen
+                </Link>
+              ) : (
+                <Link href={`/uebungen/neu?schueler=${p.studentId}${rec.skillId ? `&skill=${encodeURIComponent(rec.skillId)}` : ""}`} className="btn btn-primary mt-2 w-full">
+                  <Dumbbell size={16} aria-hidden /> Passende Übung erstellen
+                </Link>
+              )}
             </div>
           )}
+          {p.einheitSenden && <div className="mt-3">{p.einheitSenden}</div>}
           {c.strengths.length > 0 && (
             <div className="mt-4">
               <p className="text-[13px] font-semibold text-ink-2">Stärken laut KI</p>
