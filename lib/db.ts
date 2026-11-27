@@ -1636,6 +1636,24 @@ CREATE TABLE IF NOT EXISTS hefte (
   created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 CREATE INDEX IF NOT EXISTS idx_hefte_unit ON hefte(unit_id);
+
+-- Übungsheft zu den Fehlern (lib/uebungsheft.ts, niko 27.11.2026): ein KI-Lauf im Hintergrund. text_id: der korrigierte Text, aus dem
+-- es entsteht (null: aus Fehlermustern). status: laeuft | fertig | fehler; worksheet_id: das fertige Heft; verworfen: Aufgaben der KI,
+-- die nicht eindeutig waren und wegfielen.
+CREATE TABLE IF NOT EXISTS uebungshefte (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  student_id INTEGER NOT NULL REFERENCES students(id) ON DELETE CASCADE,
+  teacher_id INTEGER,
+  unit_id INTEGER REFERENCES units(id) ON DELETE SET NULL,
+  text_id INTEGER REFERENCES texts(id) ON DELETE CASCADE,
+  status TEXT NOT NULL DEFAULT 'laeuft',
+  worksheet_id INTEGER REFERENCES worksheets(id) ON DELETE SET NULL,
+  verworfen INTEGER NOT NULL DEFAULT 0,
+  fehler TEXT NOT NULL DEFAULT '',
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_uebungshefte_text ON uebungshefte(text_id);
 `;
 
 /** Columns added after the first release. Added in place so existing databases keep their data. */

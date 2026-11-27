@@ -29,6 +29,8 @@ import * as repo from "@/lib/repo";
 import { starteStoffpaket, verwirfStoffpaket } from "@/lib/stoffpaket";
 import { zeigeUebung } from "@/lib/tafel-senden";
 import { sendeZuDenTextFehlern } from "@/lib/text-uebung";
+import { getHeftLauf, starteUebungsheft } from "@/lib/uebungsheft";
+import { releaseWorksheet } from "@/lib/builder";
 import { canManageUnit, getUnit } from "@/lib/units";
 import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
@@ -144,6 +146,37 @@ export async function textFehlerAlleAction(unitId: number) {
   const out = sendeZuDenTextFehlern(unitId, t.id);
   if ("fehler" in out) weiter(unitId, out);
   ausgeben(unit, out);
+}
+
+/**
+ * „Übungsheft zu den Fehlern erstellen“ (lib/uebungsheft.ts): die KI baut aus dem korrigierten Text von heute ein ganzes Heft mit
+ * Teilen, Merke und Sätzen aus dem eigenen Text, im Hintergrund. Die Karte zeigt „wird erstellt“, dann „ans Tablet senden“.
+ */
+export async function uebungsheftAction(unitId: number, textId: number, zurueck: "einheit" | "korrektur" = "einheit") {
+  const { t } = await laufend(unitId);
+  const a = leseAblauf(unitId);
+  if (a.weg && a.stufe !== "ueben") setzeStufe(unitId, "ueben");
+  const out = starteUebungsheft({ teacherId: t.id, unitId, textId });
+  if (zurueck === "korrektur") {
+    revalidatePath(`/texte/${textId}/korrektur`);
+    redirect(`/texte/${textId}/korrektur${"fehler" in out ? `?heft=${encodeURIComponent(out.fehler)}` : ""}`);
+  }
+  weiter(unitId, "fehler" in out ? out : { ok: true });
+}
+
+/** Das fertige Übungsheft ans Tablet: freigeben, dem Schüler der Einheit zuweisen, am Tablet zeigen. */
+export async function uebungsheftSendenAction(unitId: number, laufId: number) {
+  const { unit } = await laufend(unitId);
+  const lauf = getHeftLauf(laufId);
+  if (!lauf || lauf.status !== "fertig" || !lauf.worksheetId || lauf.studentId !== unit.student_id) weiter(unitId, { fehler: "Dieses Übungsheft gibt es hier nicht." });
+  const w = repo.getWorksheet(lauf.worksheetId);
+  if (!w || w.student_id !== unit.student_id) weiter(unitId, { fehler: "Dieses Übungsheft gibt es hier nicht." });
+  // schon gesendet (zweiter Tipp): dieselbe Zuweisung noch einmal zeigen
+  const schon = repo.listAssignmentsForWorksheet(w.id).find((x) => x.unit_id === unit.id && x.student_id === unit.student_id);
+  const r = schon ? { assignmentId: schon.id } : releaseWorksheet(w.id, unit.student_id);
+  if ("error" in r && r.error) weiter(unitId, { fehler: r.error });
+  if (!r.assignmentId) weiter(unitId, { fehler: "Das Übungsheft konnte nicht gesendet werden." });
+  ausgeben(unit, { worksheetId: w.id, assignmentId: r.assignmentId });
 }
 
 async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean, heft = true) {

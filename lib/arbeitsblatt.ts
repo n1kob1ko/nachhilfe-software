@@ -3,6 +3,7 @@
  * from. Built on demand from the exercise (or library entries); nothing is stored, the exercise stays
  * the source. Works the same for generated, hand-made and KI tasks.
  */
+import type { Abschnitt } from "./uebungsheft-ansicht";
 import { categoryLabel, TASK_TYPES } from "./curriculum";
 import { zumAblesen } from "./figur";
 import { textBlocks } from "./math-format";
@@ -369,6 +370,8 @@ export type SheetDoc = {
   tasks: SheetTask[];
   /** Leseverständnis: the text all questions are about, printed once before them */
   reading: ReadingText | null;
+  /** Übungsheft zu den Fehlern (lib/uebungsheft-ansicht.ts): Vorweg, je Aufgabe Teil und Übung davor, die Kontroll-Liste am Ende */
+  heft?: { vorweg: string; kontrolle: string[]; abschnitte: (Abschnitt | null)[] } | null;
   /** Probeschularbeit (lib/probeschularbeit.ts blattDaten): points per task in order, total, grading key, time */
   probe?: {
     punkte: number[];

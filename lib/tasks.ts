@@ -130,6 +130,8 @@ export type TaskDraft = {
     genus?: "m" | "f" | "n";
     /** Eigene Probeschularbeit (lib/probe-extern.ts): die Nummer wie auf dem Blatt („1a“), für „Arbeit fotografieren“. */
     nummer?: string;
+    /** Übungsheft zu den Fehlern (lib/uebungsheft.ts): Teil und Übung im Heft (Indizes in worksheets.settings.uebungsheft). */
+    heft?: { teil: number; uebung: number };
     /** Vokabeltrainer: a key of the asked word that does not show it (lib/vokabeln.ts wortSchluessel); one word once on a sheet. */
     wort?: string;
     /** Aufgabe mit Bild: Zahlenstrahl, Koordinatensystem oder Figur (lib/figur.ts). Die Antwort steht

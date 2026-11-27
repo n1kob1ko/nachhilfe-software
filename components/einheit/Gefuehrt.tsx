@@ -6,6 +6,8 @@ import {
   papierOhneFotoAction,
   textFehlerAction,
   textFehlerAlleAction,
+  uebungsheftAction,
+  uebungsheftSendenAction,
   uebenPapierAction,
   uebenTippenAction,
   heftNochmalAction,
@@ -57,6 +59,7 @@ import {
 } from "@/lib/einheit-ablauf";
 import { gehtAlsHeft, heftDerEinheit, type Heft } from "@/lib/heft";
 import { textUebungPlan } from "@/lib/text-uebung";
+import { heftInfo, heftLaufZumText, heftMoeglich } from "@/lib/uebungsheft";
 import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
 import { getPraesEntwurf } from "@/lib/praesentation-ki";
 import { kostenSchaetzung, stoffpaketMoeglich, vorschlagFach, type Stoffpaket } from "@/lib/stoffpaket";
@@ -965,7 +968,12 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
           ))}
         </ul>
       )}
-      {alle && plan ? (
+      <UebungsheftZeile unit={unit} textId={tf.textId} name={name} />
+      {heftMoeglich(unit.student_id).ok && alle && plan ? (
+        <Klein action={textFehlerAlleAction.bind(null, unit.id)} testid="text-fehler-alle">
+          <Send size={15} aria-hidden /> Schnell, ohne KI: Übung zu allen Fehlern senden
+        </Klein>
+      ) : alle && plan ? (
         <>
           <Gross action={textFehlerAlleAction.bind(null, unit.id)} icon={<Send size={19} aria-hidden />} testid="text-fehler-alle">
             Übungen zu allen Fehlern senden
@@ -975,6 +983,10 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
             {plan.eigene.length > 0 && `, dann ${plan.eigene.length === 1 ? "ein Satz" : `${plan.eigene.length} Sätze`} aus dem eigenen Text zum Verbessern`}.
           </Leise>
         </>
+      ) : heftMoeglich(unit.student_id).ok ? (
+        <Klein action={textFehlerAction.bind(null, unit.id, offen.skillId)} testid="text-fehler-senden">
+          <Send size={15} aria-hidden /> Schnell, ohne KI: Aufgaben zu „{offen.name}“ senden
+        </Klein>
       ) : (
         <>
           <Gross action={textFehlerAction.bind(null, unit.id, offen.skillId)} icon={<Send size={19} aria-hidden />} testid="text-fehler-senden">
@@ -992,6 +1004,66 @@ function TextKarte({ unit, tf, name, n }: { unit: UnitView; tf: TextFehler; name
         </Klein>
       </div>
     </Karte>
+  );
+}
+
+/**
+ * Übungsheft zu den Fehlern (lib/uebungsheft.ts, niko 27.11.2026): die KI macht aus dem korrigierten Text ein Heft wie auf Papier
+ * (Teile, Merke, Sätze aus dem eigenen Text, Lösungen). Erstellen, warten, ans Tablet senden; ohne KI zeigt die Zeile nichts.
+ */
+function UebungsheftZeile({ unit, textId, name }: { unit: UnitView; textId: number; name: string }) {
+  const lauf = heftLaufZumText(textId);
+  const geht = heftMoeglich(unit.student_id);
+  if (lauf?.status === "laeuft") {
+    return (
+      <div className="grid gap-1" data-testid="uebungsheft-laeuft">
+        <AutoRefresh seconds={5} />
+        <p className="flex items-center gap-3 text-[17px] font-semibold" aria-live="polite">
+          <Loader2 size={20} className="animate-spin text-accent" aria-hidden /> Das Übungsheft wird erstellt …
+        </p>
+        <p className="text-[14.5px] text-ink-2">Die KI baut aus dem Text von {name} Übungen mit Merke und Lösungen. Das dauert etwa eine Minute.</p>
+      </div>
+    );
+  }
+  const w = lauf?.status === "fertig" && lauf.worksheetId ? repo.getWorksheet(lauf.worksheetId) : null;
+  if (lauf && w) {
+    const info = heftInfo(w.settings);
+    const n = repo.listTasks(w.id).length;
+    return (
+      <div className="grid gap-3" data-testid="uebungsheft-fertig">
+        <div className="rounded-xl bg-green-wash px-4 py-3 text-[15px]">
+          <p className="font-semibold text-green">Übungsheft fertig: {n} Aufgaben</p>
+          {info && <p className="mt-0.5 text-ink-2">{info.teile.map((t) => t.titel).join(" · ")}</p>}
+        </div>
+        <Gross action={uebungsheftSendenAction.bind(null, unit.id, lauf.id)} icon={<Send size={19} aria-hidden />} testid="uebungsheft-senden">
+          Übungsheft ans Tablet senden
+        </Gross>
+        <div className="flex flex-wrap justify-center gap-x-6">
+          <Link href={`/uebungen/${w.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="uebungsheft-ansehen">
+            <Eye size={15} aria-hidden /> Ansehen und drucken
+          </Link>
+          {geht.ok && (
+            <Klein action={uebungsheftAction.bind(null, unit.id, textId, "einheit")} testid="uebungsheft-neu">
+              <RotateCcw size={15} aria-hidden /> Neu erstellen
+            </Klein>
+          )}
+        </div>
+      </div>
+    );
+  }
+  if (!geht.ok) return null;
+  return (
+    <>
+      {lauf?.status === "fehler" && (
+        <p className="rounded-xl bg-red-wash px-4 py-3 text-[15px] text-red" data-testid="uebungsheft-fehler">
+          {lauf.fehler || "Das Übungsheft konnte nicht erstellt werden."}
+        </p>
+      )}
+      <Gross action={uebungsheftAction.bind(null, unit.id, textId, "einheit")} icon={<Sparkles size={19} aria-hidden />} testid="uebungsheft-erstellen">
+        {lauf?.status === "fehler" ? "Übungsheft noch einmal erstellen" : "Übungsheft zu den Fehlern erstellen"}
+      </Gross>
+      <Leise>Wie ein Arbeitsblatt: Merke-Kästen, Sätze aus dem eigenen Text, Lösungen. Die KI braucht etwa eine Minute.</Leise>
+    </>
   );
 }
 

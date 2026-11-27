@@ -1,3 +1,4 @@
+import { abschnitte, auftragVon, heftInfo, ohneAuftrag } from "@/lib/uebungsheft-ansicht";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SheetPage } from "@/components/arbeitsblatt/SheetPage";
@@ -24,7 +25,12 @@ function load(id: number) {
     first && w.title.startsWith(`${first} – `)
       ? w.title.slice(first.length + 3)
       : w.title;
-  return { w, student, title, tasks: repo.listTasks(w.id) };
+  // Übungsheft zu den Fehlern: Teile und Merke vor den Aufgaben, die Anweisung einmal im Kopf der Übung
+  const info = heftInfo(w.settings);
+  const roh = repo.listTasks(w.id);
+  const tasks = info ? roh.map((t) => ({ ...t, prompt: ohneAuftrag(t.prompt, auftragVon(info, t.data.heft)) })) : roh;
+  const heft = info ? { vorweg: info.vorweg, kontrolle: info.kontrolle, abschnitte: abschnitte(info, roh.map((t) => t.data.heft)) } : null;
+  return { w, student, title, tasks, heft };
 }
 
 export async function generateMetadata({
@@ -50,7 +56,7 @@ export default async function WorksheetSheetPage({
   const { id } = await params;
   const data = load(Number(id));
   if (!data) notFound();
-  const { w, student, title, tasks } = data;
+  const { w, student, title, tasks, heft } = data;
   const sp = await searchParams;
   const o = readOptions(sp, title);
   // aus einer Einheit geöffnet (Minitest drucken): zurück zur Einheit
@@ -78,6 +84,7 @@ export default async function WorksheetSheetPage({
     ),
     // Probeschularbeit: Punkte je Aufgabe und Notenschlüssel
     probe: blattDaten(w, tasks),
+    heft,
   };
   const back = ausEinheit
     ? { href: `/einheiten/${ausEinheit.id}`, label: "Zur Einheit" }
