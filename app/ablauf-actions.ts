@@ -21,7 +21,7 @@ import {
   stoffUebernehmen,
   waehleWeg,
 } from "@/lib/einheit-ablauf";
-import { alsHeft, gehtAlsHeft, getHeft, pruefeHeft } from "@/lib/heft";
+import { alsHeft, gehtAlsHeft, getHeft, pruefeHeft, stiftGeht } from "@/lib/heft";
 import { noteActivity } from "@/lib/learning";
 import { pushLive } from "@/lib/live";
 import { letzterStoff } from "@/lib/minitest";
@@ -164,8 +164,11 @@ export async function uebungsheftAction(unitId: number, textId: number, zurueck:
   weiter(unitId, "fehler" in out ? out : { ok: true });
 }
 
-/** Das fertige Übungsheft ans Tablet: freigeben, dem Schüler der Einheit zuweisen, am Tablet zeigen. */
-export async function uebungsheftSendenAction(unitId: number, laufId: number) {
+/**
+ * Das fertige Übungsheft ans Tablet: freigeben, dem Schüler der Einheit zuweisen, am Tablet zeigen. Mit `stift` (wenn das geht) als
+ * Heft zum Schreiben mit dem Stift, liniert (lib/heft.ts): beim „Fertig“ liest die KI alle Seiten; sonst mit Antwortfeldern.
+ */
+export async function uebungsheftSendenAction(unitId: number, laufId: number, stift = false) {
   const { unit } = await laufend(unitId);
   const lauf = getHeftLauf(laufId);
   if (!lauf || lauf.status !== "fertig" || !lauf.worksheetId || lauf.studentId !== unit.student_id) weiter(unitId, { fehler: "Dieses Übungsheft gibt es hier nicht." });
@@ -176,7 +179,9 @@ export async function uebungsheftSendenAction(unitId: number, laufId: number) {
   const r = schon ? { assignmentId: schon.id } : releaseWorksheet(w.id, unit.student_id);
   if ("error" in r && r.error) weiter(unitId, { fehler: r.error });
   if (!r.assignmentId) weiter(unitId, { fehler: "Das Übungsheft konnte nicht gesendet werden." });
-  ausgeben(unit, { worksheetId: w.id, assignmentId: r.assignmentId });
+  // nur ein neu gesendetes Heft wird eins zum Schreiben; was schon mit Antwortfeldern läuft, bleibt so
+  if (stift && !schon && stiftGeht(unit)) alsHeft(r.assignmentId);
+  ausgeben(unit, { worksheetId: w.id, assignmentId: r.assignmentId }, false);
 }
 
 async function sende(unitId: number, skillId: string, mitStoffBlatt: boolean, heft = true) {

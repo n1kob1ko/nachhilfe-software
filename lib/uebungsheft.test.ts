@@ -202,6 +202,20 @@ test("from the corrected text: the student's name is replaced, the marked errors
     const r = releaseWorksheet(w.id, s.sid);
     assert.equal(r.error, undefined);
     assert.equal(s.repo.getAssignment(r.assignmentId!)?.unit_id, s.unit.id);
+
+    // mit dem Stift (Heft am Tablet, auch in Deutsch): liniert, Teil und Übung über ihrer ersten Aufgabe, Platz nach der Art
+    const heft = await import("./heft");
+    assert.equal(heft.gehtAlsHeft(s.unit), false, "a Deutsch exercise from the generator stays typed");
+    heft.alsHeft(r.assignmentId!);
+    const h = heft.getHeft(r.assignmentId!)!;
+    assert.equal(h.linien, true);
+    assert.equal(h.titel, "Fit für die Schularbeit: Gruselgeschichte", "no first name on the page");
+    assert.equal(h.vorweg, HEFT.vorweg);
+    assert.equal(h.kontrolle.length, 2);
+    assert.deepEqual(h.aufgaben.map((a) => [a.abschnitt?.teil?.buchstabe ?? "", a.abschnitt?.uebung?.nr ?? 0]), [["A", 1], ["", 0], ["", 2], ["B", 3], ["", 0], ["", 4], ["C", 5]]);
+    assert.equal(h.aufgaben[0].text, "Lauf schrie Mira panisch", "the instruction stands once above the Übung");
+    assert.deepEqual(h.felder.map((f) => f.hoehe), [270, 270, 380, 200, 200, 200, 720]);
+    assert.ok(heft.bereinige([{ taskId: h.aufgaben[3].taskId, hoehe: 200, striche: [] }], [h.aufgaben[3].taskId])![0].hoehe === 200, "a small field stays small");
   } finally {
     router.setTransport(null);
     delete process.env.ANTHROPIC_API_KEY;

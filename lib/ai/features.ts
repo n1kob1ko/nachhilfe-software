@@ -933,6 +933,7 @@ export const BLATT_AUFGABEN_SYSTEM = [
   "Für jede Aufgabe der Liste: lies ab, was der Schüler als Ergebnis geschrieben hat, und bei Rechnungen die Zeilen seines Rechenwegs, wortgetreu. Schreib nie etwas hin, das nicht auf dem Blatt steht.",
   "Vergleiche mit der Lösung aus der Liste: richtig = Ergebnis (und Weg, wo einer verlangt ist) stimmen; teilweise = der Weg stimmt im Wesentlichen, aber ein Teil oder das Ergebnis fehlt oder ist falsch; falsch = der Ansatz stimmt nicht; leer = nichts bearbeitet.",
   "Gleichwertige Ergebnisse sind richtig (2/4 und 1/2, 0,5 und 1/2, 8x^5 und 8·x^5), außer die Aufgabe verlangt ausdrücklich eine Form wie gekürzt.",
+  "In Deutsch und Englisch zählt die Schreibung genau: schreib die Antwort buchstaben- und zeichengetreu ab, mit allen Fehlern, und vergleiche Rechtschreibung, Groß- und Kleinschreibung und jedes Satzzeichen mit der Lösung. Ob die Anführungszeichen unten oder oben, gerade oder gebogen sind, zählt nicht.",
   "Kannst du eine Antwort nicht sicher lesen oder nicht finden, ist sie nicht_lesbar, nie falsch. Bist du dir bei einer Bewertung nicht sicher, setz unsicher und sag in grund kurz warum.",
   "Steht auf dem Blatt schon eine Korrektur mit Punkten, übernimm die Punkte. Sonst keine Punkte.",
   "Gib Namen von Personen, Unterschriften und Klassenbezeichnungen nicht wieder.",

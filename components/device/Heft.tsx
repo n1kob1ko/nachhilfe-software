@@ -2,7 +2,8 @@
 
 import { Check, Eraser, Hand, Loader2, PenLine, Plus, Undo2, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { HeftAbschnitt, HeftKontrolle, HeftVorweg } from "@/components/HeftAbschnitt";
 import { MathText } from "@/components/MathText";
 import type { HeftAufgabe, HeftFeld, HeftStatus, HeftUrteil, Strich } from "@/lib/heft";
 
@@ -12,6 +13,8 @@ const MEHR = 360;
 const MAX_HOEHE = 2600;
 /** Kästchen 5 mm, in Heft-Einheiten. */
 const KAESTCHEN = 25;
+/** Linien (Übungsheft in Deutsch, Englisch …): etwa 10 mm Abstand, in Heft-Einheiten. */
+const LINIE = 48;
 const STIFT = 2.8;
 const TINTE = "#1c2740";
 /** So nah (in Heft-Einheiten) muss der Radierer an einen Strich, damit er ihn wegnimmt. */
@@ -31,7 +34,27 @@ const URTEIL: Record<HeftUrteil, { text: string; klasse: string }> = {
  * schreibt, der Finger blättert (oder schreibt, wenn „Mit Finger schreiben“ an ist). Gespeichert wird laufend; „Fertig“ macht aus
  * den Feldern Seiten (Bilder) und gibt sie ab, die KI prüft alles auf einmal.
  */
-export function Heft({ assignmentId, titel, status, aufgaben, felder: start, homeHref }: { assignmentId: number; titel: string; status: HeftStatus; aufgaben: HeftAufgabe[]; felder: HeftFeld[]; homeHref: string }) {
+export function Heft({
+  assignmentId,
+  titel,
+  status,
+  aufgaben,
+  felder: start,
+  homeHref,
+  linien = false,
+  vorweg = "",
+  kontrolle = [],
+}: {
+  assignmentId: number;
+  titel: string;
+  status: HeftStatus;
+  aufgaben: HeftAufgabe[];
+  felder: HeftFeld[];
+  homeHref: string;
+  linien?: boolean;
+  vorweg?: string;
+  kontrolle?: string[];
+}) {
   const router = useRouter();
   const [felder, setFelder] = useState(start);
   const [verlauf, setVerlauf] = useState<{ i: number; striche: Strich[] }[]>([]);
@@ -107,7 +130,7 @@ export function Heft({ assignmentId, titel, status, aufgaben, felder: start, hom
   const gibAb = async () => {
     setAbgeben("laeuft");
     try {
-      const seiten = seitenBilder(titel, aufgaben, felder);
+      const seiten = seitenBilder(titel, aufgaben, felder, linien);
       const r = await fetch(`/geraet/heft/${assignmentId}/abgeben`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ felder, seiten }) });
       const j = (await r.json().catch(() => ({}))) as { error?: string };
       if (!r.ok) return setAbgeben(j.error ?? "Das Abgeben hat nicht geklappt. Bitte noch einmal.");
@@ -160,9 +183,12 @@ export function Heft({ assignmentId, titel, status, aufgaben, felder: start, hom
         </div>
       )}
 
+      <HeftVorweg text={vorweg} />
       <div ref={liste} className="grid gap-5">
         {aufgaben.map((a, i) => (
-          <section key={a.taskId} className="overflow-hidden rounded-2xl border border-line bg-white" aria-label={`Aufgabe ${a.nr}`} data-testid="heft-aufgabe">
+          <Fragment key={a.taskId}>
+          {a.abschnitt && <HeftAbschnitt a={a.abschnitt} />}
+          <section className="overflow-hidden rounded-2xl border border-line bg-white" aria-label={`Aufgabe ${a.nr}`} data-testid="heft-aufgabe">
             <div className="flex items-start justify-between gap-3 px-4 pt-3 pb-2 text-[#16213a]">
               <p className="text-[18px] leading-relaxed whitespace-pre-line">
                 <span className="mr-2 font-semibold">{a.nr}.</span>
@@ -175,15 +201,17 @@ export function Heft({ assignmentId, titel, status, aufgaben, felder: start, hom
                 </span>
               )}
             </div>
-            {breite > 0 && <Feld feld={felder[i]} breite={breite} werkzeug={werkzeug} finger={finger} offen={offen} aendere={(s) => aendere(i, s)} />}
+            {breite > 0 && <Feld feld={felder[i]} breite={breite} werkzeug={werkzeug} finger={finger} offen={offen} linien={linien} aendere={(s) => aendere(i, s)} />}
             {offen && felder[i].hoehe < MAX_HOEHE && (
               <button type="button" onClick={() => mehrPlatz(i)} className="treffer flex min-h-[44px] w-full items-center justify-center gap-1.5 border-t border-line text-[14.5px] font-medium text-accent">
                 <Plus size={16} aria-hidden /> Mehr Platz
               </button>
             )}
           </section>
+          </Fragment>
         ))}
       </div>
+      <HeftKontrolle punkte={kontrolle} />
 
       {offen &&
         (fragen ? (
@@ -223,8 +251,8 @@ function Knopf({ an = false, onClick, disabled = false, testid, children }: { an
   );
 }
 
-/** Ein Feld unter einer Aufgabe: karierter Hintergrund, darauf die Striche. */
-function Feld({ feld, breite, werkzeug, finger, offen, aendere }: { feld: HeftFeld; breite: number; werkzeug: Werkzeug; finger: boolean; offen: boolean; aendere: (s: Strich[]) => void }) {
+/** Ein Feld unter einer Aufgabe: karierter (Mathe) oder linierter Hintergrund, darauf die Striche. */
+function Feld({ feld, breite, werkzeug, finger, offen, linien, aendere }: { feld: HeftFeld; breite: number; werkzeug: Werkzeug; finger: boolean; offen: boolean; linien: boolean; aendere: (s: Strich[]) => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const massstab = breite / BREITE;
   const hoehe = feld.hoehe * massstab;
@@ -336,8 +364,9 @@ function Feld({ feld, breite, werkzeug, finger, offen, aendere }: { feld: HeftFe
         touchAction: "none",
         cursor: offen ? (werkzeug === "radierer" ? "cell" : "crosshair") : "default",
         backgroundColor: "#fff",
-        backgroundImage: "linear-gradient(#dfe6f1 1px, transparent 1px), linear-gradient(90deg, #dfe6f1 1px, transparent 1px)",
-        backgroundSize: `${KAESTCHEN * massstab}px ${KAESTCHEN * massstab}px`,
+        ...(linien
+          ? { backgroundImage: "linear-gradient(transparent calc(100% - 1px), #c9d3e3 calc(100% - 1px))", backgroundSize: `100% ${LINIE * massstab}px` }
+          : { backgroundImage: "linear-gradient(#dfe6f1 1px, transparent 1px), linear-gradient(90deg, #dfe6f1 1px, transparent 1px)", backgroundSize: `${KAESTCHEN * massstab}px ${KAESTCHEN * massstab}px` }),
       }}
       onPointerDown={down}
       onPointerMove={move}
@@ -406,11 +435,13 @@ function umbrechen(ctx: CanvasRenderingContext2D, text: string, breite: number):
  * Die Felder als Seiten (PNG, 1000 Pixel breit): oben der Titel, je Aufgabe die Nummer, die Angabe und darunter das Feld mit den
  * Strichen. Mehrere Aufgaben teilen sich eine Seite, bis sie etwa A4-hoch ist; kein Name steht darauf.
  */
-export function seitenBilder(titel: string, aufgaben: Pick<HeftAufgabe, "nr" | "text">[], felder: Pick<HeftFeld, "hoehe" | "striche">[]): string[] {
+export function seitenBilder(titel: string, aufgaben: Pick<HeftAufgabe, "nr" | "text" | "abschnitt">[], felder: Pick<HeftFeld, "hoehe" | "striche">[], linien = false): string[] {
   const mess = document.createElement("canvas").getContext("2d")!;
   mess.font = `${SCHRIFT}px sans-serif`;
   const bloecke = aufgaben.map((a, i) => {
-    const zeilen = umbrechen(mess, `${a.nr}. ${a.text}`, BREITE - 2 * RAND);
+    // Übungsheft: die Anweisung der Übung steht über ihrer ersten Aufgabe, damit die KI beim Lesen weiß, was verlangt war
+    const u = a.abschnitt?.uebung;
+    const zeilen = [...(u ? umbrechen(mess, `Übung ${u.nr}: ${u.auftrag || u.titel}`, BREITE - 2 * RAND) : []), ...umbrechen(mess, `${a.nr}. ${a.text}`, BREITE - 2 * RAND)];
     const kopf = 18 + zeilen.length * ZEILE + 8;
     return { zeilen, kopf, feld: felder[i], hoehe: kopf + felder[i].hoehe + 24 };
   });
@@ -445,18 +476,21 @@ export function seitenBilder(titel: string, aufgaben: Pick<HeftAufgabe, "nr" | "
       ctx.font = `${SCHRIFT}px sans-serif`;
       b.zeilen.forEach((z, i) => ctx.fillText(z, RAND, y + 18 + (i + 1) * ZEILE - 8));
       const oben = y + b.kopf;
-      // Kästchen, hell, damit die Schrift vorne bleibt
+      // Kästchen oder Linien, hell, damit die Schrift vorne bleibt
       ctx.strokeStyle = "#e6ebf3";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let gy = 0; gy <= b.feld.hoehe; gy += KAESTCHEN) {
-        ctx.moveTo(0, oben + gy + 0.5);
-        ctx.lineTo(BREITE, oben + gy + 0.5);
+      const abstand = linien ? LINIE : KAESTCHEN;
+      for (let gy = linien ? LINIE : 0; gy <= b.feld.hoehe; gy += abstand) {
+        const yy = oben + gy + (linien ? -0.5 : 0.5);
+        ctx.moveTo(0, yy);
+        ctx.lineTo(BREITE, yy);
       }
-      for (let gx = 0; gx <= BREITE; gx += KAESTCHEN) {
-        ctx.moveTo(gx + 0.5, oben);
-        ctx.lineTo(gx + 0.5, oben + b.feld.hoehe);
-      }
+      if (!linien)
+        for (let gx = 0; gx <= BREITE; gx += KAESTCHEN) {
+          ctx.moveTo(gx + 0.5, oben);
+          ctx.lineTo(gx + 0.5, oben + b.feld.hoehe);
+        }
       ctx.stroke();
       ctx.save();
       ctx.translate(0, oben);

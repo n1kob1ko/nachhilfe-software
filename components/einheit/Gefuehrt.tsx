@@ -57,7 +57,7 @@ import {
   type Stufe,
   type TextFehler,
 } from "@/lib/einheit-ablauf";
-import { gehtAlsHeft, heftDerEinheit, type Heft } from "@/lib/heft";
+import { gehtAlsHeft, heftDerEinheit, stiftGeht, type Heft } from "@/lib/heft";
 import { textUebungPlan } from "@/lib/text-uebung";
 import { heftInfo, heftLaufZumText, heftMoeglich } from "@/lib/uebungsheft";
 import { getLernpaket, type LernpaketMitSchritten } from "@/lib/lernpakete";
@@ -1029,16 +1029,31 @@ function UebungsheftZeile({ unit, textId, name }: { unit: UnitView; textId: numb
   if (lauf && w) {
     const info = heftInfo(w.settings);
     const n = repo.listTasks(w.id).length;
+    const stift = stiftGeht(unit);
     return (
       <div className="grid gap-3" data-testid="uebungsheft-fertig">
         <div className="rounded-xl bg-green-wash px-4 py-3 text-[15px]">
           <p className="font-semibold text-green">Übungsheft fertig: {n} Aufgaben</p>
           {info && <p className="mt-0.5 text-ink-2">{info.teile.map((t) => t.titel).join(" · ")}</p>}
         </div>
-        <Gross action={uebungsheftSendenAction.bind(null, unit.id, lauf.id)} icon={<Send size={19} aria-hidden />} testid="uebungsheft-senden">
-          Übungsheft ans Tablet senden
-        </Gross>
+        {stift ? (
+          <>
+            <Gross action={uebungsheftSendenAction.bind(null, unit.id, lauf.id, true)} icon={<PenLine size={19} aria-hidden />} testid="uebungsheft-senden">
+              Ans Tablet: mit dem Stift schreiben
+            </Gross>
+            <Leise>{name} schreibt wie im Heft auf Linien. Beim „Fertig“ liest die KI alles und prüft es gegen die Lösungen. Unsicheres landet bei dir.</Leise>
+          </>
+        ) : (
+          <Gross action={uebungsheftSendenAction.bind(null, unit.id, lauf.id, false)} icon={<Send size={19} aria-hidden />} testid="uebungsheft-senden">
+            Übungsheft ans Tablet senden
+          </Gross>
+        )}
         <div className="flex flex-wrap justify-center gap-x-6">
+          {stift && (
+            <Klein action={uebungsheftSendenAction.bind(null, unit.id, lauf.id, false)} testid="uebungsheft-tippen">
+              <Keyboard size={15} aria-hidden /> Lieber tippen
+            </Klein>
+          )}
           <Link href={`/uebungen/${w.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="uebungsheft-ansehen">
             <Eye size={15} aria-hidden /> Ansehen und drucken
           </Link>
@@ -1106,7 +1121,7 @@ function AndereWege({ unit, skillId }: { unit: UnitView; skillId: string }) {
  */
 function HeftKarte({ unit, name, heft }: { unit: UnitView; name: string; heft: Heft }) {
   return (
-    <Karte titel={heft.status === "schreibt" ? `${name} rechnet im Heft` : heft.status === "pruefen" ? "Das Heft wird geprüft" : "Das Heft ist noch nicht geprüft"} testid="ablauf-heft">
+    <Karte titel={heft.status === "schreibt" ? `${name} ${heft.linien ? "schreibt" : "rechnet"} im Heft` : heft.status === "pruefen" ? "Das Heft wird geprüft" : "Das Heft ist noch nicht geprüft"} testid="ablauf-heft">
       <p className="-mt-2 text-[14.5px] text-ink-2">
         {heft.titel} · {heft.aufgaben.length} Aufgaben
       </p>
