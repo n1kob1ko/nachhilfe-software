@@ -18,6 +18,7 @@
  * Nur auf Lehrerseiten. „Öffnen“ führt zu einer ruhigen Ansicht nur zum Lesen (`gezeigteUnterlage`) und wird vermerkt
  * (`einheit_unterlagen.gezeigt_at`); nur was wirklich geöffnet wurde, steht im Abschluss als „Unterlage gezeigt: …“.
  */
+import { kalendertag } from "./datum";
 import { cockpit, paketQuelle, type CockpitDaten } from "./cockpit";
 import { db } from "./db";
 import { ZEIG_ARTEN_PAKET } from "./praesentation-unterricht";
@@ -131,7 +132,7 @@ export function kandidatenDerEinheit(unitId: number, c: CockpitDaten = cockpit(u
     const gelesen = x ? ausLesung(x.l.lesung.punkte, x.nr, unit.subject, student) : { skillIds: [], themen: [] };
     const name = m.title === VORGABE_TITEL ? `${d.art} ${dateien.slice(0, i + 1).filter((y) => y.art === d.art).length}` : m.title;
     const titel = (x ? x.l.lesung.dokumente.find((y) => y.nr === x.nr)?.titel : "") || name;
-    out.push({ materialId: m.id, titel, art: d.art, datum: m.created_at.slice(0, 10), heute: true, rolle: d.rolle, ...gelesen, schrittId: gewaehlt.get(m.id) ?? null });
+    out.push({ materialId: m.id, titel, art: d.art, datum: kalendertag(m.created_at) ?? m.created_at.slice(0, 10), heute: true, rolle: d.rolle, ...gelesen, schrittId: gewaehlt.get(m.id) ?? null });
   }
   // earlier explanations of this student: only through a saved reading that links them to a skill
   const heute = new Set(out.map((k) => k.materialId));
@@ -142,7 +143,7 @@ export function kandidatenDerEinheit(unitId: number, c: CockpitDaten = cockpit(u
     const { skillIds } = ausLesung(x.l.lesung.punkte, x.nr, unit.subject, student);
     if (!skillIds.length) continue;
     const titel = x.l.lesung.dokumente.find((d) => d.nr === x.nr)?.titel || m.title;
-    out.push({ materialId: m.id, titel, art: m.mime === "application/pdf" ? "PDF" : "Foto", datum: m.created_at.slice(0, 10), heute: false, rolle: "erklaerung", skillIds, themen: [], schrittId: null });
+    out.push({ materialId: m.id, titel, art: m.mime === "application/pdf" ? "PDF" : "Foto", datum: kalendertag(m.created_at) ?? m.created_at.slice(0, 10), heute: false, rolle: "erklaerung", skillIds, themen: [], schrittId: null });
   }
   return out;
 }

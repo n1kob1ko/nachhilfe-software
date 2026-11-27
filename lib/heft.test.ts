@@ -107,7 +107,9 @@ test("„Fertig“: the pages become the student's material, ONE request reads a
     const h = s.heft.getHeft(s.aid)!;
     assert.ok("fehler" in s.heft.gibAb(h, h.felder, [Buffer.from("kein png")]), "only PNG pages");
     assert.ok("fehler" in s.heft.gibAb(h, h.felder, []), "no pages, nothing to check");
-    assert.deepEqual(s.heft.gibAb(h, h.felder, [PNG, PNG]), { ok: true });
+    // every field carries a stroke: a field without one is „nicht bearbeitet“ (KI9, further down)
+    const geschrieben = h.felder.map((f) => ({ ...f, striche: [[10, 20, 60, 80]] }));
+    assert.deepEqual(s.heft.gibAb(h, geschrieben, [PNG, PNG]), { ok: true });
     assert.equal(s.heft.getHeft(s.aid)!.status, "pruefen");
     assert.ok("fehler" in s.heft.speichereHeft(s.heft.getHeft(s.aid)!, h.felder), "handed in: no more writing");
     await s.heft.warteAufHeft(s.aid);
@@ -152,6 +154,50 @@ test("the KI does not answer: the reason stays on the Heft, „Noch einmal prüf
   try {
     await s.heft.pruefeHeft(s.aid);
     assert.equal(s.heft.getHeft(s.aid)!.status, "geprueft");
+  } finally {
+    ki.aus();
+  }
+});
+
+test("KI9: eine leere Aufgabe im Heft ist „nicht bearbeitet“, nicht falsch; im Abschluss heißt das Heft nicht „Auf Papier“", async () => {
+  const s = await setup();
+  s.heft.alsHeft(s.aid);
+  // Die Lesung nennt die dritte Aufgabe „falsch“, obwohl im Feld nichts steht: die App weiß es besser, dort ist kein Strich.
+  const ki = await mitKi({
+    aufgaben: [
+      { nr: 1, antwort: "3/4", rechenweg: [], bewertung: "richtig", unsicher: false, grund: "", punkte: null },
+      { nr: 2, antwort: "2/6", rechenweg: [], bewertung: "falsch", unsicher: false, grund: "Nenner addiert.", punkte: null },
+      { nr: 3, antwort: "", rechenweg: [], bewertung: "falsch", unsicher: false, grund: "Keine Antwort.", punkte: null },
+    ],
+    anderes_blatt: false,
+  });
+  try {
+    const h = s.heft.getHeft(s.aid)!;
+    const strich = [[10, 20, 60, 80]];
+    const felder = h.felder.map((f, i) => ({ ...f, striche: i < 2 ? strich : [] }));
+    assert.deepEqual(s.heft.gibAb(h, felder, [PNG]), { ok: true });
+    await s.heft.warteAufHeft(s.aid);
+    const g = s.heft.getHeft(s.aid)!;
+    assert.equal(g.status, "geprueft", g.grund);
+    assert.deepEqual(g.aufgaben.map((a) => a.urteil), ["richtig", "falsch", null], "die leere Aufgabe hat kein Urteil");
+    const versuche = s.repo.listAttemptsForAssignment(s.aid);
+    assert.equal(versuche.length, 2, "für die leere Aufgabe gibt es keine Antwort, sie zählt nirgends");
+    assert.ok(s.repo.getAssignment(s.aid)!.completed_at, "das Heft ist trotzdem abgeschlossen");
+
+    const { uebenStand } = await import("./einheit-ablauf");
+    const u = uebenStand(s.unit.id);
+    assert.deepEqual([u.gesamt.aufgaben, u.gesamt.fertig, u.gesamt.richtig, u.gesamt.falsch], [3, 2, 1, 1]);
+    assert.equal(u.letzte?.fertig, true, "Üben geht weiter, es wartet nicht auf die leere Aufgabe");
+
+    const { papierDerEinheit } = await import("./papier-einheit");
+    const { papierZeile } = await import("./blatt-regeln");
+    const [p] = papierDerEinheit(s.unit.id);
+    assert.equal(papierZeile(p), "Im Heft am Tablet: Übung „Brüche addieren“ 1 von 2 richtig, 1 nicht bearbeitet");
+
+    const { aktivitaetenDerEinheit, aktivitaetName } = await import("./einheit-aktivitaeten");
+    const a = aktivitaetenDerEinheit(s.unit.id).find((x) => x.assignmentId === s.aid)!;
+    assert.equal(aktivitaetName(a), "Im Heft am Tablet „Brüche addieren“");
+    assert.deepEqual([a.aufgaben, a.bearbeitet], [3, 2]);
   } finally {
     ki.aus();
   }

@@ -22,6 +22,7 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { beispielNamen } from "./ai/beispielnamen";
 import type { Deck, PraesAuftrag, PraesSchritt } from "./ai/praesentation";
 import { deckAusAntwort, folieJeSchritt, praesentationAnfrage, PraesentationKiSchema } from "./ai/praesentation";
 import { kiGrundVonUrsache } from "./ai/grund";
@@ -443,8 +444,9 @@ export function erstelleSchrittEntwurf(unitId: number, schrittId: number, teache
       if (!z.fach) return { ok: false, error: "Zu diesem Schritt ist kein Fach bekannt." };
       const tor = erstellenTor(z);
       if (!tor.erlaubt) return { ok: false, error: tor.grund };
-      const a = auftragFuerSchritt(z);
-      const { system, prompt } = praesentationAnfrage(a, bekannteNamen());
+      const namen = bekannteNamen();
+      const a = { ...auftragFuerSchritt(z), beispielNamen: beispielNamen(namen, schrittId) };
+      const { system, prompt } = praesentationAnfrage(a, namen);
       // the unit names the student for the budget and the protocol; the request itself has no student data
       const out = await runAI("praesentation", PraesentationKiSchema, system, prompt, { meta: { teacherId, unitId, trigger: "praesentation-unterricht" } });
       if (!out.ok) return { ok: false, error: kiGrundVonUrsache(out.cause) };

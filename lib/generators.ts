@@ -36,6 +36,7 @@ import { MATHE_MATURA, istMatheMatura, matheMaturaFuerKategorie, matheMaturaFuer
 import { MATHE_GRUNDLAGEN } from "./mathe-grundlagen";
 import { MATHE_RECHNUNGEN } from "./mathe-rechnungen";
 import { istMaturaKategorie, pruefeMatura } from "./matura-formate";
+import { ohneReihenfolge } from "./math-text";
 import { textaufgabeTask } from "./textaufgaben";
 import { EXPLAIN } from "./erklaerungen";
 import { typischeFehler } from "./themen";
@@ -1202,7 +1203,8 @@ export function generateBuiltIn(req: GenerateRequest): TaskDraft[] {
       else if (type === "grammar" && t.type === "calc") t = { ...t, type: "grammar" };
     }
     // Aufgaben mit Bild unterscheiden sich im Bild, englische im Satz (zweite Zeile), nicht in der ersten Zeile
-    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) || istEnglischMaturaSkill(skill.id) ? aufgabenSchluessel(t) : t.prompt.split("\n")[0];
+    // dieselbe Rechnung mit vertauschten Zahlen („3/10 + 3/4“ und „3/4 + 3/10“) gilt als dieselbe Aufgabe (ohneReihenfolge)
+    const key = t.data.figure || istEnglischGrammatik(skill.id) || istDeutschSatzlehre(skill.id) || istVokabelThema(skill.id) || istMatheMatura(skill.id) || istEnglischMaturaSkill(skill.id) ? aufgabenSchluessel(t) : ohneReihenfolge(t.prompt.split("\n")[0]);
     const ganz = ganzGleich(t);
     // Wortarten: die erste Zeile ist nur die Anweisung („Schreib alle Nomen heraus“), der Satz macht die Aufgabe aus
     const wortart = isWortartenSkill(skill.id);

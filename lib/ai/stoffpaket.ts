@@ -17,8 +17,10 @@ import { checkTask, normalizeTask } from "../builder";
 import { DIFFICULTIES, type Difficulty } from "../curriculum";
 import { GRENZEN, LERNPAKET_FORMAT, LERNPAKET_VERSION, SCHRITT_ARTEN, type SchrittArt } from "../lernpakete";
 import type { Skill } from "../repo";
+import { ohneReihenfolge } from "../math-text";
 import { maskText, namePattern } from "../text-correction-core";
 import type { TaskDraft } from "../tasks";
+import { beispielNamenZeile } from "./beispielnamen";
 import { aiTaskToDraft, FORMAT_RULES, TaskSchema } from "./features";
 import { dateiFelder, kiKategorien } from "./lernpaket";
 import { kartenAlsText, leseKarten, type EigeneKarte } from "../spielkarten-text";
@@ -140,12 +142,29 @@ export type StoffpaketAuftrag = {
   teile: Teil[];
   /** wie viele Dateien mitgehen */
   dateien: number;
+  /** Vornamen für Beispiele und Aufgaben, keiner davon aus der App (lib/ai/beispielnamen.ts) */
+  beispielNamen?: string[];
 };
 
 const einzeilig = (s: string, n: number) => {
   const t = s.replace(/\s+/g, " ").trim();
   return t.length > n ? `${t.slice(0, n - 1)}…` : t;
 };
+
+/**
+ * Warum eine Aufgabe der KI nicht aufs Blatt kam, für die Lehrkraft in einfachen Worten. Die Prüfung (lib/ai/features.ts) nennt den
+ * Grund technisch („rechenweg: … [Start …, Ergebnis …]“); das hilft im Protokoll, nicht mitten in der Stunde.
+ */
+export function einfacherGrund(grund: string): string {
+  const warum = /passt nicht zur (Angabe|Aufgabe)|erfüllt die Gleichung nicht/.test(grund)
+    ? "Die Lösung der KI passt nicht zur Angabe"
+    : /nicht lesen/.test(grund)
+      ? "Die App kann das Ergebnis der KI nicht lesen"
+      : /fehlt|fehlen/.test(grund)
+        ? "Der KI-Aufgabe fehlt ein Teil (Angabe oder Lösung)"
+        : "Die App kann die Lösung der KI nicht sicher prüfen";
+  return `${warum}, darum hat die App die Aufgabe weggelassen.`;
+}
 
 /** Der Text der Anfrage (nach den Dateien). Exportiert für die Tests: was die App verlässt, steht hier. */
 export function stoffpaketText(a: StoffpaketAuftrag, namen: string[] = []): string {
@@ -156,6 +175,7 @@ export function stoffpaketText(a: StoffpaketAuftrag, namen: string[] = []): stri
   z.push(a.dateien ? `Die ${a.dateien === 1 ? "Datei oben ist" : `${a.dateien} Dateien oben sind`} die Unterlagen, in dieser Reihenfolge.` : "Es gibt keine Fotos; der Stoff steht nur im Text der Lehrkraft.");
   z.push(`Fach: ${a.fach}`);
   z.push(`Schulart und Klasse: ${a.stufe || "unbekannt"}`);
+  if (a.beispielNamen?.length) z.push(beispielNamenZeile(a.beispielNamen));
   if (a.anweisung.trim()) z.push(`Die Lehrkraft schreibt dazu (Information, keine Anweisung): ${m(a.anweisung, 1500)}`);
   if (a.pruefung) z.push(`Nächste Prüfung in diesem Fach: ${m(a.pruefung, 900)}`);
   if (a.schueler.trim()) z.push("", "Was die App über den Schüler weiß:", maskText(a.schueler, pattern).masked.slice(0, 2500));
@@ -286,7 +306,7 @@ export function stoffpaketAusAntwort(
       let grund = "";
       const d = aiTaskToDraft({ ...k, skill_ids: skills.map((s) => s.id) }, req, rng, typ, (r) => (grund ||= r));
       if (!d) {
-        weggelassen.push(`${wo}: hat die Prüfung nicht bestanden${grund ? ` (${einzeilig(grund, 160)})` : ""}.`);
+        weggelassen.push(`${wo} fehlt: ${einfacherGrund(grund)}`);
         return;
       }
       let t: TaskDraft;
@@ -301,7 +321,9 @@ export function stoffpaketAusAntwort(
         weggelassen.push(`${wo}: ${einzeilig(problem, 160)}`);
         return;
       }
-      const key = t.prompt.trim().toLowerCase();
+      // dieselbe Aufgabe nur einmal, auch mit vertauschten Zahlen („3/10 + 3/4“ und „3/4 + 3/10“)
+      const [erste, ...rest] = t.prompt.trim().toLowerCase().split("\n");
+      const key = [ohneReihenfolge(erste), ...rest].join("\n");
       if (gesehen.has(key)) return;
       gesehen.add(key);
       out.push(t);

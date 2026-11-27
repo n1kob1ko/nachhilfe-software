@@ -45,8 +45,16 @@ export function normalizeMath(s: string): string {
 // German thousands ("1.000", "12.500") only when the first group is not 0; "0.125" stays a decimal
 const NUMBER = /^(?:[1-9]\d{0,2}(?:\.\d{3})+(?![\d.,])|\d+(?:[.,]\d+)?)/;
 
+/**
+ * Gemischte Zahlen („1 3/8“, „2 1/2“): eine ganze Zahl, ein Leerzeichen, dann ein Bruch aus zwei ganzen Zahlen. Für den Parser
+ * wird daraus (1+3/8); so stimmen auch „5 - 1 3/8“ und „-1 3/8“. In der Unterstufe stehen Ergebnisse ständig so da (Test mit
+ * echter KI, 27.11.2026: „5/8 + 3/4 = 1 3/8“ fiel als unlesbar weg).
+ */
+const GEMISCHT = /(?<![\d.,/^])(\d+) (\d+)\s*\/\s*(\d+)(?![\d/^,]|\.\d)/g;
+export const mixedNumbers = (s: string): string => s.replace(GEMISCHT, "($1+$2/$3)");
+
 function tokenize(src: string, vars: Set<string>): Tok[] | null {
-  const s = normalizeMath(src);
+  const s = mixedNumbers(normalizeMath(src));
   if (!s || s.length > MAX_LENGTH) return null;
   const out: Tok[] = [];
   let i = 0;

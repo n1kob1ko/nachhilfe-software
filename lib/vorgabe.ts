@@ -21,6 +21,7 @@
  * Tippen (`aendereRolle`), ohne neue Anfrage. Vorhandenes Material des Schülers kann sie statt eines neuen Fotos wählen;
  * was schon gelesen ist, kostet nichts mehr (`gespeicherteLesung`).
  */
+import { kalendertag } from "./datum";
 import { ersetzeVorlaeufige, planNeu, hatBegonnen, leseStand } from "./cockpit";
 import { db, json } from "./db";
 import { merkeZuordnung, splitTopics, stoffVorschlag } from "./lehrplan";
@@ -460,13 +461,13 @@ export function aendereRolle(unitId: number, materialId: number, rolle: Rolle): 
 
 /**
  * Vorhandenes Material des Schülers für „Was steht heute an?“: hochgeladene Fotos und PDFs (keine Druckblätter), das neueste
- * zuerst. Mit der Rolle, wenn sie bekannt ist.
+ * zuerst. Mit der Rolle, wenn sie bekannt ist. Das Datum ist der Kalendertag in Wien (kurz nach Mitternacht nicht „gestern“).
  */
 export function materialZurWahl(studentId: number, max = 24): { id: number; titel: string; art: "Foto" | "PDF"; datum: string; rolle: Rolle | null }[] {
   return listMaterials({ studentId })
     .filter(hatDatei)
     .slice(0, max)
-    .map((m) => ({ id: m.id, titel: m.title, art: m.mime === "application/pdf" ? "PDF" : "Foto", datum: m.created_at.slice(0, 10), rolle: istRolle(m.rolle) ? m.rolle : null }));
+    .map((m) => ({ id: m.id, titel: m.title, art: m.mime === "application/pdf" ? "PDF" : "Foto", datum: kalendertag(m.created_at) ?? m.created_at.slice(0, 10), rolle: istRolle(m.rolle) ? m.rolle : null }));
 }
 
 /** Die Vorgabe entfernen. Hat die Lehrkraft noch nichts getan, gilt wieder der Ablauf ohne sie. */

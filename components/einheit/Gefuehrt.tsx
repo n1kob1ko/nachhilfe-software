@@ -32,7 +32,7 @@ import { EinheitBeenden } from "@/components/EinheitBeenden";
 import { FormKnopf } from "@/components/FormKnopf";
 import { StoffpaketForm } from "@/components/StoffpaketForm";
 import { aiEnabled, aiReadsImages } from "@/lib/ai";
-import { cockpit, FRAGE_ARTEN, merkeFrage, planFuehrung, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
+import { cockpit, merkeFrage, planFuehrung, schrittFragt, type CockpitDaten, type PlanStep } from "@/lib/cockpit";
 import {
   STUFE_LABEL,
   erklaerPaket,
@@ -67,6 +67,8 @@ import type { UnitView } from "@/lib/units";
 import { materialZurWahl, vorgabeDerEinheit } from "@/lib/vorgabe";
 import { ROLLE_SATZ } from "@/lib/pruefungsstoff";
 import { tagMonat } from "@/lib/vorbereitung-auto";
+import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
+import { KiGrenzeHinweis } from "@/components/cockpit/Cockpit";
 
 const first = (n: string) => n.split(" ")[0];
 const skillName = (id: string | null) => (id ? (repo.getSkill(id)?.name ?? id) : "");
@@ -113,6 +115,9 @@ export async function Gefuehrt({ unit, student, folien, stoffHand = false }: { u
           );
         })}
       </nav>
+
+      {/* KI-Grenze je Schüler (1 € Hinweis, 3 € Stopp): auch hier, nicht nur im Profil und unter „Mehr Werkzeuge“ */}
+      <KiGrenzeHinweis studentId={student.id} name={name} />
 
       {a.stufe === "start" && <StartKarte unit={unit} name={name} faecher={student.subjects} />}
       {a.stufe === "kurztest" && <KurztestKarte unit={unit} a={a} name={name} />}
@@ -313,7 +318,7 @@ function KurztestKarte({ unit, a, name }: { unit: UnitView; a: Ablauf; name: str
           <Camera size={19} aria-hidden /> Kurztest fotografieren
         </Link>
         <div className="flex flex-wrap justify-center gap-x-6">
-          <Link href={`/arbeitsblatt/${k.worksheetId}?einheit=${unit.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+          <Link href={druckLinkZumFotografieren(k.worksheetId, unit.id)} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
             <Printer size={16} aria-hidden /> Nochmal drucken
           </Link>
           <Klein action={stufeAction.bind(null, unit.id, "ueben")}>Weiter zum Üben</Klein>
@@ -475,6 +480,8 @@ function StoffKarte({ unit, student, name, hand }: { unit: UnitView; student: re
 
 /** „Stoff vorbereiten“ in der Einheit: läuft (die Seite lädt sich neu), ging nicht (noch einmal), oder fertig (übernehmen). */
 function StoffpaketKarte({ unit, p, name }: { unit: UnitView; p: Stoffpaket; name: string }) {
+  // nur getippt, ohne Fotos: dann ist auch von Fotos keine Rede
+  const mitFotos = p.dateien.length > 0;
   const ansehen = (
     <Link href={`/schueler/${p.student_id}/stoff/${p.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline" data-testid="stoff-ansehen">
       <Eye size={15} aria-hidden /> Alles genau ansehen
@@ -487,7 +494,9 @@ function StoffpaketKarte({ unit, p, name }: { unit: UnitView; p: Stoffpaket; nam
         <p className="flex items-center gap-3 text-[17px] font-semibold" aria-live="polite" data-testid="stoff-laeuft">
           <Loader2 size={20} className="animate-spin text-accent" aria-hidden /> {p.schritt || "Unterlagen lesen"} …
         </p>
-        <p className="text-[15px] leading-relaxed text-ink-2">Das dauert meist 2 bis 5 Minuten. Inzwischen kann {name} schon im Buch lesen oder du erklärst mit den Fotos. Die Seite zeigt von selbst, wenn es fertig ist.</p>
+        <p className="text-[15px] leading-relaxed text-ink-2">
+          Das dauert meist 2 bis 5 Minuten. Inzwischen kann {name} schon im Buch lesen{mitFotos ? " oder du erklärst mit den Fotos" : " oder du fängst schon an zu erklären"}. Die Seite zeigt von selbst, wenn es fertig ist.
+        </p>
       </Karte>
     );
   }
@@ -496,11 +505,11 @@ function StoffpaketKarte({ unit, p, name }: { unit: UnitView; p: Stoffpaket; nam
       <Karte titel="Das hat nicht geklappt" testid="ablauf-stoff">
         <p className="text-[16px] text-ink-2">{p.fehler || "Das Erstellen ging nicht."}</p>
         <Gross action={stoffNochmalAction.bind(null, unit.id)} icon={<RotateCcw size={19} aria-hidden />} testid="stoff-nochmal">
-          Noch einmal mit denselben Fotos
+          {mitFotos ? "Noch einmal mit denselben Fotos" : "Noch einmal versuchen"}
         </Gross>
         <div className="flex flex-wrap justify-center gap-x-6">
           <Klein action={stoffVerwerfenAction.bind(null, unit.id)}>
-            <Camera size={15} aria-hidden /> Andere Fotos
+            <Camera size={15} aria-hidden /> {mitFotos ? "Andere Fotos" : "Anderer Stoff"}
           </Klein>
           <Link href={`/einheiten/${unit.id}?stoff=hand`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
             Ohne Präsentation weiter
@@ -546,8 +555,8 @@ function StoffpaketKarte({ unit, p, name }: { unit: UnitView; p: Stoffpaket; nam
       </Gross>
       <div className="flex flex-wrap justify-center gap-x-6">
         {ansehen}
-        <Klein action={stoffVerwerfenAction.bind(null, unit.id)}>
-          <Camera size={15} aria-hidden /> Andere Fotos
+        <Klein action={stoffVerwerfenAction.bind(null, unit.id)} testid="stoff-anderer">
+          <Camera size={15} aria-hidden /> {mitFotos ? "Andere Fotos" : "Anderer Stoff"}
         </Klein>
       </div>
     </Karte>
@@ -726,7 +735,7 @@ function PaketErklaeren({ unit, a, name, folien, paket, thema }: { unit: UnitVie
   const letzter = i === schritte.length - 1;
   const frage = s.lehrer_fragt.trim();
   const antwort = s.erwartete_antwort.trim();
-  const knoepfe = FRAGE_ARTEN.includes(s.art) && Boolean(frage || antwort);
+  const knoepfe = schrittFragt(s);
   const blatt = offenesStoffBlatt(unit.id);
   const senden = (
     <>
@@ -1081,7 +1090,7 @@ function PapierKarte({ unit, name, papier }: { unit: UnitView; name: string; pap
         <Camera size={19} aria-hidden /> Seite fotografieren
       </Link>
       <div className="flex flex-wrap justify-center gap-x-6">
-        <Link href={`/arbeitsblatt/${papier.worksheetId}?einheit=${unit.id}`} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
+        <Link href={druckLinkZumFotografieren(papier.worksheetId, unit.id)} className="treffer inline-flex min-h-[44px] items-center gap-1.5 text-[14.5px] font-medium text-accent hover:underline">
           <Printer size={15} aria-hidden /> Nochmal drucken
         </Link>
         <Klein action={papierOhneFotoAction.bind(null, unit.id, papier.worksheetId)} testid="papier-ohne-foto">

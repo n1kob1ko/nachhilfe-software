@@ -8,6 +8,7 @@ import { pushLive, showOnTablet } from "@/lib/live";
 import { zeigeUebung } from "@/lib/tafel-senden";
 import { erstelleMinitest } from "@/lib/minitest";
 import { canManageUnit, getUnit } from "@/lib/units";
+import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
 /**
  * „Minitest“ in der laufenden Einheit: erstellt ihn aus dem Stoff der letzten Einheit (lib/minitest.ts)
@@ -32,5 +33,5 @@ export async function minitestAction(f: FormData) {
   if (ziel === "geraet" && out.assignmentId) zeigeUebung(unit, out.assignmentId);
   pushLive(unit.id);
   revalidatePath("/", "layout");
-  redirect(ziel === "druck" ? `/arbeitsblatt/${out.worksheetId}?einheit=${unit.id}` : `/einheiten/${unit.id}?gesendet=${out.worksheetId}`);
+  redirect(ziel === "druck" ? druckLinkZumFotografieren(out.worksheetId, unit.id) : `/einheiten/${unit.id}?gesendet=${out.worksheetId}`);
 }

@@ -206,7 +206,11 @@ export async function pruefeHeft(assignmentId: number): Promise<void> {
   try {
     const blatt = `z${assignmentId}`;
     const v = await liesPapier({ unitId: unit.id, blattKey: blatt, materialIds: h.materialIds, teacherId: unit.teacher_id });
-    const out = speicherePapier({ unitId: unit.id, teacherId: unit.teacher_id, blatt, zeilen: v.zeilen, materialIds: h.materialIds, gelesen: "ki" });
+    // Ein Feld ohne Strich ist nicht bearbeitet, was immer die Lesung dazu sagt; ebenso eine Aufgabe, die die Lesung sicher als leer
+    // sieht. Solche Aufgaben zählen weder als richtig noch als falsch (Test mit echter KI, 27.11.2026: die leere Aufgabe galt als Fehler).
+    const ohneStrich = new Set(h.felder.filter((f) => !f.striche.length).map((f) => f.taskId));
+    const zeilen = v.zeilen.map((z) => (z.taskId != null && (ohneStrich.has(z.taskId) || (z.bewertung === "leer" && !z.pruefen && !z.offen)) ? { ...z, antwort: "", bewertung: "leer" as const, pruefen: false, offen: false, grund: "", fehler: "" } : z));
+    const out = speicherePapier({ unitId: unit.id, teacherId: unit.teacher_id, blatt, zeilen, materialIds: h.materialIds, gelesen: "ki", leerZaehltNicht: true });
     if ("error" in out) return fehler(out.error);
     db().prepare("UPDATE hefte SET status = 'geprueft', papier_id = ?, updated_at = datetime('now') WHERE assignment_id = ?").run(out.papierId, assignmentId);
     pushLive(unit.id);

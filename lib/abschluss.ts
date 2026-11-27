@@ -450,7 +450,8 @@ export function abschlussKarte(brief: Pick<UnitBrief, "done" | "good" | "difficu
   if (belege?.beispiele?.length) gemacht.push(a(`Beispiel im Schritt gezeigt: ${belege.beispiele.join(", ")}`, "erklaerungen"));
   if (belege?.ausfuehrlich?.length) gemacht.push({ text: `Ausführlicher erklärt: ${belege.ausfuehrlich.join(", ")}`, von: "anpassung", punkt: "erklaerungen" });
   // paper work only after the teacher took it over, with how many unsure rows she checked
-  for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier", punkt: "papier" });
+  // a Heft at the tablet is no paper: its line stands with the results, not under „Auf Papier“
+  for (const p of belege?.papier ?? []) gemacht.push({ text: papierZeile(p), von: "papier", punkt: p.heft ? "ergebnisse" : "papier" });
   // a Probeschularbeit with its points and, only when everything is graded, its grade
   for (const p of belege?.proben ?? []) gemacht.push({ text: probeZeile(p), von: p.papier ? "papier" : "antworten", punkt: p.papier ? "papier" : "ergebnisse" });
   // answers still waiting for the teacher: said once, with the way to the list; they are in no result above or below

@@ -324,3 +324,29 @@ test("F0b: the reading cost follows the pages chosen (1 to 10), not a fixed two;
   assert.ok(Math.abs(usd(2) - 0.03) < 1e-9, String(usd(2)));
   assert.ok(usd(4) > 0.03 && usd(1) < 0.03);
 });
+
+test("KI12: gelesen, aber noch nicht übernommen: nach dem Neuladen der Seite steht dasselbe Ergebnis wieder da, ohne zweite Anfrage", async () => {
+  const s = await setup();
+  const ws = s.blatt(s.sid);
+  const asg = s.repo.assignWorksheet(ws, s.sid, "", s.unit.id);
+  assert.equal(s.p.offeneLesung({ unitId: s.unit.id, blattKey: `z${asg}` }), null, "nichts gelesen, nichts zu zeigen");
+  const ki = await mitKi(LESUNG);
+  try {
+    const seiten = [s.seite(), s.seite()];
+    const v = await s.p.liesPapier({ unitId: s.unit.id, blattKey: `z${asg}`, materialIds: seiten, teacherId: s.teacher.id });
+    const wieder = s.p.offeneLesung({ unitId: s.unit.id, blattKey: `z${asg}` })!;
+    assert.equal(ki.gefragt.length, 1, "das Wiederherstellen fragt die KI nicht");
+    assert.deepEqual(wieder.materialIds, [...new Set(seiten)]);
+    assert.deepEqual(wieder.vorschlag.zeilen, v.zeilen, "dieselben Zeilen in derselben Reihenfolge, mit Bewertung und Grund");
+    assert.equal(wieder.vorschlag.lesungId, v.lesungId);
+    assert.ok(wieder.vorschlag.hinweise.some((h) => h.includes("unsicher")), "der Hinweis auf die gelben Zeilen bleibt");
+    assert.equal(s.p.offeneLesung({ unitId: s.unit.id, blattKey: "z424242" }), null, "nie ein fremdes Blatt");
+
+    // übernommen: dann gibt es nichts mehr wiederherzustellen
+    const zeilen = v.zeilen.map((z) => ({ ...z, pruefen: false, offen: false }));
+    assert.ok("papierId" in s.p.speicherePapier({ unitId: s.unit.id, teacherId: s.teacher.id, blatt: `z${asg}`, zeilen, materialIds: seiten, gelesen: "ki" }));
+    assert.equal(s.p.offeneLesung({ unitId: s.unit.id, blattKey: `z${asg}` }), null);
+  } finally {
+    ki.aus();
+  }
+});

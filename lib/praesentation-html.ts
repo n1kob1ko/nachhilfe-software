@@ -4,21 +4,28 @@
  * docs/praesentation-format.md, `.folie` and `.schritt`, system fonts, nothing loaded from outside, no storage,
  * eval or fetch), and a ZIP with index.html and lernheft-notizen.json, as a teacher would upload it.
  *
- * Every text of the KI is escaped here; the only markup it can cause is **fett** → <strong>, applied after
- * escaping. The Vortragstext never goes into the HTML: it goes into the notes file, which the upload reads
+ * Every text of the KI is escaped here; the only markup it can cause is **fett** → <strong> and a fraction bar for
+ * „1/2“, both applied around escaped text. The Vortragstext never goes into the HTML: it goes into the notes file, which the upload reads
  * into the database and never serves. Pure functions, no database: tests check the output directly.
  */
 import zlib from "node:zlib";
 import type { Block, Deck } from "./ai/praesentation";
+import { folienTeile } from "./math-text";
 
 /** &, <, >, " and ' as entities: a KI text can never become a tag or leave an attribute. */
 export function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
 }
 
-/** An escaped text with **fett** as <strong>. */
+/**
+ * An escaped text with **fett** as <strong> and fractions with a bar („1/2“, like everywhere in the app; test with the real
+ * KI, 27.11.2026: the slides wrote „1/2 + 1/3“). The parts of a fraction are escaped like every other text.
+ */
 export function inline(s: string): string {
-  return escapeHtml(s).replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
+  return folienTeile(s)
+    .map((p) => (typeof p === "string" ? escapeHtml(p) : `${p.minus ? "−" : ""}<span class="bruch"><span>${escapeHtml(p.num)}</span><span>${escapeHtml(p.den)}</span></span>`))
+    .join("")
+    .replace(/\*\*([^*\n]+?)\*\*/g, "<strong>$1</strong>");
 }
 
 /** The skill's skeleton (lernheft-lernpaket, section 5) up to the slides. Only the title goes in. */
@@ -47,6 +54,9 @@ const KOPF = (titel: string) => `<!doctype html>
   .folie th,.folie td{border:.06em solid #b9c8da;padding:.25em .6em;text-align:left;vertical-align:top}
   .folie th{background:#eaf2fd}
   .folie strong{color:#10233f}
+  .bruch{display:inline-flex;flex-direction:column;vertical-align:middle;text-align:center;margin:0 .12em;font-size:.86em;line-height:1.15;white-space:nowrap}
+  .bruch span:first-child{padding:0 .18em .06em;border-bottom:.07em solid currentColor}
+  .bruch span:last-child{padding:.06em .18em 0}
 </style></head>
 <body><div class="buehne">
 `;

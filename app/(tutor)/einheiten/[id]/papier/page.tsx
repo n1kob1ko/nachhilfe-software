@@ -7,7 +7,7 @@ import { tagMonat } from "@/lib/datum";
 import { faehigkeitenFuer } from "@/lib/blatt-einlesen";
 import { keinNameBestaetigt } from "@/lib/kein-name";
 import { dayOf } from "@/lib/exams";
-import { ANDERES_BLATT, blaetterDerEinheit, blattZurUebung, papierTor, type PapierBlatt } from "@/lib/papier-einheit";
+import { ANDERES_BLATT, blaetterDerEinheit, blattZurUebung, offeneLesung, papierTor, type PapierBlatt } from "@/lib/papier-einheit";
 import { notenschluessel } from "@/lib/probeschularbeit";
 import { getStudent } from "@/lib/repo";
 import { canManageUnit, getUnit } from "@/lib/units";
@@ -37,6 +37,8 @@ export default async function PapierPage({ params, searchParams }: { params: Pro
   // the sheet of the step it was opened from, else the latest; `blatt=anders`: a sheet from elsewhere (the one of „Was steht heute an?“)
   const vor = sp.blatt === ANDERES_BLATT ? null : (blattZurUebung(blaetter, Number(sp.uebung) || null) ?? blaetter[0] ?? null);
   const tor = papierTor(student.id);
+  // schon gelesen, noch nicht übernommen: nach dem Neuladen steht das Ergebnis wieder da (ohne zweite Anfrage an die KI)
+  const gelesen = vor ? offeneLesung({ unitId: unit.id, blattKey: vor.key }) : null;
   const subjects = student.subjects.length ? student.subjects : ["Mathematik"];
   const fach = unit.subject && subjects.includes(unit.subject) ? unit.subject : subjects[0];
   const faehigkeiten = Object.fromEntries(subjects.map((f) => [f, faehigkeitenFuer(student, f)]));
@@ -63,6 +65,7 @@ export default async function PapierPage({ params, searchParams }: { params: Pro
           kosten: tor.erlaubt ? tor.kosten : null,
           fach,
           keinName: keinNameBestaetigt(unit),
+          gelesen: vor && gelesen ? { blatt: vor.key, ...gelesen } : null,
         }}
       />
     </div>

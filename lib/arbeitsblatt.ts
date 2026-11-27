@@ -117,6 +117,13 @@ export function readOptions(sp: Params, defaultTitle: string): SheetOptions {
   return o;
 }
 
+/**
+ * Der Link zu einem Blatt, das in der Einheit gedruckt und danach fotografiert wird („Lieber auf Papier rechnen“, Kurztest auf
+ * Papier): ohne Namensfeld, denn die Seite geht als Foto an die KI, und dort steht kein Name (Test mit echter KI, 27.11.2026).
+ * Die Lehrkraft kann das Feld in den Druck-Einstellungen wieder einschalten.
+ */
+export const druckLinkZumFotografieren = (worksheetId: number, unitId: number) => `/arbeitsblatt/${worksheetId}?einheit=${unitId}&${BOOL_KEYS.name}=0`;
+
 /** Query string of the settings that differ from the defaults (and the title, if changed). */
 export function optionsQuery(
   o: SheetOptions,

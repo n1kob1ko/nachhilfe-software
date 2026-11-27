@@ -29,6 +29,7 @@ import * as repo from "@/lib/repo";
 import { starteStoffpaket, verwirfStoffpaket } from "@/lib/stoffpaket";
 import { zeigeUebung } from "@/lib/tafel-senden";
 import { canManageUnit, getUnit } from "@/lib/units";
+import { druckLinkZumFotografieren } from "@/lib/arbeitsblatt";
 
 /**
  * Die Knöpfe des geführten Ablaufs (lib/einheit-ablauf.ts, components/einheit/Gefuehrt.tsx). Jede Aktion gilt für genau diese
@@ -181,7 +182,7 @@ export async function uebenPapierAction(unitId: number, skillId: string) {
     wid = out.worksheetId;
   }
   revalidatePath(`/einheiten/${unitId}`);
-  redirect(`/arbeitsblatt/${wid}?einheit=${unitId}`);
+  redirect(druckLinkZumFotografieren(wid, unitId));
 }
 
 /** „Ohne Foto weiter“ bei einer gedruckten Übung. */

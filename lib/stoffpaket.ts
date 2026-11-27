@@ -34,6 +34,7 @@ import { skillsForPrompt } from "./lehrplan";
 import { archiviereLernpaket, getLernpaket, importiereLernpaket, markiereGeprueft } from "./lernpakete";
 import { getMaterial, hatDatei, materialFile, MAX_ANALYSIS_IMAGE_BYTES, MAX_ANALYSIS_PDF_BYTES, sniffType } from "./materials";
 import { wienerDatum } from "./planung/zeit";
+import { beispielNamen } from "./ai/beispielnamen";
 import { bekannteNamen, erstellePraesEntwurf, getPraesEntwurf, praesKostenSchaetzung, uebernimmPraesEntwurf, verwirfPraesEntwurf } from "./praesentation-ki";
 import { markierePraesentationGeprueft } from "./praesentationen";
 import { angabeOhneNamen, stoffDerPruefung } from "./pruefungsstoff";
@@ -301,6 +302,7 @@ async function fuehreAus(id: number): Promise<void> {
   const stufe = student.school_type ? `${klassenLabel(student.school_type, student.klasse)}${level.status === "eindeutig" ? ` (Schulstufe ${level.schulstufe})` : ""}` : "";
   const pruefung = naechstePruefung(student.id, p.fach);
   const faehigkeiten = skillsForPrompt(student, p.fach);
+  const namen = bekannteNamen();
   const auftrag: StoffpaketAuftrag = {
     fach: p.fach,
     stufe,
@@ -311,8 +313,10 @@ async function fuehreAus(id: number): Promise<void> {
     faehigkeiten: faehigkeiten.map(({ id: sid, name, area }) => ({ id: sid, name, area })),
     teile: p.teile,
     dateien: dateien.length,
+    // Beispiele heißen nie wie ein Schüler oder eine Lehrkraft der App (lib/ai/beispielnamen.ts)
+    beispielNamen: beispielNamen(namen, id),
   };
-  const out = await runAI("stoffpaket", StoffpaketSchema, STOFFPAKET_SYSTEM, [...dateien, { type: "text", text: stoffpaketText(auftrag, bekannteNamen()) }], {
+  const out = await runAI("stoffpaket", StoffpaketSchema, STOFFPAKET_SYSTEM, [...dateien, { type: "text", text: stoffpaketText(auftrag, namen) }], {
     meta: { teacherId: p.teacher_id, studentId: student.id, unitId: p.unit_id, trigger: "stoffpaket" },
   });
   const calls = out.callId ? [out.callId] : [];
@@ -382,7 +386,7 @@ async function fuehreAus(id: number): Promise<void> {
 
   if (paketId && p.teile.includes("praesentation")) {
     setze(id, { schritt: "Präsentation erstellen" });
-    const pr = await erstellePraesEntwurf(paketId, p.teacher_id, { auchUngeprueft: true });
+    const pr = await erstellePraesEntwurf(paketId, p.teacher_id, { auchUngeprueft: true, studentId: student.id, unitId: p.unit_id });
     if (pr.ok) {
       const e = getPraesEntwurf(pr.id);
       setze(id, { praes_entwurf_id: pr.id, call_ids: JSON.stringify(e?.call_id ? [...calls, e.call_id] : calls) });
